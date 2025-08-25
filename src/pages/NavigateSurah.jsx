@@ -182,6 +182,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
+import DemoItems from '../pages/DemoItems';
 
 
 
@@ -367,7 +368,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       case 'Juz':
         return <JuzNavigate />;
       case 'Page':
-        return;
+        return <DemoItems/>;
       default:
         return null;
     }

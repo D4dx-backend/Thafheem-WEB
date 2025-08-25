@@ -198,10 +198,12 @@ const Juz = () => {
 
   return (
     <>
-      <HomepageNavbar />
+      {/* <HomepageNavbar /> */}
       <HomepageSearch />
-      <div className="min-h-screen  bg-white p-4">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen  bg-white dark:bg-black p-4 w-full mx-auto" >
+
+      <div className="max-w-6xl mx-auto">
+
           <div className="border-b border-gray-200 ">
             <div className="flex">
               <button
@@ -230,14 +232,14 @@ const Juz = () => {
             {juzData.map((juz) => (
               <div
                 key={juz.id}
-                className={`bg-white rounded-xl shadow-sm border-gray-100 overflow-hidden`}
+                className={`bg-[#EBEEF0] dark:bg-[#323A3F] rounded-xl shadow-sm border-gray-100 overflow-hidden`}
               >
                 {/* Header */}
-                <div className="bg-gray-100 px-4 py-3 flex justify-between items-center border-b">
-                  <h3 className="text-sm font-medium text-gray-700">
+                <div className="bg-gray-100 dark:bg-[#323A3F] dark:text-white px-4 py-3 flex justify-between items-center border-b">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-white">
                     {juz.title}
                   </h3>
-                  <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                  <button className="text-blue-600 hover:text-blue-800 text-xs font-medium dark:text-white">
                     Read Juz
                   </button>
                 </div>
@@ -247,14 +249,14 @@ const Juz = () => {
                   {juz.surahs.map((surah, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50 group"
+                      className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-black  group"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-700 text-sm font-medium">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-[#323A3F] rounded-full flex items-center justify-center dark:text-white text-gray-700 text-sm font-medium">
                           {surah.number}
                         </div>
                         <div>
-                          <h4 className="text-sm font-medium text-gray-900">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             {surah.name}
                           </h4>
                           <div className="flex items-center space-x-1 text-xs text-gray-500">
@@ -280,7 +282,7 @@ const Juz = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-arabic text-gray-800">
+                        <p className="text-lg font-arabic text-gray-800 dark:text-white">
                           {surah.arabicText}
                         </p>
                       </div>
@@ -290,8 +292,10 @@ const Juz = () => {
               </div>
             ))}
           </div>
-        </div>
       </div>
+
+        </div>
+
     </>
   );
 };

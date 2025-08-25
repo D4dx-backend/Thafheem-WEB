@@ -11,6 +11,9 @@ import {
   Bookmark,
   Share2,
   MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
@@ -32,39 +35,50 @@ const BlockWise = () => {
     <>
       {/* <HomeNavbar /> */}
       <Transition />
-      <div className="max-w-6xl mx-auto min-h-screen bg-white">
-        {/* Header with Tabs */}
-        <div className="bg-white px-6 py-6">
-          {/* Translation/Reading Tabs */}
-          <div className="flex justify-center space-x-4 mb-8">
-            <button
-              onClick={() => setActiveTab("Translation")}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-colors ${
-                activeTab === "Translation"
-                  ? "bg-gray-100 text-gray-800"
-                  : "bg-gray-50 text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Translation</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("Reading")}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-colors ${
-                activeTab === "Reading"
-                  ? "bg-gray-100 text-gray-800"
-                  : "bg-gray-50 text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>Reading</span>
-            </button>
-          </div>
+      <div className="w-full mx-auto min-h-screen bg-white dark:bg-black">
+      <div className="max-w-6xl mx-auto">
 
+        {/* Header with Tabs */}
+        <div className="bg-white dark:bg-black px-6 py-6">
+          {/* Translation/Reading Tabs */}
+          <div className="flex items-center justify-center mb-8">
+              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
+                <div className="flex items-center">
+                  <button className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-black dark:text-white  text-gray-900 rounded-full text-sm font-medium shadow-sm">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                    </svg>
+                    <span>Translation</span>
+                  </button>
+                  <button className="flex items-center space-x-2 px-4 py-2 text-white dark:hover:bg-gray-800 dark:text-white  hover:bg-gray-50 rounded-full text-sm font-medium">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                      <polyline points="14,2 14,8 20,8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10,9 9,9 8,9" />
+                    </svg>
+                    <Link to="/reading">
+                      <span className="text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
+                        Reading
+                      </span>
+                    </Link>
+                  </button>
+                </div>
+              </div>
+            </div>
           {/* Arabic Title */}
           <div className="text-center mb-6">
             <h1
-              className="text-5xl font-bold text-gray-900 mb-4"
+              className="text-5xl font-bold text-gray-900 dark:text-white mb-4"
               style={{ fontFamily: "Arial" }}
             >
               القرآن
@@ -81,19 +95,19 @@ const BlockWise = () => {
 
           {/* Bismillah with Controls */}
           <div className="mb-8 relative">
-            <p className="text-3xl font-arabic text-gray-800 leading-relaxed text-center">
+            <p className="text-3xl font-arabic text-gray-800 dark:text-white leading-relaxed text-center">
               بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
             </p>
             {/* Ayah wise / Block wise buttons */}
             <div className="absolute top-0 right-0">
-              <div className="flex bg-gray-100 rounded-full p-1 shadow-sm">
+              <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                 <button
-                  className="px-4 py-1.5 text-gray-500 rounded-full text-sm font-medium hover:text-gray-700 transition-colors"
+                  className="px-4 py-1.5 text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-sm font-medium hover:text-gray-700 transition-colors"
                   onClick={() => navigate("/surah")}
                 >
                   Ayah wise
                 </button>
-                <button className="px-4 py-1.5 bg-white text-gray-900 rounded-full text-sm font-medium shadow transition-colors">
+                <button className="px-4 py-1.5 dark:bg-black dark:text-white  bg-white text-gray-900 rounded-full text-sm font-medium shadow transition-colors">
                   Block wise
                 </button>
               </div>
@@ -103,17 +117,17 @@ const BlockWise = () => {
           {/* Bottom Section */}
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-900 dark:bg-white rounded-full"></div>
               <Link to="/surahinfo">
-                <span className="text-sm text-gray-600 cursor-pointer hover:underline">
+                <span className="text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
                   Surah Info
                 </span>
               </Link>
             </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            {/* <div className="flex items-center space-x-4 text-sm text-gray-500">
               <span>Ayah wise</span>
               <span>Word wise</span>
-            </div>
+            </div> */}
             <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 transition-colors">
               <Play className="w-4 h-4" />
               <span className="text-sm font-medium">Play Audio</span>
@@ -124,10 +138,10 @@ const BlockWise = () => {
         {/* Main Content */}
         <div className="max-w-5xl mx-auto px-6 pb-8">
           {/* Arabic Text Block */}
-          <div className="bg-[#d1f1f8]">
+          <div className="bg-[#d1f1f8] dark:bg-[#28454c]">
             <div className="mb-6 p-8  rounded-lg">
               <p
-                className="text-2xl leading-loose text-center text-gray-900"
+                className="text-2xl leading-loose text-center text-gray-900 dark:text-white"
                 style={{
                   fontFamily: "Arial",
                   lineHeight: "3",
@@ -146,7 +160,7 @@ const BlockWise = () => {
 
             {/* Translation Text */}
             <div className="mb-8">
-              <p className="text-gray-700 leading-relaxed text-base">
+              <p className="text-gray-700 dark:text-white leading-relaxed text-base">
                 (2:1) Alif, Lam, Mim.
                 <span
                   className="inline-flex items-center justify-center w-6 h-6 bg-cyan-500 text-white text-xs font-medium rounded-full mx-2 cursor-pointer hover:bg-cyan-600 transition-colors"
@@ -156,7 +170,7 @@ const BlockWise = () => {
                 </span>
                 (2:2) This is the Book of Allah, there is no doubt in it;
                 <span
-                  className="inline-flex items-center justify-center w-6 h-6 bg-cyan-500 text-white text-xs font-medium rounded-full mx-2 cursor-pointer hover:bg-cyan-600 transition-colors"
+                  className="inline-flex items-center justify-center w-6 h-6 bg-cyan-500 text-white  text-xs font-medium rounded-full mx-2 cursor-pointer hover:bg-cyan-600 transition-colors"
                   onClick={() => handleNumberClick(2)}
                 >
                   2
@@ -229,9 +243,9 @@ const BlockWise = () => {
           </div>
 
           {/* Third Arabic Text Block */}
-          <div className="mb-6 p-8 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-8 bg-gray-50 dark:bg-black rounded-lg">
             <p
-              className="text-2xl leading-loose text-center text-gray-900"
+              className="text-2xl leading-loose text-center text-gray-900 dark:text-white"
               style={{
                 fontFamily: "Arial",
                 lineHeight: "3",
@@ -259,7 +273,7 @@ const BlockWise = () => {
 
           {/* Translation Text for verses 8-20 */}
           <div className="mb-8">
-            <p className="text-gray-700 leading-relaxed text-base">
+            <p className="text-gray-700 dark:text-white leading-relaxed text-base">
               <strong>(2:8)</strong> There are some who say: "We believe in
               Allah and in the Last Day," while in fact they do not believe.
               <strong>(2:9)</strong> They are trying to deceive Allah and those
@@ -306,19 +320,22 @@ const BlockWise = () => {
           </div>
 
           {/* Bottom Navigation */}
-          <div className="bg-white border-t border-gray-200 px-4 py-4 mt-8">
-            <div className="max-w-4xl mx-auto flex items-center justify-center space-x-6">
-              <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-                Previous Surah
-              </button>
-              <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-                Beginning of Surah
-              </button>
-              <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-                Next Surah
-              </button>
-            </div>
+          <div className="bg-white border-t dark:bg-black border-gray-200 px-4 py-4 mt-8">
+          <div className="max-w-4xl mx-auto flex items-center justify-center space-x-6">
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous Surah</span>
+            </button>
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ArrowUp className="w-4 h-4" />
+              <span>Beginning of Surah</span>
+            </button>
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <span>Next Surah</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
+        </div>
 
           {/* Media Controls */}
           <div className="flex justify-start space-x-4 pt-4">
@@ -345,8 +362,8 @@ const BlockWise = () => {
 
         {/* Overlay Popup for Interpretation */}
         {showInterpretation && (
-          <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto relative">
+          <div className="fixed inset-0 bg-white dark:bg-[#2A2C38] bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white  rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto relative">
               {/* <button
                 onClick={() => setShowInterpretation(false)}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
@@ -358,6 +375,8 @@ const BlockWise = () => {
           </div>
         )}
       </div>
+      </div>
+
     </>
   );
 };

@@ -8,6 +8,9 @@ import {
   ChevronDown,
   BookOpen,
   List,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
 } from "lucide-react";
 import { useState } from "react";
 import HomepageNavbar from "../components/HomeNavbar";
@@ -87,15 +90,15 @@ const Surah = () => {
       {/* <HomepageNavbar /> */}
       <Transition />
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-black">
         {/* Header */}
-        <div className="bg-white px-4 py-8">
+        <div className="bg-white dark:bg-black px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
             {/* Toggle Buttons */}
             <div className="flex items-center justify-center mb-8">
-              <div className="bg-gray-100 rounded-full p-1">
+              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-900 rounded-full text-sm font-medium shadow-sm">
+                  <button className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-black dark:text-white  text-gray-900 rounded-full text-sm font-medium shadow-sm">
                     <svg
                       className="w-4 h-4"
                       fill="currentColor"
@@ -105,7 +108,7 @@ const Surah = () => {
                     </svg>
                     <span>Translation</span>
                   </button>
-                  <button className="flex items-center space-x-2 px-4 py-2 text-white hover:bg-gray-50 rounded-full text-sm font-medium">
+                  <button className="flex items-center space-x-2 px-4 py-2 text-white dark:hover:bg-gray-800 dark:text-white  hover:bg-gray-50 rounded-full text-sm font-medium">
                     <svg
                       className="w-4 h-4"
                       fill="currentColor"
@@ -118,7 +121,7 @@ const Surah = () => {
                       <polyline points="10,9 9,9 8,9" />
                     </svg>
                     <Link to="/reading">
-                      <span className="text-sm text-gray-600 cursor-pointer hover:underline">
+                      <span className="text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
                         Reading
                       </span>
                     </Link>
@@ -129,17 +132,17 @@ const Surah = () => {
 
             {/* Surah Title */}
             <div className="mb-6">
-              <h1 className="text-5xl font-arabic text-gray-900 mb-4">
+              <h1 className="text-5xl font-arabic dark:text-white text-gray-900 mb-4">
                 البقرة
               </h1>
 
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-4 mb-6">
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 transition-colors">
                   <Share2 className="w-5 h-5" />
                 </button>
-                <button 
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                <button
+                  className="p-2 text-gray-400 dark:text-white hover:text-gray-600 transition-colors"
                   onClick={handleBookmarkClick}
                 >
                   <Bookmark className="w-5 h-5" />
@@ -148,18 +151,18 @@ const Surah = () => {
 
               {/* Bismillah */}
               <div className="mb-8 relative">
-                <p className="text-3xl font-arabic text-gray-800 leading-relaxed">
+                <p className="text-3xl font-arabic text-gray-800 dark:text-white leading-relaxed">
                   بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
                 </p>
 
                 {/* Ayah wise / Block wise buttons */}
                 <div className="absolute top-0 right-0">
-                  <div className="flex bg-gray-100 rounded-full p-1 shadow-sm">
-                    <button className="px-4 py-1.5 bg-white text-gray-900 rounded-full text-sm font-medium shadow transition-colors">
+                  <div className="flex bg-gray-100  dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <button className="px-4 py-1.5 bg-white dark:bg-black dark:text-white  text-gray-900  rounded-full text-sm font-medium shadow transition-colors">
                       Ayah wise
                     </button>
                     <button
-                      className="px-4 py-1.5 text-gray-500 rounded-full text-sm font-medium hover:text-gray-700 transition-colors"
+                      className="px-4 py-1.5 text-gray-500 rounded-full  dark:hover:bg-gray-800 dark:text-white text-sm font-medium hover:text-gray-700 transition-colors"
                       onClick={() => navigate("/blockwise")}
                     >
                       Block wise
@@ -171,17 +174,12 @@ const Surah = () => {
               {/* Bottom Section */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
+                  <div className="w-2 h-2 bg-gray-900 dark:bg-white rounded-full"></div>
                   <Link to="/surahinfo">
-                    <span className="text-sm text-gray-600 cursor-pointer hover:underline">
+                    <span className="text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
                       Surah Info
                     </span>
                   </Link>
-                </div>
-
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <span>Ayah wise</span>
-                  <span>Word wise</span>
                 </div>
 
                 <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 transition-colors">
@@ -199,7 +197,7 @@ const Surah = () => {
             {verses.map((verse) => (
               <div
                 key={verse.number}
-                className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-200 ${
+                className={`bg-white rounded-lg dark:bg-black shadow-sm border border-gray-200 p-6 transition-all duration-200 ${
                   selectedVerse === verse.number
                     ? "ring-2 ring-cyan-500 border-cyan-200"
                     : "hover:shadow-md"
@@ -218,7 +216,7 @@ const Surah = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button 
+                    <button
                       className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                       onClick={handleBookmarkClick}
                     >
@@ -235,14 +233,14 @@ const Surah = () => {
 
                 {/* Arabic Text */}
                 <div className="text-right mb-4">
-                  <p className="text-2xl font-arabic leading-loose text-gray-900">
+                  <p className="text-2xl font-arabic leading-loose dark:text-white text-gray-900">
                     {verse.arabic}
                   </p>
                 </div>
 
                 {/* Translation */}
                 <div className="mb-3">
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-white leading-relaxed">
                     {verse.translation}
                   </p>
                 </div>
@@ -273,7 +271,7 @@ const Surah = () => {
                   >
                     <List className="w-5 h-5" />
                   </button>
-                  <button 
+                  <button
                     className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
                     onClick={handleBookmarkClick}
                   >
@@ -283,39 +281,25 @@ const Surah = () => {
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
-
-                {/* Action Buttons (shown when verse is selected) */}
-                {selectedVerse === verse.number && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-3">
-                      <button className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200">
-                        Tafsir & Notes
-                      </button>
-                      <button className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200">
-                        Word by Word
-                      </button>
-                      <button className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200">
-                        Root Words
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         </div>
 
         {/* Bottom Navigation */}
-        <div className="bg-white border-t border-gray-200 px-4 py-4 mt-8">
+        <div className="bg-white border-t dark:bg-black border-gray-200 px-4 py-4 mt-8">
           <div className="max-w-4xl mx-auto flex items-center justify-center space-x-6">
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Previous Surah
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous Surah</span>
             </button>
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Beginning of Surah
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ArrowUp className="w-4 h-4" />
+              <span>Beginning of Surah</span>
             </button>
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Next Surah
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <span>Next Surah</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

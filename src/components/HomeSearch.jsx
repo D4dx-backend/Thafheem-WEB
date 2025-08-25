@@ -24,7 +24,7 @@ const HomepageSearch = () => {
     { id: 36, name: "Ya-Sin", verses: "83 verses" },
   ];
   return (
-    <div className="flex flex-col items-center justify-center  bg-white px-4">
+    <div className="flex flex-col items-center justify-center  bg-white dark:bg-black px-4">
       {/* Logo Section */}
       <div className="">
         <img src={banner} alt="Logo" className="w-full h-full object-contain" />
@@ -42,7 +42,7 @@ const HomepageSearch = () => {
           <input
             type="text"
             placeholder="Search the Quran..."
-            className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white shadow-sm text-gray-700 placeholder-gray-400"
+            className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-[#2A2C38] shadow-sm text-gray-700 placeholder-gray-400"
           />
           <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
             <button className="text-gray-400 hover:text-cyan-500 transition-colors">
@@ -53,12 +53,12 @@ const HomepageSearch = () => {
 
         {/* Popular Content - Shows below search bar */}
         {showPopular && (
-          <div className="mt-4 bg-white rounded-lg shadow-lg border border-gray-200 p-6 w-full">
+          <div className="mt-4 bg-white dark:bg-[#2A2C38] rounded-lg shadow-lg border border-gray-200 p-6 w-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <TrendingUp className="h-5 w-5 text-cyan-500" />
-                <h2 className="text-lg font-medium text-gray-900">Popular</h2>
+                <h2 className="text-lg font-medium text-gray-900 dark:text-white">Popular</h2>
               </div>
               <button
                 onClick={() => setShowPopular(false)}
@@ -70,7 +70,7 @@ const HomepageSearch = () => {
 
             {/* Content */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">
                 Chapters and Verses
               </h3>
 
@@ -79,7 +79,7 @@ const HomepageSearch = () => {
   {popularChapters.map((chapter, index) => (
     <button
       key={index}
-      className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-sm text-gray-700"
+      className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-black dark:text-white dark:hover:bg-black hover:bg-gray-200 rounded-full transition-colors text-sm text-gray-700"
       style={index === popularChapters.length - 1 ? { marginRight: "1rem" } : {}}
     >
       <span>
@@ -92,12 +92,12 @@ const HomepageSearch = () => {
 
 
               {/* Listen to Quran Tajwid */}
-              <div className="flex flex-col items-center  bg-gray-50 rounded-lg text-center">
+              <div className="flex flex-col items-center dark:bg-[#2A2C38] bg-gray-50 rounded-lg text-center">
   <div className="flex items-center space-x-3">
     <div className="flex items-center justify-center w-10 h-7 bg-gray-200 rounded-full">
       <Play className="h-5 w-5 text-gray-600" />
     </div>
-    <h4 className="font-medium text-gray-900">
+    <h4 className="font-medium text-gray-900 dark:text-white">
       Listen to Quran Tajwid
     </h4>
   </div>
@@ -110,24 +110,24 @@ const HomepageSearch = () => {
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4 max-w-4xl overflow-x-auto">
-        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
+        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 dark:bg-[#2A2C38] border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
           <Play className="h-4 w-4 fill-current" />
           <span className="text-sm font-medium">Continue Reading</span>
         </button>
 
-        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
+        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 dark:bg-[#2A2C38] border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
           <List className="h-4 w-4" />
           <span className="text-sm font-medium">Navigate Quran</span>
         </button>
 
-        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
+        <button className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 dark:bg-[#2A2C38] border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700">
           <Bookmark className="h-4 w-4" />
           <span className="text-sm font-medium">Bookmarks</span>
         </button>
 
         <button
           onClick={() => setShowPopular(true)}
-          className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700"
+          className="flex items-center space-x-2 px-6 py-3 bg-cyan-50 dark:bg-[#2A2C38] border border-cyan-200 rounded-full hover:shadow-md hover:bg-cyan-100 transition-all duration-200 text-cyan-600 hover:text-cyan-700"
         >
           <TrendingUp className="h-4 w-4" />
           <span className="text-sm font-medium">Popular</span>

@@ -532,7 +532,7 @@ export default HomepageNavbar;
 //         </div>
 //       )}
 
-//       <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
+//       <nav className="bg-white dark:bg-black border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
 //         <div className="flex items-center justify-between px-4 py-3">
 //           {/* Left side */}
 //           <div className="flex items-center space-x-3">

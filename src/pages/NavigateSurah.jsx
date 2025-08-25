@@ -182,7 +182,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
-import DemoPage from '../pages/DemoPage';
+import DemoPage from './DemoPage';
 
 const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const [activeTab, setActiveTab] = useState('Surah');

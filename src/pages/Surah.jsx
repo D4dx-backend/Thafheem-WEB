@@ -84,7 +84,7 @@ const Surah = () => {
 
   return (
     <>
-      <HomepageNavbar />
+      {/* <HomepageNavbar /> */}
       <Transition />
 
       <div className="min-h-screen bg-gray-50">

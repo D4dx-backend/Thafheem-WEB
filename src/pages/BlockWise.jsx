@@ -30,7 +30,7 @@ const BlockWise = () => {
 
   return (
     <>
-      <HomeNavbar />
+      {/* <HomeNavbar /> */}
       <Transition />
       <div className="max-w-6xl mx-auto min-h-screen bg-white">
         {/* Header with Tabs */}

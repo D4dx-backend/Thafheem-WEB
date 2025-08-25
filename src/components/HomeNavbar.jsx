@@ -33,14 +33,11 @@ import logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
+import { useTheme } from "../context/ThemeContext";
 const HomepageNavbar = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -261,7 +258,7 @@ const HomepageNavbar = () => {
 
             {/* Dark Mode Toggle */}
             <button
-              onClick={toggleDarkMode}
+              onClick={toggleTheme}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
             >
               <Moon size={18} />
@@ -403,3 +400,201 @@ const HomepageNavbar = () => {
 };
 
 export default HomepageNavbar;
+
+
+// import { useState } from "react";
+// import {
+//   Menu,
+//   Search,
+//   Settings,
+//   Moon,
+//   Languages,
+//   Bookmark,
+//   X,
+//   Home,
+//   FileText,
+//   User,
+//   BookOpen,
+//   Info,
+//   Zap,
+//   Heart,
+//   Power,
+//   Download,
+//   Sparkles,
+//   Bug,
+//   Share,
+//   Users,
+//   UserCheck,
+//   Mail,
+//   MessageSquare,
+//   Shield,
+//   HelpCircle,
+//   Trash2,
+//   LogOut,
+//   ChevronRight,
+//   Sun,
+// } from "lucide-react";
+// import logo from "../assets/logo.png";
+// import { useNavigate } from "react-router-dom";
+// import SearchConsole from "./SearchConsole";
+// import LanguageConsole from "./LanguageConsole";
+
+// // 👇 import ThemeContext
+// import { useTheme } from "../context/ThemeContext";
+
+// const HomepageNavbar = () => {
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+//   const [openSubmenu, setOpenSubmenu] = useState(null);
+//   const [isSearchOpen, setIsSearchOpen] = useState(false);
+//   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+
+//   const navigate = useNavigate();
+
+//   // 👇 use global theme context
+//   const { theme, toggleTheme } = useTheme();
+
+//   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+//   const toggleSubmenu = (index) =>
+//     setOpenSubmenu(openSubmenu === index ? null : index);
+
+//   const menuItems = [
+//     { icon: Home, label: "Home", action: () => console.log("Navigate to Home") },
+//     {
+//       icon: FileText,
+//       label: "Table of Contents",
+//       action: () => navigate("/tablecontents"),
+//     },
+//     {
+//       icon: User,
+//       label: "Sayyid Maududi",
+//       action: () => navigate("/maududi"),
+//     },
+//     {
+//       icon: Languages,
+//       label: "English Translation",
+//       action: () => console.log("Navigate to English Translation"),
+//     },
+//     {
+//       icon: Info,
+//       label: "Introduction",
+//       action: () => console.log("Navigate to Introduction"),
+//     },
+//     {
+//       icon: Zap,
+//       label: "Digitisation",
+//       action: () => console.log("Navigate to Digitisation"),
+//     },
+//     {
+//       icon: BookOpen,
+//       label: "Thafeem ul quran",
+//       hasArrow: true,
+//       hasSubmenu: true,
+//       submenuItems: [
+//         { label: "Ayah wise", action: () => console.log("Navigate to Ayah wise") },
+//         { label: "Block wise", action: () => console.log("Navigate to Block wise") },
+//         { label: "Qur'an Study - Preface", action: () => navigate("/quranstudy") },
+//         { label: "End of Prophethood", action: () => navigate("/end") },
+//         { label: "Conclusion", action: () => navigate("/conclusion") },
+//       ],
+//     },
+//     { icon: FileText, label: "Tajwid", action: () => navigate("/tajweed") },
+//     { icon: Heart, label: "Donate", action: () => console.log("Navigate to Donate") },
+//     { icon: BookOpen, label: "Quiz", action: () => navigate("/quiz") },
+//     { icon: Download, label: "Drag & drop", action: () => navigate("/dragdrop") },
+//     { icon: Sparkles, label: "What's New", action: () => navigate("/whatsnew") },
+//     { icon: Settings, label: "Settings", action: () => navigate("/settings") },
+//   ];
+
+//   const dangerMenuItems = [
+//     { icon: Trash2, label: "Delete Account", action: () => navigate("/deleteaccount"), isDanger: true },
+//     { icon: LogOut, label: "Log Out", action: () => navigate("/logout"), isDanger: true },
+//   ];
+
+//   return (
+//     <>
+//       {/* Search Console Popup */}
+//       {isSearchOpen && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center">
+//           <div className="bg-white w-full max-w-lg rounded-lg relative">
+//             <SearchConsole onClose={() => setIsSearchOpen(false)} />
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Language Console Popup */}
+//       {isLanguageOpen && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+//           <div className="bg-white w-full max-w-lg rounded-lg shadow-lg relative">
+//             <div className="p-4">
+//               <LanguageConsole onClose={() => setIsLanguageOpen(false)} />
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
+//         <div className="flex items-center justify-between px-4 py-3">
+//           {/* Left side */}
+//           <div className="flex items-center space-x-3">
+//             <button
+//               onClick={toggleMenu}
+//               className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+//             >
+//               <Menu size={20} />
+//             </button>
+//             <img src={logo} alt="Thafheemul Quran" className="h-8 w-auto" />
+//           </div>
+
+//           {/* Right side */}
+//           <div className="flex items-center space-x-1">
+//             {/* Sign In */}
+//             <button className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium">
+//               Sign In
+//             </button>
+
+//             {/* Language */}
+//             <button
+//               onClick={() => setIsLanguageOpen(true)}
+//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+//             >
+//               <Languages size={18} />
+//             </button>
+
+//             {/* 🌙 Dark Mode Toggle */}
+//             <button
+//   onClick={toggleTheme}
+//   className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+// >
+//   {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+// </button>
+
+//             {/* Bookmark */}
+//             <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+//               <Bookmark size={18} />
+//             </button>
+
+//             {/* Settings */}
+//             <button
+//               onClick={() => navigate("/settings")}
+//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+//             >
+//               <Settings size={18} />
+//             </button>
+
+//             {/* Search */}
+//             <button
+//               onClick={() => setIsSearchOpen(true)}
+//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+//             >
+//               <Search size={18} />
+//             </button>
+//           </div>
+//         </div>
+//       </nav>
+
+//       {/* Sidebar … (unchanged) */}
+//     </>
+//   );
+// };
+
+// export default HomepageNavbar;

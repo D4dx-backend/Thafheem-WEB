@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 /* Arabic font support */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 
@@ -16,7 +17,6 @@
 .juz-card:hover {
   transform: translateY(-2px);
 }
-/* In App.css or index.css */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

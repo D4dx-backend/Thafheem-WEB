@@ -68,57 +68,58 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
 
   const handleClose = () => {
     if (onClose) {
-      onClose(); // only works if parent passes onClose
+      onClose();
     }
   };
-  
 
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50 w-full max-w-md mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg min-h-[80vh] max-h-[95vh] overflow-hidden">
+
+    <div className="fixed inset-0  flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-2xl shadow-xl w-full max-w-sm mx-auto max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Choose Translation Language</h2>
-          {/* <button
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Choose Translation Language</h2>
+          <button
             onClick={handleClose}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            className="p-1 text-gray-400 dark:text-white hover:text-gray-600 transition-colors"
           >
-            <X size={20} />
-          </button> */}
+            <X size={24} />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-8 overflow-y-auto min-h-[50vh] max-h-[calc(95vh-180px)]">
+        <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Available Languages Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-10">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             {languages.map((language) => (
               <button
                 key={language.id}
                 onClick={() => handleLanguageSelect(language)}
-                className={`relative p-6 rounded-xl border-2 transition-all text-left ${
+                className={`relative p-4 rounded-xl border-2 transition-all text-left ${
                   currentSelected === language.name
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-blue-500 dark:bg-[#304454] bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300 dark:hover:bg-[#304454] hover:bg-gray-50'
                 }`}
               >
                 {/* Selection Checkmark */}
                 {currentSelected === language.name && (
-                  <div className="absolute top-3 right-3 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Check size={14} className="text-white" />
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Check size={12} className="text-white" />
                   </div>
                 )}
 
                 {/* Language Icon */}
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-semibold ${language.color}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 text-lg font-semibold ${language.color}`}>
                   {language.icon}
                 </div>
 
                 {/* Language Names */}
                 <div>
-                  <div className="font-medium text-gray-900 text-base mb-2" dir={language.code === 'ur' ? 'rtl' : 'ltr'}>
+                  <div className="font-medium text-gray-900 text-sm mb-1 dark:text-white" dir={language.code === 'ur' ? 'rtl' : 'ltr'}>
                     {language.nativeName}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-500 dark:text-white">
                     {language.name}
                   </div>
                 </div>
@@ -128,48 +129,18 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
 
           {/* Upcoming Languages Section */}
           <div>
-            <h3 className="text-base font-medium text-gray-900 mb-4">Upcoming Language</h3>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="text-sm text-gray-600 leading-relaxed">
-                {upcomingLanguages.map((lang, index) => (
-                  <span key={lang}>
-                    {lang}
-                    {index < upcomingLanguages.length - 1 && ', '}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-3 text-xs text-gray-500">
-                More languages coming soon...
+            <h3 className="text-base font-medium text-gray-900 dark:text-white mb-3">Upcoming Language</h3>
+            <div className="bg-gray-50 dark:bg-[#2A2C38] rounded-xl p-4">
+              <div className="text-sm text-gray-600 leading-relaxed dark:text-white">
+                sexdcrftvgbyhnjimkodrtgvhujivbn m
               </div>
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-100 bg-gray-50">
-          <div className="flex space-x-3">
-            <button
-              onClick={handleClose}
-              className="flex-1 px-4 py-3 text-sm text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                const selectedLang = languages.find(lang => lang.name === currentSelected);
-                if (selectedLang && onLanguageSelect) {
-                  onLanguageSelect(selectedLang);
-                }
-                handleClose();
-              }}
-              className="flex-1 px-4 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
       </div>
     </div>
+    </div>
+
   );
 };
 

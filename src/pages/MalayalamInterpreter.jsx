@@ -15,7 +15,7 @@ const MalayalamInterpreter = () => {
   const getNoteContent = (noteId) => {
     const notes = {
       'N1514': (
-        <p>
+        <p className="dark:text-white">
           4. നബി(സ) തിരുമേനി ആ സന്ദര്‍ഭത്തില്‍ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്. 
           നബി(സ)ക്കും സഹചാരികള്‍ക്കും എതിരാളികള്‍ ഏല്‍പിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ 
           ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതില്‍നിന്ന് വ്യക്തമാണ്. അവിടത്തെ കരളിനെ കാര്‍ന്നുതിന്നുകൊണ്ടിരുന്ന 
@@ -39,19 +39,19 @@ const MalayalamInterpreter = () => {
         </p>
       ),
       'N1462': (
-        <p>
+        <p className="dark:text-white">
           മുസ്‌ലിം N1462 - ഇത് മുസ്‌ലിം ഹദീസ് ശേഖരത്തിലെ 1462-ാം നമ്പര്‍ ഹദീസിനെ സൂചിപ്പിക്കുന്നു.
         </p>
       ),
       '3 26:3': (
-        <div>
+        <div className="dark:bg-[#2A2C38]">
           <div className="text-center mb-4">
             <h3 className="text-lg font-medium text-[#2AA0BF] mb-2">Verse Range 1-6</h3>
-            <div className="text-right text-2xl leading-relaxed mb-4" style={{ fontFamily: "serif" }}>
+            <div className="text-right text-2xl leading-relaxed mb-4 dark:text-white" style={{ fontFamily: "serif" }}>
               ﴿١﴾ الم ﴿٢﴾ ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ ﴿٣﴾ الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ وَيُقِيمُونَ الصَّلَاةَ وَمِمَّا رَزَقْنَاهُمْ يُنفِقُونَ ﴿٤﴾ وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنزِلَ إِلَيْكَ وَمَا أُنزِلَ مِن قَبْلِكَ وَبِالْآخِرَةِ هُمْ يُوقِنُونَ ﴿٥﴾ أُولَٰئِكَ عَلَىٰ هُدًى مِّن رَّبِّهِمْ ۖ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ ﴿٦﴾
             </div>
           </div>
-          <p className="text-gray-800 leading-relaxed text-justify">
+          <p className="text-gray-800 leading-relaxed text-justify dark:text-white">
             4. നബി(സ) തിരുമേനി ആ സന്ദര്‍ഭത്തില്‍ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്. 
             നബി(സ)ക്കും സഹചാരികള്‍ക്കും എതിരാളികള്‍ ഏല്‍പിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ 
             ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതില്‍നിന്ന് വ്യക്തമാണ്. അവിടത്തെ കരളിനെ കാര്‍ന്നുതിന്നുകൊണ്ടിരുന്ന 
@@ -76,12 +76,12 @@ const MalayalamInterpreter = () => {
       surahName="18- Al-Kahf" 
       verseRange="6 - 7" 
     />
-      <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-[#2A2C38]">
         <div className="space-y-6">
           {/* Main Content Block */}
-          <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-white">
+          <div className="bg-gray-50 dark:bg-[#2A2C38] p-6 rounded-lg border-l-4 dark:border-[#2A2C38] border-white">
             <div
-              className="text-gray-800 leading-relaxed text-justify space-y-4"
+              className="text-gray-800 dark:text-white leading-relaxed text-justify space-y-4"
               style={{ fontFamily: "serif" }}
             >
               <p>
@@ -147,12 +147,12 @@ const MalayalamInterpreter = () => {
 
           {/* Navigation Block */}
           <div className="flex justify-between items-center pt-8 border-t border-gray-200">
-            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
+            <button className="flex items-center px-4 py-2 border  dark:bg-[#2A2C38] dark:text-white dark:hover:text-white border-gray-300 rounded-md text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
               <span className="mr-2">←</span>
               <span>Previous Ayah</span>
             </button>
 
-            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
+            <button className="flex items-center px-4 py-2 border dark:bg-[#2A2C38] dark:text-white dark:hover:text-white border-gray-300 rounded-md text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
               <span>Next Ayah</span>
               <span className="ml-2">→</span>
             </button>

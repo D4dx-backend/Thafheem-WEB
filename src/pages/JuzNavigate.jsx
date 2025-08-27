@@ -46,7 +46,7 @@ const JuzNavigate = () => {
 
   return (
     <>
-      <div className="bg-white w-90 max-h-96 flex flex-col shadow rounded-lg">
+      <div className="bg-white w-90 max-h-96 dark:bg-[#2A2C38]  flex flex-col shadow rounded-lg">
         {/* Search Bar */}
         <div className="p-3">
           <input
@@ -54,18 +54,18 @@ const JuzNavigate = () => {
             placeholder="Search juz"
             value={juzSearch}
             onChange={(e) => setJuzSearch(e.target.value)}
-            className="w-full px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
         {/* Juz List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-3">
+        <div className="flex-1 overflow-y-auto px-4 pb-3 ">
           {filteredJuz.length > 0 ? (
             <div className="space-y-2">
               {filteredJuz.map((juz) => (
                 <div
                   key={juz.id}
-                  className="cursor-pointer text-gray-800 hover:text-blue-600 transition-colors py-1"
+                  className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors py-1"
                 >
                   {juz.name}
                 </div>

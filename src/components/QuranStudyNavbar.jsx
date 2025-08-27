@@ -24,9 +24,9 @@ const QuranStudyNavbar = () => {
   };
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 shadow-lg h-screen overflow-y-auto">
+    <div className="w-80 bg-white border-r border-gray-200 shadow-lg h-screen overflow-y-auto dark:bg-[#2A2C38]">
       {/* Header */}
-      <div className="bg-white text-black p-4 shadow-md">
+      <div className="bg-white dark:text-white text-black p-4 dark:bg-[#2A2C38] shadow-md">
         <h1 className="text-lg font-semibold">Qur'an Study - Preface</h1>
       </div>
 
@@ -37,10 +37,10 @@ const QuranStudyNavbar = () => {
             <li key={index}>
               <button
                 onClick={() => handleItemClick(item)}
-                className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 border-l-4 hover:bg-gray-50 ${
+                className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 border-l-4 dark:hover:bg-black hover:bg-gray-50 ${
                   activeItem === item
-                    ? 'bg-green-50 border-l-green-500 text-black font-medium'
-                    : 'border-l-transparent text-gray-700 hover:border-l-gray-300'
+                    ? 'bg-green-50 border-l-green-500 dark:border-0 rounded-2xl text-black dark:bg-black dark:text-white font-medium'
+                    : 'border-l-transparent text-gray-700 dark:text-white hover:border-l-gray-300'
                 }`}
               >
                 {item}

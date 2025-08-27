@@ -2,7 +2,13 @@ import { Share2, Bookmark, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import HomepageNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
+import {
 
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  X,
+} from "lucide-react";
 const Reading = () => {
 
   return (
@@ -132,16 +138,19 @@ const Reading = () => {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="bg-white border-t border-gray-200 px-4 py-4 mt-8">
+        <div className="bg-white border-t dark:bg-black border-gray-200 px-4 py-4 mt-8">
           <div className="max-w-4xl mx-auto flex items-center justify-center space-x-6">
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Previous Page
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous Surah</span>
             </button>
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Beginning of Surah
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <ArrowUp className="w-4 h-4" />
+              <span>Beginning of Surah</span>
             </button>
-            <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-              Next Page
+            <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:bg-[#323A3F] dark:text-white hover:text-gray-900">
+              <span>Next Surah</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

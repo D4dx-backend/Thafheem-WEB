@@ -7,11 +7,11 @@ const QuranStudyContent = () => {
   };
 
   return (
-    <div className="flex-1 bg-white h-screen overflow-y-auto">
+    <div className="flex-1 bg-white h-screen overflow-y-auto dark:bg-[#2A2C38]">
       {/* Content Header */}
       <div className="border-b border-gray-300 px-6 py-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-black">Note</h1>
+          <h1 className="text-2xl font-semibold text-black dark:text-white">Note</h1>
           <button
             onClick={handlePlayAudio}
             className="flex items-center space-x-2 px-4 py-2  text-[#2AA0BF]  transition-colors duration-200"
@@ -31,7 +31,7 @@ const QuranStudyContent = () => {
       {/* Content Body */}
       <div className="px-6 py-6">
         <div className="max-w-4xl">
-          <p className="text-black text-base leading-relaxed">
+          <p className="text-black text-base leading-relaxed dark:text-white">
             It is not my intention to mention here all the problems that may arise in the mind of the reader while studying the 
             Qur'an. Because most of them arise only when a verse or chapter of the Qur'an comes into view, and the answers to 
             them are given in the 'Tafheem-ul-Quran' in their respective contexts. Therefore, leaving aside such questions, I 

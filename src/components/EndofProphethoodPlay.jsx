@@ -10,7 +10,7 @@ import {
   X 
 } from 'lucide-react';
 
-const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
+const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -121,17 +121,33 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38]  shadow-lg z-50">
+    {/* <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 shadow-lg z-50"> */}
       <audio
         ref={audioRef}
         src={audioSrc}
         preload="metadata"
       />
-      
+         <div className="px-6 pb-4">
+        <div className="relative">
+          <div className="w-full h-1 bg-gray-200 rounded-full">
+            <div
+              className="h-1 bg-black rounded-full transition-all duration-200"
+              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+            />
+          </div>
+          {/* Progress Handle */}
+          <div
+            className="absolute top-1/2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2 cursor-pointer"
+            style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+          />
+        </div>
+      </div>
       {/* Main Player Bar */}
       <div className="flex items-center justify-between px-6 py-4">
+        
         {/* Left - Current Time */}
-        <div className="text-sm font-mono text-gray-600 w-16">
+        <div className="text-sm font-mono text-gray-600 w-16 dark:text-white">
           {formatTime(currentTime)}
         </div>
 
@@ -141,7 +157,7 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100"
+              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
             >
               <MoreHorizontal size={20} />
             </button>
@@ -170,7 +186,7 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
             <button
               onClick={() => setShowVolumeSlider(!showVolumeSlider)}
               onMouseEnter={() => setShowVolumeSlider(true)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100"
+              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
             >
               {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
@@ -197,7 +213,7 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
           {/* Previous Button */}
           <button
             onClick={handleSkipBack}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100"
+            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <SkipBack size={20} />
           </button>
@@ -213,7 +229,7 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
           {/* Next Button */}
           <button
             onClick={handleSkipForward}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100"
+            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <SkipForward size={20} />
           </button>
@@ -221,34 +237,20 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100"
+            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Right - Duration */}
-        <div className="text-sm font-mono text-gray-600 w-16 text-right">
+        <div className="text-sm font-mono text-gray-600 w-16 text-right dark:text-white">
           {formatTime(duration)}
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="px-6 pb-4">
-        <div className="relative">
-          <div className="w-full h-1 bg-gray-200 rounded-full">
-            <div
-              className="h-1 bg-black rounded-full transition-all duration-200"
-              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-            />
-          </div>
-          {/* Progress Handle */}
-          <div
-            className="absolute top-1/2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2 cursor-pointer"
-            style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-          />
-        </div>
-      </div>
+   
 
       {/* Track Info (if title provided) */}
       {title && (
@@ -279,4 +281,4 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false }) =>
   );
 };
 
-export default EndofProphethoodPlay;
+export default QuranStudyPlay;

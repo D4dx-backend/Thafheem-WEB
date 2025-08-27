@@ -456,9 +456,9 @@ const HomepageNavbar = () => {
     { icon: Home, label: "Home", action: () => console.log("Navigate to Home") },
     { icon: FileText, label: "Table of Contents", action: () => navigate("/tablecontents") },
     { icon: User, label: "Sayyid Maududi", action: () => navigate("/maududi") },
-    { icon: Languages, label: "English Translation", action: () => console.log("Navigate to English Translation") },
-    { icon: Info, label: "Introduction", action: () => console.log("Navigate to Introduction") },
-    { icon: Zap, label: "Digitisation", action: () => console.log("Navigate to Digitisation") },
+    { icon: Languages, label: "English Translation", action: () => navigate("/englishtranslate") },
+    { icon: Info, label: "Introduction", action: () => navigate("/authorpreface") },
+    { icon: Zap, label: "Digitisation", action: () => navigate("/digitisation") },
     {
       icon: BookOpen,
       label: "Thafeem ul Quran",
@@ -485,7 +485,7 @@ const HomepageNavbar = () => {
     { icon: UserCheck, label: "About Author", action: () => console.log("Navigate to About Author") },
     { icon: Mail, label: "Contact Us", action: () => console.log("Navigate to Contact Us") },
     { icon: MessageSquare, label: "Feedback", action: () => console.log("Open Feedback") },
-    { icon: Shield, label: "Privacy", action: () => console.log("Navigate to Privacy") },
+    { icon: Shield, label: "Privacy", action: () => navigate("/privacy") },
     { icon: HelpCircle, label: "Help", action: () => console.log("Open Help") },
   ];
 
@@ -508,7 +508,7 @@ const HomepageNavbar = () => {
       {/* Language Console Popup */}
       {isLanguageOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
-          <div className="bg-white w-full max-w-lg rounded-lg shadow-lg relative">
+          <div className="">
             <div className="p-4">
               <LanguageConsole onClose={() => setIsLanguageOpen(false)} />
             </div>

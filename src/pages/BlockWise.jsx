@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUp,
+  X,
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
@@ -362,18 +363,21 @@ const BlockWise = () => {
 
         {/* Overlay Popup for Interpretation */}
         {showInterpretation && (
-          <div className="fixed inset-0 bg-white dark:bg-[#2A2C38] bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white  rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto relative">
-              {/* <button
-                onClick={() => setShowInterpretation(false)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
-              >
-                ×
-              </button> */}
-              <InterpretationBlockwise selectedNumber={selectedNumber} />
-            </div>
-          </div>
-        )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto relative">
+      {/* Close Button */}
+      <button
+        onClick={() => setShowInterpretation(false)}
+        className="absolute top-4 right-4 z-10 p-2 text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+      >
+        <X size={20} />
+      </button>
+
+      <InterpretationBlockwise selectedNumber={selectedNumber} />
+    </div>
+  </div>
+)}
+
       </div>
       </div>
 

@@ -322,7 +322,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     };
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full dark:bg-[#2A2C38] ">
         {/* Search Bar */}
         <div className="p-3">
           <input
@@ -330,19 +330,19 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
             placeholder="Search Surah"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
         {/* Surah List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-3">
+        <div className="flex-1 overflow-y-auto px-4 pb-3 ">
           {filteredSurahs.length > 0 ? (
             <ol className="list-decimal list-inside space-y-2">
               {filteredSurahs.map((surah) => (
                 <li
                   key={surah.id}
                   onClick={() => handleSurahClick(surah)}
-                  className="cursor-pointer text-gray-800 hover:text-blue-600 transition-colors"
+                  className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors"
                 >
                   {surah.name}
                 </li>
@@ -374,16 +374,16 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
   };
 
   return (
-<div className="bg-white rounded-lg shadow-lg w-96 max-h-[500px] flex flex-col">
+<div className="bg-white rounded-lg dark:bg-[#2A2C38]  shadow-lg w-96 max-h-[500px] flex flex-col">
   {/* Header with tabs */}
-  <div className="flex items-center bg-gray-50 rounded-full p-1 m-2">
+  <div className="flex items-center bg-gray-50 dark:bg-black  rounded-full p-1 m-2">
     {tabs.map((tab) => (
       <button
         key={tab}
         onClick={() => setActiveTab(tab)}
         className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
           activeTab === tab
-            ? 'bg-gray-200 text-gray-900'
+            ? 'bg-gray-200 text-gray-900 dark:bg-[#2A2C38] dark:text-white'
             : 'text-gray-500 hover:text-gray-700'
         }`}
       >
@@ -393,12 +393,12 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
   </div>
 
   {/* Content - make it scrollable */}
-  <div className="flex-1 overflow-y-auto px-2">
+  <div className="flex-1 overflow-y-auto px-2 ">
     {renderTabContent()}
   </div>
 
   {/* Footer tip */}
-  <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100 bg-gray-50">
+  <div className="px-4 py-2 text-xs text-gray-400 border-t dark:bg-[#2A2C38]  border-gray-100 bg-gray-50">
     Tip: try navigating with{" "}
     <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Ctrl k</kbd>
   </div>

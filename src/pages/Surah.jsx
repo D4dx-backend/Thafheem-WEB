@@ -215,7 +215,7 @@ const Surah = () => {
                       {verse.number}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  {/* <div className="flex items-center space-x-2">
                     <button
                       className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                       onClick={handleBookmarkClick}
@@ -228,7 +228,7 @@ const Surah = () => {
                     <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg">
                       <Play className="w-4 h-4" />
                     </button>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Arabic Text */}

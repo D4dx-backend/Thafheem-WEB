@@ -8,18 +8,18 @@ const Privacy = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 dark:bg-black">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <button
               onClick={handleBack}
               className="p-1 hover:bg-gray-100 rounded"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-800">
+            <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
               DefMedia Privacy Policy Statement
             </h1>
           </div>
@@ -27,8 +27,8 @@ const Privacy = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 ">
+        <div className="bg-white rounded-lg shadow-sm dark:bg-black p-6">
           <div className="prose prose-gray max-w-none">
             {/* Introduction */}
             <div className="mb-6">
@@ -36,7 +36,7 @@ const Privacy = () => {
                 Introduction:
               </h3>
 
-              <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              <p className="text-sm text-gray-700 leading-relaxed mb-4 dark:text-white">
                 The D4media (Dharmadhara Division for Digital Media), Kerala,
                 India (referred to as "D4media", "we", "us" and "our") takes
                 individuals' privacy seriously. This Statement explains our
@@ -56,11 +56,11 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 1. Collection of Data
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+              <p className="text-sm text-gray-700 leading-relaxed mb-3 dark:text-white">
                 We may collect and process the following information about you:
               </p>
 
-              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700">
+              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700 dark:text-white">
                 <li>
                   Information (such as your name, email address, mailing
                   address, phone number, date of birth, photograph,
@@ -89,7 +89,7 @@ const Privacy = () => {
                   to, or participate in, them
                 </li>
               </ul>
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+              <p className="text-sm text-gray-700 leading-relaxed mb-3 dark:text-white">
                 You are under no obligation to provide any such information.
                 However, if you should choose to withhold requested information,
                 we may not be able to provide you with certain services.
@@ -101,10 +101,10 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 2. Uses of Data:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+              <p className="text-sm text-gray-700 leading-relaxed mb-3 dark:text-white">
                 We use information held about you in the following ways:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700">
+              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700 dark:text-white">
                 <li>
                   To ensure that content from our site is presented in the most
                   effective manner for you and for your computer;
@@ -156,14 +156,14 @@ const Privacy = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3 dark:text-white">
                 3. Disclosure of Data:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 We will keep your personal data we hold confidential but you
                 agree we may provide information to:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700">
+              <ul className="list-disc pl-6 space-y-2 text-sm text-gray-700 dark:text-white">
                 <li>
                   Any member of our group, which means our subsidiaries, our
                   ultimate holding company and its subsidiaries, as defined in
@@ -194,7 +194,7 @@ const Privacy = () => {
                 </li>
               </ul>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4  dark:text-white">
                 We may provide your personal data as required or permitted by
                 law to comply with a summons, subpoena or similar legal process
                 or government request, or when we believe in good faith that
@@ -208,7 +208,7 @@ const Privacy = () => {
                 acquisition, reorganisation or otherwise.
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white">
                 To prevent and detect crimes and to protect the security and
                 safety of our events and trade fairs, we may provide your
                 personal identification data such as your full passport/identity
@@ -219,7 +219,7 @@ const Privacy = () => {
                 other third party save as expressly specified below).
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white">
                 We may also provide your passport or identity card number to
                 personnel, agents, auditors, contractors and service providers
                 in connection with the organisation of our events, persons under
@@ -230,10 +230,10 @@ const Privacy = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3 ">
                 4. Cookies:
               </h3>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-white">
                 Cookies are small, sometimes encrypted text files that are
                 stored on computer hard drives by websites that you visit. They
                 are used to help you to navigate on websites efficiently as well
@@ -248,7 +248,7 @@ const Privacy = () => {
                 and in any event, will not be kept longer than necessary.
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white">
                 We use cookies to find out more about the use of our Site and
                 user preferences to improve our services. We may provide
                 summarised traffic data to advertisers solely for the purpose of
@@ -258,7 +258,7 @@ const Privacy = () => {
                 that you may receive information more suited to your interests.
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white">
                 Web browsers often allow you to erase existing cookies from your
                 hard drive, block the use of cookies and/or be notified when
                 cookies are encountered. If you elect to block cookies, please
@@ -268,7 +268,7 @@ const Privacy = () => {
                 continuity during a browser session.
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white ">
                 We use an email delivery and marketing company to send emails
                 that you have agreed to receive. Pixels tags and cookies are
                 used in those emails and at our Site to help us measure the
@@ -276,7 +276,7 @@ const Privacy = () => {
                 site.
               </p>
 
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 dark:text-white">
                 We use a third-party advertising company to serve ads when you
                 visit our Site. This company may use information (not including
                 your name, address, email address or telephone number) about
@@ -295,7 +295,7 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 5. Security:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 Personal data stored electronically are password-protected.
                 Encryption technology is used on our secured web areas. Our
                 computer systems are placed in restricted areas. We only permit
@@ -307,7 +307,7 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 6. Hyperlinks:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 The Site may, from time to time, contain links to external sites
                 operated by third parties for your convenience. We have no
                 control of and are not responsible for these third party sites
@@ -324,7 +324,7 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 7. Changes:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 We may update this Statement. When we do, the changes will be
                 posted on www.d4media.in/privacy-policy/.
               </p>
@@ -334,7 +334,7 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 8. Data transfers:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 We will generally hold your data on our servers hosted in India.
                 However, we may transfer it to elsewhere in the world for the
                 purpose of processing into our database or to any of the people
@@ -355,42 +355,42 @@ const Privacy = () => {
               <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
                 9. Your data privacy rights:
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 By using our service, making an application or visiting our
                 Site, you acknowledge the collection and use of your personal
                 data by us as outlined in this Statement. If you do not agree
                 with the use of your personal data as set out in this Statement,
                 please do not use this Site or our Apps.
               </p>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed dark:text-white">
                 If you wish to exercise one of the above mentioned rights, cease
                 marketing communications, and/or raise questions or complaints,
                 please contact us at:
               </p>
             </div>
 
-            <div className="text-sm text-gray-700 mt-8">
+            <div className="text-sm text-gray-700 mt-8 dark:text-white">
   <p className="font-semibold">Data Privacy Officer</p>
   <p className="font-semibold">D4Media</p>
   <p>Hira Centre, Mavoor Road, Kozhikode, Kerala, India</p>
 
   <p className="mt-2">
-    Tel: <a href="tel:+91994668139" className="text-blue-600 hover:underline">(+91) 99466 68139</a>
+    Tel: <a href="tel:+91994668139" className="text-blue-600 hover:underline dark:text-[#4FAEC7]">(+91) 99466 68139</a>
   </p>
   <p>
-    E-mail: <a href="mailto:info@d4media.in" className="text-blue-600 hover:underline">info@d4media.in</a>
+    E-mail: <a href="mailto:info@d4media.in" className="text-blue-600 hover:underline dark:text-[#4FAEC7]">info@d4media.in</a>
   </p>
   <p>
-    Website: <a href="https://d4media.in/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://d4media.in/</a>
+    Website: <a href="https://d4media.in/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline dark:text-[#4FAEC7]">https://d4media.in/</a>
   </p>
 
-  <p className="mt-4">Last updated on 10-02-2024</p>
-  <p className="mt-2 font-semibold">© 2025 D4Media</p>
+  <p className="mt-4 dark:text-white">Last updated on 10-02-2024</p>
+  <p className="mt-2 font-semibold dark:text-white">© 2025 D4Media</p>
 </div>
 
 
             {/* Last Updated */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-xs text-gray-500">
                 Last updated:{" "}
                 {new Date().toLocaleDateString("en-US", {
@@ -399,7 +399,7 @@ const Privacy = () => {
                   day: "numeric",
                 })}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

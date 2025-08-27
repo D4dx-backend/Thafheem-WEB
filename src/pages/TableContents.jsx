@@ -45,19 +45,21 @@ const TableContents = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
-      <h1 className="text-2xl font-bold  mb-8 text-gray-800 border-b-2 border-black">Symbols Guide</h1>
+    
+    <div className="w-full mx-auto p-6 bg-white dark:bg-black">
+      <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold  mb-8 text-gray-800 border-b-2 border-black dark:text-white">Symbols Guide</h1>
       
       {/* Malayalam Translation Section */}
       <section className="mb-8">
-        <h2 className="text-1lg font-semibold mb-4 text-gray-700  pb-2">
+        <h2 className="text-1lg font-semibold mb-4 text-gray-700  pb-2 dark:text-white">
           Symbols in Malayalam Translation
         </h2>
         <div className="space-y-4">
           {malayalamSymbols.map((item, index) => (
             <div key={index} className=" p-4 rounded-lg">
               <h3 className="font-semibold text-[#4FAEC7] mb-2">{item.category}</h3>
-              <p className="text-gray-700 leading-relaxed">{item.description}</p>
+              <p className="text-gray-700 leading-relaxed dark:text-white">{item.description}</p>
             </div>
           ))}
         </div>
@@ -70,7 +72,7 @@ const TableContents = () => {
           {verseSymbols.map((item, index) => (
             <div key={index} className=" p-4 rounded-lg">
               <h3 className="font-semibold text-[#4FAEC7] mb-2">{item.category}</h3>
-              <p className="text-gray-700 leading-relaxed">{item.description}</p>
+              <p className="text-gray-700 leading-relaxed dark:text-white">{item.description}</p>
             </div>
           ))}
         </div>
@@ -78,28 +80,28 @@ const TableContents = () => {
 
       {/* Arabic Text Symbols Section */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4 text-gray-700  pb-2">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-white  pb-2">
           Symbols in Arabic Text
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300 bg-white shadow-lg rounded-lg">
+          <table className="w-full border-collapse border border-gray-300 bg-white dark:bg-black  shadow-lg rounded-lg">
             <thead>
               <tr className="">
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold ">
+                <th className="border dark:text-white border-gray-300 px-4 py-3 text-left font-semibold ">
                   Symbol
                 </th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold ">
+                <th className="border dark:text-white border-gray-300 px-4 py-3 text-left font-semibold ">
                   Meaning
                 </th>
               </tr>
             </thead>
             <tbody>
               {arabicSymbols.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                  <td className="border border-gray-300 px-4 py-3 text-center text-xl font-bold ">
+                <tr key={index} className={index % 2 === 0 ? "bg-gray-50 dark:bg-black" : "bg-white dark:bg-black"}>
+                  <td className="border border-gray-300 px-4 py-3 text-center text-xl font-bold dark:text-white ">
                     {item.symbol || "—"}
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-4 py-3 text-gray-700 dark:text-white">
                     {item.meaning}
                   </td>
                 </tr>
@@ -112,6 +114,7 @@ const TableContents = () => {
       {/* Footer */}
       <div className="mt-8 text-center text-sm text-gray-500">
         <p>This guide helps in understanding the various symbols used in Quranic text and translation.</p>
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import Verse from '../pages/verse';
+import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
 import DemoPage from '../pages/Demopage';
 

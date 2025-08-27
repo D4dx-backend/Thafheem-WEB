@@ -22,10 +22,10 @@ const BookmarkNavbar = () => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <div className="bg-white border-b dark:bg-black border-gray-200">
       {/* Header */}
       <div className="text-center py-4">
-        <h1 className="text-xl font-semibold text-gray-900">Bookmark</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Bookmark</h1>
       </div>
 
       {/* Navigation Tabs */}
@@ -37,8 +37,8 @@ const BookmarkNavbar = () => {
               onClick={() => handleTabClick(tab.path)}
               className={`flex-1 text-center pb-3 px-2 text-sm font-medium transition-colors relative ${
                 activePath === tab.path
-                  ? "text-gray-600 border-b-2 border-[#2AA0BF]"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-gray-600 dark:text-white border-b-2 border-[#2AA0BF]"
+                  : "text-gray-500 dark:text-white hover:text-gray-700"
               }`}
             >
               {tab.label}

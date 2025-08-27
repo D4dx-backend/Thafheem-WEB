@@ -160,7 +160,9 @@ const Home = () => {
     <>
       {/* <HomepageNavbar /> */}
       <HomepageSearch />
-      <div className="max-w-6xl mx-auto bg-white min-h-screen">
+      <div className="w-full mx-auto bg-white dark:bg-black min-h-screen">
+      <div className="max-w-6xl mx-auto">
+
         {/* Header Tabs */}
         <div className="border-b border-gray-200 ">
         <div className="flex">
@@ -192,17 +194,17 @@ const Home = () => {
           {surahs.map((surah) => (
             <div
               key={surah.number}
-              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-cyan-300 transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-black   border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-cyan-300 transition-all duration-200 cursor-pointer"
             >
               {/* Top Row: Number and Arabic Name */}
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-base font-semibold text-gray-700">
+                <div className="w-10 h-10 bg-gray-200 dark:bg-[#323A3F] rounded-full flex items-center justify-center">
+                  <span className="text-base font-semibold text-gray-700 dark:text-white">
                     {surah.number}
                   </span>
                 </div>
                 <div className="text-right" dir="rtl">
-                  <h3 className="text-xl font-bold text-gray-800">
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">
                     {surah.arabic}
                   </h3>
                 </div>
@@ -211,14 +213,14 @@ const Home = () => {
               {/* Bottom Row: English Name and Icons */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1 dark:text-white">
                     {surah.name}
                   </h3>
                   {/* Icons and Ayah Count */}
                   <div className="flex items-center space-x-2">
                     {/* Type Icon */}
                     {surah.type === "Makki" ? (
-                      <KaabaIcon className="h-4 w-4 text-gray-500" />
+                      <KaabaIcon className="h-4 w-4 text-gray-500 " />
                     ) : (
                       <Book className="h-4 w-4 text-gray-500" />
                     )}
@@ -239,6 +241,8 @@ const Home = () => {
             </div>
           ))}
         </div>
+      </div>
+
       </div>
     </>
   );

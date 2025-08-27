@@ -95,14 +95,14 @@ const DragDropQuiz = () => {
   // Show start game modal if game hasn't started
   if (!gameStarted) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center ">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-96">
+          <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl p-6 w-96">
             {/* Modal Header */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Start Game</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 dark:text-white">Start Game</h2>
             
             {/* Modal Content */}
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-6 dark:text-white">
               Are you ready to begin the game? Let's go!
             </p>
             
@@ -110,7 +110,7 @@ const DragDropQuiz = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancelGame}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-gray-600 dark:text-white hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
@@ -132,42 +132,33 @@ const DragDropQuiz = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-[#2A2C38] ">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                <span className="text-gray-800 font-medium">Al-Fatihah</span>
+                <span className="text-gray-800 font-medium dark:text-white">Al-Fatihah</span>
                 <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
               </div>
-              <span className="text-gray-400">|</span>
-              <span className="text-sm text-gray-600">1 - 7</span>
+              <span className="text-gray-400 dark:text-white">|</span>
+              <span className="text-sm text-gray-600 dark:text-white">1 - 7</span>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border border-gray-400 rounded"></div>
-                <span className="text-sm text-gray-600">Entire Surah</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border border-gray-400 rounded-full"></div>
-                <span className="text-sm text-gray-600">Entire Thaleem</span>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
 
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b dark:bg-black">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-              <h1 className="text-xl font-semibold" style={{ color: '#2AA0BF' }}>
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white" />
+              <h1 className="text-xl font-semibold " style={{ color: '#2AA0BF' }}>
                 Drag & Drop
               </h1>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-white">
               <span>മാർക്ക്: {score}</span>
               <span className="ml-4">Total: {totalQuestions}</span>
             </div>
@@ -176,8 +167,9 @@ const DragDropQuiz = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="w-full mx-auto px-4 py-6 dark:bg-black ">
+      <div className="max-w-6xl mx-auto ">
+        <div className="bg-white dark:bg-black rounded-lg shadow-sm border p-6">
           
           {/* Drag & Drop Area */}
           <div className="flex gap-8 justify-center">
@@ -185,7 +177,7 @@ const DragDropQuiz = () => {
             {/* Arabic Text Column */}
             <div className="flex flex-col gap-4">
               {arabicTexts.map((item) => (
-                <div key={item.id} className="bg-gray-200 p-4 rounded text-center w-24 h-12 flex items-center justify-center">
+                <div key={item.id} className="bg-gray-200 dark:bg-[#323A3F] dark:text-white p-4 rounded text-center w-24 h-12 flex items-center justify-center">
                   <span className="text-lg font-semibold" style={{ fontFamily: 'Arabic, serif' }}>
                     {item.text}
                   </span>
@@ -206,7 +198,7 @@ const DragDropQuiz = () => {
                         ? droppedItem.correct 
                           ? 'border-green-400 bg-green-100 text-green-700' 
                           : 'border-red-400 bg-red-100 text-red-700'
-                        : 'border-gray-300 bg-white hover:border-blue-300'
+                        : 'border-gray-300 bg-white hover:border-blue-300 dark:bg-[#323A3F]'
                     }`}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, item.id)}
@@ -228,7 +220,7 @@ const DragDropQuiz = () => {
                   key={option.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, option)}
-                  className="bg-white border border-gray-300 p-3 rounded cursor-move hover:shadow-md transition-shadow text-sm w-48 h-12 flex items-center justify-center"
+                  className="bg-white border dark:bg-black dark:text-white border-gray-300 p-3 rounded cursor-move hover:shadow-md transition-shadow text-sm w-48 h-12 flex items-center justify-center"
                 >
                   {option.text}
                 </div>
@@ -258,6 +250,7 @@ const DragDropQuiz = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

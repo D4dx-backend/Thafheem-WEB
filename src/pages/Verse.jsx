@@ -25,7 +25,7 @@ const Verse = () => {
   );
 
   return (
-    <div className="bg-white w-90 h-96 flex flex-col shadow rounded-lg">
+    <div className="bg-white dark:bg-[#2A2C38]  w-90 h-96 flex flex-col shadow rounded-lg">
       {/* Dual Search Bar */}
       <div className="p-3 flex space-x-2">
         <input
@@ -33,14 +33,14 @@ const Verse = () => {
           placeholder="Search Surah"
           value={surahSearch}
           onChange={(e) => setSurahSearch(e.target.value)}
-          className="flex-1 px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="flex-1 px-4 py-2 text-sm text-gray-600 bg-gray-50 dark:bg-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <input
           type="text"
           placeholder="Verse"
           value={verseSearch}
           onChange={(e) => setVerseSearch(e.target.value)}
-          className="w-24 px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-24 px-4 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
 
@@ -51,7 +51,7 @@ const Verse = () => {
             {filteredVerses.map((item) => (
               <li
                 key={item.id}
-                className="cursor-pointer text-gray-800 hover:text-blue-600 transition-colors"
+                className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors"
               >
                 {item.surah} – Verse {item.verse}
               </li>

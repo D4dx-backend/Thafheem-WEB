@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-primary: #0bdbb6;
+    --color-primary-dark: #0d0d0d;
+}
 
 /* Arabic font support */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');

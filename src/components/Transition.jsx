@@ -86,14 +86,14 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   return (
-    <div className="w-full bg-white border-b border-gray-200 px-4 py-3">
+    <div className="w-full bg-white dark:bg-[#2A2C38] border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between ">
         {/* Left Section - Chapter Selector */}
         <div className="flex items-center">
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-white hover:bg-gray-50 rounded-lg transition-colors"
             >
               <span className="font-medium">{selectedSurah.name}</span>
               <ChevronDown className="w-4 h-4" />
@@ -109,7 +109,7 @@ const Transition = ({ showPageInfo = false }) => {
         </div>
 
         {/* Center Section - Toggle Icons */}
-        <div className="flex items-center bg-gray-100 rounded-full p-1 space-x-1">
+        {/* <div className="flex items-center bg-gray-100 rounded-full p-1 space-x-1">
           <button
             onClick={() => setActiveView("book")}
             className={`p-2 rounded-full transition-colors ${
@@ -130,17 +130,17 @@ const Transition = ({ showPageInfo = false }) => {
           >
             <Notebook className="w-5 h-5" />
           </button>
-        </div>
+        </div> */}
 
         {/* Right Section - Page Indicator */}
         <div className="flex items-center">
           {showPageInfo ? (
             <div className="flex items-center text-sm text-gray-500">
               <span>Juz 1 | Hizb 1 | </span>
-              <span className="font-medium text-gray-700 ml-1">Page 2</span>
+              <span className="font-medium text-gray-700 ml-1 dark:text-white">Page 2</span>
             </div>
           ) : (
-            <span className="text-sm font-medium text-gray-700">Page 2</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-white">Page 2</span>
           )}
         </div>
       </div>

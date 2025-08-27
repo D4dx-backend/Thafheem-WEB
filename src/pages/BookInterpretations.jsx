@@ -23,16 +23,16 @@ const BookInterpretations = () => {
   const renderInterpretationCard = (interpretation, type) => (
     <div
       key={interpretation.id}
-      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+      className="flex items-center justify-between p-4  dark:bg-black dark:text-white dark:hover:bg-gray-800 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
     >
       {/* Left Section - Interpretation Info */}
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">
-          <span className="text-lg font-semibold text-gray-800">{interpretation.number}</span>
+          <span className="text-lg font-semibold text-gray-800 dark:text-white">{interpretation.number}</span>
         </div>
         <div>
-          <h3 className="text-base font-medium text-gray-900">{interpretation.surah}</h3>
-          <p className="text-sm text-gray-500">{interpretation.detail}</p>
+          <h3 className="text-base font-medium text-gray-900 dark:text-white">{interpretation.surah}</h3>
+          <p className="text-sm text-gray-500 ">{interpretation.detail}</p>
         </div>
       </div>
 
@@ -50,7 +50,9 @@ const BookInterpretations = () => {
   return (
     <>
       <BookmarkNavbar />
-      <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="w-full mx-auto min-h-screen p-6 bg-white dark:bg-black">
+      <div className="max-w-6xl mx-auto">
+
         <div className="space-y-8">
           {/* Ayah wise interpretations section */}
           <div>
@@ -72,6 +74,8 @@ const BookInterpretations = () => {
             </div>
           </div>
         </div>
+      </div>
+
       </div>
     </>
   );

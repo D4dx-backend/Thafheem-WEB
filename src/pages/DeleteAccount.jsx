@@ -37,15 +37,15 @@ const DeleteAccount = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         
         {/* Modal Content */}
-        <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-md mx-4">
+        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl p-6 w-96 max-w-md mx-4">
           
           {/* Header */}
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Delete Account
           </h2>
           
           {/* Message */}
-          <p className="text-gray-600 text-sm leading-relaxed mb-6">
+          <p className="text-gray-600 text-sm leading-relaxed mb-6 dark:text-white">
             Are you sure you want to delete your account? This action cannot be undone.
           </p>
           
@@ -53,7 +53,7 @@ const DeleteAccount = () => {
           <div className="flex justify-end gap-3">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium"
+              className="px-4 py-2 text-gray-700 border dark:text-white dark:hover:bg-[#2A2C38] border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>

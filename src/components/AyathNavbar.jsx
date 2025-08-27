@@ -7,14 +7,14 @@ const AyathNavbar = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 space-y-3">
+    <div className="bg-white border-b dark:bg-[#2A2C38] border-gray-200 px-4 py-3 space-y-3">
       {/* First Row - Chapter/Verse Selectors and Action Buttons */}
       <div className="flex items-center justify-between">
         {/* Left side - Chapter and Verse Dropdowns */}
         <div className="flex items-center space-x-3">
           {/* Chapter Selector */}
           <div className="relative">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white dark:hover:bg-[#323A3F] hover:bg-gray-200 rounded-lg text-sm font-medium  text-gray-700 transition-colors">
               <span>{selectedChapter}</span>
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -22,7 +22,7 @@ const AyathNavbar = () => {
 
           {/* Verse Selector */}
           <div className="relative">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100  dark:bg-[#323A3F] dark:text-white dark:hover:bg-[#323A3F] hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
               <span>{selectedVerse}</span>
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -50,7 +50,7 @@ const AyathNavbar = () => {
       <div className="flex items-center justify-between">
         {/* Left side - Language Selector */}
         <div className="relative">
-          <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+          <button className="flex items-center space-x-2 px-4 py-2 dark:bg-[#323A3F] dark:text-white dark:hover:bg-[#323A3F] bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
             <span>{selectedLanguage}</span>
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -61,7 +61,7 @@ const AyathNavbar = () => {
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <span className="text-sm text-gray-500 font-medium">click to navigate</span>
+          <span className="text-sm text-gray-500 font-medium dark:text-white">click to navigate</span>
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>

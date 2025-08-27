@@ -53,18 +53,21 @@ const Ayah = () => {
     /* Modal Backdrop */
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       {/* Modal Container */}
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         <AyathNavbar />
 
         {/* Main Content Container */}
         <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {/* Ayah Number Badge */}
           <div className="flex justify-end mb-4">
-            <div className="bg-gray-100 rounded-full px-4 py-2 flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-600">آية</span>
-              <span className="text-sm font-medium text-gray-800">
+            <div className="bg-gray-100 rounded-full dark:bg-[#2A2C38] px-4 py-2 flex items-center space-x-2">
+              <span className="text-sm font-medium dark:text-white text-gray-600">
+              الٓمٓ﴿١﴾
+                
+                </span>
+              {/* <span className="text-sm font-medium text-gray-800">
                 {currentAyah.number}
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -73,21 +76,21 @@ const Ayah = () => {
 
           {/* Arabic Text */}
           <div className="text-right mb-6">
-            <h1 className="text-3xl font-arabic text-gray-900 leading-loose">
+            <h1 className="text-3xl font-arabic dark:text-white text-gray-900 leading-loose">
               {currentAyah.arabic}
             </h1>
           </div>
 
           {/* Transliteration */}
           <div className="mb-6">
-            <h2 className="text-lg font-medium text-gray-700 leading-relaxed">
+            <h2 className="text-lg font-medium text-gray-700 dark:text-white leading-relaxed">
               {currentAyah.transliteration}
             </h2>
           </div>
 
           {/* Translation Text */}
           <div className="mb-8">
-            <p className="text-gray-700 leading-[1.7] text-sm">
+            <p className="text-gray-700 leading-[1.7] dark:text-white text-sm">
               {currentAyah.translation}
             </p>
           </div>
@@ -97,10 +100,10 @@ const Ayah = () => {
             <button
               onClick={handlePreviousAyah}
               disabled={currentAyahIndex === 0}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors group ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors group ${
                 currentAyahIndex === 0
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  ? "text-gray-400 dark:text-white cursor-not-allowed"
+                  : "text-gray-600 dark:text-white hover:text-gray-800 hover:bg-gray-50"
               }`}
             >
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -110,10 +113,10 @@ const Ayah = () => {
             <button
               onClick={handleNextAyah}
               disabled={currentAyahIndex === ayahs.length - 1}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors group ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors group ${
                 currentAyahIndex === ayahs.length - 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  ? "text-gray-400  cursor-not-allowed"
+                  : "text-gray-600 dark:text-white hover:text-gray-800 hover:bg-gray-50"
               }`}
             >
               <span className="text-sm font-medium">Next Ayah</span>

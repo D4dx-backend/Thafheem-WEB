@@ -17,22 +17,24 @@ const BookVerse = () => {
   return (
     <>
       <BookmarkNavbar />
-      <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="w-full mx-auto p-6 min-h-screen bg-white dark:bg-black">
+      <div className="max-w-6xl mx-auto">
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {bookmarkedVerses.map((verse) => (
             <div
               key={verse.id}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-black dark:hover:bg-gray-800 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
             >
               {/* Left Section - Verse Info */}
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0">
-                  <span className="text-lg font-semibold text-gray-800">
+                  <span className="text-lg font-semibold text-gray-800 dark:text-white">
                     {verse.number}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-base font-medium text-gray-900">
+                  <h3 className="text-base font-medium text-gray-900 dark:text-white">
                     {verse.surah}
                   </h3>
                   <p className="text-sm text-gray-500">{verse.ayah}</p>
@@ -50,6 +52,8 @@ const BookVerse = () => {
             </div>
           ))}
         </div>
+      </div>
+
       </div>
     </>
   );

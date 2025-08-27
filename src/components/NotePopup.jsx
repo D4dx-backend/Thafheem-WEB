@@ -7,7 +7,7 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
   return (
     <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
 
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-[#2AA0BF]">Note {noteId}</h2>

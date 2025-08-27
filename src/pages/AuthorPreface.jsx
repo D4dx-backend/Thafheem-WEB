@@ -3,10 +3,11 @@ import React from "react";
 
 const AuthorPreface = () => {
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">Author's Preface</h2>
+    <div className="w-full mx-auto p-6 dark:bg-black">
+            <div className="max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4 dark:text-white">Author's Preface</h2>
 
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         When so many translations of, and commentaries on, the Holy Qur'an
         already exist, a desire for spiritual blessing and grace is not in
         itself sufficient justification for undertaking a fresh venture in this
@@ -14,7 +15,7 @@ const AuthorPreface = () => {
         earlier works, or satisfies some unmet need felt by those interested in
         studying the Holy Book.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         The present work is neither directed at scholars and researchers, nor is
         it aimed at assisting those who, having mastered the Arabic language and
         the Islamic religious sciences, now wish to embark upon a thorough and
@@ -54,7 +55,7 @@ const AuthorPreface = () => {
         shook the length and breadth of Arabia like a thunderbolt.
       </p>
 
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         Another reason why literal translations fail to inspire the reader is
         the manner is which they are set for printing. Either the interlinear
         style is followed or, according to a more recent fashion, a page is
@@ -70,7 +71,7 @@ const AuthorPreface = () => {
         then try to read it. It will soon become obvious that the impact is
         nothing like that created by reading a coherent and continuous text.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         Again, an orator may often switch from one grammatical person to
         another, while referring both to himself and to his audience. He will
         sometimes mention his audience in the third person, while at other times
@@ -96,7 +97,7 @@ const AuthorPreface = () => {
         the written style, thereby easing the problem of those who have
         difficulty in perceiving its inner coherence.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         A further important reason why literal translations of the Qur'an tend
         to be ineffective is that the Qur'anic style is oratorical rather than
         narrative. If the translator retains the original oratorical style,
@@ -114,7 +115,7 @@ const AuthorPreface = () => {
         same misunderstanding would not need to make specific reference to it,
         for his audience would consist largely of the very people concerned.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         As already pointed out, every sürah of the Qur'an is in fact a segment
         of speech, revealed at a certain stage of the Islamic movement. Each
         revelation was occasioned by the demands of certain circumstances, and
@@ -127,7 +128,7 @@ const AuthorPreface = () => {
         limited extent, and thus renders the passages more comprehensive and
         more meaningful to the reader.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         A final problem with literal translations is that even though the Qur'ãn
         was revealed in 'clear Arabic' (Qur'an 6: 2), it also has its own
         special terminology. It often uses words with meanings other than their
@@ -151,7 +152,7 @@ const AuthorPreface = () => {
         might even give a wrong impression, or create unnecessary confusion in
         the mind of the reader.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white" >
         Consideration of these shortcomings has led me to attempt what I would
         prefer to call an explanatory or interpretative exposition, rather than
         a literal translation. In other words, I have not tried to render the
@@ -179,7 +180,7 @@ const AuthorPreface = () => {
         beginning to study the sürah itself, and to refer back to them eyen
         during his study.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         Muslim readers are further advised to go through whatever portion of the
         Qur'an they usually recite each day, along with any literal translation
         of its meaning, then to read our interpretative rendering of the same
@@ -189,7 +190,7 @@ const AuthorPreface = () => {
         hoped that such study will enable the ordinary reader — God willing — to
         acquire a considerable, if not scholarly, understanding of the Qur'an.
       </p>
-      <p className="mb-4">
+      <p className="mb-4 dark:text-white">
         This work was begun in Muharram, 1361 A.H./February, 1942. The work
         continued for just over five years, during which time interpretative
         rendering and explanatory notes were completed up to Sürah 12. Then
@@ -204,13 +205,15 @@ const AuthorPreface = () => {
       </p>
 
 
-      <p className="mt-8">
+      <p className="mt-8 dark:text-white">
         Abul A'la Maududi <br />
         New Central Jail, Multan, <br />
         17 Dhu al-Qadah, 1368 A.H. <br />
         11 September, 1949
       </p>
     </div>
+    </div>
+
   );
 };
 

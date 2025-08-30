@@ -500,10 +500,10 @@ const Tajweed = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-black">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 dark:bg-black">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="bg-white  dark:bg-black">
+        <div className="max-w-5xl mx-auto px-4 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
               ഖുർആന്‍ പാരായണ ശാസ്ത്രം (علم التجويد)
@@ -513,8 +513,8 @@ const Tajweed = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm border dark:bg-black p-8">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg dark:bg-black p-8">
           {/* Main Content */}
           <div className="space-y-6">
             {/* Basic Introduction Text */}
@@ -567,10 +567,12 @@ const Tajweed = () => {
                     </h4>
 
                     {/* Audio Player - Matching Screenshot Style */}
-                    <div className="bg-white rounded-2xl p-6 text-white dark:bg-black">
+                    <div className="bg-[#D9D9D9] rounded-2xl p-6 text-white dark:bg-black">
                       {/* Arabic Text Display */}
                       <div className="text-center mb-8">
-                        <div className="bg-gray-700 rounded-xl p-6 mx-2">
+                        <div className="w-full">
+
+                        <div className="bg-[#B3B3B3] rounded-xl p-6 mx-50">
                           <p
                             className="text-2xl font-bold text-white leading-relaxed"
                             style={{
@@ -588,29 +590,27 @@ const Tajweed = () => {
                       </div>
 
                       {/* Navigation Arrows */}
-                      <div className="flex justify-between items-center mb-8">
-                        <button className="p-3 bg-white   rounded-full transition-colors duration-200">
+                      <div className="flex justify-between  items-center mb-8">
+                        <button className="p-3    rounded-full transition-colors duration-200">
                           <ChevronLeft className="w-6 h-6  text-black " />
                         </button>
-                        <button className="p-3  bg-white  rounded-full transition-colors duration-200">
+                        <button className="p-3    rounded-full transition-colors duration-200">
                           <ChevronRight className="w-6 h-6  text-black" />
                         </button>
                       </div>
+                      </div>
 
                       {/* Progress Bar */}
-                      <div className="mb-6 px-2">
-                        <div className="w-full bg-gray-600 rounded-full h-1.5">
+                      <div className="mb-6 px-2 mx-50">
+                        <div className="w-full bg-gray-600 rounded-full h-1.5 ">
                           <div
-                            className="bg-white h-1.5 rounded-full transition-all duration-300"
+                            className="bg-black h-1.5 rounded-full transition-all duration-300"
                             style={{
                               width: `${(currentTime / totalTime) * 100}%`,
                             }}
                           ></div>
                         </div>
-                      </div>
-
-                      {/* Time Display */}
-                      <div className="flex justify-between text-sm text-gray-300 mb-8 px-2">
+                        <div className="flex justify-between text-sm text-black mb-8 px-2">
                         <span className="font-mono">
                           {formatTime(currentTime)}
                         </span>
@@ -618,20 +618,23 @@ const Tajweed = () => {
                           {formatTime(totalTime)}
                         </span>
                       </div>
+                      </div>
+
+ 
 
                       {/* Audio Controls */}
                       <div className="flex justify-center items-center gap-6">
-                        <button className="p-3  bg-white rounded-full transition-colors duration-200">
+                        <button className="p-3   rounded-full transition-colors duration-200">
                           <Volume2 className="w-5 h-5 text-black" />
                         </button>
 
-                        <button className="p-3 bg-white rounded-full transition-colors duration-200">
+                        <button className="p-3  rounded-full transition-colors duration-200">
                           <SkipBack className="w-5 h-5 text-black" />
                         </button>
 
                         <button
                           onClick={togglePlay}
-                          className="p-4 bg-white hover:bg-gray-200 rounded-full text-gray-800 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                          className="p-4  hover:bg-gray-200 rounded-full text-gray-800 transition-all duration-200 transform hover:scale-105 shadow-lg"
                         >
                           {isPlaying ? (
                             <Pause className="w-6 h-6" />
@@ -640,7 +643,7 @@ const Tajweed = () => {
                           )}
                         </button>
 
-                        <button className="p-3 bg-white rounded-full transition-colors duration-200">
+                        <button className="p-3 rounded-full transition-colors duration-200">
                           <SkipForward className="w-5 h-5 text-black" />
                         </button>
                       </div>

@@ -4,7 +4,7 @@ import { Languages } from 'lucide-react';
 const About = () => {
   return (
     <div className="w-full mx-auto min-h-screen p-6 bg-white dark:bg-black">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
 
       {/* Header */}
       <div className="mb-8">
@@ -13,7 +13,7 @@ const About = () => {
       </div>
 
       {/* Content */}
-      <div className="space-y-6 dark:text-white text-gray-800 leading-relaxed">
+      <div className=" dark:text-white text-gray-800 leading-relaxed">
         <p className="text-base">
           The Holy Qur'an is the magnificent message bestowed upon humanity by the Creator of the universe, Allah. It transcends time, 
           making it eternally relevant. Therefore, digital access to the Holy Qur'an holds great significance.

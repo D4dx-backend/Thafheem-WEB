@@ -5,11 +5,12 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
-
-      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl 
+                      w-[90vw] max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-[#2AA0BF]">Note {noteId}</h2>
           <div className="flex items-center space-x-2">
             <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -28,9 +29,9 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-6 overflow-y-auto max-h-[80vh]">
           <div 
-            className="text-gray-800 leading-relaxed text-justify"
+            className="text-gray-800 dark:text-white leading-relaxed text-justify"
             style={{ fontFamily: "serif" }}
           >
             {noteContent}

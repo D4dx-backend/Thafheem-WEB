@@ -89,54 +89,53 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {/* Available Languages Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {languages.map((language) => (
-              <button
-                key={language.id}
-                onClick={() => handleLanguageSelect(language)}
-                className={`relative p-4 rounded-xl border-2 transition-all text-left ${
-                  currentSelected === language.name
-                    ? 'border-blue-500 dark:bg-[#304454] bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 dark:hover:bg-[#304454] hover:bg-gray-50'
-                }`}
-              >
-                {/* Selection Checkmark */}
-                {currentSelected === language.name && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Check size={12} className="text-white" />
-                  </div>
-                )}
-
-                {/* Language Icon */}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 text-lg font-semibold ${language.color}`}>
-                  {language.icon}
-                </div>
-
-                {/* Language Names */}
-                <div>
-                  <div className="font-medium text-gray-900 text-sm mb-1 dark:text-white" dir={language.code === 'ur' ? 'rtl' : 'ltr'}>
-                    {language.nativeName}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-white">
-                    {language.name}
-                  </div>
-                </div>
-              </button>
-            ))}
+        <div className="space-y-3 mb-6 grid grid-cols-2 gap-3 p-4">
+  {languages.map((language) => (
+    <button
+      key={language.id}
+      onClick={() => handleLanguageSelect(language)}
+      className={`relative flex items-center justify-between w-full p-4 rounded-xl transition-all border h-20 ${
+        currentSelected === language.name
+          ? "border-blue-400 bg-blue-50"
+          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+      }`}
+    >
+      {/* Left: Icon + Text */}
+      <div className="flex items-center space-x-3">
+        <div
+          className={`w-10 h-10 rounded-md flex items-center justify-center text-lg font-semibold ${language.color}`}
+        >
+          {language.icon}
+        </div>
+        <div className="text-left">
+          <div
+            className="font-semibold text-gray-900 text-sm dark:text-white"
+            dir={language.code === "ur" ? "rtl" : "ltr"}
+          >
+            {language.name}
           </div>
-
-          {/* Upcoming Languages Section */}
-          <div>
-            <h3 className="text-base font-medium text-gray-900 dark:text-white mb-3">Upcoming Language</h3>
-            <div className="bg-gray-50 dark:bg-[#2A2C38] rounded-xl p-4">
-              <div className="text-sm text-gray-600 leading-relaxed dark:text-white">
-                sexdcrftvgbyhnjimkodrtgvhujivbn m
-              </div>
-            </div>
+          <div className="text-xs text-gray-500 dark:text-gray-300">
+            {language.nativeName}
           </div>
         </div>
+      </div>
+
+      {/* Right: Checkmark */}
+      {currentSelected === language.name && (
+        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+          <Check size={12} className="text-white" />
+        </div>
+      )}
+    </button>
+  ))}
+</div>
+<div className="text-lg  text-gray-900 dark:text-white mb-4 text-center">
+<h2 >
+  Upcoming Language
+</h2>
+<p>sexdcrftvgbyhnujimkodrftgyhuijvbn m</p>
+</div>
+
       </div>
     </div>
     </div>

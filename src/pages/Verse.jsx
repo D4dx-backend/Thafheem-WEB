@@ -25,8 +25,8 @@ const Verse = () => {
   );
 
   return (
-    <div className="bg-white dark:bg-[#2A2C38]  w-90 h-96 flex flex-col shadow rounded-lg">
-      {/* Dual Search Bar */}
+    <div className="bg-white dark:bg-[#2A2C38] w-full max-w-md h-96 flex flex-col shadow rounded-lg">
+      {/* Search Bar */}
       <div className="p-3 flex space-x-2">
         <input
           type="text"
@@ -47,16 +47,17 @@ const Verse = () => {
       {/* Verse List */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-3">
         {filteredVerses.length > 0 ? (
-          <ol className="list-decimal list-inside space-y-2">
+          <ul className="space-y-2">
             {filteredVerses.map((item) => (
               <li
                 key={item.id}
-                className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors"
+                className="flex justify-between text-gray-800 dark:text-white hover:text-blue-600 transition-colors"
               >
-                {item.surah} – Verse {item.verse}
+                <span className="truncate">{item.surah}</span>
+                <span>{item.verse}</span>
               </li>
             ))}
-          </ol>
+          </ul>
         ) : (
           <p className="text-sm text-gray-400 text-center py-4">
             No verses found

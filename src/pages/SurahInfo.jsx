@@ -1,14 +1,17 @@
 import { ArrowLeft } from "lucide-react";
-
+import { Link } from "react-router-dom";
 const SurahInfo = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center">
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4">
+        <div className="max-w-7xl mx-auto flex items-center">
+        <Link to="/surah">
+          <button  className="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4">
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
+        </Link>
+
           <h1 className="text-lg font-semibold text-gray-900">Surah Al-Baqarah</h1>
         </div>
       </div>
@@ -20,23 +23,29 @@ const SurahInfo = () => {
   <h2 className="text-4xl font-arabic text-gray-900 mb-6">سورة البقرة</h2>
 
   {/* Stats Grid */}
-  <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-sm text-gray-600">
-    <div>
-      <span className="font-medium">Revelation:</span> Madinah
-    </div>
-    <div>
-      <span className="font-medium">Revelation Order:</span> 87
-    </div>
-    <div>
-      <span className="font-medium">Verses:</span> 286
-    </div>
-    <div>
-      <span className="font-medium">Thafheem Vol:</span> 1
-    </div>
-    <div>
-      <span className="font-medium">Paragraph:</span> 40
-    </div>
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-6 text-sm">
+  <div>
+    <span className="text-gray-600">Revelation: </span>
+    <span className="font-semibold text-gray-900 dark:text-white">Madinah</span>
   </div>
+  <div>
+    <span className="text-gray-600">Revelation Order: </span>
+    <span className="font-semibold text-gray-900 dark:text-white">87</span>
+  </div>
+  <div>
+    <span className="text-gray-600">Verses: </span>
+    <span className="font-semibold text-gray-900 dark:text-white">286</span>
+  </div>
+  <div>
+    <span className="text-gray-600">Thafheem Vol: </span>
+    <span className="font-semibold text-gray-900 dark:text-white">1</span>
+  </div>
+  <div>
+    <span className="text-gray-600">Paragraph: </span>
+    <span className="font-semibold text-gray-900 dark:text-white">40</span>
+  </div>
+</div>
+
 </div>
 
 

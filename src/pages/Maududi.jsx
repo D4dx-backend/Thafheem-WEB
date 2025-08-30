@@ -92,73 +92,76 @@ const Maududi = () => {
 
             {/* Main Biography Section */}
             <div className="flex gap-6 mb-8">
-                {/* Portrait Image */}
-                <div className="flex-shrink-0">
-                    <img 
-                        src={maududiImg} 
-                        alt="Sayyid Abul A'la Maududi"
-                        className="w-[120px] h-[160px] object-cover rounded shadow-sm"
-                    />
-                </div>
-                
-                {/* Biographical Text */}
-                <div className="flex-1 ">
-                    <h3 className="text-blue-600 font-normal mb-3 text-sm dark:text-white">(1903-1979)</h3>
-                    <p className="text-black leading-relaxed mb-4 text-sm dark:text-white">
-                        Abul A'la was born on Rajab 3, 1321 AH (September 25, 1903 AD) in Aurangabad, a well-known town in the former princely 
-                        state of Hyderabad (Deccan), presently Maharashtra, India. Born in a respectable family, his ancestry on the paternal 
-                        side is traced back to the Holy Prophet Muhammad (peace and blessing of Allah be on him).
-                    </p>
-                    <p className="text-black leading-relaxed text-sm dark:text-white">
-                        The family had a long-standing tradition of spiritual leadership and a number of Maududi's ancestors were outstanding 
-                        leaders of Sufi Orders. One of the luminaries among them, the one from whom he derived his family name, was 
-                        Khwajah Qutb al-Din Maudud (d. 527 AH), a renowned leader of the Chishti Sufi Order. Maududi's forefathers had 
-                        moved to the Subcontinent from Chisht towards the end of the 9th century of the Islamic calendar (15th century of the 
-                        Christian calendar). The first one to arrive was Maududi's namesake, Abul A'la Maududi (d. 935 AH). Maududi's father, 
-                        Ahmad Hasan, born in 1855 AD, a lawyer by profession, was a highly religious and devout person. Abul A'la was the 
-                        youngest of his three sons.
-                    </p>
-                </div>
-            </div>
+  {/* Portrait Image */}
+  <div className="flex-shrink-0 min-h-screen 0">
+    <img 
+      src={maududiImg} 
+      alt="Sayyid Abul A'la Maududi"
+      className="w-[120px] h-[160px] object-cover rounded shadow-sm"
+    />
+  </div>
 
-            {/* Educational & Intellectual Growth Section */}
-            <div className="mb-6">
-                <h2 className="text-blue-600 font-normal mb-4 text-base dark:text-white">
-                    Educational & Intellectual Growth
-                </h2>
-                <div className="flex gap-4 mb-4">
-                    <img 
-                        src={Ed1}
-                        alt="Historical Document"
-                        className="w-[100px] h-[130px] object-cover rounded shadow-sm"
-                    />
-                    <img 
-                        src={Ed2}
-                        alt="School Building"
-                        className="w-[120px] h-[130px] object-cover rounded shadow-sm"
-                    />
-                    <img 
-                        src={Ed3}
-                        alt="Street View"
-                        className="w-[120px] h-[130px] object-cover rounded shadow-sm"
-                    />
-                </div>
-                <p className="text-black leading-relaxed text-sm dark:text-white">
-                    After acquiring early education at home, Abul A'la was admitted in Madrasah Furqaniyah, a high school which 
-                    attempted to combine the modern Western with the traditional Islamic education. After successfully completing his 
-                    secondary education, young Abul A'la was at the stage of undergraduate studies at Darul Uloom, Hyderabad, when his 
-                    formal education was disrupted by the illness and eventual death of his father. This did not deter Maududi from 
-                    continuing his studies though these had to be outside of the regular educational institutions. By the early 1920s, Abul A'la 
-                    knew enough Arabic, Persian and English, besides his mother-tongue, Urdu, to study the subjects of his interest 
-                    independently. Thus, most of what he learned was self-acquired though for short spells of time he also received 
-                    systematic instruction and guidance from some competent scholars. Thus, Maududi's intellectual growth was largely a 
-                    result of his own effort and the stimulation he received from his teachers. Moreover, his uprightness, his profound regard 
-                    for propriety and righteousness largely reflect the religious piety of his parents and their concern for his proper moral 
-                    upbringing.
-                </p>
-            </div>
+  {/* Biographical Text */}
+  <div className="flex-1 ">
+    <h3 className="text-blue-600 font-normal mb-3 text-sm dark:text-white">(1903-1979)</h3>
+    <p className="text-black leading-relaxed mb-4 text-sm dark:text-white">
+      Abul A'la was born on Rajab 3, 1321 AH (September 25, 1903 AD) in Aurangabad, 
+      a well-known town in the former princely state of Hyderabad (Deccan), presently 
+      Maharashtra, India. Born in a respectable family, his ancestry on the paternal 
+      side is traced back to the Holy Prophet Muhammad (peace and blessing of Allah be on him).
+    </p>
+    <p className="text-black leading-relaxed mb-6 text-sm dark:text-white">
+      The family had a long-standing tradition of spiritual leadership and a number of 
+      Maududi's ancestors were outstanding leaders of Sufi Orders. One of the luminaries 
+      among them, the one from whom he derived his family name, was Khwajah Qutb al-Din Maudud 
+      (d. 527 AH), a renowned leader of the Chishti Sufi Order. Maududi's forefathers had moved 
+      to the Subcontinent from Chisht towards the end of the 9th century of the Islamic calendar 
+      (15th century of the Christian calendar). The first one to arrive was Maududi's namesake, 
+      Abul A'la Maududi (d. 935 AH). Maududi's father, Ahmad Hasan, born in 1855 AD, a lawyer 
+      by profession, was a highly religious and devout person. Abul A'la was the youngest of his three sons.
+    </p>
 
-            <div className="mb-6">
+    {/* Educational & Intellectual Growth */}
+    <div className="mb-6">
+      <h2 className="text-blue-600 font-normal mb-4 text-base dark:text-white">
+        Educational & Intellectual Growth
+      </h2>
+      <div className="flex gap-4 mb-4">
+        <img 
+          src={Ed1}
+          alt="Historical Document"
+          className="w-[100px] h-[130px] object-cover rounded shadow-sm"
+        />
+        <img 
+          src={Ed2}
+          alt="School Building"
+          className="w-[120px] h-[130px] object-cover rounded shadow-sm"
+        />
+        <img 
+          src={Ed3}
+          alt="Street View"
+          className="w-[120px] h-[130px] object-cover rounded shadow-sm"
+        />
+      </div>
+      <p className="text-black leading-relaxed text-sm dark:text-white">
+        After acquiring early education at home, Abul A'la was admitted in Madrasah Furqaniyah, 
+        a high school which attempted to combine the modern Western with the traditional Islamic 
+        education. After successfully completing his secondary education, young Abul A'la was at 
+        the stage of undergraduate studies at Darul Uloom, Hyderabad, when his formal education 
+        was disrupted by the illness and eventual death of his father. This did not deter Maududi 
+        from continuing his studies though these had to be outside of the regular educational 
+        institutions. By the early 1920s, Abul A'la knew enough Arabic, Persian and English, 
+        besides his mother-tongue, Urdu, to study the subjects of his interest independently. 
+        Thus, most of what he learned was self-acquired though for short spells of time he also 
+        received systematic instruction and guidance from some competent scholars. Thus, Maududi's 
+        intellectual growth was largely a result of his own effort and the stimulation he received 
+        from his teachers. Moreover, his uprightness, his profound regard for propriety and 
+        righteousness largely reflect the religious piety of his parents and their concern for 
+        his proper moral upbringing.
+      </p>
+    </div>
+
+    <div className="mb-6">
                 <h2 className="text-blue-500 font-normal mb-3 text-base dark:text-white">
                     Involvement in journalism
                 </h2>
@@ -185,6 +188,9 @@ const Maududi = () => {
                 </div>
             </div>
 
+
+
+            
             <div className="mb-6">
                 <h2 className="text-blue-500 font-normal mb-3 text-base">
                     Interest in politics
@@ -220,6 +226,8 @@ const Maududi = () => {
                 </p>
             </div>
 
+
+            
             <div className="mb-6">
                 <h2 className="text-blue-500 font-normal mb-3 text-base dark:text-white">
                     Research and writings
@@ -295,6 +303,7 @@ const Maududi = () => {
                 </div>
             </div>
 
+
             <div className="mb-6">
                 <div className="bg-gray-200 rounded-lg overflow-hidden shadow-sm ">
                     <div className="aspect-video bg-gray-300 dark:bg-[#434343] flex items-center justify-center">
@@ -368,6 +377,7 @@ const Maududi = () => {
                 </div>
             </div>
 
+
             <div>
                 <div className="mb-6">
                     <h2 className="text-blue-600 font-normal mb-4 text-base dark:text-white">
@@ -383,6 +393,7 @@ const Maududi = () => {
                     </p>
                 </div>
             </div>
+
 
             <div className="mb-6">
                 <h2 className="text-blue-500 font-normal mb-3 text-base dark:text-white">
@@ -407,6 +418,7 @@ const Maududi = () => {
                 </p>
             </div>
 
+
             <div className="">
                 <h2 className="text-xl font-bold mb-4 dark:text-white">
                     Some of his books translated into English:
@@ -419,6 +431,10 @@ const Maududi = () => {
                     ))}
                 </ul>
             </div>
+  </div>
+</div>
+
+           
         </div>
         </div>
 

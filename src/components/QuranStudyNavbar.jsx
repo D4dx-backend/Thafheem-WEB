@@ -37,9 +37,9 @@ const QuranStudyNavbar = () => {
             <li key={index}>
               <button
                 onClick={() => handleItemClick(item)}
-                className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 border-l-4 dark:hover:bg-black hover:bg-gray-50 ${
+                className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 border-l-4  ${
                   activeItem === item
-                    ? 'bg-green-50 border-l-green-500 dark:border-0 rounded-2xl text-black dark:bg-black dark:text-white font-medium'
+                    ? 'bg-[#D9D9D9]  dark:border-0 rounded-2xl text-black dark:bg-black dark:text-white font-medium'
                     : 'border-l-transparent text-gray-700 dark:text-white hover:border-l-gray-300'
                 }`}
               >

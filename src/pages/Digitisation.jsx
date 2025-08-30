@@ -3,7 +3,7 @@ import React from "react";
 const Digitisation = () => {
   return (
     <div className="w-full mx-auto p-6 min-h-screen bg-white dark:bg-black shadow-sm rounded-lg">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
 
       <h2 className="text-2xl font-bold mb-2 dark:text-white">Digitisation</h2>
       <hr className="mb-4" />

@@ -44,7 +44,7 @@ const MalayalamInterpreter = () => {
         </p>
       ),
       '3 26:3': (
-        <div className="dark:bg-[#2A2C38]">
+        <div className="dark:bg-[#2A2C38]  ">
           <div className="text-center mb-4">
             <h3 className="text-lg font-medium text-[#2AA0BF] mb-2">Verse Range 1-6</h3>
             <div className="text-right text-2xl leading-relaxed mb-4 dark:text-white" style={{ fontFamily: "serif" }}>

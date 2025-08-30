@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Copy, Bookmark, Share2, X } from 'lucide-react';
-
+import { useNavigate } from "react-router-dom";
 const AyathNavbar = () => {
+  const [visible, setVisible] = useState(true);
   const [selectedChapter, setSelectedChapter] = useState('2- Al-Baqarah');
   const [selectedVerse, setSelectedVerse] = useState('1');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-
+  const navigate = useNavigate();
+  if (!visible) return null;
   return (
     <div className="bg-white border-b dark:bg-[#2A2C38] border-gray-200 px-4 py-3 space-y-3">
       {/* First Row - Chapter/Verse Selectors and Action Buttons */}
@@ -40,9 +42,13 @@ const AyathNavbar = () => {
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Share">
             <Share2 className="w-5 h-5 text-gray-600" />
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Close">
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
+          <button
+  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+  title="Close"
+  onClick={() => navigate(-1)}
+>
+  <X className="w-5 h-5 text-gray-600" />
+</button>
         </div>
       </div>
 

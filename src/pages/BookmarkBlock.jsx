@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import BookmarkNavbar from '../components/BookmarkNavbar';
+import StarNumber from '../components/StarNumber';
 
 const BookmarkBlock = () => {
   const bookmarkedBlocks = [
@@ -26,7 +27,10 @@ const BookmarkBlock = () => {
             {/* Left Section - Block Info */}
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
-                <span className="text-lg font-semibold text-gray-800 dark:text-white">{block.number}</span>
+                {/* <span className="text-lg font-semibold text-gray-800 dark:text-white">{block.number}</span> */}
+                <StarNumber number={block.number} />
+
+
               </div>
               <div>
                 <h3 className="text-base font-medium text-gray-900 dark:text-white">{block.surah}</h3>
@@ -37,7 +41,7 @@ const BookmarkBlock = () => {
             {/* Right Section - Delete Button */}
             <button
               onClick={() => handleDelete(block.id)}
-              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+              className="p-2 text-black hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
               aria-label="Delete bookmark block"
             >
               <Trash2 size={18} />

@@ -100,11 +100,20 @@ const Transition = ({ showPageInfo = false }) => {
             </button>
 
             {/* NavigateSurah Dropdown */}
-            {isDropdownOpen && (
+            {/* {isDropdownOpen && (
               <div className="absolute top-full left-0 mt-1 z-10">
                 <NavigateSurah onSurahSelect={handleSurahSelect} />
               </div>
-            )}
+            )} */}
+            {isDropdownOpen && (
+  <div className="absolute top-full left-0 mt-1 z-10">
+    <NavigateSurah 
+      onSurahSelect={handleSurahSelect} 
+      onClose={() => setIsDropdownOpen(false)} // ✅ pass down
+    />
+  </div>
+)}
+
           </div>
         </div>
 

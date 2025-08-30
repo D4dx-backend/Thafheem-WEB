@@ -376,7 +376,27 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
   return (
 <div className="bg-white rounded-lg dark:bg-[#2A2C38]  shadow-lg w-96 max-h-[500px] flex flex-col">
   {/* Header with tabs */}
-  <div className="flex items-center bg-gray-50 dark:bg-black  rounded-full p-1 m-2">
+  {/* <div className="flex items-center bg-gray-50 dark:bg-black  rounded-full p-1 m-2">
+    {tabs.map((tab) => (
+      <button
+        key={tab}
+        onClick={() => setActiveTab(tab)}
+        className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+          activeTab === tab
+            ? 'bg-gray-200 text-gray-900 dark:bg-[#2A2C38] dark:text-white'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {tab}
+      </button>
+    ))}
+  </div> */}
+
+    {/* Header with tabs + Close Icon */}
+    <div className="flex items-center justify-between bg-gray-50 dark:bg-black rounded-full p-1 m-2">
+
+  {/* Tabs */}
+  <div className="flex space-x-1">
     {tabs.map((tab) => (
       <button
         key={tab}
@@ -391,6 +411,19 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       </button>
     ))}
   </div>
+
+
+
+
+    {/* Close Button */}
+    <button
+      onClick={onClose}   // ✅ closes when clicked
+      className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+    >
+      <X className="h-5 w-5 text-gray-600 dark:text-white" />
+    </button>
+  </div>
+
 
   {/* Content - make it scrollable */}
   <div className="flex-1 overflow-y-auto px-2 ">

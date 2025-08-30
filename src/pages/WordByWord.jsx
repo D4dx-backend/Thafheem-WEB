@@ -22,7 +22,7 @@ const WordByWord = () => {
             </div>
             <div className="text-right">
               <div className="text-3xl text-gray-700 dark:text-white font-arabic">
-                الۤمّۤ
+              الٓمٓ=
               </div>
             </div>
           </div>
@@ -36,12 +36,12 @@ const WordByWord = () => {
         </div>
 
         {/* Empty Space for Content */}
-        <div className="min-h-[200px]">
+        <div className="min-h-[100px]">
           {/* This space can be used for additional word-by-word content */}
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center pt-8 border-t border-gray-200">
+        <div className="flex justify-between items-center pt-8">
           <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md dark:bg-[#2A2C38] dark:text-white dark:hover:text-white text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
             <span className="mr-2">←</span>
             <span>Previous Ayah</span>

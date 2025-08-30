@@ -30,6 +30,7 @@ const Ayah = () => {
       const ayahIndex = ayahs.findIndex(
         (ayah) => ayah.number === parseInt(ayahNumber)
       );
+      
       if (ayahIndex !== -1) {
         setCurrentAyahIndex(ayahIndex);
       }

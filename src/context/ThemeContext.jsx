@@ -1,35 +1,22 @@
-import { createContext, useContext, useState, useEffect } from "react";
+// ThemeContext.jsx or ThemeProvider.jsx
+import { createContext, useContext, useEffect, useState } from "react";
 
-// Create context
 const ThemeContext = createContext();
 
-// Custom hook
-export const useTheme = () => useContext(ThemeContext);
-
-// Provider
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // Always prefer saved theme if available
-    const savedTheme = localStorage.getItem("theme");
-    return savedTheme || "light";
-  });
+  const [theme, setTheme] = useState("light");
 
-  // Apply theme changes to document (ignore system/Chrome preference)
   useEffect(() => {
+    const root = window.document.documentElement; // <html>
     if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
+      root.classList.add("dark");
     } else {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
+      root.classList.remove("dark");
     }
-    localStorage.setItem("theme", theme);
-    console.log("Theme switched to:", theme);
   }, [theme]);
 
-  // Toggle theme manually (button only)
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (
@@ -38,3 +25,5 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+export const useTheme = () => useContext(ThemeContext);

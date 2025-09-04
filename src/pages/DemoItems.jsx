@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const DemoPage = () => {
+const DemoItems = () => {
   const [pageSearch, setPageSearch] = useState("");
 
   // Generate all 604 pages of the Quran
@@ -61,4 +61,4 @@ const DemoPage = () => {
   );
 };
 
-export default DemoPage;
+export default DemoItems;

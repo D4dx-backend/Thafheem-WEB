@@ -7,7 +7,7 @@ const EndofProphethoodContent = () => {
   };
 
   return (
-    <div className="flex-1 bg-white h-screen overflow-y-auto dark:bg-[#2A2C38]">
+    <div className="flex-1 bg-white h-screen overflow-y-auto dark:bg-[#2A2C38]  m-4">
       {/* Content Header */}
       <div className="border-b border-gray-300 px-6 py-4">
         <div className="flex justify-between items-center">
@@ -31,7 +31,7 @@ const EndofProphethoodContent = () => {
       {/* Content Body */}
       <div className="px-6 py-6">
         <div className="max-w-4xl">
-          <p className="text-black text-base leading-relaxed dark:text-white">
+          <p className="text-black text-sm leading-relaxed dark:text-white">
             The party that has created the 'Great Tribulation', which is the new Prophethood in this era, has given the word 
             'Khatam-un-Nabiyyin' the meaning of 'seal of the prophets'. That is, the prophets who come after Prophet 
             Muhammad (peace be upon Him) become prophets with the seal of that prophethood. In other words, whoever 

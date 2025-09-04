@@ -105,8 +105,8 @@ const DragDropQuiz = () => {
   // Show start game modal if game hasn't started
   if (!gameStarted) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center ">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="min-h-screen bg-gray-100  flex items-center justify-center ">
+        <div className="fixed inset-0 bg-gray-500  bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl p-6 w-96">
             {/* Modal Header */}
             <h2 className="text-xl font-semibold text-gray-800 mb-4 dark:text-white">
@@ -142,7 +142,7 @@ const DragDropQuiz = () => {
 
   // Main game content - shows after start button is clicked
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-black">
       {/* Top Navigation Bar */}
       <div className="bg-white dark:bg-[#2A2C38] ">
         <div className="max-w-6xl mx-auto px-4 py-2">
@@ -161,14 +161,18 @@ const DragDropQuiz = () => {
             </div>
           </div>
         </div>
-      </div>
 
+      </div>
+<div>
+<ArrowLeft className="w-5 h-5  text-gray-600 dark:text-white relative top-10 left-30" />
+
+</div>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b dark:bg-black">
-        <div className="max-w-6xl mx-auto px-4 py-3">
+      <div className=" border-b dark:bg-black w-[884px] mx-auto">
+
+        <div className="mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
           <div className="flex items-center  gap-25">
-  <ArrowLeft className="w-5 h-5  text-gray-600 dark:text-white" />
   <h1
     className="text-xl font-semibold"
     style={{ color: "#2AA0BF" }}
@@ -188,7 +192,7 @@ const DragDropQuiz = () => {
       {/* Main Content */}
       <div className="w-full mx-auto px-4 py-6 dark:bg-black ">
         <div className="max-w-6xl mx-auto ">
-          <div className="bg-white dark:bg-black rounded-lg shadow-sm border p-6">
+          <div className="bg-gray-50 dark:bg-black rounded-lg   p-6">
             {/* Drag & Drop Area */}
             <div className="flex gap-8 justify-center">
               {/* Arabic Text Column */}
@@ -326,10 +330,10 @@ const DragDropQuiz = () => {
           ${
             option
               ? "bg-white dark:bg-black dark:text-white border-gray-300 cursor-move hover:shadow-md"
-              : "bg-gray-100 dark:bg-[#2A2C38] border-dashed border-gray-300 text-gray-400"
+              : "bg-gray-100 dark:bg-black  border-gray-300 text-gray-400"
           }`}
                     >
-                      {option ? option.text : "Empty"}
+                      {option ? option.text : ""}
                     </div>
                   );
                 })}

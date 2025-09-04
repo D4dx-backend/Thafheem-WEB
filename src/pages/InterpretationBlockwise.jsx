@@ -4,6 +4,8 @@ import InterpretationNavbar from "../components/InterpretationNavbar";
 const InterpretationBlockwise = () => {
   return (
     <>
+    <div>
+
       <InterpretationNavbar interpretationNumber={1} />
       <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-[#2A2C38]">
         <div className="space-y-6">
@@ -35,7 +37,7 @@ const InterpretationBlockwise = () => {
           </div>
 
           {/* Navigation Block */}
-          <div className="flex justify-between items-center pt-8 border-t border-gray-200">
+          <div className="flex justify-between items-center pt-8 ">
             <button className="flex items-center px-4 py-2 border dark:bg-[#2A2C38] dark:hover:text-white  dark:text-white border-gray-300 rounded-md text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors bg-white">
               <span className="mr-2">←</span>
               <span>Previous Ayah</span>
@@ -48,6 +50,8 @@ const InterpretationBlockwise = () => {
           </div>
         </div>
       </div>
+    </div>
+
     </>
   );
 };

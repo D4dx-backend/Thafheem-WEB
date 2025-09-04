@@ -93,7 +93,7 @@ const Transition = ({ showPageInfo = false }) => {
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-white hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-white  rounded-lg transition-colors"
             >
               <span className="font-medium">{selectedSurah.name}</span>
               <ChevronDown className="w-4 h-4" />
@@ -117,29 +117,6 @@ const Transition = ({ showPageInfo = false }) => {
           </div>
         </div>
 
-        {/* Center Section - Toggle Icons */}
-        {/* <div className="flex items-center bg-gray-100 rounded-full p-1 space-x-1">
-          <button
-            onClick={() => setActiveView("book")}
-            className={`p-2 rounded-full transition-colors ${
-              activeView === "book"
-                ? "bg-white shadow text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setActiveView("notebook")}
-            className={`p-2 rounded-full transition-colors ${
-              activeView === "notebook"
-                ? "bg-white shadow text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Notebook className="w-5 h-5" />
-          </button>
-        </div> */}
 
         {/* Right Section - Page Indicator */}
         <div className="flex items-center">

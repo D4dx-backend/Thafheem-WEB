@@ -144,10 +144,10 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
         </div>
       </div>
       {/* Main Player Bar */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-6 py-4  h-[60px]">
         
         {/* Left - Current Time */}
-        <div className="text-sm font-mono text-gray-600 w-16 dark:text-white">
+        <div className="text-sm font-mono text-black w-16 dark:text-white">
           {formatTime(currentTime)}
         </div>
 
@@ -157,7 +157,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+              className="p-2 text-black hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
             >
               <MoreHorizontal size={20} />
             </button>
@@ -186,7 +186,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
             <button
               onClick={() => setShowVolumeSlider(!showVolumeSlider)}
               onMouseEnter={() => setShowVolumeSlider(true)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+              className="p-2 text-gray-600 bg-[#D9D9D9] hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
             >
               {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
@@ -213,7 +213,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           {/* Previous Button */}
           <button
             onClick={handleSkipBack}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+            className="p-2 text-black0 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <SkipBack size={20} />
           </button>
@@ -221,7 +221,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           {/* Play/Pause Button */}
           <button
             onClick={togglePlayPause}
-            className="p-3 bg-black hover:bg-gray-700 text-white rounded-full transition-colors"
+            className="p-3 bg-white  text-black rounded-full transition-colors"
           >
             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
@@ -229,7 +229,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           {/* Next Button */}
           <button
             onClick={handleSkipForward}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+            className="p-2 text-black hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <SkipForward size={20} />
           </button>
@@ -237,14 +237,14 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+            className="p-2 text-black hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Right - Duration */}
-        <div className="text-sm font-mono text-gray-600 w-16 text-right dark:text-white">
+        <div className="text-sm font-mono text-black w-16 text-right dark:text-white">
           {formatTime(duration)}
         </div>
       </div>

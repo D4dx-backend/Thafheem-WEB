@@ -18,8 +18,8 @@ const BookmarkBlock = () => {
   return (
     <>
     <BookmarkNavbar/>
-    <div className="w-full mx-auto min-h-screen p-6 bg-white dark:bg-black">
-    <div className="max-w-6xl mx-auto">
+    <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-black">
+    <div className="w-[1290px] mx-auto">
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {bookmarkedBlocks.map((block) => (
@@ -41,7 +41,7 @@ const BookmarkBlock = () => {
             {/* Right Section - Delete Button */}
             <button
               onClick={() => handleDelete(block.id)}
-              className="p-2 text-black hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+              className="p-2 text-black dark:text-white dark:hover:bg-transparent hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
               aria-label="Delete bookmark block"
             >
               <Trash2 size={18} />

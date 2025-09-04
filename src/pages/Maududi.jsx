@@ -7,6 +7,7 @@ import Ed4 from "../assets/ed4.png";
 import Ed5 from "../assets/ed5.png";
 import Ed6 from "../assets/ed6.png";
 import Ed7 from "../assets/ed7.png";
+import VideoPlayer from '../components/VideoPlayer';
 
 const Maududi = () => {
     const books = [
@@ -80,7 +81,7 @@ const Maududi = () => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="w-full mx-auto bg-white dark:bg-black p-8">
+        <div className=" mx-auto bg-white dark:bg-black p-8">
                   <div className="max-w-6xl mx-auto">
 
             {/* Header */}
@@ -97,7 +98,7 @@ const Maududi = () => {
     <img 
       src={maududiImg} 
       alt="Sayyid Abul A'la Maududi"
-      className="w-[120px] h-[160px] object-cover rounded shadow-sm"
+      className="w-[186px] h-[186px] object-cover rounded shadow-sm"
     />
   </div>
 
@@ -130,17 +131,17 @@ const Maududi = () => {
         <img 
           src={Ed1}
           alt="Historical Document"
-          className="w-[100px] h-[130px] object-cover rounded shadow-sm"
+          className="w-[186px] h-[186px] object-cover rounded shadow-sm"
         />
         <img 
           src={Ed2}
           alt="School Building"
-          className="w-[120px] h-[130px] object-cover rounded shadow-sm"
+          className="w-[186px] h-[186px] object-cover rounded shadow-sm"
         />
         <img 
           src={Ed3}
           alt="Street View"
-          className="w-[120px] h-[130px] object-cover rounded shadow-sm"
+          className="w-[186px] h-[186px] object-cover rounded shadow-sm"
         />
       </div>
       <p className="text-black leading-relaxed text-sm dark:text-white">
@@ -170,10 +171,10 @@ const Maududi = () => {
                         <img 
                             src={Ed4}
                             alt="Historical Document"
-                            className="w-[80px] h-[100px] object-cover"
+                            className="w-[186px] h-[186px] object-cover"
                         />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 ">
                         <p className="text-black leading-normal text-sm dark:text-white">
                             After the interruption of his formal education, Maududi turned to journalism in order to make 
                             his living. In 1918, he was already contributing to a leading Urdu newspaper, and in 1920, at 
@@ -200,7 +201,7 @@ const Maududi = () => {
                         <img 
                             src={Ed5}
                             alt="Political Meeting"
-                            className="w-[80px] h-[100px] object-cover"
+                            className="w-[186px] h-[186px] object-cover"
                         />
                     </div>
                     <div className="flex-1">
@@ -237,7 +238,7 @@ const Maududi = () => {
                         <img 
                             src={Ed6}
                             alt="Historical Document"
-                            className="w-[80px] h-[100px] object-cover"
+                            className="w-[186px] h-[186px] object-cover"
                         />
                     </div>
                     <div className="flex-1">
@@ -303,80 +304,78 @@ const Maududi = () => {
                 </div>
             </div>
 
+          {/* <div className="mb-6 flex justify-center">
+  <div className="w-[933px] h-[261px] bg-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col">
+   
+    <div className="flex-1 bg-gray-300 dark:bg-[#434343] flex items-center justify-center">
+      <video
+        ref={videoRef}
+        className="w-full h-full object-cover"
+        onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.target.duration)}
+        onEnded={() => setIsPlaying(false)}
+      >
+        <source src="/path-to-your-video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
 
-            <div className="mb-6">
-                <div className="bg-gray-200 rounded-lg overflow-hidden shadow-sm ">
-                    <div className="aspect-video bg-gray-300 dark:bg-[#434343] flex items-center justify-center">
-                        <video
-                            ref={videoRef}
-                            className="w-full h-full object-cover"
-                            onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
-                            onLoadedMetadata={(e) => setDuration(e.target.duration)}
-                            onEnded={() => setIsPlaying(false)}
-                        >
-                            <source src="/path-to-your-video.mp4" type="video/mp4" />
-                            Your browser does not support the video tag.
-                        </video>
-                    </div>
-                    <div className="bg-gray-100 dark:bg-[#434343] px-4 py-3">
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-700 dark:text-white font-mono min-w-[45px]">
-                                {formatTime(currentTime)}
-                            </div>
-                            <div className="flex-1 mx-4">
-                                <div 
-                                    className="w-full h-1 bg-gray-300 dark:bg-black rounded cursor-pointer"
-                                    onClick={handleProgressClick}
-                                >
-                                    <div 
-                                        className="h-full bg-gray-600 rounded transition-all duration-200"
-                                        style={{ width: `${progressPercentage}%` }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={handlePrevious}
-                                    className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                    aria-label="Previous"
-                                >
-                                    <svg className="w-5 h-5 text-gray-700 dark:text-black" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={handlePlayPause}
-                                    className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                                    aria-label={isPlaying ? "Pause" : "Play"}
-                                >
-                                    {isPlaying ? (
-                                        <svg className="w-6 h-6 text-gray-700 dark:text-black" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                    ) : (
-                                        <svg className="w-6 h-6 text-gray-700 dark:text-black" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                        </svg>
-                                    )}
-                                </button>
-                                <button
-                                    onClick={handleNext}
-                                    className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                    aria-label="Next"
-                                >
-                                    <svg className="w-5 h-5 text-gray-700 dark:text-black" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="text-sm text-gray-700 font-mono min-w-[45px] text-right">
-                                {formatTime(duration)}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    
+    <div className="bg-gray-100 dark:bg-[#434343] px-4 py-2">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-700 dark:text-white font-mono min-w-[45px]">
+          {formatTime(currentTime)}
+        </div>
+        <div className="flex-1 mx-4">
+          <div
+            className="w-full h-1 bg-gray-300 dark:bg-black rounded cursor-pointer"
+            onClick={handleProgressClick}
+          >
+            <div
+              className="h-full bg-gray-600 rounded transition-all duration-200"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+        
+          <button
+            onClick={handlePrevious}
+            className="p-1 hover:bg-gray-200 rounded transition-colors"
+            aria-label="Previous"
+          >
+        
+          </button>
 
+          <button
+            onClick={handlePlayPause}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+           
+          </button>
+
+          
+          <button
+            onClick={handleNext}
+            className="p-1 hover:bg-gray-200 rounded transition-colors"
+            aria-label="Next"
+          >
+    
+          </button>
+        </div>
+        <div className="text-sm text-gray-700 font-mono min-w-[45px] text-right">
+          {formatTime(duration)}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ */}
+ <div className="mb-6 flex justify-center">
+ <VideoPlayer/>
+
+ </div>
 
             <div>
                 <div className="mb-6">
@@ -404,7 +403,7 @@ const Maududi = () => {
                         <img 
                             src={Ed7}
                             alt="Historical Document"
-                            className="w-[120px] h-[130px] object-cover"
+                            className="w-[186px] h-[186px] object-cover"
                         />
                     </div>
                     <div className="flex-1">
@@ -423,7 +422,8 @@ const Maududi = () => {
                 <h2 className="text-xl font-bold mb-4 dark:text-white">
                     Some of his books translated into English:
                 </h2>
-                <ul className="list-disc list-inside p-4 rounded-lg space-y-1 ">
+                <ul className="list-disc  p-4 rounded-lg space-y-1 ">
+                {/* <ul className="list-disc list-inside p-4 rounded-lg space-y-1 "> */}
                     {books.map((book, index) => (
                         <li key={index} className="text-gray-800 dark:text-white">
                             {book}
@@ -434,8 +434,10 @@ const Maududi = () => {
   </div>
 </div>
 
+
            
         </div>
+        
         </div>
 
     );

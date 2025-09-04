@@ -7,7 +7,7 @@ const QuranStudyContent = () => {
   };
 
   return (
-    <div className="flex-1 bg-white h-screen overflow-y-auto dark:bg-[#2A2C38]">
+    <div className="flex-1 bg-white  overflow-y-auto dark:bg-[#2A2C38] w-[711px] h-[626px] m-4">
       {/* Content Header */}
       <div className="border-b border-gray-300 px-6 py-4">
         <div className="flex justify-between items-center">

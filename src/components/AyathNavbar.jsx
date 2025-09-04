@@ -9,7 +9,7 @@ const AyathNavbar = () => {
   const navigate = useNavigate();
   if (!visible) return null;
   return (
-    <div className="bg-white border-b dark:bg-[#2A2C38] border-gray-200 px-4 py-3 space-y-3">
+    <div className="bg-white  dark:bg-[#2A2C38]  px-4 py-3 space-y-3">
       {/* First Row - Chapter/Verse Selectors and Action Buttons */}
       <div className="flex items-center justify-between">
         {/* Left side - Chapter and Verse Dropdowns */}
@@ -43,7 +43,7 @@ const AyathNavbar = () => {
             <Share2 className="w-5 h-5 text-gray-600" />
           </button>
           <button
-  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+  className="p-2 hover:bg-gray-100 rounded-full transition-colors dark:bg-white"
   title="Close"
   onClick={() => navigate(-1)}
 >

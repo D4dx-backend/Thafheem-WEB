@@ -6,7 +6,7 @@ import EndofProphethoodPlay from '../components/EndofProphethoodPlay'
 const EndofProphethood = () => {
   return (
     <div>
-        <div className='flex'>
+        <div className='flex bg-[#FAFAFA] dark:bg-black'>
         <EndofProphethoodNavbar/>
         <EndofProphethoodContent/>
         <EndofProphethoodPlay/>

@@ -10,9 +10,9 @@ const Conclusion = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
       <div className="bg-white  dark:bg-black">
-        <div className="max-w-5xl mx-auto px-4 py-4 border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 py-4 border-b border-gray-200 ">
           <div className="flex items-center gap-4">
-
+ 
             <h1 className="text-xl font-semibold text-gray-800 dark:text-white">
               Conclusion
             </h1>
@@ -21,7 +21,7 @@ const Conclusion = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-8 bg-white ">
+      <div className="max-w-5xl mx-auto px-4 py-8 bg-white dark:bg-black">
         <div className="space-y-4 text-sm text-gray-700  dark:text-white leading-relaxed">
           <p>
             I express my heartfelt gratitude to the Most Exalted Allah, from the

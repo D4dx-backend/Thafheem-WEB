@@ -18,8 +18,8 @@ const BookVerse = () => {
   return (
     <>
       <BookmarkNavbar />
-      <div className="w-full mx-auto p-6 min-h-screen bg-white dark:bg-black">
-      <div className="max-w-6xl mx-auto">
+      <div className=" mx-auto p-6 min-h-screen bg-white dark:bg-black">
+      <div className="w-[1290px] mx-auto">
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {bookmarkedVerses.map((verse) => (
@@ -47,7 +47,7 @@ const BookVerse = () => {
               {/* Right Section - Delete Button */}
               <button
                 onClick={() => handleDelete(verse.id)}
-                className="p-2 text-black hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                className="p-2 text-black dark:text-white dark:hover:bg-transparent  hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
                 aria-label="Delete bookmark"
               >
                 <Trash2 size={18} />

@@ -42,8 +42,8 @@ const  Reading = [
 ]
 
   return (
-    <div className="w-full dark:bg-black mx-auto p-6 bg-white">
-            <div className="max-w-5xl mx-auto">
+    <div className=" dark:bg-black mx-auto p-6 bg-white">
+            <div className="max-w-[1070px] w-full mx-auto">
 
       {/* Header Section */}
       <div className="mb-8">
@@ -58,13 +58,13 @@ const  Reading = [
           <div className="bg-[#2AA0BF] rounded-lg p-2 mr-3">
             <Settings className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-white">New Features & UI:</h2>
+          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-[#2AA0BF]">New Features & UI:</h2>
         </div>
         
         <div className="space-y-3">
           {newFeatures.map((feature, index) => (
             <div key={index} className="flex items-start">
-              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-white mt-0.5 mr-3 flex-shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF] mt-0.5 mr-3 flex-shrink-0" />
               <p className="text-black leading-relaxed dark:text-white">{feature}</p>
             </div>
           ))}
@@ -77,13 +77,13 @@ const  Reading = [
           <div className="bg-[#2AA0BF] rounded-lg p-2 mr-3">
             <Settings className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-white">Prayer & Worship Features:</h2>
+          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-[#2AA0BF]">Prayer & Worship Features:</h2>
         </div>
         
         <div className="space-y-3">
           {prayerFeatures.map((feature, index) => (
             <div key={index} className="flex items-start">
-              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-white mt-0.5 mr-3 flex-shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF] mt-0.5 mr-3 flex-shrink-0" />
               <p className="text-black leading-relaxed dark:text-white">{feature}</p>
             </div>
           ))}
@@ -96,13 +96,13 @@ const  Reading = [
           <div className="bg-[#2AA0BF] rounded-lg p-2 mr-3">
             <Bell className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-white">Prayer Time Notification:</h2>
+          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-[#2AA0BF]">Prayer Time Notification:</h2>
         </div>
         
         <div className="space-y-3">
           {prayerNotification.map((feature, index) => (
             <div key={index} className="flex items-start">
-              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-white mt-0.5 mr-3 flex-shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF] mt-0.5 mr-3 flex-shrink-0" />
               <p className="text-black leading-relaxed dark:text-white">{feature}</p>
             </div>
           ))}
@@ -115,13 +115,13 @@ const  Reading = [
           <div className="bg-[#2AA0BF] rounded-lg p-2 mr-3">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-white">Reading Experience:</h2>
+          <h2 className="text-xl font-semibold text-[#2AA0BF] dark:text-[#2AA0BF]">Reading Experience:</h2>
         </div>
         
         <div className="space-y-3">
           {Reading.map((feature, index) => (
             <div key={index} className="flex items-start">
-              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-white mt-0.5 mr-3 flex-shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF] mt-0.5 mr-3 flex-shrink-0" />
               <p className="text-black leading-relaxed dark:text-white">{feature}</p>
             </div>
           ))}

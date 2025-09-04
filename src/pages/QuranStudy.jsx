@@ -6,7 +6,7 @@ import QuranStudyPlay from '../components/QuranStudyPlay'
 const QuranStudy = () => {
   return (
     <div>
-      <div className='flex '>
+      <div className='flex bg-[#FAFAFA] dark:bg-black'>
       <QuranStudyNavbar/>
       <QuranStudyContent/>
       </div>

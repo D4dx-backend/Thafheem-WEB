@@ -47,9 +47,13 @@ const TableContents = () => {
   return (
     
     <div className="w-full mx-auto p-6 bg-white dark:bg-black">
-      <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold  mb-8 text-gray-800 border-b-2 border-black dark:text-white">Symbols Guide</h1>
-      
+      <div className="w-[1070.01px] mx-auto">
+      <div className="border-b-2 border-black dark:border-white pb-2 mb-6">
+  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+    Symbols Guide
+  </h1>
+</div>
+
       {/* Malayalam Translation Section */}
       <section className="mb-8">
         <h2 className="text-1lg font-semibold mb-4 text-gray-700  pb-2 dark:text-white">
@@ -84,25 +88,31 @@ const TableContents = () => {
           Symbols in Arabic Text
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300 bg-white dark:bg-black  shadow-lg rounded-lg">
+          <table className="w-full  bg-white dark:bg-black  shadow-lg rounded-lg">
             <thead>
               <tr className="">
-                <th className="border dark:text-white border-gray-300 px-4 py-3 text-left font-semibold ">
+                <th className=" dark:text-white  px-4 py-3 text-left font-semibold ">
                   Symbol
                 </th>
-                <th className="border dark:text-white border-gray-300 px-4 py-3 text-left font-semibold ">
+                <th className=" dark:text-white  px-4 py-3 text-left font-semibold ">
                   Meaning
                 </th>
               </tr>
             </thead>
             <tbody>
               {arabicSymbols.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? "bg-gray-50 dark:bg-black" : "bg-white dark:bg-black"}>
-                  <td className="border border-gray-300 px-4 py-3 text-center text-xl font-bold dark:text-white ">
-                    {item.symbol || "—"}
+                <tr key={index} className={index % 2 === 0 ? " dark:bg-black" : "bg-white dark:bg-black"}>
+                  <td className=" px-4 py-3 text-center text-xl font-bold dark:text-white ">
+                  <div className="w-[53px] h-[53px] bg-white dark:bg-black border border-gray-200 rounded-xl shadow-md flex items-center justify-center">
+  {item.symbol || "—"}
+</div>
+
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-gray-700 dark:text-white">
-                    {item.meaning}
+                  <td className=" px-4 py-3 text-gray-700 dark:text-white">
+                  <div className=' h-[53px]'>
+                  {item.meaning}
+                  </div>
+
                   </td>
                 </tr>
               ))}

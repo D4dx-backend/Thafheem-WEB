@@ -52,31 +52,18 @@ const Ayah = () => {
   };
   return (
     /* Modal Backdrop */
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-gray-500/70 dark:bg-black/70">
+
       {/* Modal Container */}
-      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-[1073px]  h-[90vh] overflow-hidden ">
         <AyathNavbar />
 
         {/* Main Content Container */}
-        <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {/* Ayah Number Badge */}
-          <div className="flex justify-end mb-4">
-            <div className="bg-gray-100 rounded-full dark:bg-[#2A2C38] px-4 py-2 flex items-center space-x-2">
-              <span className="text-sm font-medium dark:text-white text-gray-600">
-              الٓمٓ﴿١﴾
-                
-                </span>
-              {/* <span className="text-sm font-medium text-gray-800">
-                {currentAyah.number}
-              </span> */}
-            </div>
-          </div>
-
-          {/* Separator Line */}
-          <div className="border-t border-gray-200 mb-6"></div>
+        <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)] ">
+          {/* <div className=" mb-6"></div> */}
 
           {/* Arabic Text */}
-          <div className="text-right mb-6">
+          <div className="text-right mb-6 border-b border-gray-200">
             <h1 className="text-3xl font-arabic dark:text-white text-gray-900 leading-loose">
               {currentAyah.arabic}
             </h1>

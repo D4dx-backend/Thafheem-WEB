@@ -15,7 +15,7 @@ const WordByWord = () => {
         </div>
 
         {/* Main Word Section */}
-        <div className="border-b border-gray-200 pb-6">
+        <div className="border-b border-gray-500 pb-6">
           <div className="flex justify-between items-center">
             <div className="text-left">
               <p className="text-lg text-gray-800 dark:text-white">Alif, Lam, Mim.</p>

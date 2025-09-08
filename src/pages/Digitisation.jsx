@@ -3,11 +3,11 @@ import React from "react";
 const Digitisation = () => {
   return (
     <div className=" mx-auto p-6 min-h-screen bg-white dark:bg-black shadow-sm rounded-lg">
-      <div className="max-w-[1070px] w-full mx-auto">
+      <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto">
 
       <h2 className="text-2xl font-bold mb-2 dark:text-white">Digitisation</h2>
       <hr className="mb-4" />
-      <p className="text-gray-700 mb-3 dark:text-white">
+      <p className="text-gray-700  dark:text-white">
         Development and growth in technology has effected inevitable changes in
         human habits. Our reading habits have shifted from pages to screens of
         computer and smart phone. The new generation gives prominence to visuals
@@ -16,7 +16,7 @@ const Digitisation = () => {
         Quran authored by Sayyid Abul A’la Maududi, is being released by D4
         Media.
       </p>
-      <p className="text-gray-700 mb-3 dark:text-white">
+      <p className="text-gray-700  dark:text-white">
         The first edition of Thafheemul Quran had garnered wide acceptance among
         Keralites living in Kerala and abroad since its launch in 2008. The new
         version is conceived for MS Windows, Linux and Mac Operating system. The

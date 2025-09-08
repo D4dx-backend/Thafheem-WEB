@@ -3,8 +3,8 @@ import React from "react";
 
 const AuthorPreface = () => {
   return (
-    <div className="mx-auto p-6 dark:bg-black">
-            <div className="max-w-[1070px] w-full mx-auto">
+    <div className=" p-6 dark:bg-black">
+            <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto">
             <h2 className="text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2">
   Author's Preface
 </h2>

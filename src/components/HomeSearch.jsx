@@ -127,7 +127,7 @@ const HomepageSearch = () => {
               </h3>
 
               {/* Popular Chapters */}
-              <div className="flex gap-3 mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide pr-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <div className="flex  gap-3 mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide pr-4 border-b border-gray-200 dark:border-gray-700 pb-3">
   {popularChapters.map((chapter, index) => (
     <button
       key={index}
@@ -162,31 +162,37 @@ const HomepageSearch = () => {
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-4xl px-2">
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-          <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg  transition-all duration-200 text-[#62C3DC] dark:text-cyan-200  text-sm flex-shrink-0">
-            <Play className="h-4 w-4 fill-current text-[#3FA6C0]" />
-            <span className="font-medium whitespace-nowrap">Continue Reading</span>
-          </button>
+  <div className="flex flex-wrap justify-center gap-3 sm:gap-4 w-full">
+    {/* Group Continue Reading + Navigate Quran */}
+    <div className="flex w-full justify-center gap-3 sm:w-auto sm:gap-4">
+      <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
+        <Play className="h-4 w-4 fill-current text-[#3FA6C0]" />
+        <span className="font-medium whitespace-nowrap">Continue Reading</span>
+      </button>
 
-          <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg  transition-all duration-200 text-[#62C3DC] dark:text-cyan-200  text-sm flex-shrink-0">
-            <ListIcon className="h-4 w-4 text-[#3FA6C0]" />
-            <span className="font-medium whitespace-nowrap">Navigate Quran</span>
-          </button>
+      <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
+        <ListIcon className="h-4 w-4 text-[#3FA6C0]" />
+        <span className="font-medium whitespace-nowrap">Navigate Quran</span>
+      </button>
+    </div>
 
-          <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg  transition-all duration-200 text-[#62C3DC] dark:text-cyan-200  text-sm flex-shrink-0">
-            <BookmarkIcon className="h-4 w-4 text-[#3FA6C0]" />
-            <span className="font-medium whitespace-nowrap">Bookmarks</span>
-          </button>
+    {/* Bookmarks */}
+    <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0">
+      <BookmarkIcon className="h-4 w-4 text-[#3FA6C0]" />
+      <span className="font-medium whitespace-nowrap">Bookmarks</span>
+    </button>
 
-          <button
-            onClick={() => setShowPopular(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg  transition-all duration-200 text-[#62C3DC] dark:text-cyan-200  text-sm flex-shrink-0"
-          >
-            <TrendingUpIcon className="h-4 w-4 text-[#3FA6C0]" />
-            <span className="font-medium whitespace-nowrap">Popular</span>
-          </button>
-        </div>
-      </div>
+    {/* Popular */}
+    <button
+      onClick={() => setShowPopular(true)}
+      className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0"
+    >
+      <TrendingUpIcon className="h-4 w-4 text-[#3FA6C0]" />
+      <span className="font-medium whitespace-nowrap">Popular</span>
+    </button>
+  </div>
+</div>
+
     </div>
   );
 };

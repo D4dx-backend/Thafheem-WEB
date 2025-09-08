@@ -170,82 +170,77 @@ const Home = () => {
       {/* <HomepageNavbar /> */}
       <HomepageSearch />
       <div className=" mx-auto bg-white dark:bg-black min-h-screen">
-        <div className="w-[1290px] mx-auto ">
-          {/* Header Tabs */}
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex">
-              <button
-                onClick={() => navigate("/")}
-                className={`cursor-pointer px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors min-h-[48px] flex items-center ${
-                  location.pathname === "/"
-                    ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
-                    : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                }`}
-              >
-                Surah
-              </button>
-              <button
-                onClick={() => navigate("/juz")}
-                className={`cursor-pointer px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors min-h-[48px] flex items-center ${
-                  location.pathname === "/juz"
-                    ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
-                    : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                }`}
-              >
-                Juz
-              </button>
+  <div className="max-w-[1290px] w-full mx-auto px-2 sm:px-4">
+    {/* Header Tabs */}
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="flex overflow-x-auto">
+        <button
+          onClick={() => navigate("/")}
+          className={`cursor-pointer px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors min-h-[48px] flex items-center whitespace-nowrap ${
+            location.pathname === "/"
+              ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          }`}
+        >
+          Surah
+        </button>
+        <button
+          onClick={() => navigate("/juz")}
+          className={`cursor-pointer px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors min-h-[48px] flex items-center whitespace-nowrap ${
+            location.pathname === "/juz"
+              ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          }`}
+        >
+          Juz
+        </button>
+      </div>
+    </div>
+
+    {/* Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-2">
+      {surahs.map((surah) => (
+        <div
+          key={surah.number}
+          className="w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-black border border-gray-200 dark:border-gray-700
+                     rounded-xl px-4 py-3 sm:py-0 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
+                     flex items-center"
+        >
+          {/* Left: number + name + small meta */}
+          <div className="flex items-center gap-3 min-w-0">
+            <StarNumber number={surah.number} color="#E5E7EB" textColor="#000" />
+
+            {/* Name + meta column */}
+            <div className="flex flex-col justify-center min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                {surah.name}
+              </h3>
+
+              <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm mt-1">
+                {surah.type === "Makki" ? (
+                  <KaabaIcon className="h-4 w-4 flex-shrink-0" />
+                ) : (
+                  <Mad className="h-4 w-4 flex-shrink-0" />
+                )}
+                <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                <BookOpen className="h-4 w-4 flex-shrink-0" />
+                <span className="font-medium">{surah.ayahs}</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-2">
-  {surahs.map((surah) => (
-    <div
-      key={surah.number}
-      className="w-full max-w-[421px] h-[81px] bg-white dark:bg-black border border-gray-200 dark:border-gray-700
-                 rounded-xl px-4 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
-                 flex items-center"
-    >
-      {/* Left: number + name + small meta */}
-      <div className="flex items-center gap-3 min-w-0">
-        <StarNumber
-          number={surah.number}
-          // size={45}
-          color="#E5E7EB"
-          textColor="#000"
-        />
-
-        {/* Name + meta column */}
-        <div className="flex flex-col justify-center min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
-            {surah.name}
-          </h3>
-
-          <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm mt-1">
-            {surah.type === "Makki" ? (
-              <KaabaIcon className="h-4 w-4 flex-shrink-0" />
-            ) : (
-              <Mad className="h-4 w-4 flex-shrink-0" />
-            )}
-            <div className="w-1 h-1 bg-gray-400 rounded-full" />
-            <BookOpen className="h-4 w-4 flex-shrink-0" />
-            <span className="font-medium">{surah.ayahs}</span>
+          {/* Right: Arabic title */}
+          <div className="ml-auto text-right" dir="rtl">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+              {surah.arabic}
+            </h3>
           </div>
         </div>
-      </div>
-
-      {/* Right: Arabic title */}
-      <div className="ml-auto text-right" dir="rtl">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-          {surah.arabic}
-        </h3>
-      </div>
+      ))}
     </div>
-  ))}
+  </div>
 </div>
 
-
-        </div>
-      </div>
     </>
   );
 };

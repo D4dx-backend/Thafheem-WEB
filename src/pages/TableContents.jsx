@@ -19,7 +19,7 @@ const TableContents = () => {
     },
     {
       category: "Verse",
-      description: "What is called 'Ayat' in technical language is translated as verse. Ayat are the individual sentences in the Surah. The scope of the verses is determined by Allah. In the Arabic original, the verses in each Surah are separated by adding serial numbers in between. In the Malayalam translation, the verses are not separated individually. The serial number of the verses contained in each section is given at its beginning. If there is a '-' mark before or after the verse number, it means that the translation of that verse is not complete in the given section. Example: 15-17- indicates that the translation of verse 17 is only partially included in this section. When shown as -17-22, it means that the translation of verse 17 is partially included in the previous section."
+      description: "What is called 'Ayat' in technical language is translated as verse. Ayat are the individual sentences in the Surah. The scope of the verses is determined by Allah. In the Arabic original, the verses in each Surah are separated by adding serial numbers in between. In the Malayalam translation, the verses are not separated individually. The serial number of the verses contained in each section is given at its beginning. If there is a '-' mark before or after the verse number, it means that the translation of that verse is not complete in the given section. Example: 15-17- indicates that the translation of verse 17 is only partially included in this section. When shown as -17-22, it means that the translation of verse 17 is partially included in the previous section."
     }
   ];
 
@@ -46,37 +46,37 @@ const TableContents = () => {
 
   return (
     
-    <div className="w-full mx-auto p-6 bg-white dark:bg-black">
-      <div className="w-[1070.01px] mx-auto">
+    <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-black">
+      <div className="w-full max-w-[1070px] mx-auto px-4 sm:px-0">
       <div className="border-b-2 border-black dark:border-white pb-2 mb-6">
-  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+  <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
     Symbols Guide
   </h1>
 </div>
 
       {/* Malayalam Translation Section */}
-      <section className="mb-8">
-        <h2 className="text-1lg font-semibold mb-4 text-gray-700  pb-2 dark:text-white">
+      <section className="mb-6 sm:mb-8 ]">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700 pb-2 dark:text-white">
           Symbols in Malayalam Translation
         </h2>
         <div className="space-y-4">
           {malayalamSymbols.map((item, index) => (
-            <div key={index} className=" p-4 rounded-lg">
-              <h3 className="font-semibold text-[#4FAEC7] mb-2">{item.category}</h3>
-              <p className="text-gray-700 leading-relaxed dark:text-white">{item.description}</p>
+            <div key={index} className="p-3 sm:p-4 rounded-lg">
+              <h3 className="font-semibold text-[#4FAEC7] mb-2 text-sm sm:text-base">{item.category}</h3>
+              <p className="text-gray-700 leading-relaxed dark:text-white text-sm sm:text-base">{item.description}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Verses Section */}
-      <section className="mb-8">
+      <section className="mb-6 sm:mb-8">
   
         <div className="space-y-4">
           {verseSymbols.map((item, index) => (
-            <div key={index} className=" p-4 rounded-lg">
-              <h3 className="font-semibold text-[#4FAEC7] mb-2">{item.category}</h3>
-              <p className="text-gray-700 leading-relaxed dark:text-white">{item.description}</p>
+            <div key={index} className="p-3 sm:p-4 rounded-lg">
+              <h3 className="font-semibold text-[#4FAEC7] mb-2 text-sm sm:text-base">{item.category}</h3>
+              <p className="text-gray-700 leading-relaxed dark:text-white text-sm sm:text-base">{item.description}</p>
             </div>
           ))}
         </div>
@@ -121,8 +121,9 @@ const TableContents = () => {
         </div>
       </section>
 
+
       {/* Footer */}
-      <div className="mt-8 text-center text-sm text-gray-500">
+      <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500 px-4 sm:px-0">
         <p>This guide helps in understanding the various symbols used in Quranic text and translation.</p>
       </div>
       </div>

@@ -4,7 +4,7 @@ import HomepageNavbar from "../components/HomeNavbar";
 import HomepageSearch from "../components/HomeSearch";
 import { useNavigate, useLocation } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
-
+import { surahNameUnicodes } from '../components/surahNameUnicodes';
 // Custom Kaaba Icon Component
 const KaabaIcon = ({ className }) => (
   <svg
@@ -212,7 +212,7 @@ const Home = () => {
 
             {/* Name + meta column */}
             <div className="flex flex-col justify-center min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+              <h3 className="text-base sm:text-[16px] font-semibold text-gray-900 dark:text-white truncate font-poppins">
                 {surah.name}
               </h3>
 
@@ -230,11 +230,19 @@ const Home = () => {
           </div>
 
           {/* Right: Arabic title */}
-          <div className="ml-auto text-right" dir="rtl">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-              {surah.arabic}
-            </h3>
-          </div>
+         {/* Replace the existing Arabic title div in Home.jsx with the following */}
+<div className="ml-auto text-right" dir="rtl">
+  <h3
+    className="text-lg sm:text-[30px] font-normal text-gray-900 dark:text-white"
+    style={{ fontFamily: 'SuraName, Amiri, serif' }}
+  >
+    {surahNameUnicodes[surah.number]
+      ? String.fromCharCode(
+          parseInt(surahNameUnicodes[surah.number].replace('U+', ''), 16)
+        )
+      : surah.arabic}
+  </h3>
+</div>
         </div>
       ))}
     </div>

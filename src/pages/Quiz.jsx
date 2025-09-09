@@ -178,7 +178,7 @@ const Quiz = () => {
                     </div>
 
                     {/* Surah List */}
-                    <div className="overflow-y-auto h-full pb-20 sm:pb-4">
+                    <div className="overflow-y-auto h-full pb-20 sm:pb-4 font-poppins">
                       {surahList.map((surah) => (
                         <div
                           key={surah.id}

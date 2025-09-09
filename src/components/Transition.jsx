@@ -31,12 +31,6 @@ const Transition = ({ showPageInfo = false }) => {
               <ChevronDown className="w-4 h-4" />
             </button>
 
-            {/* NavigateSurah Dropdown */}
-            {/* {isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 z-10">
-                <NavigateSurah onSurahSelect={handleSurahSelect} />
-              </div>
-            )} */}
             {isDropdownOpen && (
   <div className="absolute top-full left-0 mt-1 z-10">
     <NavigateSurah 

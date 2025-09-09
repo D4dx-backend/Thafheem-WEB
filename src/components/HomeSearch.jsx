@@ -2,6 +2,7 @@ import { useState } from "react";
 import logo from "../assets/logo.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
+import ForwardIcon from "../assets/forward.png"
 // Icon components using inline SVG
 const SearchIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +61,7 @@ const HomepageSearch = () => {
     { id: 2, name: "Al-Baqarah", verses: "285-286" },
     { id: 1, name: "Al-Fatiha", verses: "7 verses" },
     { id: 18, name: "Al-Kahf", verses: "110 verses" },
-    { id: 36, name: "Ya-Sin", verses: "83 verses" },
+    { id: 67, name: "Al-Baqarah 285-286", verses: "83 verses" },
   ];
 
   return (
@@ -110,7 +111,7 @@ const HomepageSearch = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
-                <h2 className="text-lg font-medium text-gray-900 dark:text-[#95959b]">Popular</h2>
+                <h2 className="sm:text-[16px] font-normal font-poppins text-gray-500 dark:text-[#95959b]">Popular</h2>
               </div>
               <button
                 onClick={() => setShowPopular(false)}
@@ -122,7 +123,7 @@ const HomepageSearch = () => {
 
             {/* Content */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">
+              <h3 className="text-lg font-medium font-poppins text-gray-900 mb-4 dark:text-white">
                 Chapters and Verses
               </h3>
 
@@ -131,7 +132,7 @@ const HomepageSearch = () => {
   {popularChapters.map((chapter, index) => (
     <button
       key={index}
-      className="inline-flex items-center space-x-2 px-4 py-2 bg-[#D8D8D8] dark:bg-black dark:text-white dark:hover:bg-gray-800 hover:bg-gray-200 rounded-full transition-colors text-sm text-gray-700 flex-shrink-0"
+      className="inline-flex font-poppins sm:text-[12px] items-center space-x-2 px-4 py-2 bg-[#D8D8D8] dark:bg-black dark:text-white dark:hover:bg-gray-800 hover:bg-gray-200 rounded-full transition-colors text-sm text-gray-700 flex-shrink-0"
       style={index === popularChapters.length - 1 ? { marginRight: "1rem" } : {}}
     >
       <span>
@@ -147,10 +148,10 @@ const HomepageSearch = () => {
              
 <div className="flex flex-col items-center dark:bg-[#2A2C38]  rounded-lg py-4 text-center">
   <div className="flex items-center space-x-3">
-    <div className="flex items-center justify-center w-10 h-8  rounded-full">
-      <Play className="h-5 w-5 text-black dark:text-gray-300" />
-    </div>
-    <h4 className="font-medium text-gray-900 dark:text-white text-base">
+  <div className="flex items-center justify-center w-10 h-8 rounded-full">
+  <img src={ForwardIcon} alt="Forward" className="w-[85px] h-[18px] object-contain" />
+</div>
+    <h4 className="font-medium font-poppins text-black dark:text-white text-base">
       Listen to Quran Tajwid
     </h4>
   </div>
@@ -167,19 +168,19 @@ const HomepageSearch = () => {
     <div className="flex w-full justify-center gap-3 sm:w-auto sm:gap-4">
       <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
         <Play className="h-4 w-4 fill-current text-[#3FA6C0]" />
-        <span className="font-medium whitespace-nowrap">Continue Reading</span>
+        <span className="font-medium whitespace-nowrap font-poppins">Continue Reading</span>
       </button>
 
       <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
         <ListIcon className="h-4 w-4 text-[#3FA6C0]" />
-        <span className="font-medium whitespace-nowrap">Navigate Quran</span>
+        <span className="font-medium whitespace-nowrap font-poppins">Navigate Quran</span>
       </button>
     </div>
 
     {/* Bookmarks */}
     <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0">
       <BookmarkIcon className="h-4 w-4 text-[#3FA6C0]" />
-      <span className="font-medium whitespace-nowrap">Bookmarks</span>
+      <span className="font-medium whitespace-nowrap font-poppins">Bookmarks</span>
     </button>
 
     {/* Popular */}
@@ -188,7 +189,7 @@ const HomepageSearch = () => {
       className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0"
     >
       <TrendingUpIcon className="h-4 w-4 text-[#3FA6C0]" />
-      <span className="font-medium whitespace-nowrap">Popular</span>
+      <span className="font-medium whitespace-nowrap font-poppins">Popular</span>
     </button>
   </div>
 </div>

@@ -579,14 +579,14 @@ const Surah = () => {
                 <div className="flex items-center">
                   <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
                     <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <span className="text-xs sm:text-sm text-black dark:text-white">
+                    <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
                       Translation
                     </span>
                   </button>
                   <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
                     <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
                     <Link to="/reading">
-                      <span className="text-xs sm:text-sm text-black dark:text-white cursor-pointer hover:underline">
+                      <span className="text-xs sm:text-sm text-black font-poppins dark:text-white cursor-pointer hover:underline">
                         Reading
                       </span>
                     </Link>
@@ -604,37 +604,10 @@ const Surah = () => {
 
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-3 sm:space-x-4">
-                <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-4 h-4 sm:w-5 sm:h-5"
-                  >
-                    {/* Crescent moon on top */}
-                    <path d="M12 2c-1 0-1.5 1-1 2s1.5 1 1 2" />
+              <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                {kabahIcon}
+</button>
 
-                    {/* Main dome */}
-                    <path d="M7 10c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5" />
-
-                    {/* Minaret */}
-                    <rect x="4" y="4" width="1.5" height="8" />
-                    <circle cx="4.75" cy="3.5" r="0.5" />
-
-                    {/* Base structure */}
-                    <path d="M3 18h18" />
-                    <path d="M4 18v-7" />
-                    <path d="M20 18v-7" />
-                    <path d="M7 18v-8" />
-                    <path d="M17 18v-8" />
-
-                    {/* Entrance arch */}
-                    <path d="M10 18v-4c0-1 0.9-2 2-2s2 1 2 2v4" />
-                  </svg>
-                </button>
 
                 <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                   <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -711,6 +684,7 @@ const Surah = () => {
                 {kabahIcon}
 </button>
 
+
                   <button className="p-2 text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                     <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
@@ -776,7 +750,7 @@ const Surah = () => {
 
         {/* Translation */}
         <div className="mb-2 sm:mb-3">
-          <p className="text-sm sm:text-base lg:text-lg text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal">
             {verse.translation}
           </p>
         </div>

@@ -12,7 +12,7 @@ const InterpretationBlockwise = () => {
           {/* Main Content Block */}
           <div className="bg-gray-50 p-6 rounded-lg border-l-4 dark:bg-[#2A2C38] dark:border-[#2A2C38] border-white">
             <p className="text-gray-800  dark:text-white leading-relaxed text-justify">
-              <span className="font-semibold">1.</span> The names of letters of
+              <span className="font-normal font-poppins">1.</span> The names of letters of
               the Arabic alphabet, called huruf muqattaat, occur at the
               beginning of several surahs of the Qur'an. At the time of the
               Qur'anic revelation the use of such letters was a well-known

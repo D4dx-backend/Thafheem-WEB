@@ -69,7 +69,7 @@ const VideoPlayer = () => {
         <div className="mb-3">
           <div
             ref={progressRef}
-            className="w-full sm:h-3 h-[3px] bg-white dark:bg-[#323A3F] rounded-full cursor-pointer relative touch-manipulation"
+            className="w-full sm:h-[3px] h-[3px] bg-white dark:bg-[#323A3F] rounded-full cursor-pointer relative touch-manipulation"
             onClick={handleProgressClick}
           >
             <div

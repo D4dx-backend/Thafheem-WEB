@@ -491,10 +491,13 @@ import {
   ArrowUp,
   X,
   Info,
+  LibraryBig,
+  Notebook,
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
 import InterpretationBlockwise from "./InterpretationBlockwise";
+import Bismi from "../assets/bismi.jpg"
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -521,29 +524,15 @@ const BlockWise = () => {
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
                   <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <svg
-                      className="w-3 h-3 sm:w-4 sm:h-4"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-                    </svg>
-                    <span className="text-xs sm:text-sm">Translation</span>
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
+                    <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
+                      Translation
+                    </span>
                   </button>
                   <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
-                    <svg
-                      className="w-3 h-3 sm:w-4 sm:h-4"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-                      <polyline points="14,2 14,8 20,8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10,9 9,9 8,9" />
-                    </svg>
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
                     <Link to="/reading">
-                      <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
+                      <span className="text-xs sm:text-sm font-poppins text-black dark:text-white cursor-pointer hover:underline">
                         Reading
                       </span>
                     </Link>
@@ -572,9 +561,11 @@ const BlockWise = () => {
 
             {/* Bismillah with Controls */}
             <div className="mb-6 sm:mb-8 relative">
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-arabic text-gray-800 dark:text-white leading-relaxed text-center px-2 sm:px-4">
-                بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-              </p>
+            <div className="flex flex-col items-center px-2 sm:px-4">
+  <img src={Bismi} alt="Bismi" className="w-[236px] h-[52.9px] mb-4" />
+  
+
+</div>
 
               {/* Desktop Ayah wise / Block wise buttons */}
               <div className="absolute top-0 right-0 hidden sm:block">
@@ -607,7 +598,7 @@ const BlockWise = () => {
                   <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="text-xs sm:text-sm font-medium">Play Audio</span>
                 </button>
-                <div className="flex justify-end">
+                <div className="flex justify-end sm:hidden">
                 <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                   <button
                     onClick={() => navigate("/surah")}
@@ -652,7 +643,7 @@ const BlockWise = () => {
 
               {/* Translation Text */}
               <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
-                <p className="text-gray-700 dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base">
+                <p className="text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base font-poppins">
                   (2:1) Alif, Lam, Mim.
                   <span
                     className="inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 bg-[#19B5DD] text-white text-xs font-medium rounded-lg mx-1 sm:mx-2 cursor-pointer hover:bg-cyan-600 transition-colors flex-shrink-0"
@@ -768,35 +759,20 @@ const BlockWise = () => {
             {/* Second Arabic Text Block */}
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 dark:bg-black rounded-lg">
               <p
-                className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
+                className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-xl max-w-[1166px] leading-loose text-center text-gray-900 dark:text-white px-2"
                 style={{
                   fontFamily: "Arial",
                   lineHeight: "2.5",
                   direction: "rtl",
                 }}
               >
-                وَإِذَا لَقُوا۟ ٱلَّذِينَ ءَامَنُوا۟ قَالُوٓا۟ ءَامَنَّا وَإِذَا
-                خَلَوْا۟ إِلَىٰ شَيَٰطِينِهِمْ قَالُوٓا۟ إِنَّا مَعَكُمْ
-                إِنَّمَا نَحْنُ مُسْتَهْزِءُونَ ﴿١٤﴾ ٱللَّهُ يَسْتَهْزِئُ بِهِمْ
-                وَيَمُدُّهُمْ فِى طُغْيَٰنِهِمْ يَعْمَهُونَ ﴿١٥﴾ أُو۟لَٰٓئِكَ
-                ٱلَّذِينَ ٱشْتَرَوُا۟ ٱلضَّلَٰلَةَ بِٱلْهُدَىٰ فَمَا رَبِحَت
-                تِّجَٰرَتُهُمْ وَمَا كَانُوا۟ مُهْتَدِينَ ﴿١٦﴾ مَثَلُهُمْ
-                كَمَثَلِ ٱلَّذِى ٱسْتَوْقَدَ نَارًا فَلَمَّآ أَضَآءَتْ مَا
-                حَوْلَهُۥ ذَهَبَ ٱللَّهُ بِنُورِهِمْ وَتَرَكَهُمْ فِى ظُلُمَٰتٍ
-                لَّا يُبْصِرُونَ ﴿١٧﴾ صُمٌّۢ بُكْمٌ عُمْىٌ فَهُمْ لَا
-                يَرْجِعُونَ ﴿١٨﴾ أَوْ كَصَيِّبٍ مِّنَ ٱلسَّمَآءِ فِيهِ ظُلُمَٰتٌ
-                وَرَعْدٌ وَبَرْقٌ يَجْعَلُونَ أَصَٰبِعَهُمْ فِىٓ ءَاذَانِهِم
-                مِّنَ ٱلصَّوَٰعِقِ حَذَرَ ٱلْمَوْتِ ۚ وَٱللَّهُ مُحِيطٌۢ
-                بِٱلْكَٰفِرِينَ ﴿١٩﴾ يَكَادُ ٱلْبَرْقُ يَخْطَفُ أَبْصَٰرَهُمْ ۖ
-                كُلَّمَآ أَضَآءَ لَهُم مَّشَوْا۟ فِيهِ وَإِذَآ أَظْلَمَ
-                عَلَيْهِمْ قَامُوا۟ ۚ وَلَوْ شَآءَ ٱللَّهُ لَذَهَبَ بِسَمْعِهِمْ
-                وَأَبْصَٰرِهِمْ ۚ إِنَّ ٱللَّهُ عَلَىٰ كُلِّ شَىْءٍ قَدِيرٌ ﴿٢٠﴾
+                وَمِنَٱلنَّاسِمَنيَقُولُءَامَنَّابِٱللَّهِوَبِٱلْيَوْمِٱلْأَخِرِوَمَاهُمبِمُؤْمِنِينَ﴿٨﴾يُخَـٰدِعُونَ ٱللَّهَوَٱلَّذِينَءَامَنُواْوَمَايَخْدَعُونَإِلَّآأَنفُسَهُمْوَمَايَشْعُرُونَ﴿٩﴾فِىقُلُوبِهِممَّرَضٌفَزَادَهُمُ ٱللَّهُمَرَضًا‌ۖوَلَهُمْعَذَابٌأَلِيمُ ۢبِمَاكَانُواْيَكْذِبُونَ﴿١٠﴾وَإِذَاقِيلَلَهُمْلَاتُفْسِدُواْفِىٱلْأَرْضِقَالُوٓاْإِنَّمَانَحْنُمُصْلِحُونَ﴿١١﴾أَلَآإِنَّهُمْهُمُٱلْمُفْسِدُونَوَلَـٰكِنلَّايَشْعُرُونَ﴿١٢﴾وَإِذَاقِيلَلَهُمْءَامِنُواْكَمَآءَامَنَٱلنَّاسُقَالُوٓاْأَنُؤْمِنُكَمَآءَامَنَٱلسُّفَهَآءُ‌ۗأَلَآإِنَّهُمْهُمُٱلسُّفَهَآءُوَلَـٰكِنلَّايَعْلَمُونَ﴿١٣﴾وَإِذَالَقُواْٱلَّذِينَءَامَنُواْقَالُوٓاْءَامَنَّاوَإِذَاخَلَوْاْإِلَىٰشَيَـٰطِينِهِمْقَالُوٓاْإِنَّامَعَكُمْإِنَّمَانَحْنُمُسْتَهْزِءُونَ﴿١٤﴾ٱللَّهُيَسْتَهْزِئُبِهِمْوَيَمُدُّهُمْفِىطُغْيَـٰنِهِمْيَعْمَهُونَ﴿١٥﴾أُوْلَـٰٓئِكَٱلَّذِينَٱشْتَرَوُاْٱلضَّلَـٰلَةَبِٱلْهُدَىٰفَمَارَبِحَتتِّجَـٰرَتُهُمْوَمَاكَانُواْمُهْتَدِينَ﴿١٦﴾مَثَلُهُمْكَمَثَلِٱلَّذِىٱسْتَوْقَدَنَارًافَلَمَّآأَضَآءَتْمَا حَوْلَهُۥذَهَبَ ٱللَّهُبِنُورِهِمْوَتَرَكَهُمْفِىظُلُمَـٰتٍلَّا يُبْصِرُونَ﴿١٧﴾صُمُّ ۢبُكْمٌعُمْىٌفَهُمْلَا يَرْجِعُونَ﴿١٨﴾أَوْكَصَيِّبٍمِّنَٱلسَّمَآءِفِيهِظُلُمَـٰتٌوَرَعْدٌوَبَرْقٌيَجْعَلُونَأَصَـٰبِعَهُمْفِىٓءَاذَانِهِممِّنَٱلصَّوَاعِقِحَذَرَٱلْمَوْتِ‌ۚوَٱللَّهُمُحِيطُ ۢبِٱلْكَـٰفِرِينَ﴿١٩﴾يَكَادُٱلْبَرْقُيَخْطَفُأَبْصَـٰرَهُمْ ۖكُلَّمَآأَضَآءَلَهُممَّشَوْاْفِيهِوَإِذَآأَظْلَمَعَلَيْهِمْقَامُواْ‌ۚوَلَوْشَآءَ ٱللَّهُلَذَهَبَبِسَمْعِهِمْوَأَبْصَـٰرِهِمْ‌ۚإِنَّٱللَّهَعَلَىٰكُلِّشَىْءٍقَدِيرٌ﴿٢٠﴾
               </p>
             </div>
 
             {/* Translation Text for verses 8-20 */}
             <div className="mb-6 sm:mb-8 px-2 sm:px-0">
-              <p className="text-gray-700 dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base">
+              <p className="text-gray-700 dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base font-poppins max-w-[1093px]">
                 <strong>(2:8)</strong> There are some who say: "We believe in
                 Allah and in the Last Day," while in fact they do not believe.
                 <strong>(2:9)</strong> They are trying to deceive Allah and

@@ -81,7 +81,7 @@ const Maududi = () => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="mx-auto bg-white dark:bg-black p-2 sm:p-4 md:p-6 lg:p-8">
+        <div className="mx-auto bg-white dark:bg-black p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
             {/* Portrait Image - Responsive positioning */}
             <div className="block sm:block lg:absolute lg:top-40 mb-4 sm:mb-6 lg:mb-0">
                 <img 
@@ -94,7 +94,7 @@ const Maududi = () => {
             <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-0 lg:ml-50">
                 {/* Header */}
                 <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
-                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white">
+                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white ">
                         Sayyid Abul A'la Maududi (1903-1979)
                     </h1>
                 </div>

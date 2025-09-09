@@ -566,7 +566,7 @@ const DragDropQuiz = () => {
       
       <div className="flex items-center gap-25">
         <h1
-          className="text-lg sm:text-xl font-semibold"
+          className="text-lg sm:text-xl font-semibold font-poppins"
           style={{ color: "#2AA0BF" }}
         >
           Drag & Drop

@@ -3,7 +3,7 @@ import { Languages } from 'lucide-react';
 
 const About = () => {
   return (
-    <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-black">
+    <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-black font-poppins">
             <div className="max-w-[1070px] w-full mx-auto">
 
       {/* Header */}

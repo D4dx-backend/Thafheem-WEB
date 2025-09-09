@@ -3,7 +3,7 @@ import React from 'react';
 const TableContents = () => {
   const malayalamSymbols = [
     {
-      category: "Chapter",
+      category: "Chapter:",
       description: "In the technical language of the Quran, what is called 'Surah' is translated as chapter. The Quran is divided into one hundred and fourteen sections. Each such divided section is a Surah. The division and naming of Surahs is divine. The main theme of each Surah will be a part of the original subject of the Quran or any subject related to it."
     },
     {
@@ -14,11 +14,11 @@ const TableContents = () => {
 
   const verseSymbols = [
     {
-      category: "Section",
+      category: "Section:",
       description: "For ease of recitation, the Quran is divided into thirty Juz' (parts). Each Juz' is divided into several Ruku's. The number of Ruku's contained in each chapter is shown as a section at the beginning of the chapter."
     },
     {
-      category: "Verse",
+      category: "Verse:",
       description: "What is called 'Ayat' in technical language is translated as verse. Ayat are the individual sentences in the Surah. The scope of the verses is determined by Allah. In the Arabic original, the verses in each Surah are separated by adding serial numbers in between. In the Malayalam translation, the verses are not separated individually. The serial number of the verses contained in each section is given at its beginning. If there is a '-' mark before or after the verse number, it means that the translation of that verse is not complete in the given section. Example: 15-17- indicates that the translation of verse 17 is only partially included in this section. When shown as -17-22, it means that the translation of verse 17 is partially included in the previous section."
     }
   ];
@@ -46,7 +46,7 @@ const TableContents = () => {
 
   return (
     
-    <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-black">
+    <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-black font-poppins">
       <div className="w-full max-w-[1070px] mx-auto px-4 sm:px-0">
       <div className="border-b-2 border-black dark:border-white pb-2 mb-6">
   <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">

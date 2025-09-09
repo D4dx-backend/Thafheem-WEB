@@ -124,7 +124,6 @@ import React, { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import AyathNavbar from "../components/AyathNavbar";
-
 const Ayah = () => {
   const { ayahNumber } = useParams();
   const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
@@ -193,14 +192,14 @@ const Ayah = () => {
 
       {/* Transliteration */}
       <div className="mb-4 sm:mb-6">
-        <h2 className="text-base sm:text-lg lg:text-xl font-medium text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0">
+        <h2 className="text-base sm:text-lg font-poppins lg:text-xl font-medium text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0">
           {currentAyah.transliteration}
         </h2>
       </div>
 
       {/* Translation */}
       <div className="mb-6 sm:mb-8">
-        <p className="text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base px-2 sm:px-0">
+        <p className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base px-2 sm:px-0">
           {currentAyah.translation}
         </p>
       </div>

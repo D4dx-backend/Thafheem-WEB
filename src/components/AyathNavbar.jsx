@@ -180,56 +180,198 @@
 
 // export default AyathNavbar;
 
+// import React, { useState } from 'react';
+// import { ChevronDown, ChevronLeft, ChevronRight, Copy, Bookmark, Share2, X,NotepadText } from 'lucide-react';
+// import { useNavigate } from "react-router-dom";
 
+// const AyathNavbar = () => {
+//   const [visible, setVisible] = useState(true);
+//   const [selectedChapter, setSelectedChapter] = useState('2- Al-Baqarah');
+//   const [selectedVerse, setSelectedVerse] = useState('1');
+//   const [selectedLanguage, setSelectedLanguage] = useState('English');
+//   const navigate = useNavigate();
 
+//   if (!visible) return null;
 
+//   return (
+//     <div className="bg-white dark:bg-[#2A2C38] px-3 sm:px-4 py-3 space-y-3 relative">
+//       {/* Mobile Close Button - Positioned absolute on mobile */}
+//       <button
+//         className="absolute top-2 right-2 sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors bg-white dark:bg-gray-600 shadow-sm z-10"
+//         title="Close"
+//         onClick={() => navigate(-1)}
+//       >
+//         <X className="w-4 h-4 text-gray-600 dark:text-white" />
+//       </button>
 
-import React, { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Copy, Bookmark, Share2, X } from 'lucide-react';
+//       {/* First Row - Chapter/Verse Selectors and Close Button */}
+//       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+//         {/* Left side - Chapter and Verse Dropdowns */}
+//         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:space-x-3 pr-12 sm:pr-0">
+//           {/* Chapter Selector */}
+//           <div className="relative">
+//             <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+//               <span>{selectedChapter}</span>
+//               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+//             </button>
+//           </div>
+
+//           {/* Verse Selector */}
+//           <div className="relative">
+//             <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+//               <span>{selectedVerse}</span>
+//               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Right side - Desktop Close Button */}
+//         <div className="hidden sm:flex items-center">
+//           <button
+//             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors dark:bg-white"
+//             title="Close"
+//             onClick={() => navigate(-1)}
+//           >
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* Second Row - Language Selector and Action Icons */}
+//    {/* Second Row - Language Selector + Action Icons (Same Row) */}
+// <div className="flex flex-row items-center justify-between gap-3 sm:gap-0">
+//   {/* Left side - Language Selector */}
+//   <div className="relative">
+//     <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+//       <span>{selectedLanguage}</span>
+//       <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+//     </button>
+//   </div>
+
+//   {/* Right side - Action Icons */}
+//   <div className="flex items-center space-x-1 sm:space-x-2">
+//     <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Copy">
+//       <NotepadText className="w-4 sm:w-5 h-4 sm:h-5 text-blue-500" />
+//     </button>
+//     <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Bookmark">
+//       <Bookmark className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+//     </button>
+//     <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Share">
+//       <Share2 className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+//     </button>
+//   </div>
+// </div>
+
+//     </div>
+//   );
+// };
+
+// export default AyathNavbar;
+
+import React, { useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  Share2,
+  X,
+  NotepadText,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// Example first 10 surahs
+const first10Surahs = [
+  "1 - Al-Fatihah",
+  "2 - Al-Baqarah",
+  "3 - Aal-E-Imran",
+  "4 - An-Nisa",
+  "5 - Al-Ma'idah",
+  "6 - Al-An'am",
+  "7 - Al-A'raf",
+  "8 - Al-Anfal",
+  "9 - At-Tawbah",
+  "10 - Yunus",
+];
+const first10Ayahs = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 const AyathNavbar = () => {
   const [visible, setVisible] = useState(true);
-  const [selectedChapter, setSelectedChapter] = useState('2- Al-Baqarah');
-  const [selectedVerse, setSelectedVerse] = useState('1');
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [selectedChapter, setSelectedChapter] = useState("2 - Al-Baqarah");
+  const [selectedVerse, setSelectedVerse] = useState("1");
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [verseDropdownOpen, setVerseDropdownOpen] = useState(false);
+
   const navigate = useNavigate();
 
   if (!visible) return null;
 
   return (
     <div className="bg-white dark:bg-[#2A2C38] px-3 sm:px-4 py-3 space-y-3 relative">
-      {/* Mobile Close Button - Positioned absolute on mobile */}
-      <button
-        className="absolute top-2 right-2 sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors bg-white dark:bg-gray-600 shadow-sm z-10"
-        title="Close"
-        onClick={() => navigate(-1)}
-      >
-        <X className="w-4 h-4 text-gray-600 dark:text-white" />
-      </button>
-
-      {/* First Row - Chapter/Verse Selectors and Close Button */}
+      {/* First Row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        {/* Left side - Chapter and Verse Dropdowns */}
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:space-x-3 pr-12 sm:pr-0">
-          {/* Chapter Selector */}
+          {/* Chapter Selector with Dropdown */}
           <div className="relative">
-            <button className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+            <button
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg  font-medium text-gray-700 transition-colors"
+            >
               <span>{selectedChapter}</span>
               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
             </button>
+
+            {isDropdownOpen && (
+              <div className="absolute sm:text-base text:sm top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto h-[calc(100vh-100px)] z-50">
+                {first10Surahs.map((surah, idx) => (
+                  <div
+                    key={idx}
+                    className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white"
+                    onClick={() => {
+                      setSelectedChapter(surah);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    {surah}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Verse Selector */}
           <div className="relative">
-            <button className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
-              <span>{selectedVerse}</span>
-              <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-            </button>
-          </div>
+  <button
+    onClick={() => setVerseDropdownOpen((prev) => !prev)}
+    className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
+  >
+    <span>{selectedVerse}</span>
+    <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+  </button>
+
+  {verseDropdownOpen && (
+    <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto h-[calc(100vh-100px)] z-50">
+      {first10Ayahs.map((ayah, idx) => (
+        <div
+          key={idx}
+          className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white"
+          onClick={() => {
+            setSelectedVerse(ayah);
+            setVerseDropdownOpen(false);
+          }}
+        >
+           {ayah}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
         </div>
 
-        {/* Right side - Desktop Close Button */}
+        {/* Close Button */}
         <div className="hidden sm:flex items-center">
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors dark:bg-white"
@@ -241,34 +383,38 @@ const AyathNavbar = () => {
         </div>
       </div>
 
-      {/* Second Row - Language Selector and Action Icons */}
-   {/* Second Row - Language Selector + Action Icons (Same Row) */}
-<div className="flex flex-row items-center justify-between gap-3 sm:gap-0">
-  {/* Left side - Language Selector */}
-  <div className="relative">
-    <button className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
-      <span>{selectedLanguage}</span>
-      <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-    </button>
-  </div>
+      {/* Second Row */}
+      <div className="flex flex-row items-center justify-between gap-3 sm:gap-0">
+        <div className="relative">
+          <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+            <span>{selectedLanguage}</span>
+            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+          </button>
+        </div>
 
-  {/* Right side - Action Icons */}
-  <div className="flex items-center space-x-1 sm:space-x-2">
-    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Copy">
-      <Copy className="w-4 sm:w-5 h-4 sm:h-5 text-blue-500" />
-    </button>
-    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Bookmark">
-      <Bookmark className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
-    </button>
-    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Share">
-      <Share2 className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
-    </button>
-  </div>
-</div>
-
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Copy"
+          >
+            <NotepadText className="w-4 sm:w-5 h-4 sm:h-5 text-blue-500" />
+          </button>
+          <button
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Bookmark"
+          >
+            <Bookmark className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          <button
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Share"
+          >
+            <Share2 className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default AyathNavbar;
-

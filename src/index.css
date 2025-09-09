@@ -9,11 +9,16 @@
 
 /* Arabic font support */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 .font-arabic {
   font-family: 'Amiri', serif;
   direction: rtl;
 }
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
 
 /* Custom styles for Juz cards */
 .juz-card {
@@ -29,4 +34,11 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@font-face {
+  font-family: 'SuraName';
+  src: url('/public/fonts/sura_names.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }

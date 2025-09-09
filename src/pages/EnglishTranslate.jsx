@@ -2,7 +2,7 @@ import React from "react";
 
 const EnglishTranslate = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-black px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-black px-4 sm:px-6 lg:px-8 font-poppins">
       <div className="max-w-5xl mx-auto">
         <div className="bg-white dark:bg-black  rounded-lg p-8">
           {/* Title */}

@@ -173,7 +173,7 @@ const SurahInfo = () => {
       {/* Content */}
       <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Arabic Title */}
-        <div className="text-center mb-6 sm:mb-8 border-b border-gray-200 dark:border-white pb-4 sm:pb-6">
+        <div className="text-center mb-6 sm:mb-8 border-b border-gray-200 dark:border-white pb-4 sm:pb-6 font-poppins">
   <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-arabic text-black mb-4 sm:mb-6 dark:text-white px-2">سورة البقرة</h2>
   <div>
     <div className="flex flex-wrap justify-center gap-x-6 sm:gap-x-8 md:gap-x-12 lg:gap-x-15 gap-y-2 sm:gap-y-4 text-xs sm:text-sm text-center">
@@ -207,9 +207,11 @@ const SurahInfo = () => {
 
 
         {/* Name Section */}
-        <div className="mb-6 sm:mb-8">
+        <div className="font-poppins">
+
+        <div className="mb-6 sm:mb-8 ">
           <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">Name</h3>
-          <p className="text-gray-700 leading-relaxed dark:text-white text-sm sm:text-base lg:text-lg px-1 sm:px-0">
+          <p className="text-gray-700 leading-relaxed dark:text-white text-sm sm:text-base lg:text-lg px-1 sm:px-0 ">
             Why the name Al-BAQARAH? Al-BAQARAH (the Cow) has been so named from the story of the Cow occurring in this Surah (vv. 67-73). It has not, however, been 
             used as a title to indicate the subject of the Surah. It will, therefore, be as wrong to translate the name Al-Baqarah into "The Cow" or "The Heifer" as to translate 
             any Surah, say Yaaseen, Al-Hijr, Al-Ahzaab, etc., into their literal meanings. This is the longest Surah and is the first complete Surah to deal with the subject 
@@ -297,6 +299,8 @@ const SurahInfo = () => {
               But they had strayed away from it during the centuries of degeneration and had adopted many un-Islamic creeds, rites and customs of which there was no 
               mention and for which there was no sanction in the Torah. Not only this: they had tampered with the Torah by inserting their own...
             </p>
+        </div>
+
           </div>
         </div>
       </div>

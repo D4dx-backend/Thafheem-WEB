@@ -42,7 +42,7 @@ const  Reading = [
 ]
 
   return (
-    <div className="dark:bg-black mx-auto p-3 sm:p-4 md:p-6 bg-white">
+    <div className="dark:bg-black mx-auto p-3 sm:p-4 md:p-6 bg-white font-poppins">
       <div className="max-w-[1070px] w-full mx-auto px-2 sm:px-4 md:px-0">
 
         {/* Header Section */}

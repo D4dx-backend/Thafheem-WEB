@@ -506,6 +506,7 @@ import HomepageSearch from "../components/HomeSearch";
 import { useNavigate, useLocation } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
 import { Play, Book, Circle, BookOpen } from "lucide-react";
+import { surahNameUnicodes } from '../components/surahNameUnicodes';
 
 const Juz = () => {
   const KaabaIcon = ({ className }) => (
@@ -781,10 +782,10 @@ const Juz = () => {
                 >
                   {/* Header */}
                   <div className="bg-[#EBEEF0] dark:bg-[#323A3F] dark:text-white px-3 sm:px-4 py-1 flex justify-between items-center ">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-white">
+                    <h3 className="text-sm font-medium font-poppins text-gray-700 dark:text-white">
                       {juz.title}
                     </h3>
-                    <button className="text-black hover:text-black text-xs font-medium dark:text-white min-h-[32px] px-2">
+                    <button className="text-black hover:text-black text-xs font-medium font-poppins dark:text-white min-h-[32px] px-2">
                       Read Juz
                     </button>
                   </div>
@@ -811,7 +812,7 @@ const Juz = () => {
 
                             {/* Name + Icons stacked */}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                              <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
                                 {surah.name}
                               </h4>
 
@@ -835,8 +836,15 @@ const Juz = () => {
 
                           {/* Arabic name on the right */}
                           <div className="text-right flex-shrink-0 ml-2">
-                            <p className="text-base sm:text-lg lg:text-xl font-arabic text-gray-900 dark:text-white leading-tight">
-                              {surah.arabicText}
+                            <p className="text-base sm:text-[30px] font-arabic text-gray-900 dark:text-white leading-tight"
+    style={{ fontFamily: 'SuraName, Amiri, serif' }}
+                            
+                            >
+                             {surahNameUnicodes[surah.number]
+      ? String.fromCharCode(
+          parseInt(surahNameUnicodes[surah.number].replace('U+', ''), 16)
+        )
+      : surah.arabic}
                             </p>
                           </div>
                         </div>
@@ -856,10 +864,10 @@ const Juz = () => {
                 >
                   {/* Header */}
                   <div className="bg-[#EBEEF0] dark:bg-[#323A3F] dark:text-white px-3 sm:px-4 py-1 flex justify-between items-center ">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-white">
+                    <h3 className="text-sm font-medium font-poppins text-gray-700 dark:text-white">
                       {juz.title}
                     </h3>
-                    <button className="text-black hover:text-black text-xs font-medium dark:text-white min-h-[32px] px-2">
+                    <button className="text-black hover:text-black text-xs font-medium font-poppins dark:text-white min-h-[32px] px-2">
                       Read Juz
                     </button>
                   </div>
@@ -886,7 +894,7 @@ const Juz = () => {
 
                             {/* Name + Icons stacked */}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                              <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
                                 {surah.name}
                               </h4>
 
@@ -910,8 +918,15 @@ const Juz = () => {
 
                           {/* Arabic name on the right */}
                           <div className="text-right flex-shrink-0 ml-2">
-                            <p className="text-base sm:text-lg lg:text-xl font-arabic text-gray-900 dark:text-white leading-tight">
-                              {surah.arabicText}
+                            <p className="text-base sm:text-[30px] font-arabic text-gray-900 dark:text-white leading-tight"
+                                style={{ fontFamily: 'SuraName, Amiri, serif' }}
+
+                            >
+                              {surahNameUnicodes[surah.number]
+      ? String.fromCharCode(
+          parseInt(surahNameUnicodes[surah.number].replace('U+', ''), 16)
+        )
+      : surah.arabic}
                             </p>
                           </div>
                         </div>
@@ -931,10 +946,10 @@ const Juz = () => {
                 >
                   {/* Header */}
                   <div className="bg-[#EBEEF0] dark:bg-[#323A3F] dark:text-white px-3 sm:px-4 py-1 flex justify-between items-center ">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-white">
+                    <h3 className="text-sm font-poppins font-medium text-gray-700 dark:text-white">
                       {juz.title}
                     </h3>
-                    <button className="text-black hover:text-black text-xs font-medium dark:text-white min-h-[32px] px-2">
+                    <button className="text-black hover:text-black text-xs font-poppins font-medium dark:text-white min-h-[32px] px-2">
                       Read Juz
                     </button>
                   </div>
@@ -961,7 +976,7 @@ const Juz = () => {
 
                             {/* Name + Icons stacked */}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                              <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
                                 {surah.name}
                               </h4>
 
@@ -985,8 +1000,15 @@ const Juz = () => {
 
                           {/* Arabic name on the right */}
                           <div className="text-right flex-shrink-0 ml-2">
-                            <p className="text-base sm:text-lg lg:text-xl font-arabic text-gray-900 dark:text-white leading-tight">
-                              {surah.arabicText}
+                            <p className="text-base sm:text-[30px]  font-arabic text-gray-900 dark:text-white leading-tight"
+                                style={{ fontFamily: 'SuraName, Amiri, serif' }}
+
+                            >
+                              {surahNameUnicodes[surah.number]
+      ? String.fromCharCode(
+          parseInt(surahNameUnicodes[surah.number].replace('U+', ''), 16)
+        )
+      : surah.arabic}
                             </p>
                           </div>
                         </div>

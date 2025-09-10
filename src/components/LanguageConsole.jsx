@@ -73,7 +73,7 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-500/70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-500/70 flex items-center justify-center z-50 font-poppins">
       {/* Modal Container */}
       <div className="bg-white dark:bg-[#2A2C38] rounded-2xl shadow-xl w-full max-w-sm mx-auto max-h-[90vh] overflow-hidden">
         {/* Header */}
@@ -132,12 +132,12 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
         </div>
   
         {/* Upcoming Languages */}
-        <div className="text-lg text-black font-bold mb-4 text-center dark:text-white">
+        {/* <div className="text-lg text-black font-bold mb-4 text-center dark:text-white">
           <h2>Upcoming Languages</h2>
           <p className="text-gray-600 font-normal text-sm dark:text-white">
             French, Spanish, Turkish, Indonesian, German, Italian, Portuguese
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

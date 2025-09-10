@@ -117,7 +117,7 @@ const Conclusion = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-black font-poppins">
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-200 max-w-[1070px]">

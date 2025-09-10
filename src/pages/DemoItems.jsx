@@ -22,7 +22,7 @@ const DemoItems = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-[#2A2C38] w-full  h-full flex flex-col  rounded-lg">
+      <div className="bg-white dark:bg-[#2A2C38] w-full  h-full flex flex-col  rounded-lg font-poppins">
         {/* Search Bar */}
         <div className="p-3">
           <input

@@ -12,7 +12,7 @@ const DeleteAccount = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center font-poppins">
       {/* Modal Overlay */}
       {isOpen && (
         <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-center justify-center z-50">

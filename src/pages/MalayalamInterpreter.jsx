@@ -178,11 +178,12 @@ import React, { useState } from "react";
 import InterpretationNavbar from "../components/InterpretationNavbar";
 import NotePopup from "../components/NotePopup";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { useTheme } from "../context/ThemeContext"; 
 
 const MalayalamInterpreter = () => {
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState({ id: '', content: '' });
-
+  const { quranFont } = useTheme();
   const handleNoteClick = (noteId) => {
     const noteContent = getNoteContent(noteId);
     setSelectedNote({ id: noteId, content: noteContent });
@@ -192,7 +193,7 @@ const MalayalamInterpreter = () => {
   const getNoteContent = (noteId) => {
     const notes = {
       'N1514': (
-        <p className="dark:text-white">
+        <p className="dark:text-white sm:text-[16px]  font-malayalam">
           4. നബി(സ) തിരുമേനി ആ സന്ദര്‍ഭത്തില്‍ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്. 
           നബി(സ)ക്കും സഹചാരികള്‍ക്കും എതിരാളികള്‍ ഏല്‍പിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ 
           ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതില്‍നിന്ന് വ്യക്തമാണ്. അവിടത്തെ കരളിനെ കാര്‍ന്നുതിന്നുകൊണ്ടിരുന്ന 
@@ -216,7 +217,7 @@ const MalayalamInterpreter = () => {
         </p>
       ),
       'N1462': (
-        <p className="dark:text-white">
+        <p className="dark:text-white sm:text-[16px]  font-malayalam">
           മുസ്‌ലിം N1462 - ഇത് മുസ്‌ലിം ഹദീസ് ശേഖരത്തിലെ 1462-ാം നമ്പര്‍ ഹദീസിനെ സൂചിപ്പിക്കുന്നു.
         </p>
       ),
@@ -224,11 +225,13 @@ const MalayalamInterpreter = () => {
         <div className="dark:bg-[#2A2C38]">
           <div className="text-center mb-4">
             <h3 className="text-lg font-medium text-[#2AA0BF] mb-2">Verse Range 1-6</h3>
-            <div className="text-right text-xl sm:text-2xl leading-relaxed mb-4 dark:text-white px-2 sm:px-0" style={{ fontFamily: "serif" }}>
+            <div className="text-right text-xl sm:text-2xl leading-relaxed mb-4 dark:text-white px-2 sm:px-0" 
+            style={{ fontFamily: `'${quranFont}', serif` }}
+            >
               ﴿١﴾ الم ﴿٢﴾ ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ ﴿٣﴾ الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ وَيُقِيمُونَ الصَّلَاةَ وَمِمَّا رَزَقْنَاهُمْ يُنفِقُونَ ﴿٤﴾ وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنزِلَ إِلَيْكَ وَمَا أُنزِلَ مِن قَبْلِكَ وَبِالْآخِرَةِ هُمْ يُوقِنُونَ ﴿٥﴾ أُولَٰئِكَ عَلَىٰ هُدًى مِّن رَّبِّهِمْ ۖ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ ﴿٦﴾
             </div>
           </div>
-          <p className="text-gray-800 leading-relaxed text-justify dark:text-white text-sm sm:text-base">
+          <p className="text-gray-800 leading-relaxed text-justify dark:text-white text-sm sm:text-[16px]  font-malayalam">
             4. നബി(സ) തിരുമേനി ആ സന്ദര്‍ഭത്തില്‍ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്. 
             നബി(സ)ക്കും സഹചാരികള്‍ക്കും എതിരാളികള്‍ ഏല്‍പിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ 
             ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതില്‍നിന്ന് വ്യക്തമാണ്. അവിടത്തെ കരളിനെ കാര്‍ന്നുതിന്നുകൊണ്ടിരുന്ന 
@@ -253,7 +256,7 @@ const MalayalamInterpreter = () => {
       surahName="18- Al-Kahf" 
       verseRange="6 - 7" 
     />
-      <div className="w-full  mx-auto p-3 sm:p-4 lg:p-6 bg-white dark:bg-[#2A2C38]">
+      <div className="w-full  mx-auto p-3 sm:p-4 lg:p-6 bg-white dark:bg-[#2A2C38] max-w-[1073px] ">
         <div className="space-y-4 sm:space-y-6">
           {/* Main Content Block */}
           <div className="bg-gray-50 dark:bg-[#2A2C38] p-3 sm:p-4 lg:p-6 rounded-lg border-l-4 dark:border-[#2A2C38] border-white">
@@ -261,7 +264,7 @@ const MalayalamInterpreter = () => {
               className="text-gray-800 dark:text-white leading-relaxed text-justify space-y-3 sm:space-y-4"
               style={{ fontFamily: "serif" }}
             >
-              <p className="text-sm sm:text-base lg:text-sm">
+              <p className="text-sm sm:text-[16px]  font-malayalam">
                 <span className="font-semibold">4.</span> നബി(സ) തിരുമേനി ആ
                 സന്ദര്‍ഭത്തില്‍ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ
                 സൂചിപ്പിക്കുന്നത്. നബി(സ)ക്കും സഹചാരികള്‍ക്കും എതിരാളികള്‍
@@ -293,7 +296,7 @@ const MalayalamInterpreter = () => {
                 <span className="italic">)</span>.
               </p>
 
-              <p className="text-sm sm:text-base lg:text-sm">
+              <p className="text-sm sm:text-[16px]  font-malayalam">
                 "ജനം വിശ്വാസികളാകാത്തതില്‍ മനംനൊന്ത് താങ്കള്‍ സ്വയം ഹനിച്ചേക്കാം"
                 എന്നാണ് പ്രകൃത വാക്യത്തില്‍ പ്രത്യക്ഷമായി പറഞ്ഞിട്ടുള്ളതെങ്കിലും അതില്‍
                 ഭംഗ്യന്തരേണ തിരുമേനിയെ സാന്ത്വനപ്പെടുത്തുകയും
@@ -324,7 +327,7 @@ const MalayalamInterpreter = () => {
 
           {/* Navigation Block */}
       {/* Navigation Block - Fixed Bottom */}
-<div className="fixed bottom-0 left-0 w-full flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38] z-50">
+<div className=" bottom-0 left-0 w-full flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38] z-50">
   <button
     className="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] 
     text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"

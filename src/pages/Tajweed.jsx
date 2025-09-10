@@ -255,6 +255,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext"; 
 
 const Tajweed = () => {
   const [expandedSections, setExpandedSections] = useState({
@@ -284,6 +285,7 @@ const Tajweed = () => {
       .toString()
       .padStart(2, "0")}`;
   };
+  const { quranFont } = useTheme();
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -291,7 +293,7 @@ const Tajweed = () => {
       <div className="bg-white dark:bg-black">
         <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-tight">
+            <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-tight font-malayalam">
               ഖുർആന്‍ പാരായണ ശാസ്ത്രം (علم التجويد)
             </h1>
           </div>
@@ -305,7 +307,7 @@ const Tajweed = () => {
           <div className="space-y-4 sm:space-y-6">
             {/* Basic Introduction Text */}
             <div className="prose prose-gray max-w-none mb-6 sm:mb-8">
-              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-3 sm:mb-4 dark:text-white">
+              <p className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mb-3 sm:mb-4 dark:text-white font-malayalam">
                 അല്ലാഹു മനുഷ്യര്‍ക്ക് നല്‍കിയ ഏറ്റവും വലിയ അനുഗ്രഹമാണ് പരിശുദ്ധ
                 ഖുര്‍ആന്‍. അതിന്റെ പാരായണവും പഠനവും മനനവും ഏറ്റവും മഹത്തായ
                 പ്രതിഫലവും പുണ്യവും ലഭിക്കുന്ന സല്‍കര്‍മങ്ങളില്‍ പെട്ടതാണ്.
@@ -333,7 +335,7 @@ const Tajweed = () => {
                 onClick={() => toggleSection("chapter")}
                 className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <h3 className="text-sm sm:text-base font-medium text-blue-600 dark:text-blue-400">
+                <h3 className="text-sm sm:text-base font-medium text-blue-600 dark:text-blue-400 font-malayalam">
                   വിവിധയിനം വിരാമങ്ങള്‍
                 </h3>
                 <span className="text-gray-600 dark:text-gray-300">
@@ -346,7 +348,7 @@ const Tajweed = () => {
               </button>
               {expandedSections.chapter && (
                 <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-200 dark:border-gray-600">
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mt-2 sm:mt-3 dark:text-white">
+                  <p className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mt-2 sm:mt-3 dark:text-white font-malayalam">
                     الوقف ഭാഷാര്‍ഥം: തടഞ്ഞുവെക്കുക സാങ്കേതികാര്‍ഥം: പാരായണം
                     തുടരണമെന്ന ഉദ്ദേശ്യത്തോടെ സാധാരണഗതിയില്‍ ശ്വാസം വിടാവുന്ന
                     സമയം നിര്‍ത്തുക. അനുബന്ധം : وَقْف ചെയ്യാനുദ്ദേശിക്കുന്ന
@@ -377,12 +379,8 @@ const Tajweed = () => {
                           <div className="bg-[#B3B3B3] dark:bg-[#323A3F] rounded-lg p-3 sm:p-4 lg:p-6 mx-auto h-auto max-w-[406px] min-h-[80px] sm:min-h-[100px] lg:h-[132px] flex items-center justify-center">
                             <p
                               className="text-lg sm:text-lg lg:text-xl xl:text-2xl font-bold text-white leading-relaxed text-center px-2"
-                              style={{
-                                fontFamily:
-                                  "'Traditional Arabic', 'Arabic Typesetting', serif",
-                                direction: "rtl",
-                                lineHeight: "1.8",
-                              }}
+                              style={{ fontFamily: `'${quranFont}', serif` }}
+
                             >
                               كَلَّا ۖ بَلْ رَانَ عَلَىٰ قُلُوبِهِم مَّا كَانُوا
                               يَكْسِبُونَ ﴿١٤﴾
@@ -471,7 +469,7 @@ const Tajweed = () => {
             ].map((title, index) => (
               <div
                 key={index}
-                className="border border-gray-200 rounded-lg dark:bg-[#2A2C38]"
+                className="border border-gray-200 rounded-lg dark:bg-[#2A2C38] font-malayalam"
               >
                 <button
                   onClick={() => toggleSection(`section_${index}`)}

@@ -137,7 +137,7 @@ const Verse = () => {
   );
 
   return (
-    <div className="bg-white dark:bg-[#2A2C38] w-full  h-full max-w-md  flex flex-col  rounded-lg">
+    <div className="bg-white dark:bg-[#2A2C38] w-full  h-full max-w-md  flex flex-col  rounded-lg font-poppins">
       {/* Search Bar */}
       <div className="p-3 flex space-x-2">
         <input

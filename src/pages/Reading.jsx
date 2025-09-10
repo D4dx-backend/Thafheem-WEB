@@ -250,6 +250,8 @@ import HomepageNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
 import { ChevronLeft, ChevronRight, ArrowUp, X } from "lucide-react";
 import Bismi from "../assets/bismi.jpg"
+import { useTheme } from "../context/ThemeContext"; 
+import { surahNameUnicodes } from '../components/surahNameUnicodes';
 
 const Reading = () => {
 
@@ -270,6 +272,7 @@ const Reading = () => {
       />
     </svg>
   );
+  const { quranFont } = useTheme();
 
   return (
     <>
@@ -302,9 +305,15 @@ const Reading = () => {
 
             {/* Surah Title */}
             <div className="mb-4 sm:mb-6">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-arabic text-gray-900 dark:text-white mb-3 sm:mb-4">
-                البقرة
-              </h1>
+<h1
+  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-arabic text-gray-900 dark:text-white mb-3 sm:mb-4"
+  style={{ fontFamily: 'SuraName, Amiri, serif' }}
+>
+  البقرة
+</h1>
+
+
+
 
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
@@ -359,84 +368,84 @@ const Reading = () => {
 </div>
 
           {/* First Block - Highlighted */}
-          <div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
-            <div className="text-center">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose dark:text-white text-gray-900 mb-3 sm:mb-4 bg-[#E7F0F3] dark:bg-[#63C3DC] px-2 py-1 rounded">
+          <div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6" >
+            <div className="text-center" >
+              <p  style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose dark:text-white text-gray-900 mb-3 sm:mb-4 bg-[#E7F0F3] dark:bg-[#63C3DC] px-2 py-1 rounded">
                 الم ﴿١﴾ ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى
                 لِّلْمُتَّقِينَ
               </p>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+              <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                 الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ وَيُقِيمُونَ الصَّلَاةَ
                 وَمِمَّا رَزَقْنَاهُمْ يُنفِقُونَ ﴿٢﴾
               </p>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+              <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                 وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنزِلَ إِلَيْكَ وَمَا أُنزِلَ مِن
                 قَبْلِكَ وَبِالْآخِرَةِ هُمْ يُوقِنُونَ ﴿٣﴾
               </p>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+              <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                 أُولَٰئِكَ عَلَىٰ هُدًى مِّن رَّبِّهِمْ ۖ وَأُولَٰئِكَ هُمُ
                 الْمُفْلِحُونَ ﴿٤﴾
               </p>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+              <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                 إِنَّ الَّذِينَ كَفَرُوا سَوَاءٌ عَلَيْهِمْ أَأَنذَرْتَهُمْ أَمْ
                 لَمْ تُنذِرْهُمْ لَا يُؤْمِنُونَ ﴿٥﴾
               </p>
-              <div className="text-center text-gray-500 mb-1 sm:mb-2 text-xs sm:text-sm">2</div>
-              <hr className="w-1/2 mx-auto border-gray-300 shadow-sm" />
+              <div style={{ fontFamily: `'${quranFont}', serif` }} className="text-center text-gray-500 mb-1 sm:mb-2 text-xs sm:text-sm">2</div>
+              <hr style={{ fontFamily: `'${quranFont}', serif` }} className="w-1/2 mx-auto border-gray-300 shadow-sm" />
 
-              <div className="text-center">
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+              <div style={{ fontFamily: `'${quranFont}', serif` }} className="text-center">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                   خَتَمَ اللَّهُ عَلَىٰ قُلُوبِهِمْ وَعَلَىٰ سَمْعِهِمْ ۖ
                   وَعَلَىٰ أَبْصَارِهِمْ غِشَاوَةٌ ۖ وَلَهُمْ عَذَابٌ عَظِيمٌ
                   ﴿٦﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                   وَمِنَ النَّاسِ مَن يَقُولُ آمَنَّا بِاللَّهِ وَبِالْيَوْمِ
                   الْآخِرِ وَمَا هُم بِمُؤْمِنِينَ
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                   يُخَادِعُونَ اللَّهَ وَالَّذِينَ آمَنُوا وَمَا يَخْدَعُونَ
                   إِلَّا أَنفُسَهُمْ وَمَا يَشْعُرُونَ ﴿٧﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                   فِي قُلُوبِهِم مَّرَضٌ فَزَادَهُمُ اللَّهُ مَرَضًا ۖ وَلَهُمْ
                   عَذَابٌ أَلِيمٌ بِمَا كَانُوا يَكْذِبُونَ ﴿٨﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
                   وَإِذَا قِيلَ لَهُمْ لَا تُفْسِدُوا فِي الْأَرْضِ قَالُوا
                   إِنَّمَا نَحْنُ مُصْلِحُونَ ﴿٩﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                    فِي قُلُوبِهِم مَّرَضٌ فَزَادَهُمُ اللَّهُ مَرَضًا ۖ وَلَهُمْ
                   عَذَابٌ أَلِيمٌ بِمَا كَانُوا يَكْذِبُونَ ﴿١٠﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   وَإِذَا قِيلَ لَهُمْ لَا تُفْسِدُوا فِي الْأَرْضِ قَالُوا
                   إِنَّمَا نَحْنُ مُصْلِحُونَ ﴿١١﴾
                 </p>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   أَلَا إِنَّهُمْ هُمُ الْمُفْسِدُونَ وَلَٰكِن لَّا يَشْعُرُونَ
                   ﴿١٢﴾
                 </p>
 
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   وَإِذَا قِيلَ لَهُمْ آمِنُوا كَمَا آمَنَ النَّاسُ قَالُوا
                   أَنُؤْمِنُ كَمَا آمَنَ السُّفَهَاءُ ۗ أَلَا إِنَّهُمْ هُمُ
                   السُّفَهَاءُ وَلَٰكِن لَّا يَعْلَمُونَ ﴿١٣﴾
                 </p>
 
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   وَإِذَا لَقُوا الَّذِينَ آمَنُوا قَالُوا آمَنَّا وَإِذَا
                   خَلَوْا إِلَىٰ شَيَاطِينِهِمْ قَالُوا إِنَّا مَعَكُمْ إِنَّمَا
                   نَحْنُ مُسْتَهْزِئُونَ ﴿١٤﴾
                 </p>
 
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   اللَّهُ يَسْتَهْزِئُ بِهِمْ وَيَمُدُّهُمْ فِي طُغْيَانِهِمْ
                   يَعْمَهُونَ ﴿١٥﴾
                 </p>
 
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+                <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
                   أُولَٰئِكَ الَّذِينَ اشْتَرَوُا الضَّلَالَةَ بِالْهُدَىٰ فَمَا
                   رَبِحَت تِّجَارَتُهُمْ وَمَا كَانُوا مُهْتَدِينَ ﴿١٦﴾
                 </p>
@@ -449,35 +458,35 @@ const Reading = () => {
 
 
               <div className="text-center">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+              <p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   مَثَلُهُمْ كَمَثَلِ الَّذِي اسْتَوْقَدَ نَارًا فَلَمَّا أَضَاءَتْ مَا حَوْلَهُ ذَهَبَ اللَّهُ بِنُورِهِمْ وَتَرَكَهُمْ فِي ظُلُمَاتٍ لَّا يُبْصِرُونَ ﴿١٧﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   صُمٌّ بُكْمٌ عُمْيٌ فَهُمْ لَا يَرْجِعُونَ ﴿١٨﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   أَوْ كَصَيِّبٍ مِّنَ السَّمَاءِ فِيهِ ظُلُمَاتٌ وَرَعْدٌ وَبَرْقٌ يَجْعَلُونَ أَصَابِعَهُمْ فِي آذَانِهِم مِّنَ الصَّوَاعِقِ حَذَرَ الْمَوْتِ ۚ وَاللَّهُ مُحِيطٌ بِالْكَافِرِينَ ﴿١٩﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   يَكَادُ الْبَرْقُ يَخْطَفُ أَبْصَارَهُمْ ۖ كُلَّمَا أَضَاءَ لَهُم مَّشَوْا فِيهِ وَإِذَا أَظْلَمَ عَلَيْهِمْ قَامُوا ۚ وَلَوْ شَاءَ اللَّهُ لَذَهَبَ بِسَمْعِهِمْ وَأَبْصَارِهِمْ ۚ إِنَّ اللَّهَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ ﴿٢٠﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   يَا أَيُّهَا النَّاسُ اعْبُدُوا رَبَّكُمُ الَّذِي خَلَقَكُمْ وَالَّذِينَ مِن قَبْلِكُمْ لَعَلَّكُمْ تَتَّقُونَ ﴿٢١﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   الَّذِي جَعَلَ لَكُمُ الْأَرْضَ فِرَاشًا وَالسَّمَاءَ بِنَاءً وَأَنزَلَ مِنَ السَّمَاءِ مَاءً فَأَخْرَجَ بِهِ مِنَ الثَّمَرَاتِ رِزْقًا لَّكُمْ ۖ فَلَا تَجْعَلُوا لِلَّهِ أَندَادًا وَأَنتُمْ تَعْلَمُونَ ﴿٢٢﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   وَإِن كُنتُمْ فِي رَيْبٍ مِّمَّا نَزَّلْنَا عَلَىٰ عَبْدِنَا فَأْتُوا بِسُورَةٍ مِّن مِّثْلِهِ وَادْعُوا شُهَدَاءَكُم مِّن دُونِ اللَّهِ إِن كُنتُمْ صَادِقِينَ ﴿٢٣﴾
 </p>
 
-<p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
+<p style={{ fontFamily: `'${quranFont}', serif` }} className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white px-2">
   فَإِن لَّمْ تَفْعَلُوا وَلَن تَفْعَلُوا فَاتَّقُوا النَّارَ الَّتِي وَقُودُهَا النَّاسُ وَالْحِجَارَةُ ۖ أُعِدَّتْ لِلْكَافِرِينَ ﴿٢٤﴾
 </p>
 

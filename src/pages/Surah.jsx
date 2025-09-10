@@ -469,8 +469,10 @@ import Transition from "../components/Transition";
 import WordByWord from "./WordByWord";
 import StarNumber from "../components/StarNumber";
  import Bismi from "../assets/bismi.jpg"
+ import { useTheme } from '../context/ThemeContext';
 
 const Surah = () => {
+  const { quranFont, fontSize } = useTheme();
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
@@ -743,10 +745,16 @@ const Surah = () => {
       <div key={verse.number} className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
         {/* Arabic Text */}
         <div className="text-right mb-2 sm:mb-3 lg:mb-4">
-          <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-arabic leading-loose dark:text-white text-gray-900 px-2 sm:px-0">
-            {verse.arabic}
-          </p>
-        </div>
+  <p
+    className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+    style={{
+      fontFamily: quranFont,
+      fontSize: `${fontSize}px`, // Controlled by ThemeContext, defaults to 16px
+    }}
+  >
+    {verse.arabic}
+  </p>
+</div>
 
         {/* Translation */}
         <div className="mb-2 sm:mb-3">

@@ -139,7 +139,7 @@ const HomepageNavbar = () => {
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
+      <nav className="bg-white dark:bg-[#2A2C38] border-b border-gray-100 dark:border-gray-700 w-full relative z-50 ">
         <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
@@ -231,10 +231,10 @@ const HomepageNavbar = () => {
                   <X size={20} />
                 </button> */}
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100">MENU</h2>
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins">MENU</h2>
             </div>
 
-            <div className="py-2">
+            <div className="py-2 font-poppins">
               {menuItems.map((item, index) => {
                 const IconComponent = item.icon;
                 // Check if the main menu item or any submenu item is active
@@ -290,7 +290,7 @@ const HomepageNavbar = () => {
                     </button>
 
                     {item.hasSubmenu && openSubmenu === index && (
-                      <div className="bg-gray-50 dark:bg-[#2A2C38] ml-4 sm:ml-6">
+                      <div className="bg-gray-50 dark:bg-[#2A2C38] ml-4 sm:ml-6 ">
                         {item.submenuItems.map((subItem, subIndex) => {
                           const isSubActive = isActive(subItem.path);
                           return (

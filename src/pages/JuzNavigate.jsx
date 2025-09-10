@@ -46,7 +46,7 @@ const JuzNavigate = () => {
 
   return (
     <>
-      <div className="bg-white w-full h-full dark:bg-[#2A2C38]  flex flex-col  rounded-lg">
+      <div className="bg-white w-full h-full dark:bg-[#2A2C38]  flex flex-col  rounded-lg font-poppins">
         {/* Search Bar */}
         <div className="p-3">
           <input

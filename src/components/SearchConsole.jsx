@@ -84,7 +84,7 @@ const SearchConsole = ({ onClose }) => {
   );
   
   return (
-    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50 bg-gray-500/70 ">
+    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50 bg-gray-500/70 font-poppins">
       <div className="bg-white mt-10 dark:bg-[#2A2C38] w-full max-w-sm mx-auto rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto relative">
         {/* Close Button */}
         <button

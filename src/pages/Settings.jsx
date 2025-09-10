@@ -12,12 +12,12 @@ import {
 import { useTheme } from "../context/ThemeContext";
 
 const Settings = ({ onClose }) => {
-  const { theme: contextTheme, toggleTheme } = useTheme();
+  const { theme: contextTheme, toggleTheme, quranFont: contextQuranFont, setQuranFont: setContextQuranFont, fontSize: contextFontSize, setFontSize: setContextFontSize } = useTheme();
   const [theme, setTheme] = useState(
     contextTheme === "dark" ? "Dark" : "Light"
   );
-  const [quranFont, setQuranFont] = useState("Uthmani");
-  const [fontSize, setFontSize] = useState(16);
+  const [quranFont, setQuranFont] = useState(contextQuranFont);
+  const [fontSize, setFontSize] = useState(contextFontSize);
   const [language, setLanguage] = useState("English");
   const [translationFontSize, setTranslationFontSize] = useState(12);
   const [viewType, setViewType] = useState("Ayah Wise");
@@ -48,8 +48,10 @@ const Settings = ({ onClose }) => {
     if (contextTheme === "dark") {
       toggleTheme();
     }
-    setQuranFont("Uthmani");
-    setFontSize(16);
+    setQuranFont("Amiri Quran");
+    setContextQuranFont("Amiri Quran");
+    setFontSize(26);
+    setContextFontSize(26);
     setLanguage("English");
     setTranslationFontSize(12);
     setViewType("Ayah Wise");
@@ -60,12 +62,15 @@ const Settings = ({ onClose }) => {
   };
 
   const handleSave = () => {
+    // Save font settings to context
+    setContextQuranFont(quranFont);
+    setContextFontSize(fontSize);
     console.log("Settings saved");
     if (onClose) onClose();
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-[342px] bg-white dark:bg-[#2A2C38]">
+    <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
       {/* Header */}
       {/* <div className="flex items-center justify-between p-6 border-b border-gray-200 "> */}
       <div className="flex items-center justify-between p-6 shadow-md">
@@ -136,28 +141,28 @@ const Settings = ({ onClose }) => {
             </h3>
 
             <div className="flex rounded-full bg-gray-100 dark:bg-black p-1 w-[287px] max-w-sm mx-auto">
-              {/* Uthmani Button */}
+              {/* ScheherazadeNew Button */}
               <button
-                onClick={() => setQuranFont("Uthmani")}
+                onClick={() => setQuranFont("ScheherazadeNew-Regular")}
                 className={`flex-1 px-4 py-2 rounded-full transition-all ${
-                  quranFont === "Uthmani"
+                  quranFont === "ScheherazadeNew-Regular"
                     ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
                     : "text-gray-600 hover:text-gray-800 dark:text-white"
                 }`}
               >
-                Uthmani
+                Scheherazade
               </button>
 
-              {/* Amiri Button */}
+              {/* Amiri Quran Button */}
               <button
-                onClick={() => setQuranFont("Amiri")}
+                onClick={() => setQuranFont("Amiri Quran")}
                 className={`flex-1 px-4 py-2 rounded-full transition-all ${
-                  quranFont === "Amiri"
+                  quranFont === "Amiri Quran"
                     ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
                     : "text-gray-600 hover:text-gray-800 dark:text-white"
                 }`}
               >
-                Amiri
+                Amiri Quran
               </button>
             </div>
           </div>
@@ -179,7 +184,7 @@ const Settings = ({ onClose }) => {
                   {fontSize}
                 </span>
                 <button
-                  onClick={() => setFontSize(Math.min(24, fontSize + 1))}
+                  onClick={() => setFontSize(Math.min(48, fontSize + 1))}
                   className="p-2 bg-[#B3B3B3] rounded-full  transition-colors dark:bg-white dark:text-black dark:border-0 "
                 >
                   <Plus size={18} />
@@ -189,7 +194,11 @@ const Settings = ({ onClose }) => {
 
             <div
               className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-black mx-auto"
-              style={{ fontSize: `${fontSize}px` }}
+              style={{ 
+                fontSize: `${fontSize}px`,
+                fontFamily: quranFont,
+                direction: 'rtl'
+              }}
             >
               <p className="text-black dark:text-white" dir="rtl">
                 بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ

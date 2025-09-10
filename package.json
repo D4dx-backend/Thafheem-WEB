@@ -13,6 +13,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.11",
+    "axios": "^1.11.0",
     "i": "^0.3.7",
     "lucide-react": "^0.541.0",
     "react": "^19.1.1",

@@ -374,6 +374,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { useTheme } from "../context/ThemeContext"; 
 
 const DragDropQuiz = () => {
   const [score, setScore] = useState(0);
@@ -475,6 +476,7 @@ const DragDropQuiz = () => {
     console.log("Game cancelled");
   };
   const [gameStarted, setGameStarted] = useState(false);
+  const { quranFont } = useTheme();
 
   // Show start game modal if game hasn't started
   if (!gameStarted) {
@@ -523,7 +525,7 @@ const DragDropQuiz = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-1 sm:px-2 py-1 rounded">
-                <span className="text-gray-800 font-medium dark:text-white text-sm sm:text-base">
+                <span className="text-gray-800 font-medium dark:text-white text-sm sm:text-base font-poppins">
                   Al-Fatihah
                 </span>
                 <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 rotate-90" />
@@ -602,7 +604,7 @@ const DragDropQuiz = () => {
               <div className="flex flex-row gap-2 sm:gap-3 lg:gap-4 justify-center">
   {/* Arabic Text Column */}
   <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 order-1">
-    <h3 className="text-sm sm:text-base font-medium text-center mb-2 text-gray-700 dark:text-white lg:hidden">
+    <h3 className="text-sm sm:text-base font-medium text-center mb-2 text-gray-700 dark:text-white lg:hidden ">
       Arabic Text
     </h3>
     {arabicTexts.map((item) => (
@@ -612,7 +614,8 @@ const DragDropQuiz = () => {
       >
         <span
           className="text-base sm:text-lg font-semibold"
-          style={{ fontFamily: "Arabic, serif" }}
+          style={{ fontFamily: `'${quranFont}', serif` }}
+
         >
           {item.text}
         </span>
@@ -635,7 +638,7 @@ const DragDropQuiz = () => {
           onDragStart={(e) =>
             droppedItem && handleDragStart(e, droppedItem)
           }
-          className={`w-full sm:w-56 lg:w-64 h-10 sm:h-12 border rounded-lg flex items-center justify-center text-xs sm:text-sm transition-colors ${
+          className={`w-full font-malayalam sm:w-56 lg:w-64 h-10 sm:h-12 border rounded-lg flex items-center justify-center text-xs sm:text-sm transition-colors ${
             droppedItem
               ? droppedItem.correct
                 ? "border-green-400 bg-green-100 text-green-700"
@@ -663,7 +666,7 @@ const DragDropQuiz = () => {
     Malayalam Options
   </h3>
 
-  <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+  <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 font-malayalam">
     {Array.from({ length: 8 }).map((_, index) => {
       const option = getAvailableOptions()[index];
 

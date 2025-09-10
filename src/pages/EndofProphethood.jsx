@@ -20,8 +20,9 @@ const EndofProphethood = () => {
   }, []);
 
   const handlePlayAudio = () => {
-    setShowAudioPlayer(true);
+    setShowAudioPlayer(prev => !prev);
   };
+  
 
   const handleCloseAudio = () => {
     setShowAudioPlayer(false);
@@ -30,8 +31,9 @@ const EndofProphethood = () => {
   // Show audio player always on desktop, conditionally on mobile
   const shouldShowAudioPlayer = !isMobile || showAudioPlayer;
 
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-black">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-black font-poppins">
       <div className="flex flex-col lg:flex-row">
         <EndofProphethoodNavbar
           activeSection={activeSection}
@@ -40,7 +42,7 @@ const EndofProphethood = () => {
         <EndofProphethoodContent
           onPlayAudio={handlePlayAudio}
           activeSection={activeSection}
-          showPlayButton={isMobile} // Only show play button on mobile
+          showPlayButton={true}  
         />
       </div>
 

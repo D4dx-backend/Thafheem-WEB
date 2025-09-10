@@ -8,7 +8,7 @@ const QuranStudy = () => {
   const [showMobilePlayer, setShowMobilePlayer] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen font-poppins">
       <div className="flex flex-col lg:flex-row bg-[#FAFAFA] dark:bg-black">
         <QuranStudyNavbar
           activeItem={activeItem}
@@ -16,7 +16,8 @@ const QuranStudy = () => {
         />
         <QuranStudyContent
           activeItem={activeItem}
-          onPlayAudio={() => setShowMobilePlayer(true)}
+          onPlayAudio={() => setShowMobilePlayer(prev => !prev)}
+
         />
       </div>
 
@@ -25,11 +26,11 @@ const QuranStudy = () => {
         <QuranStudyPlay
           audioSrc="/path/to/audio.mp3"
           title={activeItem}
-          onClose={() => {}} // No close functionality on desktop
+          onClose={() => {}} 
         />
       </div>
 
-      {/* Show on mobile only when button is clicked */}
+ 
       {showMobilePlayer && (
         <div className="lg:hidden">
           <QuranStudyPlay

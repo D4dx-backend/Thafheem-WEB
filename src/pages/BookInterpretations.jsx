@@ -113,7 +113,7 @@ const BookInterpretations = () => {
   const renderInterpretationCard = (interpretation, type) => (
     <div
       key={interpretation.id}
-      className="flex items-center justify-between p-3 sm:p-4 dark:bg-black dark:text-white dark:hover:bg-gray-800 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+      className="flex items-center font-poppins justify-between p-3 sm:p-4 dark:bg-black dark:text-white dark:hover:bg-gray-800 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
     >
       {/* Left Section - Interpretation Info */}
       <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">

@@ -122,7 +122,7 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false, isMo
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 shadow-lg z-50  h-[90px]">
       <audio
         ref={audioRef}
         src={audioSrc}

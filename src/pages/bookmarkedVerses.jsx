@@ -85,7 +85,7 @@ const BookVerse = () => {
   return (
     <>
       <BookmarkNavbar />
-      <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black">
+      <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
         <div className="w-full max-w-[1290px] mx-auto">
 
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">

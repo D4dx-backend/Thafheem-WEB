@@ -41,7 +41,7 @@ const EndofProphethoodContent = ({ onPlayAudio, activeSection, showPlayButton = 
           {showPlayButton && (
             <button
               onClick={onPlayAudio}
-              className="flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 text-[#2AA0BF] hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200 rounded-lg border border-[#2AA0BF]/20"
+              className="flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 text-[#2AA0BF] hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200 rounded-lg "
             >
               <svg 
                 className="w-4 h-4" 

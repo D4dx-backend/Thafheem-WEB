@@ -143,7 +143,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     };
 
     return (
-      <div className="flex flex-col h-full dark:bg-[#2A2C38] ">
+      <div className="flex flex-col h-full dark:bg-[#2A2C38] font-poppins">
         {/* Search Bar */}
         <div className="p-3">
           <input
@@ -201,7 +201,7 @@ return (
     <div className="flex items-center justify-between bg-[#F8F9FA] dark:bg-black rounded-full p-1 m-2 w-[260px]">
 
 
-    <div className="flex items-center">
+    <div className="flex items-center font-poppins">
   {tabs.map((tab, idx) => (
     <React.Fragment key={tab}>
       <button

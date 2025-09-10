@@ -42,3 +42,27 @@
   font-weight: normal;
   font-style: normal;
 }
+
+@font-face {
+  font-family: 'Amiri Quran';
+  src: url('/public/fonts/amiri-quran.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'ScheherazadeNew-Regular';
+  src: url('/public/fonts/ScheherazadeNew-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'NotoSansMalayalam';
+  src: url('/fonts/NotoSansMalayalam-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-malayalam {
+  font-family: 'NotoSansMalayalam', serif;
+}

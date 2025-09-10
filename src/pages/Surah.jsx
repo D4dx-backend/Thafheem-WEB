@@ -472,7 +472,7 @@ import StarNumber from "../components/StarNumber";
  import { useTheme } from '../context/ThemeContext';
 
 const Surah = () => {
-  const { quranFont, fontSize } = useTheme();
+  const { quranFont, fontSize, translationFontSize } = useTheme();
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
@@ -758,7 +758,10 @@ const Surah = () => {
 
         {/* Translation */}
         <div className="mb-2 sm:mb-3">
-          <p className="text-sm sm:text-base lg:text-lg text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal">
+          <p 
+            className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+            style={{ fontSize: `${translationFontSize}px` }}
+          >
             {verse.translation}
           </p>
         </div>

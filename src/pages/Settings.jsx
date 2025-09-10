@@ -12,14 +12,25 @@ import {
 import { useTheme } from "../context/ThemeContext";
 
 const Settings = ({ onClose }) => {
-  const { theme: contextTheme, toggleTheme, quranFont: contextQuranFont, setQuranFont: setContextQuranFont, fontSize: contextFontSize, setFontSize: setContextFontSize } = useTheme();
+  const {
+    theme: contextTheme,
+    toggleTheme,
+    quranFont: contextQuranFont,
+    setQuranFont: setContextQuranFont,
+    fontSize: contextFontSize,
+    setFontSize: setContextFontSize,
+    translationFontSize: contextTranslationFontSize,
+    setTranslationFontSize: setContextTranslationFontSize,
+  } = useTheme();
   const [theme, setTheme] = useState(
     contextTheme === "dark" ? "Dark" : "Light"
   );
   const [quranFont, setQuranFont] = useState(contextQuranFont);
   const [fontSize, setFontSize] = useState(contextFontSize);
   const [language, setLanguage] = useState("English");
-  const [translationFontSize, setTranslationFontSize] = useState(12);
+  const [translationFontSize, setTranslationFontSize] = useState(
+    contextTranslationFontSize
+  );
   const [viewType, setViewType] = useState("Ayah Wise");
   const [quranAudio, setQuranAudio] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
@@ -54,6 +65,7 @@ const Settings = ({ onClose }) => {
     setContextFontSize(26);
     setLanguage("English");
     setTranslationFontSize(12);
+    setContextTranslationFontSize(12);
     setViewType("Ayah Wise");
     setQuranAudio(true);
     setPlaybackSpeed(1.0);
@@ -65,6 +77,7 @@ const Settings = ({ onClose }) => {
     // Save font settings to context
     setContextQuranFont(quranFont);
     setContextFontSize(fontSize);
+    setContextTranslationFontSize(translationFontSize);
     console.log("Settings saved");
     if (onClose) onClose();
   };
@@ -194,10 +207,10 @@ const Settings = ({ onClose }) => {
 
             <div
               className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-black mx-auto"
-              style={{ 
+              style={{
                 fontSize: `${fontSize}px`,
                 fontFamily: quranFont,
-                direction: 'rtl'
+                direction: "rtl",
               }}
             >
               <p className="text-black dark:text-white" dir="rtl">
@@ -272,7 +285,10 @@ const Settings = ({ onClose }) => {
             </div>
             <div className="border-b border-black  pb-4 mb-4">
               <div className="bg-[#F8F9FA] mt-5 p-2 rounded-sm h-[100px] w-[310px] dark:bg-black ">
-                <p className="text-sm text-gray-600 mt-2 dark:text-white">
+                <p
+                  className="text-gray-600 mt-2 dark:text-white"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                >
                   Verse wise format in the Quran, establish prayer and spend out
                   of what We have provided for them.
                 </p>

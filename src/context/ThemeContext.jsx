@@ -38,6 +38,7 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState("light");
   const [quranFont, setQuranFont] = useState("Amiri Quran"); // Default font
   const [fontSize, setFontSize] = useState(26); // Default font size in px
+  const [translationFontSize, setTranslationFontSize] = useState(12); // Default translation font size
 
   useEffect(() => {
     const root = window.document.documentElement; // <html>
@@ -53,7 +54,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, quranFont, setQuranFont, fontSize, setFontSize }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, quranFont, setQuranFont, fontSize, setFontSize, translationFontSize, setTranslationFontSize }}>
       {children}
     </ThemeContext.Provider>
   );

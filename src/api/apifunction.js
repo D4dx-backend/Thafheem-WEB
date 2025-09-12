@@ -11,18 +11,10 @@ export const fetchSurahs = async () => {
     arabic: surah.ASuraName,
     name: surah.ESuraName,
     ayahs: surah.TotalAyas,
-    type: surah.SuraType === "M" ? "Makki" : "Madani",
+    type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
   }));
 };
 
-export const fetchPageRanges = async () => {
-  const response = await fetch(PAGE_RANGES_API);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  const data = await response.json();
-  return data;
-};
 
 export const fetchJuzData = async () => {
   try {
@@ -32,13 +24,13 @@ export const fetchJuzData = async () => {
       fetchSurahs(),
     ]);
 
-    // Create surah names mapping
+    // Create surah names mapping with correct type classification
     const surahNamesMap = {};
     surahsData.forEach(surah => {
       surahNamesMap[surah.number] = {
         name: surah.name,
         arabic: surah.arabic,
-        type: surah.type,
+        type: surah.SuraType === "Makkan" ? "Makki" : "Madani", // Fixed mapping
         totalAyas: surah.ayahs
       };
     });
@@ -88,7 +80,7 @@ export const fetchJuzData = async () => {
             name: surahInfo.name,
             arabic: surahInfo.arabic,
             verses: verseRanges,
-            type: surahInfo.type,
+            type: surahInfo.type, // This will now be "Makki" or "Madani"
             ayahs: surahInfo.totalAyas
           });
         }
@@ -119,6 +111,7 @@ export const fetchJuzData = async () => {
   }
 };
 
+
 // Fetch audio translations for a specific Surah or Ayah
 export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
     const url = ayahNumber
@@ -146,3 +139,54 @@ export const fetchArabicVerses = async (surahId) => {
 };
 
 
+
+
+
+
+
+
+// Add these functions to your existing apifunction.js file
+
+// Fetch basic chapter info from Quran.com API
+export const fetchCompleteSurahInfo = async (surahId, language = 'en') => {
+  try {
+    const [basicChapter, detailedInfo, thafheemInfo, surahsData] = await Promise.all([
+      fetchBasicChapterData(surahId, language),
+      fetchChapterInfo(surahId, language).catch(() => null),
+      fetchThafheemPreface(surahId).catch(() => null),
+      fetchSurahs().then(surahs => surahs.find(s => s.number === parseInt(surahId))),
+    ]);
+
+    return {
+      basic: basicChapter,
+      detailed: detailedInfo,
+      thafheem: thafheemInfo,
+      surah: surahsData,
+    };
+  } catch (error) {
+    console.error('Error fetching complete surah info:', error);
+    throw error;
+  }
+};
+
+// Example of dependent functions you may already have in apifunctions.js
+export const fetchBasicChapterData = async (chapterId, language = 'en') => {
+  const response = await fetch(`${QURAN_API_BASE}/chapters?language=${language}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data.chapters.find(chapter => chapter.id === parseInt(chapterId));
+};
+
+export const fetchChapterInfo = async (chapterId, language = 'en') => {
+  const response = await fetch(`${QURAN_API_BASE}/chapters/${chapterId}/info?language=${language}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data.chapter_info;
+};
+
+export const fetchThafheemPreface = async (suraId) => {
+  const response = await fetch(`https://thafheem.net/thafheem-api/preface/${suraId}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data[0]; // Take first element
+};

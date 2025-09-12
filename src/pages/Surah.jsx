@@ -208,7 +208,7 @@ const Surah = () => {
                   </button>
                   <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
                     <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <Link to="/reading">
+                    <Link to={`/reading/${surahId}`}>
                       <span className="text-xs sm:text-sm text-black font-poppins dark:text-white cursor-pointer hover:underline">
                         Reading
                       </span>
@@ -272,7 +272,7 @@ const Surah = () => {
                     </button>
                     <button
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={() => navigate("/blockwise")}
+                      onClick={() => navigate(`/blockwise/${surahId}`)}
                     >
                       Block
                     </button>
@@ -315,7 +315,7 @@ const Surah = () => {
                       </button>
                       <button
                         className="px-3 sm:px-4 py-1.5 text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs sm:text-sm font-medium hover:text-gray-700 dark:hover:text-white transition-colors"
-                        onClick={() => navigate("/blockwise")}
+                        onClick={() => navigate(`/blockwise/${surahId}`)}
                       >
                         Block wise
                       </button>

@@ -1,4 +1,4 @@
-import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, QURAN_API_BASE } from "./apis";
+import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE } from "./apis";
 
 export const fetchSurahs = async () => {
   const response = await fetch(SURA_NAMES_API);
@@ -189,4 +189,50 @@ export const fetchThafheemPreface = async (suraId) => {
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   return data[0]; // Take first element
+};
+
+// Block-wise reading API functions
+
+// Fetch ayah ranges for block-based reading structure
+export const fetchAyaRanges = async (surahId) => {
+  const response = await fetch(`${AYA_RANGES_API}/${surahId}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data;
+};
+
+// Fetch structured Quranic text with audio URLs for block-wise reading
+export const fetchQuranTextWithStructure = async (surahId, range = null) => {
+  const url = range 
+    ? `${QURAN_TEXT_API}/${surahId}/${range}`
+    : `${QURAN_TEXT_API}/${surahId}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data;
+};
+
+// Fetch complete block-wise data for a surah
+export const fetchBlockWiseData = async (surahId) => {
+  try {
+    const [ayaRanges, quranText, surahsData] = await Promise.all([
+      fetchAyaRanges(surahId).catch(() => null),
+      fetchQuranTextWithStructure(surahId).catch(() => null),
+      fetchSurahs().then(surahs => surahs.find(s => s.number === parseInt(surahId))),
+    ]);
+
+    return {
+      ayaRanges: ayaRanges || [],
+      quranText: quranText || [],
+      surahInfo: surahsData || { number: parseInt(surahId), arabic: "Unknown Surah" },
+    };
+  } catch (error) {
+    console.error('Error fetching block-wise data:', error);
+    throw error;
+  }
 };

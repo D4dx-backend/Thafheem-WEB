@@ -46,9 +46,9 @@ function App() {
           <Route path="/surah/:surahId" element={<Surah />} />
           {/* <Route path="/surahinfo" element={<SurahInfo />} /> */}
           <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
-          <Route path="/reading" element={<Reading />} />
+          <Route path="/reading/:surahId?" element={<Reading />} />
           <Route path="/ayah/:ayahNumber?" element={<Ayah />} />
-          <Route path="/blockwise" element={<BlockWise />} />
+          <Route path="/blockwise/:surahId" element={<BlockWise />} />
           <Route path="/bookmarkblock" element={<BookmarkBlock />} />
           <Route path="/bookmarkedverses" element={<BookVerse />} />
           <Route

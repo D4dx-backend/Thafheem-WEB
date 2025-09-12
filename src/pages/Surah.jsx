@@ -474,7 +474,7 @@ import WordByWord from "./WordByWord";
 import StarNumber from "../components/StarNumber";
 import Bismi from "../assets/bismi.jpg";
 import { useTheme } from '../context/ThemeContext';
-import { fetchAyahAudioTranslations, fetchSurahs } from "../api/apifunction";
+import { fetchAyahAudioTranslations, fetchSurahs, fetchArabicVerses } from "../api/apifunction";
 
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
@@ -487,6 +487,7 @@ const Surah = () => {
   const [showWordByWord, setShowWordByWord] = useState(false);
   const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
   const [ayahData, setAyahData] = useState([]);
+  const [arabicVerses, setArabicVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -500,17 +501,21 @@ const Surah = () => {
         setLoading(true);
         setError(null);
   
-        const [ayahResponse, surahsResponse] = await Promise.all([
+        const [ayahResponse, surahsResponse, arabicResponse] = await Promise.all([
           fetchAyahAudioTranslations(parseInt(surahId)),
           fetchSurahs(),
+          fetchArabicVerses(parseInt(surahId)),
         ]);
   
         console.log("Ayah Response:", ayahResponse);
         console.log("Surahs Response:", surahsResponse);
+        console.log("Arabic Response:", arabicResponse);
+        console.log("Ayah Response length:", ayahResponse.length);
+        console.log("Arabic Response length:", arabicResponse.length);
   
         const formattedAyahData = ayahResponse.map((ayah) => ({
           number: ayah.contiayano || 0,
-          ArabicText: (ayah.contiayano || ""),
+          ArabicText: "",
           Translation: (ayah.AudioText || "")
             .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
             .replace(/\s+/g, " ") // Clean up multiple spaces
@@ -518,7 +523,8 @@ const Surah = () => {
         }));
   
         setAyahData(formattedAyahData);
-  
+        setArabicVerses(arabicResponse || []);
+
         const currentSurah = surahsResponse.find((s) => s.number === parseInt(surahId));
         setSurahInfo(currentSurah || { arabic: "Unknown Surah", number: parseInt(surahId) });
   
@@ -784,43 +790,59 @@ const Surah = () => {
         {/* Verses */}
         <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-black">
           <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-            {ayahData.length === 0 ? (
+            {!loading && ayahData.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400">
                   No ayah data available for this surah.
                 </p>
               </div>
-            ) : (
-              ayahData.map((verse, index) => (
-                <div key={index} className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
-                  {/* Arabic Text */}
-                  <div className="text-right mb-2 sm:mb-3 lg:mb-4">
-                  <p
-  className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
-  style={{
-    fontFamily: quranFont,
-    fontSize: `${fontSize}px`,
-  }}
->
-  {verse.ArabicText}
-</p>
-                  </div>
+            ) : !loading && ayahData.length > 0 ? (
+              ayahData.map((verse, index) => {
+                // Find corresponding Arabic verse by index (more reliable than verse_key matching)
+                const arabicVerse = arabicVerses[index];
+                const arabicText = arabicVerse?.text_uthmani || "";
+                
+                // If no Arabic text found, try to find by verse_key as fallback
+                const fallbackArabicVerse = arabicVerses.find(av => av.verse_key === `${surahId}:${index + 1}`);
+                const finalArabicText = arabicText || fallbackArabicVerse?.text_uthmani || "";
+                
+                console.log(`Verse ${index + 1}:`, {
+                  translationVerse: verse,
+                  arabicVerse: arabicVerse,
+                  arabicText: finalArabicText,
+                  fallbackFound: !!fallbackArabicVerse
+                });
+                
+                return (
+                  <div key={index} className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
+                    {/* Arabic Text */}
+                    <div className="text-right mb-2 sm:mb-3 lg:mb-4">
+                      <p
+                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+                        style={{
+                          fontFamily: quranFont,
+                          fontSize: `${fontSize}px`,
+                        }}
+                      >
+                        {finalArabicText}
+                      </p>
+                    </div>
 
-                  {/* Translation */}
-                  <div className="mb-2 sm:mb-3">
-                  <p
-  className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
-  style={{ fontSize: `${translationFontSize}px` }}
->
-{verse.Translation}
-</p>
-                  </div>
+                    {/* Translation */}
+                    <div className="mb-2 sm:mb-3">
+                      <p
+                        className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                        style={{ fontSize: `${translationFontSize}px` }}
+                      >
+                        {verse.Translation}
+                      </p>
+                    </div>
 
                   {/* Actions */}
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-0">
                     {/* Verse Number */}
                     <span className="text-xs sm:text-sm font-medium">
-                      {surahId}.{verse.AyaNo || verse.number || index + 1}
+                      {surahId}.{index + 1}
                     </span>
 
                     {/* Copy */}
@@ -838,7 +860,7 @@ const Surah = () => {
                       className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/ayah/${verse.AyaNo || verse.number || index + 1}`);
+                        navigate(`/ayah/${index + 1}`);
                       }}
                     >
                       <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -849,7 +871,7 @@ const Surah = () => {
                       className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleWordByWordClick(verse.AyaNo || verse.number || index + 1);
+                        handleWordByWordClick(index + 1);
                       }}
                     >
                       <List className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -869,8 +891,9 @@ const Surah = () => {
                     </button>
                   </div>
                 </div>
-              ))
-            )}
+                );
+              })
+            ) : null}
           </div>
         </div>
 

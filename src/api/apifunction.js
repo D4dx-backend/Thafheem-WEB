@@ -1,4 +1,4 @@
-import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API } from "./apis";
+import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, QURAN_API_BASE } from "./apis";
 
 export const fetchSurahs = async () => {
   const response = await fetch(SURA_NAMES_API);
@@ -132,5 +132,17 @@ export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
     const data = await response.json();
     return data;
   };
+
+// Fetch Arabic verses in Uthmani script from Quran.com API
+export const fetchArabicVerses = async (surahId) => {
+  const url = `${QURAN_API_BASE}/quran/verses/uthmani?chapter_number=${surahId}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.verses;
+};
 
 

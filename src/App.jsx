@@ -32,13 +32,15 @@ import Tajweed from "./pages/Tajweed";
 import QuranStudy from "./pages/QuranStudy";
 import EndofProphethood from "./pages/EndofProphethood";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <HomepageNavbar />
-        <Routes>
+      <AuthProvider>
+        <Router>
+          <HomepageNavbar />
+          <Routes>
           <Route path="/" element={<Home />} /> {/* Surah/Home */}
           <Route path="/juz" element={<Juz />} />
           <Route path="/sign" element={<Sign />} />
@@ -80,6 +82,7 @@ function App() {
         </Routes>
         <Footer />
       </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Menu,
@@ -29,7 +28,7 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
-  BookA, 
+  BookA,
   Book,
   LaptopMinimal,
   BookUser,
@@ -43,19 +42,24 @@ import {
   ChevronDown,
 } from "lucide-react";
 import logo from "../assets/logo.png";
-import { useNavigate, useLocation } from "react-router-dom"; 
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
 import { useTheme } from "../context/ThemeContext";
-import SettingsDrawer  from "../pages/Settings";
+import { useAuth } from "../context/AuthContext";
+import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
+import SettingsDrawer from "../pages/Settings";
 
 const HomepageNavbar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
@@ -63,6 +67,27 @@ const HomepageNavbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut(auth);
+      console.log("User signed out successfully");
+      navigate("/"); // Redirect to home page after successful logout
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const handleAuthButtonClick = () => {
+    if (user) {
+      handleSignOut();
+    } else {
+      navigate("/sign");
+    }
+  };
 
   const menuItems = [
     { icon: Home, label: "Home", path: "/" },
@@ -92,7 +117,7 @@ const HomepageNavbar = () => {
     { icon: Sparkles, label: "What's New", path: "/whatsnew" },
     { icon: Settings, label: "Settings", path: "/settings" },
     { icon: Bug, label: "Raise a bug", path: "/raisebug" },
-    { icon: MessageCircleQuestion , label: "Share App", path: "/share" },
+    { icon: MessageCircleQuestion, label: "Share App", path: "/share" },
     { icon: CircleAlert, label: "About Author", path: "/aboutauthor" },
     { icon: User, label: "About Us", path: "/about" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
@@ -102,7 +127,12 @@ const HomepageNavbar = () => {
   ];
 
   const dangerMenuItems = [
-    { icon: UserX, label: "Delete Account", path: "/deleteaccount", isDanger: true },
+    {
+      icon: UserX,
+      label: "Delete Account",
+      path: "/deleteaccount",
+      isDanger: true,
+    },
     { icon: LogOut, label: "Log Out", path: "/logout", isDanger: true },
   ];
 
@@ -143,27 +173,50 @@ const HomepageNavbar = () => {
         <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
-          <button
-  onClick={toggleMenu}
-  className="flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
+            <button
+              onClick={toggleMenu}
+              className="flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
              text-gray-600 dark:text-gray-300 
              hover:text-gray-800 dark:hover:text-white 
              hover:bg-gray-100 dark:hover:bg-gray-800 
              rounded-lg transition-colors 
              min-h-[44px] min-w-[44px] justify-center 
              sm:min-h-auto sm:min-w-auto sm:justify-start"
->
-  <Menu size={18} className="sm:w-5 sm:h-5" />
-</button>
-
+            >
+              <Menu size={18} className="sm:w-5 sm:h-5" />
+            </button>
           </div>
 
           {/* Right side */}
           <div className="flex items-center space-x-1">
-            <button className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap">
-              <span className="hidden xs:inline">Sign In</span>
-              <span className="xs:hidden">Sign</span>
-            </button>
+            {/* Sign In/Sign Out Button */}
+            {user ? (
+              <button
+                onClick={handleAuthButtonClick}
+                disabled={isSigningOut}
+                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSigningOut ? (
+                  <div className="flex items-center space-x-1">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-red-600"></div>
+                    <span className="hidden xs:inline">Signing Out...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="hidden xs:inline">Sign Out</span>
+                    <span className="xs:hidden">Log Out</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleAuthButtonClick}
+                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+              >
+                <span className="hidden xs:inline">Sign In</span>
+                <span className="xs:hidden">Sign</span>
+              </button>
+            )}
 
             <button
               onClick={() => setIsLanguageOpen(true)}
@@ -194,10 +247,10 @@ const HomepageNavbar = () => {
               <Settings size={18} />
             </button>
             {isSettingsOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center">
-    <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
-  </div>
-)}
+              <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
+              </div>
+            )}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -231,7 +284,9 @@ const HomepageNavbar = () => {
                   <X size={20} />
                 </button> */}
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins">MENU</h2>
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins">
+                MENU
+              </h2>
             </div>
 
             <div className="py-2 font-poppins">
@@ -241,7 +296,9 @@ const HomepageNavbar = () => {
                 const isMainActive =
                   isActive(item.path) ||
                   (item.hasSubmenu &&
-                    item.submenuItems?.some((subItem) => isActive(subItem.path)));
+                    item.submenuItems?.some((subItem) =>
+                      isActive(subItem.path)
+                    ));
 
                 return (
                   <div key={index}>
@@ -273,20 +330,18 @@ const HomepageNavbar = () => {
                           {item.label}
                         </span>
                       </div>
-                      {item.hasArrow && (
-  openSubmenu === index ? (
-    <ChevronDown
-      size={16}
-      className="text-black dark:text-white flex-shrink-0 transition-transform"
-    />
-  ) : (
-    <ChevronRight
-      size={16}
-      className="text-black dark:text-white flex-shrink-0 transition-transform"
-    />
-  )
-)}
-
+                      {item.hasArrow &&
+                        (openSubmenu === index ? (
+                          <ChevronDown
+                            size={16}
+                            className="text-black dark:text-white flex-shrink-0 transition-transform"
+                          />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className="text-black dark:text-white flex-shrink-0 transition-transform"
+                          />
+                        ))}
                     </button>
 
                     {item.hasSubmenu && openSubmenu === index && (
@@ -307,7 +362,9 @@ const HomepageNavbar = () => {
                               }`}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>
-                              <span className="leading-tight">{subItem.label}</span>
+                              <span className="leading-tight">
+                                {subItem.label}
+                              </span>
                             </button>
                           );
                         })}

@@ -1,22 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 const LogOut = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Redirect if not signed in
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  // Show loading while checking auth state
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCancel = () => {
     setIsOpen(false);
     console.log('Logout cancelled');
-    navigate(-1); // 👈 Go back to previous page
+    navigate(-1); // Go back to previous page
   };
 
-  const handleLogout = () => {
-    setIsOpen(false);
-    console.log('User logged out');
-    // Clear auth data if needed (localStorage/sessionStorage)
-    // localStorage.removeItem("token");
-    navigate('/'); // 👈 Redirect to homepage
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut(auth);
+      setIsOpen(false);
+      console.log('User logged out successfully');
+      navigate('/'); // Redirect to homepage
+    } catch (error) {
+      console.error('Error logging out:', error);
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -41,15 +70,20 @@ const LogOut = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 border dark:text-white dark:hover:bg-[#2A2C38] border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium"
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-gray-700 border dark:text-white dark:hover:bg-[#2A2C38] border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-medium"
+                disabled={isLoggingOut}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                Log Out
+                {isLoggingOut && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                <span>{isLoggingOut ? 'Logging Out...' : 'Log Out'}</span>
               </button>
             </div>
           </div>

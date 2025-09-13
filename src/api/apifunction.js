@@ -1,4 +1,4 @@
-import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE } from "./apis";
+import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE, INTERPRETATION_API } from "./apis";
 
 export const fetchSurahs = async () => {
   const response = await fetch(SURA_NAMES_API);
@@ -138,6 +138,21 @@ export const fetchArabicVerses = async (surahId) => {
   return data.verses;
 };
 
+// Fetch Arabic verses with page information from Quran.com API
+export const fetchArabicVersesWithPage = async (surahId, page = 1) => {
+  const url = `${QURAN_API_BASE}/quran/verses/uthmani?chapter_number=${surahId}&page=${page}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return {
+    verses: data.verses,
+    pagination: data.pagination || null
+  };
+};
+
 
 
 
@@ -236,3 +251,42 @@ export const fetchBlockWiseData = async (surahId) => {
     throw error;
   }
 };
+
+// Fetch word-by-word meaning from Quran.com API
+export const fetchWordByWordMeaning = async (surahId, verseId, language = 'en') => {
+  const verseKey = `${surahId}:${verseId}`;
+  const url = `${QURAN_API_BASE}/verses/by_key/${verseKey}?words=true&word_fields=verse_key,word_number,location,text_uthmani,text_indopak,text_simple,class_name,line_number,page_number,code_v1,qpc_uthmani_hafs,translation&translation_fields=resource_name,language_name&language=${language}&translations=131`;
+  
+  console.log('Fetching word-by-word data from:', url);
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Word-by-word API response:', data);
+    return data.verse;
+  } catch (error) {
+    console.error('Error fetching word-by-word meaning:', error);
+    throw error;
+  }
+};
+
+// Fetch word meanings from Thafheem API
+export const fetchThafheemWordMeanings = async (surahId, verseId) => {
+  const url = `https://thafheem.net/thafheem-api/wordmeanings/${surahId}/${verseId}`;
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching Thafheem word meanings:', error);
+    throw error;
+  }
+};
+

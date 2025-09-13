@@ -7,31 +7,37 @@ import { ChevronLeft, ChevronRight, ArrowUp, X } from "lucide-react";
 import Bismi from "../assets/bismi.jpg";
 import { useTheme } from "../context/ThemeContext";
 import { surahNameUnicodes } from '../components/surahNameUnicodes';
-import { fetchArabicVerses, fetchSurahs } from '../api/apifunction';
+import { fetchArabicVersesWithPage, fetchSurahs } from '../api/apifunction';
 
 const Reading = () => {
-  const { surahId } = useParams(); // Changed from surah_id to surahId for consistency
+  const { surahId } = useParams();
   const navigate = useNavigate();
   const [verses, setVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const [pageLoading, setPageLoading] = useState(false);
 
+  // Fetch surah data and first page
   useEffect(() => {
     const fetchSurahData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setCurrentPage(1); // Reset to first page when surah changes
         
-        const currentSurahId = surahId || 2; // Default to Al-Baqarah if no ID provided
+        const currentSurahId = surahId || 2;
         
-        // Fetch verses and surah info concurrently
+        // Fetch verses with pagination and surah info concurrently
         const [versesData, surahsData] = await Promise.all([
-          fetchArabicVerses(currentSurahId),
+          fetchArabicVersesWithPage(currentSurahId, 1),
           fetchSurahs()
         ]);
         
-        setVerses(versesData);
+        setVerses(versesData.verses);
+        setPagination(versesData.pagination);
         setSurahInfo(surahsData.find(s => s.number === parseInt(currentSurahId)));
         
       } catch (err) {
@@ -45,6 +51,30 @@ const Reading = () => {
     fetchSurahData();
   }, [surahId]);
 
+  // Fetch specific page data
+  const fetchPage = async (pageNumber) => {
+    try {
+      setPageLoading(true);
+      setError(null);
+      
+      const currentSurahId = surahId || 2;
+      const versesData = await fetchArabicVersesWithPage(currentSurahId, pageNumber);
+      
+      setVerses(versesData.verses);
+      setPagination(versesData.pagination);
+      setCurrentPage(pageNumber);
+      
+      // Scroll to top when page changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+    } catch (err) {
+      console.error('Error fetching page data:', err);
+      setError(err.message);
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
   // Navigation functions
   const handlePreviousSurah = () => {
     const currentId = parseInt(surahId) || 2;
@@ -57,8 +87,20 @@ const Reading = () => {
   const handleNextSurah = () => {
     const currentId = parseInt(surahId) || 2;
     const nextSurahId = currentId + 1;
-    if (nextSurahId <= 114) { // Total surahs in Quran
+    if (nextSurahId <= 114) {
       navigate(`/reading/${nextSurahId}`);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (pagination && currentPage > 1) {
+      fetchPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination && currentPage < pagination.total_pages) {
+      fetchPage(currentPage + 1);
     }
   };
 
@@ -83,9 +125,9 @@ const Reading = () => {
       />
     </svg>
   );
+
   const toArabicNumber = (numberString) => {
     const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    
     return numberString.replace(/\d/g, (digit) => arabicDigits[digit]);
   };
   
@@ -139,16 +181,18 @@ const Reading = () => {
                 </button>
               </div>
 
-              {/* Bismillah */}
-              <div className="mb-6 sm:mb-8">
-                <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-arabic dark:text-white text-gray-800 leading-relaxed px-2">
-                  <img 
-                    src={Bismi} 
-                    alt="Bismillah" 
-                    className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert" 
-                  />
-                </p>
-              </div>
+              {/* Bismillah - only show on first page */}
+              {currentPage === 1 && (
+                <div className="mb-6 sm:mb-8">
+                  <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-arabic dark:text-white text-gray-800 leading-relaxed px-2">
+                    <img 
+                      src={Bismi} 
+                      alt="Bismillah" 
+                      className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert" 
+                    />
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -180,7 +224,7 @@ const Reading = () => {
           {/* Content */}
           {!loading && !error && verses.length > 0 && (
             <>
-              <div className="flex flex-row sm:flex-row items-center justify-between">
+              <div className="flex flex-row sm:flex-row items-center justify-between mb-4">
                 {/* Left side */}
                 <div className="flex items-center space-x-2">
                   <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />  
@@ -191,6 +235,13 @@ const Reading = () => {
                   </Link>
                 </div>
 
+                {/* Center - Page info */}
+                {pagination && pagination.total_pages > 1 && (
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <span>Page {currentPage} of {pagination.total_pages}</span>
+                  </div>
+                )}
+
                 {/* Right side */}
                 <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 transition-colors">
                   <Play className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -198,34 +249,154 @@ const Reading = () => {
                 </button>
               </div>
 
-              {/* Verses Content */}
-              <div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
-                <div className="text-center">
-                  {verses.map((verse, index) => (
-                    <div key={verse.id}>
-                      <p 
-                        style={{ fontFamily: `'${quranFont}', serif` }} 
-                        
-                        className={`text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white mb-3 sm:mb-4 px-2 ${
-                          index === 0 ? 'bg-[#E7F0F3] dark:bg-[#63C3DC] px-2 py-1 rounded' : ''
-                        }`}
-                      >
-                        {verse.text_uthmani} ﴿{toArabicNumber(verse.verse_key.split(':')[1])} ﴾
-                      </p>
-                      
-                      {/* Add page breaks every 10 verses for better reading experience */}
-                      {verse.verse_number % 10 === 0 && verse.verse_number < verses.length && (
-                        <>
-                          <div className="text-center text-gray-500 mb-1 sm:mb-2 text-xs sm:text-sm">
-                            {Math.ceil(verse.verse_number / 10)}
-                          </div>
-                          <hr className="w-1/2 mx-auto border-gray-300 shadow-sm" />
-                        </>
-                      )}
-                    </div>
-                  ))}
+              {/* Page Navigation - Top */}
+              {pagination && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-center space-x-4 mb-6">
+                  <button 
+                    onClick={handlePreviousPage}
+                    disabled={currentPage <= 1 || pageLoading}
+                    className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 
+                               dark:bg-[#323A3F] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 
+                               border border-gray-300 dark:border-gray-600 rounded-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous Page</span>
+                  </button>
+
+                  <span className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#323A3F] rounded-lg">
+                    {currentPage} / {pagination.total_pages}
+                  </span>
+
+                  <button 
+                    onClick={handleNextPage}
+                    disabled={currentPage >= pagination.total_pages || pageLoading}
+                    className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 
+                               dark:bg-[#323A3F] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 
+                               border border-gray-300 dark:border-gray-600 rounded-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>Next Page</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
+              )}
+
+              {/* Page Loading Indicator */}
+              {pageLoading && (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">Loading page...</p>
+                </div>
+              )}
+
+              {/* Verses Content */}
+              {/* <div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+  <div className="text-center">
+    {verses.map((verse, index) => (
+      <div key={verse.id} className="mb-4">
+
+        <div className="p-4  rounded-lg ">
+          <p 
+            style={{ fontFamily: `'${quranFont}', serif` }} 
+            className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white"
+          >
+            {verse.text_uthmani} ﴿{toArabicNumber(verse.verse_key.split(':')[1])}﴾
+          </p>
+        </div>
+
+        {(index + 1) % 10 === 0 && index < verses.length - 1 && (
+          <div className="my-6 ">
+            <hr className="border-gray-300 dark:border-gray-600" />
+            <div className="text-center text-gray-500 dark:text-gray-400 text-sm mt-2">
+              Page {Math.ceil((index + 1) / 10)}
+            </div>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+</div> */}
+
+{/* Verses Content */}
+{/* Verses Content */}
+<div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+  <div className="text-center">
+    {/* Continuous text flow */}
+    <p 
+      style={{ fontFamily: `'${quranFont}', serif` }} 
+      className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-arabic leading-loose text-gray-900 dark:text-white"
+    >
+      {verses.map((verse, index) => (
+        <span key={verse.id}>
+          {verse.text_uthmani} ﴿{toArabicNumber(verse.verse_key.split(':')[1])}﴾
+          {/* Add gap between verses for better readability */}
+          {index < verses.length - 1 && '   '}
+          
+          {/* Page Break Indicator Every 10 Verses */}
+          {(index + 1) % 10 === 0 && index < verses.length - 1 && (
+            <>
+              <br />
+              <span className="block my-3">
+                <span className="block border-t border-gray-300 dark:border-gray-600 mb-2"></span>
+                <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-500 dark:text-gray-400 font-sans">
+                  Verses {Math.max(1, (index + 1) - 9)} - {index + 1}
+                </span>
+              </span>
+              <br />
+            </>
+          )}
+        </span>
+      ))}
+    </p>
+
+    {/* End of page indicator */}
+    {verses.length > 0 && (
+      <div className="mt-8 mb-4">
+        <hr className="border-gray-300 dark:border-gray-600" />
+        <div className="text-center text-gray-500 dark:text-gray-400 text-sm mt-4">
+          <span className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full font-sans">
+            End of Page {currentPage} • {verses.length} verses
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
+
+              {/* Page Navigation - Bottom */}
+              {pagination && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-center space-x-4 mb-6">
+                  <button 
+                    onClick={handlePreviousPage}
+                    disabled={currentPage <= 1 || pageLoading}
+                    className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 
+                               dark:bg-[#323A3F] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 
+                               border border-gray-300 dark:border-gray-600 rounded-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous Page</span>
+                  </button>
+
+                  <span className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#323A3F] rounded-lg">
+                    {currentPage} / {pagination.total_pages}
+                  </span>
+
+                  <button 
+                    onClick={handleNextPage}
+                    disabled={currentPage >= pagination.total_pages || pageLoading}
+                    className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 
+                               dark:bg-[#323A3F] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 
+                               border border-gray-300 dark:border-gray-600 rounded-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>Next Page</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

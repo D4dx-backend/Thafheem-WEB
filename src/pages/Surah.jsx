@@ -25,19 +25,24 @@ import Transition from "../components/Transition";
 import WordByWord from "./WordByWord";
 import StarNumber from "../components/StarNumber";
 import Bismi from "../assets/bismi.jpg";
-import { useTheme } from '../context/ThemeContext';
-import { fetchAyahAudioTranslations, fetchSurahs, fetchArabicVerses } from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
+import {
+  fetchAyahAudioTranslations,
+  fetchSurahs,
+  fetchArabicVerses,
+} from "../api/apifunction";
 
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
-  
+  const [copiedVerse, setCopiedVerse] = useState(null);
   // State management
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
-  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
+  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] =
+    useState(null);
   const [ayahData, setAyahData] = useState([]);
   const [arabicVerses, setArabicVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
@@ -48,23 +53,24 @@ const Surah = () => {
   useEffect(() => {
     const loadSurahData = async () => {
       if (!surahId) return;
-  
+
       try {
         setLoading(true);
         setError(null);
-  
-        const [ayahResponse, surahsResponse, arabicResponse] = await Promise.all([
-          fetchAyahAudioTranslations(parseInt(surahId)),
-          fetchSurahs(),
-          fetchArabicVerses(parseInt(surahId)),
-        ]);
-  
+
+        const [ayahResponse, surahsResponse, arabicResponse] =
+          await Promise.all([
+            fetchAyahAudioTranslations(parseInt(surahId)),
+            fetchSurahs(),
+            fetchArabicVerses(parseInt(surahId)),
+          ]);
+
         console.log("Ayah Response:", ayahResponse);
         console.log("Surahs Response:", surahsResponse);
         console.log("Arabic Response:", arabicResponse);
         console.log("Ayah Response length:", ayahResponse.length);
         console.log("Arabic Response length:", arabicResponse.length);
-  
+
         const formattedAyahData = ayahResponse.map((ayah) => ({
           number: ayah.contiayano || 0,
           ArabicText: "",
@@ -73,13 +79,16 @@ const Surah = () => {
             .replace(/\s+/g, " ") // Clean up multiple spaces
             .trim(),
         }));
-  
+
         setAyahData(formattedAyahData);
         setArabicVerses(arabicResponse || []);
 
-        const currentSurah = surahsResponse.find((s) => s.number === parseInt(surahId));
-        setSurahInfo(currentSurah || { arabic: "Unknown Surah", number: parseInt(surahId) });
-  
+        const currentSurah = surahsResponse.find(
+          (s) => s.number === parseInt(surahId)
+        );
+        setSurahInfo(
+          currentSurah || { arabic: "Unknown Surah", number: parseInt(surahId) }
+        );
       } catch (err) {
         setError(err.message);
         console.error("Error fetching surah data:", err);
@@ -87,15 +96,22 @@ const Surah = () => {
         setLoading(false);
       }
     };
-  
+
     loadSurahData();
   }, [surahId]);
-  
-  
-  
+
   const handleWordByWordClick = (verseNumber) => {
     setSelectedVerseForWordByWord(verseNumber);
     setShowWordByWord(true);
+  };
+
+  const handleWordByWordClose = () => {
+    setShowWordByWord(false);
+    setSelectedVerseForWordByWord(null);
+  };
+
+  const handleWordByWordNavigate = (newVerseNumber) => {
+    setSelectedVerseForWordByWord(newVerseNumber);
   };
 
   const handleBookmarkClick = (e) => {
@@ -125,7 +141,8 @@ const Surah = () => {
 
   const handleNextSurah = () => {
     const nextSurahId = parseInt(surahId) + 1;
-    if (nextSurahId <= 114) { // Total surahs in Quran
+    if (nextSurahId <= 114) {
+      // Total surahs in Quran
       navigate(`/surah/${nextSurahId}`);
     }
   };
@@ -147,7 +164,45 @@ const Surah = () => {
       />
     </svg>
   );
-
+  const handleCopyVerse = async (arabicText, translation, verseNumber) => {
+    try {
+      const textToCopy = `${arabicText}
+  
+  "${translation}"
+  
+  — Quran ${surahId}:${verseNumber}`;
+  
+      await navigator.clipboard.writeText(textToCopy);
+      
+      // Show feedback
+      setCopiedVerse(verseNumber);
+      
+      // Clear feedback after 2 seconds
+      setTimeout(() => {
+        setCopiedVerse(null);
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      
+      // Fallback for older browsers
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        setCopiedVerse(verseNumber);
+        setTimeout(() => {
+          setCopiedVerse(null);
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed: ', fallbackErr);
+      }
+    }
+  };
   // Loading state
   if (loading) {
     return (
@@ -156,7 +211,9 @@ const Surah = () => {
         <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading Surah data...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading Surah data...
+            </p>
           </div>
         </div>
       </>
@@ -237,10 +294,10 @@ const Surah = () => {
 
               {/* Bismillah */}
               <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4">
-                <img 
-                  src={Bismi} 
-                  alt="Bismillah" 
-                  className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert" 
+                <img
+                  src={Bismi}
+                  alt="Bismillah"
+                  className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert"
                 />
               </p>
 
@@ -252,18 +309,20 @@ const Surah = () => {
                     Surah info
                   </span>
                 </Link> */}
-  <Link to={`/surahinfo/${surahId}`}>
-    <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
-      Surah info
-    </span>
-  </Link>
+                <Link to={`/surahinfo/${surahId}`}>
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
+                    Surah info
+                  </span>
+                </Link>
               </div>
 
               {/* Play Audio */}
               <div className="flex justify-between">
                 <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors min-h-[44px] px-2">
                   <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="text-xs sm:text-sm font-medium">Play Audio</span>
+                  <span className="text-xs sm:text-sm font-medium">
+                    Play Audio
+                  </span>
                 </button>
                 <div className="flex justify-end">
                   <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
@@ -285,9 +344,9 @@ const Surah = () => {
             <div className="hidden sm:block">
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-  {surahInfo?.arabic || `Surah ${surahId}`}
-</h1>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
+                  {surahInfo?.arabic || `Surah ${surahId}`}
+                </h1>
 
                 {/* Action Icons */}
                 <div className="flex items-center justify-center space-x-3 sm:space-x-4">
@@ -301,10 +360,10 @@ const Surah = () => {
 
                 {/* Bismillah */}
                 <div className="mt-6 sm:mb-8 relative">
-                  <img 
-                    src={Bismi} 
-                    alt="Bismillah" 
-                    className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert" 
+                  <img
+                    src={Bismi}
+                    alt="Bismillah"
+                    className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert"
                   />
 
                   {/* Desktop Ayah wise / Block wise buttons */}
@@ -328,10 +387,10 @@ const Surah = () => {
                   <div className="flex items-center justify-start space-x-2">
                     <Info className="w-5 h-5 text-gray-900 dark:text-white" />
                     <Link to={`/surahinfo/${surahId}`}>
-    <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
-      Surah info
-    </span>
-  </Link>
+                      <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
+                        Surah info
+                      </span>
+                    </Link>
                   </div>
 
                   <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors min-h-[44px] px-2">
@@ -358,20 +417,26 @@ const Surah = () => {
                 // Find corresponding Arabic verse by index (more reliable than verse_key matching)
                 const arabicVerse = arabicVerses[index];
                 const arabicText = arabicVerse?.text_uthmani || "";
-                
+
                 // If no Arabic text found, try to find by verse_key as fallback
-                const fallbackArabicVerse = arabicVerses.find(av => av.verse_key === `${surahId}:${index + 1}`);
-                const finalArabicText = arabicText || fallbackArabicVerse?.text_uthmani || "";
-                
+                const fallbackArabicVerse = arabicVerses.find(
+                  (av) => av.verse_key === `${surahId}:${index + 1}`
+                );
+                const finalArabicText =
+                  arabicText || fallbackArabicVerse?.text_uthmani || "";
+
                 console.log(`Verse ${index + 1}:`, {
                   translationVerse: verse,
                   arabicVerse: arabicVerse,
                   arabicText: finalArabicText,
-                  fallbackFound: !!fallbackArabicVerse
+                  fallbackFound: !!fallbackArabicVerse,
                 });
-                
+
                 return (
-                  <div key={index} className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
+                  <div
+                    key={index}
+                    className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700"
+                  >
                     {/* Arabic Text */}
                     <div className="text-right mb-2 sm:mb-3 lg:mb-4">
                       <p
@@ -395,59 +460,72 @@ const Surah = () => {
                       </p>
                     </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-0">
-                    {/* Verse Number */}
-                    <span className="text-xs sm:text-sm font-medium">
-                      {surahId}.{index + 1}
-                    </span>
+                    {/* Actions */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-0">
+                      {/* Verse Number */}
+                      <span className="text-xs sm:text-sm font-medium">
+                        {surahId}.{index + 1}
+                      </span>
 
-                    {/* Copy */}
-                    <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
-                      <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                      {/* Copy */}
+                      <button 
+  className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors relative"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleCopyVerse(finalArabicText, verse.Translation, index + 1);
+  }}
+  title="Copy verse"
+>
+  {copiedVerse === index + 1 ? (
+    <div className="flex items-center space-x-1">
+      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+      <span className="text-xs text-green-500 font-medium hidden sm:inline">Copied!</span>
+    </div>
+  ) : (
+    <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+  )}
+</button>
 
-                    {/* Play */}
-                    <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
-                      <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                      {/* Play */}
+                      <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
+                        <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
 
-                    {/* BookOpen */}
-                    <button
+                      {/* BookOpen */}
+                      <button
                       className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/ayah/${index + 1}`);
-                      }}
                     >
                       <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
 
-                    {/* List */}
-                    <button
-                      className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleWordByWordClick(index + 1);
-                      }}
-                    >
-                      <List className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
 
-                    {/* Bookmark */}
-                    <button
-                      className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                      onClick={handleBookmarkClick}
-                    >
-                      <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                      {/* List */}
+                      <button
+                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWordByWordClick(index + 1);
+                        }}
+                      >
+                        <List className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
 
-                    {/* Share */}
-                    <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
-                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                      {/* Bookmark */}
+                      <button
+                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        onClick={handleBookmarkClick}
+                      >
+                        <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+
+                      {/* Share */}
+                      <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
+                        <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
                 );
               })
             ) : null}
@@ -461,7 +539,7 @@ const Surah = () => {
             <div className="sm:hidden space-y-2">
               {/* First row: Previous + Beginning */}
               <div className="flex space-x-2">
-                <button 
+                <button
                   onClick={handlePreviousSurah}
                   disabled={parseInt(surahId) <= 1}
                   className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-xs text-gray-600 
@@ -473,8 +551,10 @@ const Surah = () => {
                   <span>Previous Surah</span>
                 </button>
 
-                <button 
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                <button
+                  onClick={() =>
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }
                   className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-xs text-gray-600 
                              dark:bg-[#323A3F] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 
                              border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px]"
@@ -486,7 +566,7 @@ const Surah = () => {
 
               {/* Second row: Next Surah */}
               <div className="flex justify-center">
-                <button 
+                <button
                   onClick={handleNextSurah}
                   disabled={parseInt(surahId) >= 114}
                   className="w-[173.96px] flex items-center justify-center space-x-2 px-4 py-2 text-xs text-gray-600 
@@ -502,7 +582,7 @@ const Surah = () => {
 
             {/* Desktop: Horizontal layout */}
             <div className="hidden sm:flex items-center justify-center space-x-3 sm:space-x-4 lg:space-x-6">
-              <button 
+              <button
                 onClick={handlePreviousSurah}
                 disabled={parseInt(surahId) <= 1}
                 className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#FFFFFF] text-gray-600 
@@ -513,9 +593,9 @@ const Surah = () => {
                 <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Previous Surah</span>
               </button>
-              
-              <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#FFFFFF] text-gray-600 
                            dark:bg-[#2A2C38] dark:text-white hover:text-gray-900 dark:hover:text-gray-300 min-h-[44px] 
                            sm:min-h-[48px] border border-gray-300 dark:border-gray-600 rounded-lg"
@@ -523,8 +603,8 @@ const Surah = () => {
                 <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Beginning of Surah</span>
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleNextSurah}
                 disabled={parseInt(surahId) >= 114}
                 className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#FFFFFF] text-gray-600 
@@ -540,10 +620,18 @@ const Surah = () => {
         </div>
 
         {/* Overlay Popup for Word by Word */}
+        {/* Overlay Popup for Word by Word */}
         {showWordByWord && (
-          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="rounded-lg max-w-xs sm:max-w-5xl max-h-[90vh] overflow-y-auto relative w-full">
-              <WordByWord selectedVerse={selectedVerseForWordByWord} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+              <div className="overflow-y-auto max-h-[90vh]">
+                <WordByWord
+                  selectedVerse={selectedVerseForWordByWord}
+                  surahId={surahId}
+                  onClose={handleWordByWordClose}
+                  onNavigate={handleWordByWordNavigate}
+                />
+              </div>
             </div>
           </div>
         )}

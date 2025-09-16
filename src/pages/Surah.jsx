@@ -313,6 +313,56 @@ const Surah = () => {
       }
     }
   };
+
+  const handleShareVerse = async (arabicText, translation, verseNumber) => {
+    const shareText = `${arabicText}
+
+"${translation}"
+
+— Quran ${surahId}:${verseNumber}`;
+
+    const shareUrl = `${window.location.origin}/surah/${surahId}#verse-${verseNumber}`;
+
+    const shareData = {
+      title: `Quran ${surahId}:${verseNumber}`,
+      text: shareText,
+      url: shareUrl,
+    };
+
+    try {
+      // Check if Web Share API is supported
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare(shareData)
+      ) {
+        await navigator.share(shareData);
+        showSuccess("Verse shared successfully");
+      } else {
+        // Fallback: Copy shareable link to clipboard
+        const shareableContent = `${shareText}\n\nRead more: ${shareUrl}`;
+        await navigator.clipboard.writeText(shareableContent);
+        showSuccess("Verse link copied to clipboard");
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        // User cancelled the share dialog
+        return;
+      }
+
+      console.error("Error sharing verse:", error);
+
+      // Final fallback: Copy to clipboard
+      try {
+        const shareableContent = `${shareText}\n\nRead more: ${shareUrl}`;
+        await navigator.clipboard.writeText(shareableContent);
+        showSuccess("Verse link copied to clipboard");
+      } catch (clipboardError) {
+        console.error("Failed to copy to clipboard:", clipboardError);
+        showError("Failed to share verse. Please try again.");
+      }
+    }
+  };
   // Loading state
   if (loading) {
     return (
@@ -455,9 +505,16 @@ const Surah = () => {
             <div className="hidden sm:block">
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-                  {surahInfo?.arabic || `Surah ${surahId}`}
-                </h1>
+              <h1
+  className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
+  style={{
+    fontFamily: quranFont,
+    fontSize: `${fontSize + 20}px`,  // Increase the base font size by 8px
+  }}
+>
+  {surahInfo?.arabic || `Surah ${surahId}`}
+</h1>
+
 
                 {/* Action Icons */}
                 <div className="flex items-center justify-center space-x-3 sm:space-x-4">
@@ -681,7 +738,18 @@ const Surah = () => {
                       </button>
 
                       {/* Share */}
-                      <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
+                      <button
+                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareVerse(
+                            finalArabicText,
+                            verse.Translation,
+                            index + 1
+                          );
+                        }}
+                        title="Share verse"
+                      >
                         <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>

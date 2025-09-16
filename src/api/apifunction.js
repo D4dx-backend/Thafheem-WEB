@@ -1,4 +1,4 @@
-import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE, INTERPRETATION_API } from "./apis";
+import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE, INTERPRETATION_API,QUIZ_API } from "./apis";
 
 export const fetchSurahs = async () => {
   const response = await fetch(SURA_NAMES_API);
@@ -402,6 +402,518 @@ export const fetchAllInterpretations = async (surahId, verseId, language = 'en')
     return Array.isArray(data) ? data : [data];
   } catch (error) {
     console.error('Error fetching all interpretations:', error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
+// Fetch quiz questions for specific surah and verse range
+export const fetchQuizQuestions = async (surahId, range) => {
+  const url = `${QUIZ_API}/${surahId}/${range}`;
+  
+  try {
+    console.log('=== FETCHING QUIZ QUESTIONS ===');
+    console.log('URL:', url);
+    console.log('Surah ID:', surahId);
+    console.log('Range:', range);
+    
+    const response = await fetch(url);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response body:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('=== RAW API RESPONSE ===');
+    console.log('Response data:', data);
+    console.log('Data type:', typeof data);
+    console.log('Is array:', Array.isArray(data));
+    
+    if (Array.isArray(data) && data.length > 0) {
+      console.log('First item keys:', Object.keys(data[0]));
+      console.log('First item:', data[0]);
+    } else if (data && typeof data === 'object') {
+      console.log('Single object keys:', Object.keys(data));
+      console.log('Single object:', data);
+    }
+    
+    // Add detailed debugging
+    debugApiResponse(data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching quiz questions:', error);
+    throw error;
+  }
+};
+
+// Fetch random quiz questions for a surah (when range starts with '0')
+export const fetchRandomQuizQuestions = async (surahId, count = 5) => {
+  const range = `0-${count}`;
+  return fetchQuizQuestions(surahId, range);
+};
+
+// Fetch quiz questions for specific verse range
+export const fetchQuizQuestionsForRange = async (surahId, startVerse, endVerse) => {
+  const range = startVerse === endVerse ? `${startVerse}` : `${startVerse}-${endVerse}`;
+  return fetchQuizQuestions(surahId, range);
+};
+
+// Transform quiz data to expected format based on actual API response
+export const transformQuizData = (rawData) => {
+  console.log('=== TRANSFORM QUIZ DATA START ===');
+  console.log('Raw input data:', rawData);
+  console.log('Data type:', typeof rawData);
+  console.log('Is array:', Array.isArray(rawData));
+  
+  if (!Array.isArray(rawData)) {
+    console.log('Converting non-array to array');
+    rawData = [rawData];
+  }
+
+  const transformed = rawData.map((item, index) => {
+    console.log(`\n--- Processing Question ${index + 1} ---`);
+    console.log('Raw item:', item);
+    console.log('Item keys:', Object.keys(item));
+    
+    // Extract question ID
+    const questionId = item.id || item.questionId || item.question_id || item.QuestionId || item.qid || index + 1;
+    
+    // Extract question text with more variations
+    const questionText = item.question || 
+                        item.questionText || 
+                        item.question_text ||
+                        item.Quest || 
+                        item.Question || 
+                        item.QuestionText ||
+                        item.quest ||
+                        item.text ||
+                        'Question not available';
+    
+    // Extract correct answer with more variations
+    const correctAnswer = item.correctAnswer || 
+                         item.correct_answer || 
+                         item.answer || 
+                         item.Answer ||
+                         item.CorrectAnswer ||
+                         item.correct ||
+                         'A';
+
+    console.log('Extracted question text:', questionText);
+    console.log('Extracted correct answer:', correctAnswer);
+
+    // Handle different option formats - COMPREHENSIVE APPROACH
+    let options = [];
+    
+    // Method 1: Direct options array
+    if (item.options && Array.isArray(item.options)) {
+      console.log('Found options array:', item.options);
+      options = item.options.map((opt, optIndex) => ({
+        id: opt.id || opt.key || opt.letter || ['A', 'B', 'C', 'D'][optIndex],
+        text: opt.text || opt.option || opt.value || opt.content || (typeof opt === 'string' ? opt : `Option ${optIndex + 1}`)
+      }));
+    }
+    
+    // Method 2: Individual option fields - COMPREHENSIVE SEARCH
+    if (options.length === 0) {
+      console.log('Searching for individual option fields...');
+      
+      // Get all possible field names for this item
+      const allFields = Object.keys(item);
+      console.log('All available fields:', allFields);
+      
+      // Try to extract options from these fields - More comprehensive field matching
+      ['A', 'B', 'C', 'D'].forEach(letter => {
+        const possibleFields = [
+          // Standard patterns
+          `option${letter}`,
+          `option_${letter}`,
+          `Option${letter}`,
+          `OPTION${letter}`,
+          letter,
+          letter.toLowerCase(),
+          `choice${letter}`,
+          `Choice${letter}`,
+          `ans${letter}`,
+          `answer${letter}`,
+          `Answer${letter}`,
+          // Additional patterns that might be used by the API
+          `opt${letter}`,
+          `Opt${letter}`,
+          `OPT${letter}`,
+          `${letter}Option`,
+          `${letter}option`,
+          `${letter}_option`,
+          `${letter.toLowerCase()}Option`,
+          `${letter.toLowerCase()}option`,
+          `${letter.toLowerCase()}_option`,
+          // Numbered alternatives
+          `option${['A', 'B', 'C', 'D'].indexOf(letter) + 1}`,
+          `Option${['A', 'B', 'C', 'D'].indexOf(letter) + 1}`,
+          `choice${['A', 'B', 'C', 'D'].indexOf(letter) + 1}`,
+          `Choice${['A', 'B', 'C', 'D'].indexOf(letter) + 1}`,
+          // Direct field names that might contain the option text
+          `${letter}Text`,
+          `${letter}text`,
+          `${letter}_text`,
+          `text${letter}`,
+          `Text${letter}`
+        ];
+        
+        console.log(`Looking for option ${letter} in fields:`, possibleFields);
+        
+        for (const field of possibleFields) {
+          if (item.hasOwnProperty(field) && item[field] !== undefined && item[field] !== null && item[field] !== '') {
+            const optionText = String(item[field]).trim();
+            if (optionText.length > 0 && optionText !== 'null' && optionText !== 'undefined') {
+              console.log(`Found option ${letter} in field '${field}':`, optionText);
+              options.push({ id: letter, text: optionText });
+              break; // Found this option, move to next letter
+            }
+          }
+        }
+      });
+    }
+    
+    // Method 3: Check for nested objects
+    if (options.length === 0) {
+      console.log('Checking for nested option objects...');
+      
+      if (item.choices) {
+        console.log('Found choices object:', item.choices);
+        if (Array.isArray(item.choices)) {
+          options = item.choices.map((choice, idx) => ({
+            id: ['A', 'B', 'C', 'D'][idx] || idx.toString(),
+            text: choice.text || choice.option || choice.value || String(choice)
+          }));
+        } else if (typeof item.choices === 'object') {
+          Object.keys(item.choices).forEach((key, idx) => {
+            const letter = ['A', 'B', 'C', 'D'][idx] || key;
+            options.push({ id: letter, text: String(item.choices[key]) });
+          });
+        }
+      }
+      
+      if (options.length === 0 && item.alternatives) {
+        console.log('Found alternatives object:', item.alternatives);
+        if (Array.isArray(item.alternatives)) {
+          options = item.alternatives.map((alt, idx) => ({
+            id: ['A', 'B', 'C', 'D'][idx] || idx.toString(),
+            text: alt.text || alt.option || alt.value || String(alt)
+          }));
+        }
+      }
+    }
+
+    // Method 4: Try to find any field that looks like it contains option text
+    if (options.length === 0) {
+      console.log('Trying pattern matching for option fields...');
+      const allFields = Object.keys(item);
+      
+      // Look for fields that might contain options
+      const potentialOptionFields = allFields.filter(field => {
+        const lowerField = field.toLowerCase();
+        return (
+          lowerField.includes('option') || 
+          lowerField.includes('choice') || 
+          lowerField.includes('answer') ||
+          /^[a-d]$/i.test(field) ||
+          /option[a-d]/i.test(lowerField) ||
+          /choice[a-d]/i.test(lowerField) ||
+          /[a-d]option/i.test(lowerField) ||
+          /opt[a-d]/i.test(lowerField) ||
+          /[a-d]text/i.test(lowerField)
+        );
+      });
+      
+      console.log('Potential option fields found:', potentialOptionFields);
+      
+      // Try to map these fields to options
+      potentialOptionFields.forEach((field, idx) => {
+        if (item[field] && String(item[field]).trim().length > 0) {
+          const letter = ['A', 'B', 'C', 'D'][idx] || 
+                        (field.match(/[A-D]/i) && field.match(/[A-D]/i)[0].toUpperCase()) ||
+                        ['A', 'B', 'C', 'D'][options.length];
+          
+          if (letter && !options.find(opt => opt.id === letter)) {
+            options.push({ 
+              id: letter, 
+              text: String(item[field]).trim() 
+            });
+          }
+        }
+      });
+    }
+    
+    console.log(`Final extracted options for question ${index + 1}:`, options);
+    
+    // Create fallback only if absolutely no options found
+    if (options.length === 0) {
+      console.error(`NO OPTIONS FOUND for question ${index + 1}!`);
+      console.error('Full item data:', JSON.stringify(item, null, 2));
+      
+      // Try one more time with a different approach - look at all string values
+      const stringValues = [];
+      Object.entries(item).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.trim().length > 5 && value !== questionText) {
+          stringValues.push({ key, value: value.trim() });
+        }
+      });
+      
+      console.log('Found string values that might be options:', stringValues);
+      
+      if (stringValues.length >= 2) {
+        // Use the string values as options
+        options = stringValues.slice(0, 4).map((item, idx) => ({
+          id: ['A', 'B', 'C', 'D'][idx],
+          text: item.value
+        }));
+        console.log('Created options from string values:', options);
+      } else {
+        // Final fallback
+        options = [
+          { id: "A", text: "Option A (No data found)" },
+          { id: "B", text: "Option B (No data found)" },
+          { id: "C", text: "Option C (No data found)" }
+        ];
+      }
+    }
+
+    const result = {
+      id: questionId,
+      question: questionText,
+      options: options,
+      correctAnswer: correctAnswer
+    };
+
+    console.log(`Final transformed question ${index + 1}:`, result);
+    return result;
+  });
+  
+  console.log('=== TRANSFORM QUIZ DATA END ===');
+  console.log('Final transformed data:', transformed);
+  return transformed;
+};
+
+// Add this helper function to debug API response structure
+export const debugApiResponse = (data) => {
+  console.log('=== API RESPONSE DEBUG ===');
+  console.log('Response type:', typeof data);
+  console.log('Is array:', Array.isArray(data));
+  console.log('Raw response:', data);
+  
+  if (Array.isArray(data) && data.length > 0) {
+    const firstItem = data[0];
+    console.log('First item keys:', Object.keys(firstItem));
+    console.log('First item values:', Object.values(firstItem));
+    console.log('First item structure:', firstItem);
+    
+    // Look for option-related fields
+    const optionFields = Object.keys(firstItem).filter(key => 
+      key.toLowerCase().includes('option') || 
+      key.toLowerCase().includes('choice') || 
+      key.toLowerCase().includes('answer') ||
+      key.match(/^[A-D]$/) ||
+      key.match(/^[a-d]$/)
+    );
+    console.log('Potential option fields:', optionFields);
+    
+    optionFields.forEach(field => {
+      console.log(`${field}:`, firstItem[field]);
+    });
+  }
+  console.log('=== END DEBUG ===');
+  
+  return data;
+};
+// Updated validation function with more flexible checking
+export const validateQuizData = (quizData) => {
+  console.log('Validating quiz data:', quizData);
+  
+  if (!Array.isArray(quizData)) {
+    console.warn('Quiz data is not an array:', quizData);
+    return false;
+  }
+  
+  if (quizData.length === 0) {
+    console.warn('Quiz data array is empty');
+    return false;
+  }
+
+  const isValid = quizData.every((question, index) => {
+    console.log(`Validating question ${index}:`, question);
+    
+    // Check for basic question structure
+    const hasId = question.id !== undefined && question.id !== null;
+    const hasQuestion = question.question && typeof question.question === 'string' && question.question.trim().length > 0;
+    const hasOptions = question.options && Array.isArray(question.options) && question.options.length > 0;
+    const hasCorrectAnswer = question.correctAnswer && typeof question.correctAnswer === 'string';
+    
+    console.log(`Question ${index} validation:`, {
+      hasId,
+      hasQuestion,
+      hasOptions,
+      hasCorrectAnswer,
+      optionsCount: question.options ? question.options.length : 0
+    });
+    
+    if (!hasId) console.warn(`Question ${index} missing ID:`, question);
+    if (!hasQuestion) console.warn(`Question ${index} missing question text:`, question);
+    if (!hasOptions) console.warn(`Question ${index} missing or invalid options:`, question);
+    if (!hasCorrectAnswer) console.warn(`Question ${index} missing correct answer:`, question);
+    
+    return hasId && hasQuestion && hasOptions && hasCorrectAnswer;
+  });
+  
+  console.log('Quiz data validation result:', isValid);
+  return isValid;
+};
+
+// Fetch quiz questions with data transformation
+export const fetchQuizWithSurahInfo = async (surahId, range) => {
+  try {
+    const [rawQuizData, surahsData] = await Promise.all([
+      fetchQuizQuestions(surahId, range),
+      fetchSurahs()
+    ]);
+    
+    console.log('Raw quiz data before transformation:', rawQuizData);
+    
+    // Transform the quiz data to expected format
+    const transformedQuestions = transformQuizData(rawQuizData);
+    console.log('Transformed quiz questions:', transformedQuestions);
+    
+    const surahInfo = surahsData.find(s => s.number === parseInt(surahId));
+    
+    return {
+      questions: transformedQuestions,
+      surahInfo: surahInfo || { 
+        number: parseInt(surahId), 
+        arabic: "Unknown Surah",
+        name: `Surah ${surahId}`,
+        ayahs: 0,
+        type: "Unknown"
+      },
+      range: range,
+      totalQuestions: transformedQuestions.length
+    };
+  } catch (error) {
+    console.error('Error fetching quiz with surah info:', error);
+    throw error;
+  }
+};
+
+// Fetch entire surah quiz with transformation
+export const fetchEntireSurahQuiz = async (surahId) => {
+  try {
+    const surahsData = await fetchSurahs();
+    const surah = surahsData.find(s => s.number === parseInt(surahId));
+    
+    if (!surah) {
+      throw new Error(`Surah ${surahId} not found`);
+    }
+    
+    const range = `1-${surah.ayahs}`;
+    return fetchQuizWithSurahInfo(surahId, range);
+  } catch (error) {
+    console.error('Error fetching entire surah quiz:', error);
+    throw error;
+  }
+};
+
+// Create fallback quiz data for testing
+export const createFallbackQuizData = (surahId) => {
+  return {
+    questions: [
+      {
+        id: 1,
+        question: "ഖുർആനിലെ ആദ്യ സൂറയുടെ പേര് എന്താണ്?",
+        options: [
+          { id: "A", text: "അൽ-ഫാതിഹ" },
+          { id: "B", text: "അൽ-ബഖറ" },
+          { id: "C", text: "ആലി ഇംറാൻ" },
+          { id: "D", text: "അൻ-നിസാ" }
+        ],
+        correctAnswer: "A"
+      },
+      {
+        id: 2,
+        question: "ഖുർആനിൽ എത്ര സൂറകൾ ഉണ്ട്?",
+        options: [
+          { id: "A", text: "113" },
+          { id: "B", text: "114" },
+          { id: "C", text: "115" },
+          { id: "D", text: "116" }
+        ],
+        correctAnswer: "B"
+      }
+    ],
+    surahInfo: {
+      number: parseInt(surahId),
+      name: `Surah ${surahId}`,
+      arabic: "Sample Surah",
+      ayahs: 7,
+      type: "Unknown"
+    },
+    range: "1-7",
+    totalQuestions: 2
+  };
+};
+
+// Direct API test function to inspect raw response
+export const testQuizAPI = async (surahId = 1, range = "1-7") => {
+  const url = `${QUIZ_API}/${surahId}/${range}`;
+  console.log('=== DIRECT API TEST ===');
+  console.log('Testing URL:', url);
+  
+  try {
+    const response = await fetch(url);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    const rawText = await response.text();
+    console.log('Raw response text:', rawText);
+    
+    let data;
+    try {
+      data = JSON.parse(rawText);
+      console.log('Parsed JSON data:', data);
+      console.log('Data type:', typeof data);
+      console.log('Is array:', Array.isArray(data));
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('First item structure:');
+        console.log('Keys:', Object.keys(data[0]));
+        console.log('Values:', Object.values(data[0]));
+        console.log('Full first item:', data[0]);
+        
+        // Look specifically for option fields
+        const firstItem = data[0];
+        console.log('\n=== OPTION FIELD ANALYSIS ===');
+        Object.keys(firstItem).forEach(key => {
+          const value = firstItem[key];
+          console.log(`${key}: ${value} (type: ${typeof value})`);
+        });
+      }
+      
+      return data;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.log('Response is not valid JSON');
+      return null;
+    }
+  } catch (error) {
+    console.error('API test failed:', error);
     throw error;
   }
 };

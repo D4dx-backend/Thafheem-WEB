@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
-import { useParams } from "react-router-dom";
-import AyathNavbar from "../components/AyathNavbar";
+import AyathNavbar from "./AyathNavbar";
 import {
   fetchInterpretation,
   fetchArabicVerses,
@@ -10,8 +8,8 @@ import {
   fetchSurahs,
 } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
-const Ayah = () => {
-  const { surahId, verseId } = useParams();
+
+const AyahModal = ({ surahId, verseId, onClose }) => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
 
   // State management
@@ -23,7 +21,7 @@ const Ayah = () => {
   const [error, setError] = useState(null);
   const [totalVerses, setTotalVerses] = useState(0);
 
-  // Initialize verse from URL parameters
+  // Initialize verse from props
   useEffect(() => {
     if (verseId) {
       setCurrentVerseId(parseInt(verseId));
@@ -55,13 +53,6 @@ const Ayah = () => {
             }
           ),
         ]);
-
-        console.log("Interpretation Response:", interpretationResponse);
-        console.log(
-          "Interpretation Response Type:",
-          typeof interpretationResponse
-        );
-        console.log("Is Array:", Array.isArray(interpretationResponse));
 
         // Get surah info
         const currentSurah = surahsData.find(
@@ -98,19 +89,14 @@ const Ayah = () => {
 
         // Set interpretation data - handle different response structures
         if (interpretationResponse) {
-          // If it's an array, use it directly
           if (Array.isArray(interpretationResponse)) {
             setInterpretationData(interpretationResponse);
-          }
-          // If it's an object with data property
-          else if (
+          } else if (
             interpretationResponse.data &&
             Array.isArray(interpretationResponse.data)
           ) {
             setInterpretationData(interpretationResponse.data);
-          }
-          // If it's a single object, wrap it in an array
-          else if (typeof interpretationResponse === "object") {
+          } else if (typeof interpretationResponse === "object") {
             setInterpretationData([interpretationResponse]);
           } else {
             setInterpretationData(null);
@@ -140,6 +126,7 @@ const Ayah = () => {
       setCurrentVerseId(currentVerseId - 1);
     }
   };
+
   // Loading state
   if (loading) {
     return (
@@ -151,6 +138,7 @@ const Ayah = () => {
             totalVerses={totalVerses}
             surahInfo={surahInfo}
             onVerseChange={setCurrentVerseId}
+            onClose={onClose}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -176,6 +164,7 @@ const Ayah = () => {
             totalVerses={totalVerses}
             surahInfo={surahInfo}
             onVerseChange={setCurrentVerseId}
+            onClose={onClose}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -207,6 +196,7 @@ const Ayah = () => {
           totalVerses={totalVerses}
           surahInfo={surahInfo}
           onVerseChange={setCurrentVerseId}
+          onClose={onClose}
         />
 
         {/* Scrollable Content */}
@@ -214,7 +204,12 @@ const Ayah = () => {
           {/* Verse Info Header */}
           <div className="mb-4 sm:mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300">
+              <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300"
+                                      style={{
+                                        fontFamily: quranFont,
+                                        fontSize: `${fontSize}px`,
+                                      }}
+>
                 {surahInfo?.arabic || `Surah ${surahId}`}
               </h3>
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -261,7 +256,6 @@ const Ayah = () => {
               </h4>
               <div className="space-y-3">
                 {interpretationData.map((interpretation, index) => {
-                  // Extract interpretation text from various possible fields
                   const interpretationText =
                     interpretation.AudioIntrerptn ||
                     interpretation.interpretation ||
@@ -280,13 +274,13 @@ const Ayah = () => {
                       >
                         {interpretationText}
                       </p>
-                      {(interpretation.interptn_no ||
+                      {/* {(interpretation.interptn_no ||
                         interpretation.number) && (
                         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                           Interpretation{" "}
                           {interpretation.interptn_no || interpretation.number}
                         </div>
-                      )}
+                      )} */}
                     </div>
                   );
                 })}
@@ -344,4 +338,4 @@ const Ayah = () => {
   );
 };
 
-export default Ayah;
+export default AyahModal;

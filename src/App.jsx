@@ -6,7 +6,7 @@ import Sign from "./pages/Sign";
 import Surah from "./pages/Surah";
 import SurahInfo from "./pages/SurahInfo";
 import Reading from "./pages/Reading";
-import Ayah from "./pages/Ayah";
+
 import BlockWise from "./pages/BlockWise";
 import BookVerse from "./pages/bookmarkedVerses";
 import BookmarkBlock from "./pages/BookmarkBlock";
@@ -49,8 +49,7 @@ function App() {
           {/* <Route path="/surahinfo" element={<SurahInfo />} /> */}
           <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
           <Route path="/reading/:surahId?" element={<Reading />} />
-          <Route path="/ayah/" element={<Ayah />} />
-          <Route path="/ayah/:surahId/:verseId" element={<Ayah />} />
+
           <Route path="/blockwise/:surahId" element={<BlockWise />} />
           <Route path="/bookmarkblock" element={<BookmarkBlock />} />
           <Route path="/bookmarkedverses" element={<BookVerse />} />

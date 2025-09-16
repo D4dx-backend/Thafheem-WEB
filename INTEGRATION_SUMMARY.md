@@ -9,11 +9,13 @@
 
 ### 2. Surah.jsx Updates
 - Added BookOpen button click handler (`handleInterpretationClick`)
-- Button now navigates to `/ayah/{surahId}/{verseId}` route
+- Button now opens AyahModal component instead of navigating to separate page
 - Added console logging for debugging
 - Integrated with existing toast notification system
+- Added state management for modal visibility
 
-### 3. Ayah.jsx Complete Rewrite
+### 3. AyahModal Component (New)
+- Converted Ayah.jsx from page to reusable modal component
 - Dynamic data fetching from multiple APIs:
   - Surah information
   - Arabic verses (Uthmani script)
@@ -23,18 +25,20 @@
 - Loading and error states
 - Navigation between verses within same surah
 - Theme integration (font sizes, dark mode)
+- Modal overlay with backdrop blur
 
 ### 4. AyathNavbar.jsx Updates
 - Made component dynamic with props:
   - `surahId`, `verseId`, `totalVerses`, `surahInfo`
-  - `onVerseChange`, `onSurahChange` callbacks
+  - `onVerseChange`, `onSurahChange`, `onClose` callbacks
 - Dynamic surah and verse dropdowns
 - Proper navigation handling
 - Mobile-responsive design
+- Close button integration for modal usage
 
 ### 5. App.jsx Route Updates
-- Added new route: `/ayah/:surahId/:verseId`
-- Maintains backward compatibility with existing `/ayah/` route
+- Removed old `/ayah/` routes since functionality is now modal-based
+- Cleaner routing structure focused on main pages
 
 ## API Endpoints Used
 
@@ -53,15 +57,16 @@
 ## User Flow
 
 1. User clicks BookOpen button in Surah.jsx
-2. Navigation to `/ayah/{surahId}/{verseId}`
-3. Ayah.jsx loads with:
+2. AyahModal opens as overlay with interpretation for selected verse
+3. Modal displays:
    - Arabic verse text
    - English translation
    - Tafheem-ul-Quran interpretation
 4. User can navigate between verses using:
    - Dropdown selectors in navbar
    - Previous/Next buttons
-   - Direct navigation via URL
+   - Modal stays open for seamless navigation
+5. User can close modal to return to Surah page
 
 ## Error Handling
 

@@ -30,6 +30,7 @@ import { useAuth } from "../context/AuthContext";
 import BookmarkService from "../services/bookmarkService";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import AyahModal from "../components/AyahModal";
 import {
   fetchAyahAudioTranslations,
   fetchSurahs,
@@ -49,6 +50,9 @@ const Surah = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
   const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] =
+    useState(null);
+  const [showAyahModal, setShowAyahModal] = useState(false);
+  const [selectedVerseForInterpretation, setSelectedVerseForInterpretation] =
     useState(null);
   const [ayahData, setAyahData] = useState([]);
   const [arabicVerses, setArabicVerses] = useState([]);
@@ -155,12 +159,18 @@ const Surah = () => {
         "Verse",
         verseNumber
       );
-      // Navigate to Ayah page with surah and verse information
-      navigate(`/ayah/${surahId}/${verseNumber}`);
+      // Open the AyahModal instead of navigating
+      setSelectedVerseForInterpretation(verseNumber);
+      setShowAyahModal(true);
     } catch (error) {
-      console.error("Error navigating to interpretation:", error);
+      console.error("Error opening interpretation:", error);
       showError("Failed to load interpretation. Please try again.");
     }
+  };
+
+  const handleAyahModalClose = () => {
+    setShowAyahModal(false);
+    setSelectedVerseForInterpretation(null);
   };
 
   const handleBookmarkClick = async (
@@ -848,7 +858,6 @@ const Surah = () => {
         </div>
 
         {/* Overlay Popup for Word by Word */}
-        {/* Overlay Popup for Word by Word */}
         {showWordByWord && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
@@ -862,6 +871,15 @@ const Surah = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Ayah Modal for Interpretation */}
+        {showAyahModal && (
+          <AyahModal
+            surahId={surahId}
+            verseId={selectedVerseForInterpretation}
+            onClose={handleAyahModalClose}
+          />
         )}
       </div>
     </>

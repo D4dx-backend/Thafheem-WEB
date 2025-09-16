@@ -138,7 +138,9 @@ const HomepageNavbar = () => {
 
   // Helper function to determine if a menu item is active
   const isActive = (path) => location.pathname === path;
-
+  const handleBookmarkClick = () => {
+    navigate("/bookmarkedverses");
+  };
   return (
     <>
       {/* Search Console Popup */}
@@ -236,9 +238,12 @@ const HomepageNavbar = () => {
               )}
             </button>
 
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-              <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
+            <button
+      onClick={handleBookmarkClick}
+      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+    >
+      <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
+    </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}

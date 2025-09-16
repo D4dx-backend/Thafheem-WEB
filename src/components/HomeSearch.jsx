@@ -2,6 +2,8 @@ import { useState } from "react";
 import logo from "../assets/logo.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 import ForwardIcon from "../assets/forward.png"
 // Icon components using inline SVG
 const SearchIcon = ({ className }) => (
@@ -63,7 +65,11 @@ const HomepageSearch = () => {
     { id: 18, name: "Al-Kahf", verses: "110 verses" },
     { id: 67, name: "Al-Baqarah 285-286", verses: "83 verses" },
   ];
+  const navigate = useNavigate();
 
+  const handleBookmarkClick = () => {
+    navigate("/bookmarkedverses");
+  };
   return (
     <div className="flex flex-col items-center justify-center bg-white dark:bg-black px-4 py-6 sm:py-8 lg:py-12">
       {/* Banner Section */}
@@ -178,7 +184,7 @@ const HomepageSearch = () => {
     </div>
 
     {/* Bookmarks */}
-    <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0">
+    <button   onClick={handleBookmarkClick} className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0">
       <BookmarkIcon className="h-4 w-4 text-[#3FA6C0]" />
       <span className="font-medium whitespace-nowrap font-poppins">Bookmarks</span>
     </button>

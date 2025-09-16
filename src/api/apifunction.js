@@ -290,3 +290,118 @@ export const fetchThafheemWordMeanings = async (surahId, verseId) => {
   }
 };
 
+// Fetch interpretation for specific verse from Thafheem API
+export const fetchInterpretation = async (surahId, verseId, interpretationNo = 1, language = 'en') => {
+  // Primary endpoint for individual verse interpretations
+  const primaryUrl = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
+  
+  try {
+    console.log('Fetching interpretation from:', primaryUrl);
+    const response = await fetch(primaryUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Interpretation data received:', data);
+    
+    // The API returns an array of interpretation objects
+    // Filter by interpretation number if multiple interpretations exist
+    if (Array.isArray(data) && data.length > 0) {
+      const filteredData = data.filter(item => 
+        item.interptn_no === interpretationNo || !item.interptn_no
+      );
+      return filteredData.length > 0 ? filteredData : data;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching interpretation:', error);
+    
+    // Fallback: Try range-based endpoint (treating single verse as range)
+    try {
+      const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
+      console.log('Trying range-based interpretation URL:', rangeUrl);
+      const rangeResponse = await fetch(rangeUrl);
+      if (!rangeResponse.ok) {
+        throw new Error(`HTTP error! status: ${rangeResponse.status}`);
+      }
+      const rangeData = await rangeResponse.json();
+      console.log('Range-based interpretation data received:', rangeData);
+      return rangeData;
+    } catch (rangeError) {
+      console.error('Range-based interpretation API also failed:', rangeError);
+      
+      // Final fallback: Try with language parameter
+      try {
+        const langUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${language}`;
+        console.log('Trying language-specific interpretation URL:', langUrl);
+        const langResponse = await fetch(langUrl);
+        if (!langResponse.ok) {
+          throw new Error(`HTTP error! status: ${langResponse.status}`);
+        }
+        const langData = await langResponse.json();
+        console.log('Language-specific interpretation data received:', langData);
+        return langData;
+      } catch (langError) {
+        console.error('All interpretation endpoints failed:', langError);
+        throw error; // Throw the original error
+      }
+    }
+  }
+};
+
+// Fetch interpretation for verse range from Thafheem API
+export const fetchInterpretationRange = async (surahId, range, interpretationNo = 1, language = 'en') => {
+  // For ranges, use the range-based endpoint
+  const url = `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}/${language}`;
+  
+  try {
+    console.log('Fetching range interpretation from:', url);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Range interpretation data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching interpretation range:', error);
+    
+    // Fallback: Try without language parameter
+    try {
+      const noLangUrl = `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}`;
+      console.log('Trying range interpretation without language:', noLangUrl);
+      const noLangResponse = await fetch(noLangUrl);
+      if (!noLangResponse.ok) {
+        throw new Error(`HTTP error! status: ${noLangResponse.status}`);
+      }
+      const noLangData = await noLangResponse.json();
+      console.log('Range interpretation without language received:', noLangData);
+      return noLangData;
+    } catch (noLangError) {
+      console.error('Range interpretation fallback also failed:', noLangError);
+      throw error;
+    }
+  }
+};
+
+// Additional helper function to fetch multiple interpretations for a verse
+export const fetchAllInterpretations = async (surahId, verseId, language = 'en') => {
+  try {
+    const url = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
+    console.log('Fetching all interpretations from:', url);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('All interpretations data received:', data);
+    
+    // Return all interpretations for the verse
+    return Array.isArray(data) ? data : [data];
+  } catch (error) {
+    console.error('Error fetching all interpretations:', error);
+    throw error;
+  }
+};

@@ -50,6 +50,7 @@ function App() {
           <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
           <Route path="/reading/:surahId?" element={<Reading />} />
           <Route path="/ayah/" element={<Ayah />} />
+          <Route path="/ayah/:surahId/:verseId" element={<Ayah />} />
           <Route path="/blockwise/:surahId" element={<BlockWise />} />
           <Route path="/bookmarkblock" element={<BookmarkBlock />} />
           <Route path="/bookmarkedverses" element={<BookVerse />} />

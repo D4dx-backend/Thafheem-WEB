@@ -268,7 +268,7 @@
 
 // export default AyathNavbar;
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -279,37 +279,81 @@ import {
   NotepadText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { fetchSurahs } from "../api/apifunction";
 
-// Example first 10 surahs
-const first10Surahs = [
-  "1 - Al-Fatihah",
-  "2 - Al-Baqarah",
-  "3 - Aal-E-Imran",
-  "4 - An-Nisa",
-  "5 - Al-Ma'idah",
-  "6 - Al-An'am",
-  "7 - Al-A'raf",
-  "8 - Al-Anfal",
-  "9 - At-Tawbah",
-  "10 - Yunus",
-];
-const first10Ayahs = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
-
-const AyathNavbar = () => {
+const AyathNavbar = ({ 
+  surahId, 
+  verseId, 
+  totalVerses, 
+  surahInfo,
+  onVerseChange,
+  onSurahChange 
+}) => {
   const [visible, setVisible] = useState(true);
-  const [selectedChapter, setSelectedChapter] = useState("2 - Al-Baqarah");
-  const [selectedVerse, setSelectedVerse] = useState("1");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
-  const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [verseDropdownOpen, setVerseDropdownOpen] = useState(false);
+  const [allSurahs, setAllSurahs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+
+  // Fetch all surahs for dropdown
+  useEffect(() => {
+    const loadSurahs = async () => {
+      try {
+        const surahs = await fetchSurahs();
+        setAllSurahs(surahs);
+      } catch (error) {
+        console.error("Error loading surahs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSurahs();
+  }, []);
+
+  // Generate verse numbers array
+  const verseNumbers = Array.from({ length: totalVerses || 10 }, (_, i) => i + 1);
+
+  const currentSurahDisplay = surahInfo 
+    ? `${surahInfo.number} - ${surahInfo.name || surahInfo.arabic}`
+    : `${surahId} - Loading...`;
+
+  const handleSurahChange = (newSurahId) => {
+    if (onSurahChange) {
+      onSurahChange(newSurahId);
+    } else {
+      // Navigate to new surah with verse 1
+      navigate(`/ayah/${newSurahId}/1`);
+    }
+    setIsDropdownOpen(false);
+  };
+
+  const handleVerseChange = (newVerseId) => {
+    if (onVerseChange) {
+      onVerseChange(newVerseId);
+    } else {
+      // Navigate to new verse in same surah
+      navigate(`/ayah/${surahId}/${newVerseId}`);
+    }
+    setVerseDropdownOpen(false);
+  };
 
   if (!visible) return null;
 
   return (
     <div className="bg-white dark:bg-[#2A2C38] px-3 sm:px-4 py-3 space-y-3 relative">
+      {/* Mobile Close Button - Positioned absolute on mobile */}
+      <button
+        className="absolute top-2 right-2 sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors bg-white dark:bg-gray-600 shadow-sm z-10"
+        title="Close"
+        onClick={() => navigate(-1)}
+      >
+        <X className="w-4 h-4 text-gray-600 dark:text-white" />
+      </button>
+
       {/* First Row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:space-x-3 pr-12 sm:pr-0">
@@ -317,24 +361,23 @@ const AyathNavbar = () => {
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg  font-medium text-gray-700 transition-colors"
+              className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
             >
-              <span>{selectedChapter}</span>
+              <span>{currentSurahDisplay}</span>
               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
             </button>
 
-            {isDropdownOpen && (
-              <div className="absolute sm:text-base text:sm top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto h-[calc(100vh-100px)] z-50">
-                {first10Surahs.map((surah, idx) => (
+            {isDropdownOpen && !loading && (
+              <div className="absolute sm:text-base text-sm top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto max-w-xs h-[calc(100vh-100px)] z-50">
+                {allSurahs.map((surah) => (
                   <div
-                    key={idx}
-                    className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white"
-                    onClick={() => {
-                      setSelectedChapter(surah);
-                      setIsDropdownOpen(false);
-                    }}
+                    key={surah.number}
+                    className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${
+                      surah.number === parseInt(surahId) ? 'bg-gray-100 dark:bg-gray-700' : ''
+                    }`}
+                    onClick={() => handleSurahChange(surah.number)}
                   >
-                    {surah}
+                    {surah.number} - {surah.name}
                   </div>
                 ))}
               </div>
@@ -347,22 +390,21 @@ const AyathNavbar = () => {
     onClick={() => setVerseDropdownOpen((prev) => !prev)}
     className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
   >
-    <span>{selectedVerse}</span>
+    <span>Verse {verseId}</span>
     <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
   </button>
 
   {verseDropdownOpen && (
-    <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto h-[calc(100vh-100px)] z-50">
-      {first10Ayahs.map((ayah, idx) => (
+    <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-auto max-h-60 z-50">
+      {verseNumbers.map((verse) => (
         <div
-          key={idx}
-          className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white"
-          onClick={() => {
-            setSelectedVerse(ayah);
-            setVerseDropdownOpen(false);
-          }}
+          key={verse}
+          className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${
+            verse === parseInt(verseId) ? 'bg-gray-100 dark:bg-gray-700' : ''
+          }`}
+          onClick={() => handleVerseChange(verse)}
         >
-           {ayah}
+          Verse {verse}
         </div>
       ))}
     </div>

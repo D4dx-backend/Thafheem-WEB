@@ -1,241 +1,345 @@
-// import React, { useState, useEffect } from "react";
-// import { ChevronRight, ChevronLeft } from "lucide-react";
-// import { useParams } from "react-router-dom";
-// import AyathNavbar from "../components/AyathNavbar";
-
-// const Ayah = () => {
-//   const { ayahNumber } = useParams();
-//   const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
-
-//   const ayahs = [
-//     {
-//       number: 1,
-//       arabic: "الم",
-//       transliteration: "Alif, Lam, Mim.",
-//       translation:
-//         "The names of letters of the Arabic alphabet, called huruf muqatta'at, occur at the beginning of several surahs of the Qur'an. At the time of the Qur'anic revelation the use of such letters was a well-known literary device, used by both poets and orators, and we find several instances in the pre-Islamic Arabic literature that has come down to us. Since the muqatta'at were commonly used the Arabs of that period generally knew what they meant and so they did not present a puzzle. We do not notice, therefore, any contemporaries of the Prophet (peace be on him) raising objections against the Qur'an on the ground that the letters at the beginning of some of its surahs were absurd. For the same reason no Tradition has come down to us of any Companion asking the Prophet about the significance of the muqatta'at. Later on this literary device gradually fell into disuse and hence it became difficult for commentators to determine their precise meanings. It is obvious, however, that deriving right guidance from the Qur'an does not depend on grasping the meaning of these vocables, and that anyone who fails to understand them may still live a righteous life and attain salvation. The ordinary reader, therefore, need not delve too deeply into this matter.",
-//     },
-//     {
-//       number: 2,
-//       arabic: "ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ",
-//       transliteration: "Dhālika al-kitābu lā rayba fīhi hudal lil-muttaqīn",
-//       translation:
-//         "This is the Book of Allah, there is no doubt in it; One obvious meaning of this verse is that this Book, the Qur'an, is undoubtedly from God. Another possible meaning is that nothing contained in it can be subject to doubt. Books which deal with supernatural questions, with matters that lie beyond the range of sense perception, are invariably based on conjecture and their authors, despite their brave show of competence, are therefore not immune from a degree of scepticism regarding their statements. This Book, which is based wholly on Truth, a book which is the work of none other than the All-Knowing God Himself is distinguishable from all other books. Hence, there is no room for doubt about its contents despite the hesitation some people might express either through ignorance or folly.",
-//     },
-//   ];
-
-//   // Set initial ayah based on URL parameter
-//   useEffect(() => {
-//     if (ayahNumber) {
-//       const ayahIndex = ayahs.findIndex(
-//         (ayah) => ayah.number === parseInt(ayahNumber)
-//       );
-      
-//       if (ayahIndex !== -1) {
-//         setCurrentAyahIndex(ayahIndex);
-//       }
-//     }
-//   }, [ayahNumber]);
-
-//   const currentAyah = ayahs[currentAyahIndex];
-
-//   const handleNextAyah = () => {
-//     if (currentAyahIndex < ayahs.length - 1) {
-//       setCurrentAyahIndex(currentAyahIndex + 1);
-//     }
-//   };
-
-//   const handlePreviousAyah = () => {
-//     if (currentAyahIndex > 0) {
-//       setCurrentAyahIndex(currentAyahIndex - 1);
-//     }
-//   };
-//   return (
-//     /* Modal Backdrop */
-//     <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-gray-500/70 dark:bg-black/70">
-
-//       {/* Modal Container */}
-//       <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-[1073px]  h-[90vh] overflow-hidden ">
-//         <AyathNavbar />
-
-//         {/* Main Content Container */}
-//         <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)] ">
-//           {/* <div className=" mb-6"></div> */}
-
-//           {/* Arabic Text */}
-//           <div className="text-right mb-6 border-b border-gray-200">
-//             <h1 className="text-3xl font-arabic dark:text-white text-gray-900 leading-loose">
-//               {currentAyah.arabic}
-//             </h1>
-//           </div>
-
-//           {/* Transliteration */}
-//           <div className="mb-6">
-//             <h2 className="text-lg font-medium text-gray-700 dark:text-white leading-relaxed">
-//               {currentAyah.transliteration}
-//             </h2>
-//           </div>
-
-//           {/* Translation Text */}
-//           <div className="mb-8">
-//             <p className="text-gray-700 leading-[1.7] dark:text-white text-sm">
-//               {currentAyah.translation}
-//             </p>
-//           </div>
-
-//           {/* Navigation Buttons */}
-//           <div className="flex justify-between pt-4">
-//             <button
-//               onClick={handlePreviousAyah}
-//               disabled={currentAyahIndex === 0}
-//               className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors group ${
-//                 currentAyahIndex === 0
-//                   ? "text-gray-400 dark:text-white cursor-not-allowed"
-//                   : "text-gray-600 dark:text-white hover:text-gray-800 hover:bg-gray-50"
-//               }`}
-//             >
-//               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-//               <span className="text-sm font-medium">Previous Ayah</span>
-//             </button>
-
-//             <button
-//               onClick={handleNextAyah}
-//               disabled={currentAyahIndex === ayahs.length - 1}
-//               className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors group ${
-//                 currentAyahIndex === ayahs.length - 1
-//                   ? "text-gray-400  cursor-not-allowed"
-//                   : "text-gray-600 dark:text-white hover:text-gray-800 hover:bg-gray-50"
-//               }`}
-//             >
-//               <span className="text-sm font-medium">Next Ayah</span>
-//               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Ayah;
-
 
 import React, { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import AyathNavbar from "../components/AyathNavbar";
+import {
+  fetchInterpretation,
+  fetchArabicVerses,
+  fetchAyahAudioTranslations,
+  fetchSurahs,
+} from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
 const Ayah = () => {
-  const { ayahNumber } = useParams();
-  const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
+  const { surahId, verseId } = useParams();
+  const { quranFont, fontSize, translationFontSize } = useTheme();
 
-  const ayahs = [
-    {
-      number: 1,
-      arabic: "الم",
-      transliteration: "Alif, Lam, Mim.",
-      translation:
-        "The names of letters of the Arabic alphabet, called huruf muqatta'at, occur at the beginning of several surahs of the Qur'an. At the time of the Qur'anic revelation the use of such letters was a well-known literary device, used by both poets and orators, and we find several instances in the pre-Islamic Arabic literature that has come down to us. Since the muqatta'at were commonly used the Arabs of that period generally knew what they meant and so they did not present a puzzle. We do not notice, therefore, any contemporaries of the Prophet (peace be on him) raising objections against the Qur'an on the ground that the letters at the beginning of some of its surahs were absurd. For the same reason no Tradition has come down to us of any Companion asking the Prophet about the significance of the muqatta'at. Later on this literary device gradually fell into disuse and hence it became difficult for commentators to determine their precise meanings. It is obvious, however, that deriving right guidance from the Qur'an does not depend on grasping the meaning of these vocables, and that anyone who fails to understand them may still live a righteous life and attain salvation. The ordinary reader, therefore, need not delve too deeply into this matter.",
-    },
-    {
-      number: 2,
-      arabic: "ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ",
-      transliteration: "Dhālika al-kitābu lā rayba fīhi hudal lil-muttaqīn",
-      translation:
-        "This is the Book of Allah, there is no doubt in it; One obvious meaning of this verse is that this Book, the Qur'an, is undoubtedly from God. Another possible meaning is that nothing contained in it can be subject to doubt. Books which deal with supernatural questions, with matters that lie beyond the range of sense perception, are invariably based on conjecture and their authors, despite their brave show of competence, are therefore not immune from a degree of scepticism regarding their statements. This Book, which is based wholly on Truth, a book which is the work of none other than the All-Knowing God Himself is distinguishable from all other books. Hence, there is no room for doubt about its contents despite the hesitation some people might express either through ignorance or folly.This is the Book of Allah, there is no doubt in it; One obvious meaning of this verse is that this Book, the Qur'an, is undoubtedly from God. Another possible meaning is that nothing contained in it can be subject to doubt. Books which deal with supernatural questions, with matters that lie beyond the range of sense perception, are invariably based on conjecture and their authors, despite their brave show of competence, are therefore not immune from a degree of scepticism regarding their statements. This Book, which is based wholly on Truth, a book which is the work of none other than the All-Knowing God Himself is distinguishable from all other books. Hence, there is no room for doubt about its contents despite the hesitation some people might express either through ignorance or folly.",
-    },
-  ];
+  // State management
+  const [currentVerseId, setCurrentVerseId] = useState(1);
+  const [surahInfo, setSurahInfo] = useState(null);
+  const [verseData, setVerseData] = useState(null);
+  const [interpretationData, setInterpretationData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [totalVerses, setTotalVerses] = useState(0);
 
-  // Set initial ayah based on URL parameter
+  // Initialize verse from URL parameters
   useEffect(() => {
-    if (ayahNumber) {
-      const ayahIndex = ayahs.findIndex(
-        (ayah) => ayah.number === parseInt(ayahNumber)
-      );
-      
-      if (ayahIndex !== -1) {
-        setCurrentAyahIndex(ayahIndex);
-      }
+    if (verseId) {
+      setCurrentVerseId(parseInt(verseId));
     }
-  }, [ayahNumber]);
+  }, [verseId]);
 
-  const currentAyah = ayahs[currentAyahIndex];
+  // Fetch data when surahId or currentVerseId changes
+  useEffect(() => {
+    const loadVerseData = async () => {
+      if (!surahId || !currentVerseId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [
+          surahsData,
+          arabicVerses,
+          translationData,
+          interpretationResponse,
+        ] = await Promise.all([
+          fetchSurahs(),
+          fetchArabicVerses(parseInt(surahId)),
+          fetchAyahAudioTranslations(parseInt(surahId), currentVerseId),
+          fetchInterpretation(parseInt(surahId), currentVerseId, 1, "en").catch(
+            (error) => {
+              console.log("Interpretation API error:", error);
+              return null;
+            }
+          ),
+        ]);
+
+        console.log("Interpretation Response:", interpretationResponse);
+        console.log(
+          "Interpretation Response Type:",
+          typeof interpretationResponse
+        );
+        console.log("Is Array:", Array.isArray(interpretationResponse));
+
+        // Get surah info
+        const currentSurah = surahsData.find(
+          (s) => s.number === parseInt(surahId)
+        );
+        setSurahInfo(
+          currentSurah || { arabic: "Unknown Surah", number: parseInt(surahId) }
+        );
+        setTotalVerses(currentSurah?.ayahs || 0);
+
+        // Get Arabic verse
+        const arabicVerse = arabicVerses.find(
+          (v) => v.verse_key === `${surahId}:${currentVerseId}`
+        );
+
+        // Get translation
+        const translationVerse = Array.isArray(translationData)
+          ? translationData.find((t) => t.contiayano === currentVerseId)
+          : translationData;
+
+        // Combine verse data
+        setVerseData({
+          number: currentVerseId,
+          arabic: arabicVerse?.text_uthmani || "",
+          translation:
+            translationVerse?.AudioText?.replace(
+              /<sup[^>]*foot_note[^>]*>\d+<\/sup>/g,
+              ""
+            )
+              ?.replace(/\s+/g, " ")
+              ?.trim() || "",
+          verseKey: `${surahId}:${currentVerseId}`,
+        });
+
+        // Set interpretation data - handle different response structures
+        if (interpretationResponse) {
+          // If it's an array, use it directly
+          if (Array.isArray(interpretationResponse)) {
+            setInterpretationData(interpretationResponse);
+          }
+          // If it's an object with data property
+          else if (
+            interpretationResponse.data &&
+            Array.isArray(interpretationResponse.data)
+          ) {
+            setInterpretationData(interpretationResponse.data);
+          }
+          // If it's a single object, wrap it in an array
+          else if (typeof interpretationResponse === "object") {
+            setInterpretationData([interpretationResponse]);
+          } else {
+            setInterpretationData(null);
+          }
+        } else {
+          setInterpretationData(null);
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching verse data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVerseData();
+  }, [surahId, currentVerseId]);
 
   const handleNextAyah = () => {
-    if (currentAyahIndex < ayahs.length - 1) {
-      setCurrentAyahIndex(currentAyahIndex + 1);
+    if (currentVerseId < totalVerses) {
+      setCurrentVerseId(currentVerseId + 1);
     }
   };
 
   const handlePreviousAyah = () => {
-    if (currentAyahIndex > 0) {
-      setCurrentAyahIndex(currentAyahIndex - 1);
+    if (currentVerseId > 1) {
+      setCurrentVerseId(currentVerseId - 1);
     }
   };
-  return (
-    /* Modal Backdrop */
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
-
-      {/* Modal Container */}
+  // Loading state
+  if (loading) {
+    return (
       <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
-  {/* Modal Container */}
-  <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
-    <AyathNavbar />
-
-    {/* Scrollable Content */}
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
-      {/* Arabic Text */}
-      <div className="text-right mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-600 pb-3 sm:pb-4">
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-arabic dark:text-white text-gray-900 leading-loose px-2 sm:px-0">
-          {currentAyah.arabic}
-        </h1>
+        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+          <AyathNavbar
+            surahId={surahId}
+            verseId={currentVerseId}
+            totalVerses={totalVerses}
+            surahInfo={surahInfo}
+            onVerseChange={setCurrentVerseId}
+          />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">
+                Loading verse data...
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      {/* Transliteration */}
-      <div className="mb-4 sm:mb-6">
-        <h2 className="text-base sm:text-lg font-poppins lg:text-xl font-medium text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0">
-          {currentAyah.transliteration}
-        </h2>
+  // Error state
+  if (error) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+          <AyathNavbar
+            surahId={surahId}
+            verseId={currentVerseId}
+            totalVerses={totalVerses}
+            surahInfo={surahInfo}
+            onVerseChange={setCurrentVerseId}
+          />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-red-500 dark:text-red-400 text-lg mb-2">
+                Failed to load verse data
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {error}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      {/* Translation */}
-      <div className="mb-6 sm:mb-8">
-        <p className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base px-2 sm:px-0">
-          {currentAyah.translation}
-        </p>
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+        <AyathNavbar
+          surahId={surahId}
+          verseId={currentVerseId}
+          totalVerses={totalVerses}
+          surahInfo={surahInfo}
+          onVerseChange={setCurrentVerseId}
+        />
+
+        {/* Scrollable Content */}
+        <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+          {/* Verse Info Header */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300">
+                {surahInfo?.arabic || `Surah ${surahId}`}
+              </h3>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Verse {currentVerseId} of {totalVerses}
+              </span>
+            </div>
+          </div>
+
+          {/* Arabic Text */}
+          {verseData && (
+            <div className="text-right mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-600 pb-3 sm:pb-4">
+              <h1
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl dark:text-white text-gray-900 leading-loose px-2 sm:px-0"
+                style={{
+                  fontFamily: quranFont,
+                  fontSize: `${fontSize}px`,
+                }}
+              >
+                {verseData.arabic}
+              </h1>
+            </div>
+          )}
+
+          {/* Translation */}
+          {verseData && (
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Translation:
+              </h4>
+              <p
+                className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                style={{ fontSize: `${translationFontSize}px` }}
+              >
+                {verseData.translation}
+              </p>
+            </div>
+          )}
+
+          {/* Interpretation */}
+          {interpretationData && interpretationData.length > 0 && (
+            <div className="mb-6 sm:mb-8">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Tafheem-ul-Quran (Interpretation):
+              </h4>
+              <div className="space-y-3">
+                {interpretationData.map((interpretation, index) => {
+                  // Extract interpretation text from various possible fields
+                  const interpretationText =
+                    interpretation.AudioIntrerptn ||
+                    interpretation.interpretation ||
+                    interpretation.text ||
+                    interpretation.content ||
+                    "No interpretation available";
+
+                  return (
+                    <div
+                      key={index}
+                      className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4"
+                    >
+                      <p
+                        className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base"
+                        style={{ fontSize: `${translationFontSize}px` }}
+                      >
+                        {interpretationText}
+                      </p>
+                      {(interpretation.interptn_no ||
+                        interpretation.number) && (
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Interpretation{" "}
+                          {interpretation.interptn_no || interpretation.number}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No interpretation message */}
+          {(!interpretationData || interpretationData.length === 0) && (
+            <div className="mb-6 sm:mb-8">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Tafheem-ul-Quran (Interpretation):
+              </h4>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4">
+                <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+                  No interpretation available for this verse.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Fixed Bottom Navigation Buttons */}
+        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38]">
+          <button
+            onClick={handlePreviousAyah}
+            disabled={currentVerseId <= 1}
+            className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
+              currentVerseId <= 1
+                ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
+                : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
+            }`}
+          >
+            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs sm:text-sm font-medium">
+              Previous Ayah
+            </span>
+          </button>
+
+          <button
+            onClick={handleNextAyah}
+            disabled={currentVerseId >= totalVerses}
+            className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
+              currentVerseId >= totalVerses
+                ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
+                : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
+            }`}
+          >
+            <span className="text-xs sm:text-sm font-medium">Next Ayah</span>
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
       </div>
-    </div>
-
-    {/* Fixed Bottom Navigation Buttons */}
-    <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38]">
-      <button
-        onClick={handlePreviousAyah}
-        disabled={currentAyahIndex === 0}
-        className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-          currentAyahIndex === 0
-            ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
-            : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
-        }`}
-      >
-        <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-xs sm:text-sm font-medium">Previous Ayah</span>
-      </button>
-
-      <button
-        onClick={handleNextAyah}
-        disabled={currentAyahIndex === ayahs.length - 1}
-        className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-          currentAyahIndex === ayahs.length - 1
-            ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
-            : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
-        }`}
-      >
-        <span className="text-xs sm:text-sm font-medium">Next Ayah</span>
-        <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
-      </button>
-    </div>
-  </div>
-</div>
-
     </div>
   );
 };

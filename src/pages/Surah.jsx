@@ -26,16 +26,23 @@ import WordByWord from "./WordByWord";
 import StarNumber from "../components/StarNumber";
 import Bismi from "../assets/bismi.jpg";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import BookmarkService from "../services/bookmarkService";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/Toast";
 import {
   fetchAyahAudioTranslations,
   fetchSurahs,
   fetchArabicVerses,
+  fetchInterpretation,
 } from "../api/apifunction";
 
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { user } = useAuth();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [copiedVerse, setCopiedVerse] = useState(null);
   // State management
   const [selectedVerse, setSelectedVerse] = useState(null);
@@ -48,6 +55,8 @@ const Surah = () => {
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
+  const [bookmarkLoading, setBookmarkLoading] = useState({});
 
   // Fetch ayah data and surah info
   useEffect(() => {
@@ -100,6 +109,30 @@ const Surah = () => {
     loadSurahData();
   }, [surahId]);
 
+  // Load bookmarked verses for signed-in users
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      if (!user || !surahId) return;
+
+      try {
+        const bookmarks = await BookmarkService.getBookmarks(
+          user.uid,
+          "translation"
+        );
+        const bookmarkedKeys = new Set(
+          bookmarks
+            .filter((bookmark) => bookmark.surahId === parseInt(surahId))
+            .map((bookmark) => `${bookmark.surahId}:${bookmark.verseId}`)
+        );
+        setBookmarkedVerses(bookmarkedKeys);
+      } catch (error) {
+        console.error("Error loading bookmarks:", error);
+      }
+    };
+
+    loadBookmarks();
+  }, [user, surahId]);
+
   const handleWordByWordClick = (verseNumber) => {
     setSelectedVerseForWordByWord(verseNumber);
     setShowWordByWord(true);
@@ -114,9 +147,87 @@ const Surah = () => {
     setSelectedVerseForWordByWord(newVerseNumber);
   };
 
-  const handleBookmarkClick = (e) => {
+  const handleInterpretationClick = async (verseNumber) => {
+    try {
+      console.log(
+        "Opening interpretation for Surah",
+        surahId,
+        "Verse",
+        verseNumber
+      );
+      // Navigate to Ayah page with surah and verse information
+      navigate(`/ayah/${surahId}/${verseNumber}`);
+    } catch (error) {
+      console.error("Error navigating to interpretation:", error);
+      showError("Failed to load interpretation. Please try again.");
+    }
+  };
+
+  const handleBookmarkClick = async (
+    e,
+    verseIndex,
+    arabicText,
+    translation
+  ) => {
     e.stopPropagation();
-    navigate("/bookmarkblock");
+
+    // Check if user is signed in
+    if (!user) {
+      showError("Please sign in to bookmark verses");
+      navigate("/sign");
+      return;
+    }
+
+    const verseNumber = verseIndex + 1;
+    const verseKey = `${surahId}:${verseNumber}`;
+
+    try {
+      setBookmarkLoading((prev) => ({ ...prev, [verseKey]: true }));
+
+      if (bookmarkedVerses.has(verseKey)) {
+        // Find the bookmark to delete
+        const bookmarks = await BookmarkService.getBookmarks(
+          user.uid,
+          "translation"
+        );
+        const bookmarkToDelete = bookmarks.find(
+          (bookmark) =>
+            bookmark.surahId === parseInt(surahId) &&
+            bookmark.verseId === verseNumber
+        );
+
+        if (bookmarkToDelete) {
+          await BookmarkService.deleteBookmark(bookmarkToDelete.id, user.uid);
+        }
+
+        setBookmarkedVerses((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(verseKey);
+          return newSet;
+        });
+        showSuccess("Bookmark removed successfully");
+        console.log("Bookmark removed for verse:", verseKey);
+      } else {
+        // Add bookmark
+        await BookmarkService.addBookmark(
+          user.uid,
+          surahId,
+          verseNumber,
+          "translation",
+          surahInfo?.arabic || `Surah ${surahId}`,
+          `${arabicText} - ${translation}`
+        );
+
+        setBookmarkedVerses((prev) => new Set([...prev, verseKey]));
+        showSuccess("Verse bookmarked successfully");
+        console.log("Bookmark added for verse:", verseKey);
+      }
+    } catch (error) {
+      console.error("Error managing bookmark:", error);
+      showError("Failed to manage bookmark. Please try again.");
+    } finally {
+      setBookmarkLoading((prev) => ({ ...prev, [verseKey]: false }));
+    }
   };
 
   const handleRetry = () => {
@@ -171,35 +282,34 @@ const Surah = () => {
   "${translation}"
   
   — Quran ${surahId}:${verseNumber}`;
-  
+
       await navigator.clipboard.writeText(textToCopy);
-      
+
       // Show feedback
       setCopiedVerse(verseNumber);
-      
+
       // Clear feedback after 2 seconds
       setTimeout(() => {
         setCopiedVerse(null);
       }, 2000);
-      
     } catch (err) {
-      console.error('Failed to copy text: ', err);
-      
+      console.error("Failed to copy text: ", err);
+
       // Fallback for older browsers
       try {
-        const textArea = document.createElement('textarea');
+        const textArea = document.createElement("textarea");
         textArea.value = textToCopy;
         document.body.appendChild(textArea);
         textArea.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(textArea);
-        
+
         setCopiedVerse(verseNumber);
         setTimeout(() => {
           setCopiedVerse(null);
         }, 2000);
       } catch (fallbackErr) {
-        console.error('Fallback copy failed: ', fallbackErr);
+        console.error("Fallback copy failed: ", fallbackErr);
       }
     }
   };
@@ -248,6 +358,7 @@ const Surah = () => {
   return (
     <>
       <Transition />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <div className="min-h-screen bg-white dark:bg-black">
         {/* Header */}
@@ -468,38 +579,56 @@ const Surah = () => {
                       </span>
 
                       {/* Copy */}
-                      <button 
-  className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors relative"
-  onClick={(e) => {
-    e.stopPropagation();
-    handleCopyVerse(finalArabicText, verse.Translation, index + 1);
-  }}
-  title="Copy verse"
->
-  {copiedVerse === index + 1 ? (
-    <div className="flex items-center space-x-1">
-      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-      </svg>
-      <span className="text-xs text-green-500 font-medium hidden sm:inline">Copied!</span>
-    </div>
-  ) : (
-    <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-  )}
-</button>
+                      <button
+                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors relative"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyVerse(
+                            finalArabicText,
+                            verse.Translation,
+                            index + 1
+                          );
+                        }}
+                        title="Copy verse"
+                      >
+                        {copiedVerse === index + 1 ? (
+                          <div className="flex items-center space-x-1">
+                            <svg
+                              className="w-3 h-3 sm:w-4 sm:h-4 text-green-500"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span className="text-xs text-green-500 font-medium hidden sm:inline">
+                              Copied!
+                            </span>
+                          </div>
+                        ) : (
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
+                      </button>
 
                       {/* Play */}
                       <button className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors">
                         <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
 
-                      {/* BookOpen */}
+                      {/* BookOpen - Interpretation */}
                       <button
-                      className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                    >
-                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-
+                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInterpretationClick(index + 1);
+                        }}
+                        title="View interpretation"
+                      >
+                        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
 
                       {/* List */}
                       <button
@@ -514,10 +643,41 @@ const Surah = () => {
 
                       {/* Bookmark */}
                       <button
-                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                        onClick={handleBookmarkClick}
+                        className={`p-1 transition-colors ${
+                          bookmarkedVerses.has(`${surahId}:${index + 1}`)
+                            ? "text-cyan-500 hover:text-cyan-600"
+                            : "hover:text-gray-700 dark:hover:text-white"
+                        } ${
+                          bookmarkLoading[`${surahId}:${index + 1}`]
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
+                        onClick={(e) =>
+                          handleBookmarkClick(
+                            e,
+                            index,
+                            finalArabicText,
+                            verse.Translation
+                          )
+                        }
+                        disabled={bookmarkLoading[`${surahId}:${index + 1}`]}
+                        title={
+                          bookmarkedVerses.has(`${surahId}:${index + 1}`)
+                            ? "Remove bookmark"
+                            : "Add bookmark"
+                        }
                       >
-                        <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
+                        {bookmarkLoading[`${surahId}:${index + 1}`] ? (
+                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b border-current"></div>
+                        ) : (
+                          <Bookmark
+                            className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                              bookmarkedVerses.has(`${surahId}:${index + 1}`)
+                                ? "fill-current"
+                                : ""
+                            }`}
+                          />
+                        )}
                       </button>
 
                       {/* Share */}

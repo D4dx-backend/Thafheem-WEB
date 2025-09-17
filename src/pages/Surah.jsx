@@ -61,7 +61,14 @@ const Surah = () => {
   const [error, setError] = useState(null);
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});
-
+  const toArabicNumber = (num) => {
+    const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    return num
+      .toString()
+      .split('')
+      .map(digit => arabicDigits[digit] || digit)
+      .join('');
+  };
   // Fetch ayah data and surah info
   useEffect(() => {
     const loadSurahData = async () => {
@@ -515,16 +522,15 @@ const Surah = () => {
             <div className="hidden sm:block">
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
-              <h1
-  className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
-  style={{
-    fontFamily: quranFont,
-    fontSize: `${fontSize + 20}px`,  // Increase the base font size by 8px
-  }}
->
-  {surahInfo?.arabic || `Surah ${surahId}`}
-</h1>
-
+                <h1
+                  className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
+                  style={{
+                    fontFamily: quranFont,
+                    fontSize: `${fontSize + 20}px`, // Increase the base font size by 8px
+                  }}
+                >
+                  {surahInfo?.arabic || `Surah ${surahId}`}
+                </h1>
 
                 {/* Action Icons */}
                 <div className="flex items-center justify-center space-x-3 sm:space-x-4">
@@ -617,16 +623,17 @@ const Surah = () => {
                   >
                     {/* Arabic Text */}
                     <div className="text-right mb-2 sm:mb-3 lg:mb-4">
-                      <p
-                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
-                        style={{
-                          fontFamily: quranFont,
-                          fontSize: `${fontSize}px`,
-                        }}
-                      >
-                        {finalArabicText}
-                      </p>
-                    </div>
+  <p
+    className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+    style={{
+      fontFamily: quranFont,
+      fontSize: `${fontSize}px`,
+    }}
+  >
+    ﴾{finalArabicText}﴿ {toArabicNumber(index + 1)}
+  </p>
+</div>
+
 
                     {/* Translation */}
                     <div className="mb-2 sm:mb-3">
@@ -860,7 +867,7 @@ const Surah = () => {
         {/* Overlay Popup for Word by Word */}
         {showWordByWord && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               <div className="overflow-y-auto max-h-[90vh]">
                 <WordByWord
                   selectedVerse={selectedVerseForWordByWord}

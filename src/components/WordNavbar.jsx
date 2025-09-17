@@ -6,6 +6,8 @@ import {
   Copy,
   Bookmark,
   Share2,
+  BookOpen,
+
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +18,7 @@ const WordNavbar = ({
   surahInfo,
   onNavigate,
   onClose,
+  onShowAyahModal,
 }) => {
   const [visible, setVisible] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
@@ -65,8 +68,16 @@ const WordNavbar = ({
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             title="Copy"
           >
-            <Copy className="w-4 sm:w-5 h-4 sm:h-5 text-blue-500" />
+            <Copy className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600" />
           </button>
+          <button
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="View Ayah Details"
+            onClick={() => onShowAyahModal && onShowAyahModal(selectedVerse)}
+          >
+            <BookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             title="Bookmark"
@@ -95,25 +106,13 @@ const WordNavbar = ({
       {/* Second Row - Language Selector and Navigation */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
         {/* Center - Navigation */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          <button
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            onClick={() => onNavigate && onNavigate(selectedVerse - 1)}
-            disabled={selectedVerse <= 1}
-          >
-            <ChevronLeft className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
-          </button>
-          <span className="text-xs sm:text-sm text-gray-500 font-medium dark:text-white text-center">
-            click to navigate
-          </span>
-          <button
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            onClick={() => onNavigate && onNavigate(selectedVerse + 1)}
-          >
-            <ChevronRight className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
-          </button>
-        </div>
-
+   
+        <div className="relative">
+            <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
+              <span>{selectedLanguage}</span>
+              <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+            </button>
+          </div>
         {/* Right side - Empty space for alignment */}
         <div className="hidden sm:block w-[140px]"></div>
       </div>

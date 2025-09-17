@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import AyathNavbar from "./AyathNavbar";
+import WordByWord from "../pages/WordByWord";
 import {
   fetchInterpretation,
   fetchArabicVerses,
@@ -20,6 +21,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalVerses, setTotalVerses] = useState(0);
+  const [showWordByWord, setShowWordByWord] = useState(false);
 
   // Initialize verse from props
   useEffect(() => {
@@ -127,6 +129,14 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     }
   };
 
+  const handleWordByWordClick = (verseNumber) => {
+    setShowWordByWord(true);
+  };
+
+  const handleWordByWordClose = () => {
+    setShowWordByWord(false);
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -139,6 +149,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             surahInfo={surahInfo}
             onVerseChange={setCurrentVerseId}
             onClose={onClose}
+            onWordByWordClick={handleWordByWordClick}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -165,6 +176,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             surahInfo={surahInfo}
             onVerseChange={setCurrentVerseId}
             onClose={onClose}
+            onWordByWordClick={handleWordByWordClick}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -197,6 +209,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           surahInfo={surahInfo}
           onVerseChange={setCurrentVerseId}
           onClose={onClose}
+          onWordByWordClick={handleWordByWordClick}
         />
 
         {/* Scrollable Content */}
@@ -204,12 +217,13 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           {/* Verse Info Header */}
           <div className="mb-4 sm:mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300"
-                                      style={{
-                                        fontFamily: quranFont,
-                                        fontSize: `${fontSize}px`,
-                                      }}
->
+              <h3
+                className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300"
+                style={{
+                  fontFamily: quranFont,
+                  fontSize: `${fontSize}px`,
+                }}
+              >
                 {surahInfo?.arabic || `Surah ${surahId}`}
               </h3>
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -334,6 +348,22 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* WordByWord Modal */}
+      {showWordByWord && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <div className="overflow-y-auto max-h-[90vh]">
+              <WordByWord
+                selectedVerse={currentVerseId}
+                surahId={surahId}
+                onClose={handleWordByWordClose}
+                onNavigate={setCurrentVerseId}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

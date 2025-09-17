@@ -19,7 +19,8 @@ const AyathNavbar = ({
   surahInfo,
   onVerseChange,
   onSurahChange,
-  onClose 
+  onClose,
+  onWordByWordClick
 }) => {
   const [visible, setVisible] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
@@ -181,7 +182,8 @@ const AyathNavbar = ({
           </button>
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title="Share"
+            title="Word by Word"
+            onClick={() => onWordByWordClick && onWordByWordClick(verseId)}
           >
           <List className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>

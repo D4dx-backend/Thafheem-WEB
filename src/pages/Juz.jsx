@@ -222,7 +222,7 @@ useEffect(() => {
   return (
     <>
       <HomepageSearch />
-      <div className="min-h-screen bg-white dark:bg-black p-3 sm:p-4 mx-auto">
+      <div className="min-h-screen bg-white dark:bg-gray-900 p-3 sm:p-4 mx-auto">
         <div className="w-full max-w-[1290px] mx-auto px-2 sm:px-4">
           {/* Header Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
@@ -279,7 +279,7 @@ useEffect(() => {
                         <div
                           key={`${juz.id}-${surah.number}-${index}`}
                           onClick={() => handleSurahClick(surah.number)}
-                          className="w-full min-h-[76px] flex flex-col p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-black hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-400 border border-transparent"
+                          className="w-full min-h-[76px] flex flex-col p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-gray-900 hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-400 border border-transparent"
                         >
                           {/* Top Row: Number + English + Arabic */}
                           <div className="flex items-center justify-between">

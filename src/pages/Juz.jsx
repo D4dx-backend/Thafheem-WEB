@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import HomepageNavbar from "../components/HomeNavbar";
 import HomepageSearch from "../components/HomeSearch";
@@ -18,7 +16,7 @@ const Juz = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const KaabaIcon  = ({ className }) => (
+  const KaabaIcon = ({ className }) => (
     <svg
       viewBox="0 0 11 13"
       fill="none"
@@ -33,7 +31,7 @@ const Juz = () => {
     </svg>
   );
 
-  const madIcon  = (
+  const madIcon = (
     <svg
       width="11"
       height="15"
@@ -50,117 +48,116 @@ const Juz = () => {
       />
     </svg>
   );
-// Use this corrected useEffect (remove the first one):
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+  // Use this corrected useEffect (remove the first one):
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-      // Fetch page ranges data
-      const pageRangesResponse = await fetch(
-        "https://thafheem.net/thafheem-api/pageranges/all"
-      );
+        // Fetch page ranges data
+        const pageRangesResponse = await fetch(
+          "https://thafheem.net/thafheem-api/pageranges/all"
+        );
 
-      if (!pageRangesResponse.ok) {
-        throw new Error(`HTTP error! status: ${pageRangesResponse.status}`);
-      }
-
-      const pageRangesData = await pageRangesResponse.json();
-
-      // Fetch surah names for mapping
-      const surahNamesResponse = await fetch(
-        "https://thafheem.net/thafheem-api/suranames/all"
-      );
-
-      if (!surahNamesResponse.ok) {
-        throw new Error(`HTTP error! status: ${surahNamesResponse.status}`);
-      }
-
-      const surahNamesData = await surahNamesResponse.json();
-
-      // Create surah names mapping - FIXED TYPE MAPPING
-      const surahNamesMap = {};
-      surahNamesData.forEach((surah) => {
-        surahNamesMap[surah.SuraID] = {
-          name: surah.ESuraName,
-          arabic: surah.ASuraName,
-          type: surah.SuraType === "Makkan" ? "Makki" : "Madani", // FIXED: was "M", now "Makkan"
-          totalAyas: surah.TotalAyas,
-        };
-      });
-      setSurahNames(surahNamesMap);
-
-      // Process and group page ranges by Juz
-      const juzMap = {};
-
-      pageRangesData.forEach((range) => {
-        const juzId = range.juzid;
-        const suraId = range.SuraId;
-
-        if (!juzMap[juzId]) {
-          juzMap[juzId] = {};
+        if (!pageRangesResponse.ok) {
+          throw new Error(`HTTP error! status: ${pageRangesResponse.status}`);
         }
 
-        if (!juzMap[juzId][suraId]) {
-          juzMap[juzId][suraId] = [];
+        const pageRangesData = await pageRangesResponse.json();
+
+        // Fetch surah names for mapping
+        const surahNamesResponse = await fetch(
+          "https://thafheem.net/thafheem-api/suranames/all"
+        );
+
+        if (!surahNamesResponse.ok) {
+          throw new Error(`HTTP error! status: ${surahNamesResponse.status}`);
         }
 
-        juzMap[juzId][suraId].push({
-          ayaFrom: range.ayafrom,
-          ayaTo: range.ayato,
-          pageId: range.PageId,
+        const surahNamesData = await surahNamesResponse.json();
+
+        // Create surah names mapping - FIXED TYPE MAPPING
+        const surahNamesMap = {};
+        surahNamesData.forEach((surah) => {
+          surahNamesMap[surah.SuraID] = {
+            name: surah.ESuraName,
+            arabic: surah.ASuraName,
+            type: surah.SuraType === "Makkan" ? "Makki" : "Madani", // FIXED: was "M", now "Makkan"
+            totalAyas: surah.TotalAyas,
+          };
         });
-      });
+        setSurahNames(surahNamesMap);
 
-      // Transform to component format
-      const transformedJuzData = [];
-      Object.keys(juzMap).forEach((juzId) => {
-        const juzSurahs = [];
-      
-        Object.keys(juzMap[juzId]).forEach((suraId) => {
-          const ranges = juzMap[juzId][suraId];
-          const surahInfo = surahNamesMap[parseInt(suraId)];
-      
-          if (surahInfo) {
-            const ayaFrom = Math.min(...ranges.map((r) => r.ayaFrom));
-            const ayaTo = Math.max(...ranges.map((r) => r.ayaTo));
-            const ayaRange = `${ayaFrom}-${ayaTo}`;
-      
-            juzSurahs.push({
-              number: parseInt(suraId),
-              name: surahInfo.name,
-              arabic: surahInfo.arabic,
-              verses: surahInfo.totalAyas,  // Show total ayahs only
-              type: surahInfo.type,
-              ayahs: surahInfo.totalAyas,
+        // Process and group page ranges by Juz
+        const juzMap = {};
+
+        pageRangesData.forEach((range) => {
+          const juzId = range.juzid;
+          const suraId = range.SuraId;
+
+          if (!juzMap[juzId]) {
+            juzMap[juzId] = {};
+          }
+
+          if (!juzMap[juzId][suraId]) {
+            juzMap[juzId][suraId] = [];
+          }
+
+          juzMap[juzId][suraId].push({
+            ayaFrom: range.ayafrom,
+            ayaTo: range.ayato,
+            pageId: range.PageId,
+          });
+        });
+
+        // Transform to component format
+        const transformedJuzData = [];
+        Object.keys(juzMap).forEach((juzId) => {
+          const juzSurahs = [];
+
+          Object.keys(juzMap[juzId]).forEach((suraId) => {
+            const ranges = juzMap[juzId][suraId];
+            const surahInfo = surahNamesMap[parseInt(suraId)];
+
+            if (surahInfo) {
+              const ayaFrom = Math.min(...ranges.map((r) => r.ayaFrom));
+              const ayaTo = Math.max(...ranges.map((r) => r.ayaTo));
+              const ayaRange = `${ayaFrom}-${ayaTo}`;
+
+              juzSurahs.push({
+                number: parseInt(suraId),
+                name: surahInfo.name,
+                arabic: surahInfo.arabic,
+                verses: surahInfo.totalAyas, // Show total ayahs only
+                type: surahInfo.type,
+                ayahs: surahInfo.totalAyas,
+              });
+            }
+          });
+
+          juzSurahs.sort((a, b) => a.number - b.number);
+
+          if (juzSurahs.length > 0) {
+            transformedJuzData.push({
+              id: parseInt(juzId),
+              title: `Juz ${juzId}`,
+              surahs: juzSurahs,
             });
           }
         });
-      
-        juzSurahs.sort((a, b) => a.number - b.number);
-      
-        if (juzSurahs.length > 0) {
-          transformedJuzData.push({
-            id: parseInt(juzId),
-            title: `Juz ${juzId}`,
-            surahs: juzSurahs,
-          });
-        }
-      });
-      
-      transformedJuzData.sort((a, b) => a.id - b.id);
-      setJuzData(transformedJuzData);
-      
-    } catch (err) {
-      setError(err.message);
-      console.error("Error fetching juz data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  fetchData();
-}, []);
+        transformedJuzData.sort((a, b) => a.id - b.id);
+        setJuzData(transformedJuzData);
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching juz data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Split juz data into three columns for display
   const getColumnData = (columnIndex) => {
@@ -170,9 +167,16 @@ useEffect(() => {
     return juzData.slice(startIndex, endIndex);
   };
 
-  // Handle juz click
+  // Handle juz click - navigate to first surah of the selected Juz
   const handleJuzClick = (juzId) => {
-    navigate(`/juz/${juzId}`);
+    // Find the first surah in the selected Juz
+    const selectedJuz = juzData.find((juz) => juz.id === juzId);
+    if (selectedJuz && selectedJuz.surahs.length > 0) {
+      // Get the first surah number from the Juz
+      const firstSurahNumber = selectedJuz.surahs[0].number;
+      // Navigate to the first surah with Juz context information
+      navigate(`/surah/${firstSurahNumber}?fromJuz=${juzId}`);
+    }
   };
 
   // Handle surah click within juz
@@ -302,14 +306,13 @@ useEffect(() => {
 
                                 {/* Icons row (under name) */}
                                 <div className="flex items-center space-x-1 sm:space-x-2 text-gray-500 dark:text-gray-400 mt-1">
-                                {surah.type === "Makki" ? (
-    <KaabaIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-  ) : (
-    <div className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0">
-      {madIcon}
-    </div>
-  )}
-
+                                  {surah.type === "Makki" ? (
+                                    <KaabaIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                  ) : (
+                                    <div className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0">
+                                      {madIcon}
+                                    </div>
+                                  )}
 
                                   <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
 

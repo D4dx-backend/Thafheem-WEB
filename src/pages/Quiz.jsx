@@ -529,13 +529,6 @@ const Quiz = () => {
               ))}
             </div>
 
-            <div className="text-xs sm:text-sm text-gray-600 mb-4 dark:text-white">
-              <p>
-                {hasSubmittedCurrent
-                  ? "ഉത്തരം സമർപ്പിച്ചു. അടുത്ത ചോദ്യത്തിലേക്ക് പോകാൻ 'Next Question' ക്ലിക്ക് ചെയ്യുക."
-                  : "ഉത്തരം തെരഞ്ഞെടുത്ത് 'Submit Answer' ക്ലിക്ക് ചെയ്യുക."}
-              </p>
-            </div>
 
             {/* Submit Answer Button */}
             {selectedAnswer && !hasSubmittedCurrent && (

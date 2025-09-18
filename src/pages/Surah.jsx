@@ -45,6 +45,9 @@ const Surah = () => {
   const navigate = useNavigate();
   const location = useLocation(); // Add this to get query parameters
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  
+  // Check if user came from Juz view
+  const fromJuz = new URLSearchParams(location.search).get('fromJuz');
   const [copiedVerse, setCopiedVerse] = useState(null);
   
   // State management
@@ -489,6 +492,21 @@ const Surah = () => {
 
             {/* Mobile Layout */}
             <div className="sm:hidden space-y-3 sm:space-y-4 px-2">
+              {/* Juz Context Indicator */}
+              {fromJuz && (
+                <div className="text-center">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    Reading from Juz {fromJuz}
+                  </span>
+                  <button
+                    onClick={() => navigate('/juz')}
+                    className="ml-2 text-xs text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
+                  >
+                    Back to Juz
+                  </button>
+                </div>
+              )}
+              
               {/* Surah Title */}
               <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
                 {surahInfo?.arabic || "Loading..."}
@@ -549,6 +567,21 @@ const Surah = () => {
 
             {/* Desktop Layout */}
             <div className="hidden sm:block">
+              {/* Juz Context Indicator */}
+              {fromJuz && (
+                <div className="mb-2 text-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Reading from Juz {fromJuz}
+                  </span>
+                  <button
+                    onClick={() => navigate('/juz')}
+                    className="ml-2 text-sm text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
+                  >
+                    Back to Juz
+                  </button>
+                </div>
+              )}
+              
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
                 <h1

@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="bg-white py-6 mt-auto font-poppins dark:bg-black">
+    <footer className="bg-white py-6 mt-auto font-poppins dark:bg-gray-900">
       <div className="border-t border-gray-300 mx-auto" style={{ maxWidth: '1290px' }}></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

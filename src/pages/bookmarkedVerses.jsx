@@ -87,7 +87,7 @@ const BookVerse = () => {
       <>
         <BookmarkNavbar />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
+        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
           <div className="w-full max-w-[1290px] mx-auto">
             <div className="text-center py-12">
               <div className="mb-6">
@@ -120,7 +120,7 @@ const BookVerse = () => {
       <>
         <BookmarkNavbar />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
+        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
           <div className="w-full max-w-[1290px] mx-auto">
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
@@ -138,7 +138,7 @@ const BookVerse = () => {
       <>
         <BookmarkNavbar />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
+        <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
           <div className="w-full max-w-[1290px] mx-auto">
             <div className="text-center py-12">
               <p className="text-red-500 dark:text-red-400 text-lg mb-4">{error}</p>
@@ -192,7 +192,7 @@ const BookVerse = () => {
     <>
       <BookmarkNavbar />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
+      <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
         <div className="w-full max-w-[1290px] mx-auto">
 
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
@@ -201,7 +201,7 @@ const BookVerse = () => {
               return (
                 <div
                   key={verse.id}
-                  className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-black dark:hover:bg-gray-800 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                   onClick={() => handleVerseClick(verse.surahId, verse.verseId)}
                 >
                   {/* Left Section - Verse Info */}
@@ -213,11 +213,11 @@ const BookVerse = () => {
                       <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                         {verse.surah}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-white truncate">
                         {verse.ayah}
                       </p>
                       {verse.verseText && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-gray-400 dark:text-white mt-1 line-clamp-2">
                           {verse.verseText.length > 100 
                             ? `${verse.verseText.substring(0, 100)}...` 
                             : verse.verseText

@@ -81,7 +81,7 @@ const Maududi = () => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="mx-auto bg-white dark:bg-black p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
+        <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
             {/* Portrait Image - Responsive positioning */}
             <div className="block sm:block lg:absolute lg:top-40 mb-4 sm:mb-6 lg:mb-0">
                 <img 

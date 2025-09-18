@@ -46,9 +46,9 @@ const TableContents = () => {
 
   return (
     
-    <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-black font-poppins">
+    <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-gray-900 font-poppins">
       <div className="w-full max-w-[1070px] mx-auto px-4 sm:px-0">
-      <div className="border-b-2 border-black dark:border-white pb-2 mb-6">
+      <div className="border-b-2 border-gray-900 dark:border-white pb-2 mb-6">
   <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
     Symbols Guide
   </h1>
@@ -88,7 +88,7 @@ const TableContents = () => {
           Symbols in Arabic Text
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full  bg-white dark:bg-black  shadow-lg rounded-lg">
+          <table className="w-full  bg-white dark:bg-gray-900  shadow-lg rounded-lg">
             <thead>
               <tr className="">
                 <th className=" dark:text-white  px-4 py-3 text-left font-semibold ">
@@ -101,9 +101,9 @@ const TableContents = () => {
             </thead>
             <tbody>
               {arabicSymbols.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? " dark:bg-black" : "bg-white dark:bg-black"}>
+                <tr key={index} className={index % 2 === 0 ? " dark:bg-gray-900" : "bg-white dark:bg-gray-900"}>
                   <td className=" px-4 py-3 text-center text-xl font-bold dark:text-white ">
-                  <div className="w-[53px] h-[53px] bg-white dark:bg-black border border-gray-200 rounded-xl shadow-md flex items-center justify-center">
+                  <div className="w-[53px] h-[53px] bg-white dark:bg-gray-900 border border-gray-200 rounded-xl shadow-md flex items-center justify-center">
   {item.symbol || "—"}
 </div>
 
@@ -123,7 +123,7 @@ const TableContents = () => {
 
 
       {/* Footer */}
-      <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500 px-4 sm:px-0">
+      <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-400 px-4 sm:px-0">
         <p>This guide helps in understanding the various symbols used in Quranic text and translation.</p>
       </div>
       </div>

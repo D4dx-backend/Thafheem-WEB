@@ -71,7 +71,7 @@ const HomepageSearch = () => {
     navigate("/bookmarkedverses");
   };
   return (
-    <div className="flex flex-col items-center justify-center bg-white dark:bg-black px-4 py-6 sm:py-8 lg:py-12">
+    <div className="flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4 py-6 sm:py-8 lg:py-12">
       {/* Banner Section */}
       <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl mb-6 sm:mb-8 mx-auto">
         <img

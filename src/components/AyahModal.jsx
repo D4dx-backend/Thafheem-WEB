@@ -9,9 +9,12 @@ import {
   fetchSurahs,
 } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "./Toast";
 
 const AyahModal = ({ surahId, verseId, onClose }) => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { toasts, removeToast } = useToast();
 
   // State management
   const [currentVerseId, setCurrentVerseId] = useState(1);
@@ -150,6 +153,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onVerseChange={setCurrentVerseId}
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
+            verseData={verseData}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -177,6 +181,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onVerseChange={setCurrentVerseId}
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
+            verseData={verseData}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -201,7 +206,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
-      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
         <AyathNavbar
           surahId={surahId}
           verseId={currentVerseId}
@@ -210,6 +215,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           onVerseChange={setCurrentVerseId}
           onClose={onClose}
           onWordByWordClick={handleWordByWordClick}
+          verseData={verseData}
         />
 
         {/* Scrollable Content */}
@@ -266,7 +272,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           {interpretationData && interpretationData.length > 0 && (
             <div className="mb-6 sm:mb-8">
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Tafheem-ul-Quran (Interpretation):
+                {/* Tafheem-ul-Quran (Interpretation): */}
               </h4>
               <div className="space-y-3">
                 {interpretationData.map((interpretation, index) => {
@@ -280,7 +286,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   return (
                     <div
                       key={index}
-                      className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4"
+                      className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 sm:p-4"
                     >
                       <p
                         className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base"
@@ -308,7 +314,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 Tafheem-ul-Quran (Interpretation):
               </h4>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4">
+              <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3 sm:p-4">
                 <p className="text-gray-500 dark:text-gray-400 text-sm italic">
                   No interpretation available for this verse.
                 </p>
@@ -318,7 +324,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         </div>
 
         {/* Fixed Bottom Navigation Buttons */}
-        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38]">
+        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <button
             onClick={handlePreviousAyah}
             disabled={currentVerseId <= 1}
@@ -364,6 +370,9 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           </div>
         </div>
       )}
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

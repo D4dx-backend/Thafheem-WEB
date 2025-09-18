@@ -415,9 +415,9 @@ const Privacy = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black font-poppins">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-poppins">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 dark:bg-black">
+      <div className="bg-white border-b border-gray-200 dark:bg-gray-900">
         <div className="w-full max-w-[1070.01px] mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 sm:pb-3 mb-3 sm:mb-4">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
@@ -426,7 +426,7 @@ const Privacy = () => {
           </div>
         </div>
         <div className="w-full max-w-[1070.01px] mx-auto px-3 sm:px-6">
-          <div className="bg-white dark:bg-black">
+          <div className="bg-white dark:bg-gray-900">
             <div className="prose prose-gray max-w-none">
               {/* Introduction */}
               <div className="mb-4 sm:mb-6">

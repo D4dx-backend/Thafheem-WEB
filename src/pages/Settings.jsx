@@ -108,7 +108,7 @@ const Settings = ({ onClose }) => {
             </h3>
 
             {/* Wrapper */}
-            <div className="flex rounded-full bg-gray-100 p-1 dark:bg-black w-[287px] max-w-sm mx-auto">
+            <div className="flex rounded-full bg-gray-100 p-1 dark:bg-gray-950 w-[287px] max-w-sm mx-auto">
               {/* Light Button */}
               <button
                 onClick={() => {
@@ -153,7 +153,7 @@ const Settings = ({ onClose }) => {
               Quran Font
             </h3>
 
-            <div className="flex rounded-full bg-gray-100 dark:bg-black p-1 w-[287px] max-w-sm mx-auto">
+            <div className="flex rounded-full bg-gray-100 dark:bg-gray-950 p-1 w-[287px] max-w-sm mx-auto">
               {/* ScheherazadeNew Button */}
               <button
                 onClick={() => setQuranFont("ScheherazadeNew-Regular")}
@@ -206,7 +206,7 @@ const Settings = ({ onClose }) => {
             </div>
 
             <div
-              className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-black mx-auto"
+              className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-gray-950 mx-auto"
               style={{
                 fontSize: `${fontSize}px`,
                 fontFamily: quranFont,
@@ -284,7 +284,7 @@ const Settings = ({ onClose }) => {
               </div>
             </div>
             <div className="border-b border-black  pb-4 mb-4">
-              <div className="bg-[#F8F9FA] mt-5 p-2 rounded-sm h-[100px] w-[310px] dark:bg-black ">
+              <div className="bg-[#F8F9FA] mt-5 p-2 rounded-sm h-[100px] w-[310px] dark:bg-gray-950 ">
                 <p
                   className="text-gray-600 mt-2 dark:text-white"
                   style={{ fontSize: `${translationFontSize}px` }}
@@ -301,7 +301,7 @@ const Settings = ({ onClose }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">
               View Type
             </h3>
-            <div className="flex rounded-full bg-gray-100 w-[287px] p-1 dark:bg-black">
+            <div className="flex rounded-full bg-gray-100 w-[287px] p-1 dark:bg-gray-950">
               {/* Ayah Wise Button */}
               <button
                 onClick={() => setViewType("Ayah Wise")}
@@ -390,7 +390,7 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* Reciter */}
-          <div className="p-4 bg-gray-50 rounded-lg dark:bg-black">
+          <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-950">
             <div className="flex flex-col space-y-1">
               {/* Label */}
               <label className="text-sm font-medium text-gray-500">

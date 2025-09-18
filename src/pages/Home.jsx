@@ -87,7 +87,7 @@ const Home = () => {
     <>
       {/* <HomepageNavbar /> */}
       <HomepageSearch />
-      <div className=" mx-auto bg-white dark:bg-black min-h-screen">
+      <div className=" mx-auto bg-white dark:bg-gray-900 min-h-screen">
         <div className="max-w-[1290px] w-full mx-auto px-2 sm:px-4">
           {/* Header Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
@@ -160,7 +160,7 @@ const Home = () => {
                 <div
                   key={surah.number}
                   onClick={() => handleSurahClick(surah.number)}
-                  className="w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-black border border-gray-200 dark:border-gray-700
+                  className="w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
                      rounded-xl px-4 py-3 sm:py-0 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
                      flex items-center hover:border-cyan-500 dark:hover:border-cyan-400"
                 >

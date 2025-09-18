@@ -192,33 +192,7 @@ const HomepageNavbar = () => {
           {/* Right side */}
           <div className="flex items-center space-x-1">
             {/* Sign In/Sign Out Button */}
-            {user ? (
-              <button
-                onClick={handleAuthButtonClick}
-                disabled={isSigningOut}
-                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSigningOut ? (
-                  <div className="flex items-center space-x-1">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-red-600"></div>
-                    <span className="hidden xs:inline">Signing Out...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="hidden xs:inline">Sign Out</span>
-                    <span className="xs:hidden">Log Out</span>
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={handleAuthButtonClick}
-                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
-              >
-                <span className="hidden xs:inline">Sign In</span>
-                <span className="xs:hidden">Sign</span>
-              </button>
-            )}
+          
 
             <button
               onClick={() => setIsLanguageOpen(true)}
@@ -262,6 +236,27 @@ const HomepageNavbar = () => {
             >
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
+            {user ? (
+             <button
+             onClick={handleAuthButtonClick}
+             disabled={isSigningOut}
+             className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+             {isSigningOut ? (
+               <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+             ) : (
+               <LogOut className="w-5 h-5" />
+             )}
+           </button>
+            ) : (
+              <button
+                onClick={handleAuthButtonClick}
+                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+              >
+                <span className="hidden xs:inline">Sign In</span>
+                <span className="xs:hidden">Sign</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>

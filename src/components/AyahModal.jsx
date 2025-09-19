@@ -9,9 +9,12 @@ import {
   fetchSurahs,
 } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import BookmarkService from "../services/bookmarkService";
 
 const AyahModal = ({ surahId, verseId, onClose }) => {
   const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { user } = useAuth();
 
   // State management
   const [currentVerseId, setCurrentVerseId] = useState(1);
@@ -158,6 +161,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                 Loading verse data...
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={async () => {
+                try {
+                  const userId = BookmarkService.getEffectiveUserId(user);
+                  await BookmarkService.addAyahInterpretationBookmark(
+                    userId,
+                    surahId,
+                    currentVerseId,
+                    surahInfo?.arabic || `Surah ${surahId}`
+                  );
+                } catch (e) {
+                  console.error('Failed to save ayah-interpretation bookmark', e);
+                }
+              }}
+              className="text-xs px-2 py-1 border rounded text-gray-600 dark:text-white border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Bookmark Interpretation
+            </button>
           </div>
         </div>
       </div>

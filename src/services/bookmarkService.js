@@ -1,6 +1,25 @@
 const THAFHEEM_API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://thafheem.net/thafheem-api';
 
 class BookmarkService {
+  // Provide a persistent guest id for unauthenticated users
+  static getGuestUserId() {
+    try {
+      const key = 'thafheem_guest_user_id';
+      let guestId = localStorage.getItem(key);
+      if (!guestId) {
+        guestId = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+        localStorage.setItem(key, guestId);
+      }
+      return guestId;
+    } catch (_) {
+      // In environments without localStorage, fallback to a constant id
+      return 'guest_user';
+    }
+  }
+
+  static getEffectiveUserId(user) {
+    return user?.uid || this.getGuestUserId();
+  }
   // Fallback to localStorage if API is not available
   static getLocalStorageKey(userId) {
     return `bookmarks_${userId}`;
@@ -37,7 +56,11 @@ class BookmarkService {
       if (!response.ok) {
         // Fallback to localStorage if API fails
         console.log('API failed, using localStorage fallback');
-        return this.getLocalBookmarks(userId);
+        // Filter local bookmarks by type when using fallback
+        const all = this.getLocalBookmarks(userId);
+        return Array.isArray(all)
+          ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
+          : [];
       }
 
       const data = await response.json();
@@ -54,8 +77,11 @@ class BookmarkService {
       return [];
     } catch (error) {
       console.error('Error fetching bookmarks, using localStorage fallback:', error);
-      // Fallback to localStorage
-      return this.getLocalBookmarks(userId);
+      // Fallback to localStorage (filtered by type)
+      const all = this.getLocalBookmarks(userId);
+      return Array.isArray(all)
+        ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
+        : [];
     }
   }
 
@@ -95,6 +121,83 @@ class BookmarkService {
     } catch (error) {
       console.error('Error adding bookmark, using localStorage fallback:', error);
       // Fallback to localStorage
+      const localBookmarks = this.getLocalBookmarks(userId);
+      localBookmarks.push(bookmarkData);
+      this.saveLocalBookmarks(userId, localBookmarks);
+      return bookmarkData;
+    }
+  }
+
+  // Add an Ayah-wise interpretation bookmark
+  static async addAyahInterpretationBookmark(userId, surahId, verseId, surahName = '', meta = {}) {
+    const bookmarkData = {
+      id: `${userId}_${surahId}_${verseId}_ayahinterp_${Date.now()}`,
+      userId,
+      surahId: parseInt(surahId),
+      verseId: parseInt(verseId),
+      bookmarkType: 'ayah-interpretation',
+      surahName: surahName && surahName.trim() ? surahName : `Surah ${surahId}`,
+      createdAt: new Date().toISOString(),
+      ...meta,
+    };
+
+    try {
+      const response = await fetch(`${THAFHEEM_API_BASE}/bookmarks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookmarkData),
+      });
+      if (!response.ok) {
+        const local = this.getLocalBookmarks(userId);
+        local.push(bookmarkData);
+        this.saveLocalBookmarks(userId, local);
+        return bookmarkData;
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding ayah interpretation bookmark, using local fallback:', error);
+      const local = this.getLocalBookmarks(userId);
+      local.push(bookmarkData);
+      this.saveLocalBookmarks(userId, local);
+      return bookmarkData;
+    }
+  }
+
+  // Add a block bookmark (single record representing a range)
+  static async addBlockBookmark(userId, surahId, fromAyah, toAyah, surahName = '') {
+    const bookmarkData = {
+      id: `${userId}_${surahId}_${fromAyah}_${toAyah}_${Date.now()}`,
+      userId: userId,
+      surahId: parseInt(surahId),
+      verseId: parseInt(fromAyah),
+      bookmarkType: 'block',
+      surahName: surahName && surahName.trim() ? surahName : `Surah ${surahId}`,
+      blockFrom: parseInt(fromAyah),
+      blockTo: parseInt(toAyah),
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch(`${THAFHEEM_API_BASE}/bookmarks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookmarkData),
+      });
+
+      if (!response.ok) {
+        // Fallback to localStorage
+        const localBookmarks = this.getLocalBookmarks(userId);
+        localBookmarks.push(bookmarkData);
+        this.saveLocalBookmarks(userId, localBookmarks);
+        return bookmarkData;
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error adding block bookmark, using localStorage fallback:', error);
       const localBookmarks = this.getLocalBookmarks(userId);
       localBookmarks.push(bookmarkData);
       this.saveLocalBookmarks(userId, localBookmarks);

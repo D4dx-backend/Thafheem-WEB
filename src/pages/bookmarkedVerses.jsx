@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowLeft } from "lucide-react";
 import BookmarkNavbar from "../components/BookmarkNavbar";
 import StarNumber from "../components/StarNumber";
 import { useAuth } from "../context/AuthContext";
@@ -192,6 +192,11 @@ const BookVerse = () => {
     <>
       <BookmarkNavbar />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 mt-2">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+      </div>
       <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-black font-poppins">
         <div className="w-full max-w-[1290px] mx-auto">
 

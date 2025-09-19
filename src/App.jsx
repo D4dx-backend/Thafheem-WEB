@@ -43,6 +43,7 @@ function App() {
           <Routes>
           <Route path="/" element={<Home />} /> {/* Surah/Home */}
           <Route path="/juz" element={<Juz />} />
+          <Route path="/juz/:juzId" element={<Juz />} />
           <Route path="/sign" element={<Sign />} />
           {/* <Route path="/surah" element={<Surah />} /> */}
           <Route path="/surah/:surahId" element={<Surah />} />

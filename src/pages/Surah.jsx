@@ -33,7 +33,7 @@ import { ToastContainer } from "../components/Toast";
 import AyahModal from "../components/AyahModal";
 import {
   fetchAyahAudioTranslations,
-  fetchSurahs,
+  listSurahNames,
   fetchArabicVerses,
   fetchInterpretation,
 } from "../api/apifunction";
@@ -78,16 +78,13 @@ const Surah = () => {
         setLoading(true);
         setError(null);
 
-        const [ayahResponse, surahsResponse, arabicResponse] =
+        const [ayahResponse, surahNamesResponse, arabicResponse] =
           await Promise.all([
             fetchAyahAudioTranslations(parseInt(surahId)),
-            fetchSurahs(),
+            listSurahNames(),
             fetchArabicVerses(parseInt(surahId)),
           ]);
 
-        console.log("Ayah Response:", ayahResponse);
-        console.log("Surahs Response:", surahsResponse);
-        console.log("Arabic Response:", arabicResponse);
         console.log("Ayah Response length:", ayahResponse.length);
         console.log("Arabic Response length:", arabicResponse.length);
 
@@ -103,11 +100,13 @@ const Surah = () => {
         setAyahData(formattedAyahData);
         setArabicVerses(arabicResponse || []);
 
-        const currentSurah = surahsResponse.find(
-          (s) => s.number === parseInt(surahId)
+        const currentSurah = surahNamesResponse.find(
+          (s) => s.id === parseInt(surahId)
         );
         setSurahInfo(
-          currentSurah || { arabic: "Unknown Surah", number: parseInt(surahId) }
+          currentSurah
+            ? { arabic: currentSurah.arabic, number: currentSurah.id }
+            : { arabic: "Unknown Surah", number: parseInt(surahId) }
         );
       } catch (err) {
         setError(err.message);
@@ -143,6 +142,51 @@ const Surah = () => {
 
     loadBookmarks();
   }, [user, surahId]);
+
+  // Handle scroll to specific verse when navigating with anchor
+  useEffect(() => {
+    const handleScrollToVerse = () => {
+      const hash = window.location.hash;
+      
+      if (hash && hash.startsWith('#verse-')) {
+        const verseNumber = parseInt(hash.replace('#verse-', ''));
+        
+        if (verseNumber && !loading && ayahData.length > 0) {
+          // Wait for the content to fully render
+          setTimeout(() => {
+            const verseElement = document.getElementById(`verse-${verseNumber}`);
+            
+            if (verseElement) {
+              verseElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              // Highlight the verse briefly
+              verseElement.style.backgroundColor = '#fef3c7';
+              setTimeout(() => {
+                verseElement.style.backgroundColor = '';
+              }, 2000);
+            }
+          }, 500); // Reduced delay for better responsiveness
+        }
+      }
+    };
+
+    // Run when data is loaded or when hash changes
+    if (!loading && ayahData.length > 0) {
+      // Add a small delay to ensure DOM is ready
+      setTimeout(handleScrollToVerse, 100);
+    }
+
+    // Listen for hash changes and popstate (back/forward button)
+    window.addEventListener('hashchange', handleScrollToVerse);
+    window.addEventListener('popstate', handleScrollToVerse);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleScrollToVerse);
+      window.removeEventListener('popstate', handleScrollToVerse);
+    };
+  }, [loading, ayahData, surahId, window.location.hash]);
 
   const handleWordByWordClick = (verseNumber) => {
     setSelectedVerseForWordByWord(verseNumber);
@@ -587,9 +631,9 @@ const Surah = () => {
           </div>
         </div>
 
-        {/* Verses */}
-        <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-black">
-          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+         {/* Verses */}
+         <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-black">
+           <div key={window.location.hash} className="space-y-4 sm:space-y-6 lg:space-y-8">
             {!loading && ayahData.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400">
@@ -619,6 +663,7 @@ const Surah = () => {
                 return (
                   <div
                     key={index}
+                    id={`verse-${index + 1}`}
                     className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700"
                   >
                     {/* Arabic Text */}

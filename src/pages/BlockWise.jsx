@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
+import BookmarkService from "../services/bookmarkService";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/Toast";
 import InterpretationBlockwise from "./InterpretationBlockwise";
 import Bismi from "../assets/bismi.jpg"
 import { useTheme } from "../context/ThemeContext";
@@ -32,6 +36,8 @@ const BlockWise = () => {
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const { quranFont } = useTheme();
   const { surahId } = useParams();
   
@@ -41,6 +47,7 @@ const BlockWise = () => {
   const [error, setError] = useState(null);
   const [ayahData, setAyahData] = useState([]);
   const [arabicVerses, setArabicVerses] = useState([]);
+  const [blockBookmarkLoading, setBlockBookmarkLoading] = useState({});
 
   // Fetch block-wise data
   useEffect(() => {
@@ -57,9 +64,23 @@ const BlockWise = () => {
           fetchArabicVerses(parseInt(surahId)),
         ]);
 
+        console.log("=== BLOCKWISE DEBUG ===");
         console.log("Block-wise Response:", blockWiseResponse);
         console.log("Ayah Response:", ayahResponse);
         console.log("Arabic Response:", arabicResponse);
+        console.log("Aya Ranges from API:", blockWiseResponse?.ayaRanges);
+        console.log("Ayah Data length:", ayahResponse?.length);
+        console.log("Arabic Verses length:", arabicResponse?.length);
+        
+        // Debug the first few ayah data items
+        if (ayahResponse && ayahResponse.length > 0) {
+          console.log("First 3 ayah items:", ayahResponse.slice(0, 3));
+        }
+        
+        // Debug the first few Arabic verses
+        if (arabicResponse && arabicResponse.length > 0) {
+          console.log("First 3 Arabic verses:", arabicResponse.slice(0, 3));
+        }
 
         setBlockData(blockWiseResponse);
 
@@ -128,6 +149,7 @@ const BlockWise = () => {
   if (loading) {
     return (
       <>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
         <Transition />
         <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
           <div className="text-center">
@@ -143,6 +165,7 @@ const BlockWise = () => {
   if (error) {
     return (
       <>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
         <Transition />
         <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
           <div className="text-center">
@@ -166,6 +189,7 @@ const BlockWise = () => {
 
   return (
     <>
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <Transition />
       <div className="mx-auto min-h-screen bg-white dark:bg-black">
         <div className="mx-auto px-3 sm:px-6 lg:px-8">
@@ -268,39 +292,110 @@ const BlockWise = () => {
 
           {/* Main Content */}
           <div className="max-w-full sm:max-w-[1290px] mx-auto pb-6 sm:pb-8">
-            {/* Arabic Text Block */}
-            <div className="bg-[#ebf5f7] dark:bg-[#28454c] rounded-lg mb-4 sm:mb-6">
+            {/* Render blocks based on aya ranges */}
+            {(() => {
+              // Check if we have valid aya ranges from API
+              const hasValidRanges = blockData?.ayaRanges && 
+                Array.isArray(blockData.ayaRanges) && 
+                blockData.ayaRanges.length > 0 &&
+                blockData.ayaRanges.some(range => 
+                  (range.ayaFrom || range.ayafrom || range.from || range.start || range.startAya) &&
+                  (range.ayaTo || range.ayato || range.to || range.end || range.endAya)
+                );
+
+              console.log("Has valid ranges:", hasValidRanges);
+              console.log("Raw ayaRanges:", blockData?.ayaRanges);
+
+              // If no valid ranges, create fallback ranges (every 5 verses)
+              const rangesToUse = hasValidRanges ? blockData.ayaRanges : (() => {
+                const totalVerses = ayahData?.length || arabicVerses?.length || 0;
+                const fallbackRanges = [];
+                for (let i = 1; i <= totalVerses; i += 5) {
+                  fallbackRanges.push({
+                    ayafrom: i,
+                    ayato: Math.min(i + 4, totalVerses)
+                  });
+                }
+                console.log("Using fallback ranges:", fallbackRanges);
+                return fallbackRanges;
+              })();
+
+              return rangesToUse;
+            })().map((rangeItem, blockIndex) => {
+              const start =
+                rangeItem.ayaFrom ||
+                rangeItem.ayafrom ||
+                rangeItem.from ||
+                rangeItem.start ||
+                rangeItem.startAya ||
+                1;
+              const end =
+                rangeItem.ayaTo ||
+                rangeItem.ayato ||
+                rangeItem.to ||
+                rangeItem.end ||
+                rangeItem.endAya ||
+                start;
+
+              console.log(`Block ${blockIndex + 1} - Range Item:`, rangeItem);
+              console.log(`Block ${blockIndex + 1} - Start: ${start}, End: ${end}`);
+
+              const arabicSlice = Array.isArray(arabicVerses)
+                ? arabicVerses.slice(start - 1, end)
+                : [];
+              const translationSlice = Array.isArray(ayahData)
+                ? ayahData.slice(start - 1, end)
+                : [];
+
+              console.log(`Block ${blockIndex + 1} - Arabic slice length:`, arabicSlice.length);
+              console.log(`Block ${blockIndex + 1} - Translation slice length:`, translationSlice.length);
+
+              return (
+                <div
+                  key={`block-${blockIndex}-${start}-${end}`}
+                  className="rounded-xl mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
+                >
+                  <div className="px-3 sm:px-4 pt-3 sm:pt-4 flex items-center justify-between">
+                    <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium">
+                      Block {blockIndex + 1}: Ayahs {start}
+                      {end && end !== start ? `-${end}` : ''}
+                    </span>
+                  </div>
+
               <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                 <p
                   className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
                   style={{ fontFamily: `'${quranFont}', serif` }}
                 >
-                  {arabicVerses.length > 0 ? 
-                    arabicVerses.map((verse, index) => `${verse.text_uthmani} ﴿${index + 1}﴾`).join(' ') :
-                    'Loading Arabic text...'
-                  }
+                      {arabicSlice.length > 0
+                        ? arabicSlice
+                            .map((verse, idx) => `${verse.text_uthmani} ﴿${start + idx}﴾`)
+                            .join(' ')
+                        : 'Loading Arabic text...'}
                 </p>
               </div>
 
-              {/* Translation Text */}
+                  {/* Translation Text for this block */}
               <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
                 <p className="text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base font-poppins">
-                  {ayahData.length > 0 ? 
-                    ayahData.map((ayah, index) => (
-                      <React.Fragment key={index}>
-                        <strong>({surahId}:{index + 1})</strong> {ayah.Translation}
+                      {translationSlice.length > 0
+                        ? translationSlice.map((ayah, idx) => {
+                            const ayahNumber = start + idx;
+                            return (
+                              <React.Fragment key={`ayah-${ayahNumber}`}>
+                                <strong>({surahId}:{ayahNumber})</strong> {ayah.Translation}
                         <span
                           className="inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 bg-[#19B5DD] text-white text-xs font-medium rounded-lg mx-1 sm:mx-2 cursor-pointer hover:bg-cyan-600 transition-colors flex-shrink-0"
-                          onClick={() => handleNumberClick(index + 1)}
+                                  onClick={() => handleNumberClick(ayahNumber)}
                         >
-                          {index + 1}
-                        </span>
-                        {' '}
+                                  {ayahNumber}
+                                </span>{' '}
                       </React.Fragment>
-                    )) :
-                    'Loading translation...'
-                  }
-                </p>
+                            );
+                          })
+                        : 'Loading translation...'}
+                    </p>
+
                 <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-3 sm:pt-4">
                   {/* Copy */}
                   <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
@@ -323,8 +418,32 @@ const BlockWise = () => {
                   </button>
 
                   {/* Bookmark */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                      <button
+                        className={`p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          blockBookmarkLoading[`${start}-${end}`] ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        onClick={async () => {
+                          const key = `${start}-${end}`;
+                          try {
+                            setBlockBookmarkLoading(prev => ({ ...prev, [key]: true }));
+                            const userId = BookmarkService.getEffectiveUserId(user);
+                            await BookmarkService.addBlockBookmark(userId, surahId, start, end);
+                            showSuccess(`Saved block ${start}-${end}`);
+                          } catch (err) {
+                            console.error('Failed to bookmark block:', err);
+                            showError('Failed to save block');
+                          } finally {
+                            setBlockBookmarkLoading(prev => ({ ...prev, [key]: false }));
+                          }
+                        }}
+                        title="Bookmark block"
+                        disabled={blockBookmarkLoading[`${start}-${end}`]}
+                      >
+                        {blockBookmarkLoading[`${start}-${end}`] ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b border-current"></div>
+                        ) : (
                     <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )}
                   </button>
 
                   {/* Share */}
@@ -334,6 +453,8 @@ const BlockWise = () => {
                 </div>
               </div>
             </div>
+              );
+            })}
 
             {/* Bottom Navigation */}
             <div className="bg-white border-t dark:bg-black border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3 sm:py-4 mt-6 sm:mt-8 rounded-lg">
@@ -408,7 +529,15 @@ const BlockWise = () => {
           {showInterpretation && (
             <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full">
-                <InterpretationBlockwise selectedNumber={selectedNumber} />
+                <InterpretationBlockwise
+                  surahId={parseInt(surahId)}
+                  range={`${selectedNumber}`}
+                  ipt={1}
+                  lang="en"
+                  onClose={() => setShowInterpretation(false)}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
               </div>
             </div>
           )}

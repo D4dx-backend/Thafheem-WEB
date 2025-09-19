@@ -6,13 +6,59 @@ export const fetchSurahs = async () => {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   const data = await response.json();
-  return data.map((surah) => ({
+  const result = data.map((surah) => ({
     number: surah.SuraID,
-    arabic: surah.ASuraName,
-    name: surah.ESuraName,
+    arabic: surah.ASuraName?.trim(),
+    name: surah.ESuraName?.trim(),
     ayahs: surah.TotalAyas,
     type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
   }));
+  return result;
+};
+
+/**
+ * List surah names with minimal fields for UI dropdowns or lists
+ * Returns: [{ id, arabic, english }]
+ */
+export const listSurahNames = async () => {
+  const response = await fetch(SURA_NAMES_API);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  const result = data.map((surah) => ({
+    id: surah.SuraID,
+    arabic: surah.ASuraName?.trim(),
+    english: surah.ESuraName?.trim(),
+  }));
+  return result;
+};
+
+/**
+ * Get a single surah's names by id
+ * Returns: { id, arabic, english } | null
+ */
+export const getSurahNameById = async (surahId) => {
+  const names = await listSurahNames();
+  return names.find((s) => s.id === parseInt(surahId)) || null;
+};
+
+/**
+ * Build a flattened verse index from Surah data
+ * Returns: [{ id: "<surah>-<verse>", surahId, arabic, english, verse }]
+ */
+export const listSurahVerseIndex = async () => {
+  const surahs = await fetchSurahs();
+  const result = surahs.flatMap((s) =>
+    Array.from({ length: s.ayahs }, (_, i) => ({
+      id: `${s.number}-${i + 1}`,
+      surahId: s.number,
+      arabic: s.arabic,
+      english: s.name,
+      verse: i + 1,
+    }))
+  );
+  return result;
 };
 
 

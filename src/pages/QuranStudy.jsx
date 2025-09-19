@@ -9,7 +9,7 @@ const QuranStudy = () => {
 
   return (
     <div className="min-h-screen font-poppins">
-      <div className="flex flex-col lg:flex-row bg-[#FAFAFA] dark:bg-black">
+      <div className="flex flex-col lg:flex-row bg-[#FAFAFA] dark:bg-gray-900">
         <QuranStudyNavbar
           activeItem={activeItem}
           setActiveItem={setActiveItem}

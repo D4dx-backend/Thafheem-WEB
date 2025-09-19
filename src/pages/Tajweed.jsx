@@ -288,9 +288,9 @@ const Tajweed = () => {
   const { quranFont } = useTheme();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-black">
+      <div className="bg-white dark:bg-gray-900">
         <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 sm:gap-3">
             <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-tight font-malayalam">
@@ -302,7 +302,7 @@ const Tajweed = () => {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <div className="bg-white rounded-lg dark:bg-black p-4 sm:p-6 lg:p-8">
+        <div className="bg-white rounded-lg dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
           {/* Main Content */}
           <div className="space-y-4 sm:space-y-6">
             {/* Basic Introduction Text */}
@@ -372,7 +372,7 @@ const Tajweed = () => {
                     </h4>
 
                     {/* Audio Player - Matching Screenshot Style */}
-                    <div className="bg-[#D9D9D9] rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white dark:bg-[#191919]">
+                    <div className="bg-[#D9D9D9] rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white dark:bg-gray-900">
                       {/* Arabic Text Display */}
                       <div className="text-center mb-6 sm:mb-8">
                         <div className="w-full">

@@ -2,7 +2,7 @@ import React from "react";
 
 const Digitisation = () => {
   return (
-    <div className=" mx-auto p-6 min-h-screen bg-white dark:bg-black shadow-sm rounded-lg font-poppins">
+    <div className=" mx-auto p-6 min-h-screen bg-white dark:bg-gray-900 shadow-sm rounded-lg font-poppins">
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto">
 
       <h2 className="text-2xl font-bold mb-2 dark:text-white">Digitisation</h2>

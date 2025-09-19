@@ -137,9 +137,9 @@ class BookmarkService {
   }
 
   // Check if verse is bookmarked
-  static async isBookmarked(userId, surahId, verseId) {
+  static async isBookmarked(userId, surahId, verseId, bookmarkType = 'translation') {
     try {
-      const bookmarks = await this.getBookmarks(userId, 'translation');
+      const bookmarks = await this.getBookmarks(userId, bookmarkType);
       return bookmarks.some(bookmark => 
         bookmark.surahId === parseInt(surahId) && bookmark.verseId === parseInt(verseId)
       );

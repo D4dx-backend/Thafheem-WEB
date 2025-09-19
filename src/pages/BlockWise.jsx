@@ -129,7 +129,7 @@ const BlockWise = () => {
     return (
       <>
         <Transition />
-        <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading Block-wise data...</p>
@@ -167,15 +167,15 @@ const BlockWise = () => {
   return (
     <>
       <Transition />
-      <div className="mx-auto min-h-screen bg-white dark:bg-black">
+      <div className="mx-auto min-h-screen bg-white dark:bg-gray-900">
         <div className="mx-auto px-3 sm:px-6 lg:px-8">
           {/* Header with Tabs */}
-          <div className="bg-white dark:bg-black py-4 sm:py-6">
+          <div className="bg-white dark:bg-gray-900 py-4 sm:py-6">
             {/* Translation/Reading Tabs */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
                     <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
                     <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
                       Translation
@@ -214,7 +214,7 @@ const BlockWise = () => {
             {/* Bismillah with Controls */}
             <div className="mb-6 sm:mb-8 relative">
               <div className="flex flex-col items-center px-2 sm:px-4">
-                <img src={Bismi} alt="Bismi" className="w-[236px] h-[52.9px] mb-4" />
+                <img src={Bismi} alt="Bismi" className="w-[236px] h-[52.9px] mb-4 dark:invert" />
               </div>
 
               {/* Desktop Ayah wise / Block wise buttons */}
@@ -336,7 +336,7 @@ const BlockWise = () => {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="bg-white border-t dark:bg-black border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3 sm:py-4 mt-6 sm:mt-8 rounded-lg">
+            <div className="bg-white border-t dark:bg-gray-900 border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3 sm:py-4 mt-6 sm:mt-8 rounded-lg">
               {/* Mobile: Stack vertically */}
               <div className="sm:hidden space-y-2">
                 {/* First row: Previous + Beginning */}

@@ -85,7 +85,7 @@ const SurahInfo = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading Surah information...</p>
@@ -97,7 +97,7 @@ const SurahInfo = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 dark:text-red-400 text-lg mb-2">
             Failed to load Surah information
@@ -120,9 +120,9 @@ const SurahInfo = () => {
     : [];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white px-3 sm:px-4 lg:px-6 py-4 dark:bg-black">
+      <div className="bg-white px-3 sm:px-4 lg:px-6 py-4 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto flex items-center">
           <Link to={`/surah/${surahId}`}>
             <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors mr-3 sm:mr-4">

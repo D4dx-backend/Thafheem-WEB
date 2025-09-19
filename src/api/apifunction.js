@@ -470,6 +470,7 @@ export const fetchQuizQuestionsForRange = async (surahId, startVerse, endVerse) 
 };
 
 // Transform quiz data to expected format based on actual API response
+// Transform quiz data to expected format based on actual API response
 export const transformQuizData = (rawData) => {
   console.log('=== TRANSFORM QUIZ DATA START ===');
   console.log('Raw input data:', rawData);
@@ -501,16 +502,16 @@ export const transformQuizData = (rawData) => {
                         'Question not available';
     
     // Extract correct answer with more variations
-    const correctAnswer = item.correctAnswer || 
-                         item.correct_answer || 
-                         item.answer || 
-                         item.Answer ||
-                         item.CorrectAnswer ||
-                         item.correct ||
-                         'A';
+    const rawCorrectAnswer = item.correctAnswer || 
+                            item.correct_answer || 
+                            item.answer || 
+                            item.Answer ||
+                            item.CorrectAnswer ||
+                            item.correct ||
+                            'A';
 
     console.log('Extracted question text:', questionText);
-    console.log('Extracted correct answer:', correctAnswer);
+    console.log('Raw correct answer:', rawCorrectAnswer);
 
     // Handle different option formats - COMPREHENSIVE APPROACH
     let options = [];
@@ -688,6 +689,40 @@ export const transformQuizData = (rawData) => {
         ];
       }
     }
+
+    // ===== FIX: Convert correct answer to match option ID format =====
+    let correctAnswer = rawCorrectAnswer;
+    
+    // If correct answer is a number, convert it to corresponding letter
+    if (/^\d+$/.test(String(rawCorrectAnswer))) {
+      const answerIndex = parseInt(rawCorrectAnswer) - 1; // Convert 1-based to 0-based
+      if (answerIndex >= 0 && answerIndex < options.length) {
+        correctAnswer = options[answerIndex].id;
+        console.log(`Converted numeric answer ${rawCorrectAnswer} to letter ${correctAnswer}`);
+      }
+    }
+    
+    // If correct answer is a letter but doesn't match any option ID, try to find it
+    if (!options.find(opt => opt.id === correctAnswer)) {
+      console.warn(`Correct answer ${correctAnswer} doesn't match any option ID`);
+      
+      // Try to find the correct answer by content matching
+      const matchingOption = options.find(opt => 
+        opt.text.toLowerCase().includes(String(rawCorrectAnswer).toLowerCase()) ||
+        String(rawCorrectAnswer).toLowerCase().includes(opt.text.toLowerCase())
+      );
+      
+      if (matchingOption) {
+        correctAnswer = matchingOption.id;
+        console.log(`Found matching option by content: ${correctAnswer}`);
+      } else {
+        // Default to first option if no match found
+        correctAnswer = options[0]?.id || 'A';
+        console.warn(`No matching option found, defaulting to ${correctAnswer}`);
+      }
+    }
+
+    console.log('Final correct answer:', correctAnswer);
 
     const result = {
       id: questionId,

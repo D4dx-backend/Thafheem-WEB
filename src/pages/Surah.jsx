@@ -18,7 +18,7 @@ import {
   Notebook,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import HomepageNavbar from "../components/HomeNavbar";
 import { Link } from "react-router-dom";
 import Transition from "../components/Transition";
@@ -43,17 +43,20 @@ const Surah = () => {
   const { user } = useAuth();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
+  const location = useLocation(); // Add this to get query parameters
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  
+  // Check if user came from Juz view
+  const fromJuz = new URLSearchParams(location.search).get('fromJuz');
   const [copiedVerse, setCopiedVerse] = useState(null);
+  
   // State management
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
-  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] =
-    useState(null);
+  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
   const [showAyahModal, setShowAyahModal] = useState(false);
-  const [selectedVerseForInterpretation, setSelectedVerseForInterpretation] =
-    useState(null);
+  const [selectedVerseForInterpretation, setSelectedVerseForInterpretation] = useState(null);
   const [ayahData, setAyahData] = useState([]);
   const [arabicVerses, setArabicVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
@@ -61,14 +64,39 @@ const Surah = () => {
   const [error, setError] = useState(null);
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});
+
   const toArabicNumber = (num) => {
-    const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
     return num
       .toString()
-      .split('')
-      .map(digit => arabicDigits[digit] || digit)
-      .join('');
+      .split("")
+      .map((digit) => arabicDigits[digit] || digit)
+      .join("");
   };
+
+  // Check for wordByWord query parameter and auto-open modal
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const wordByWordParam = urlParams.get('wordByWord');
+    
+    if (wordByWordParam) {
+      const verseNumber = parseInt(wordByWordParam) || 1;
+      
+      // Set a small delay to ensure the component is fully loaded
+      const timer = setTimeout(() => {
+        setSelectedVerseForWordByWord(verseNumber);
+        setShowWordByWord(true);
+        
+        // Clean up URL by removing the parameter
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('wordByWord');
+        window.history.replaceState({}, '', newUrl.pathname);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location.search, loading]); // Depend on loading to ensure data is ready
+
   // Fetch ayah data and surah info
   useEffect(() => {
     const loadSurahData = async () => {
@@ -260,6 +288,13 @@ const Surah = () => {
   };
 
   // Navigation functions
+  // Add this useEffect after your existing useEffects
+  useEffect(() => {
+    // Scroll to top whenever surahId changes
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [surahId]);
+
+  // Keep the navigation functions simple
   const handlePreviousSurah = () => {
     const prevSurahId = parseInt(surahId) - 1;
     if (prevSurahId >= 1) {
@@ -292,6 +327,7 @@ const Surah = () => {
       />
     </svg>
   );
+
   const handleCopyVerse = async (arabicText, translation, verseNumber) => {
     try {
       const textToCopy = `${arabicText}
@@ -380,12 +416,13 @@ const Surah = () => {
       }
     }
   };
+
   // Loading state
   if (loading) {
     return (
       <>
         <Transition />
-        <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">
@@ -402,7 +439,7 @@ const Surah = () => {
     return (
       <>
         <Transition />
-        <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-500 dark:text-red-400 text-lg mb-2">
               Failed to load Surah data
@@ -427,15 +464,15 @@ const Surah = () => {
       <Transition />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      <div className="min-h-screen bg-white dark:bg-black">
+      <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white dark:bg-black px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="bg-white dark:bg-gray-900 px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
           <div className="w-full max-w-[1290px] mx-auto text-center px-2 sm:px-0">
             {/* Toggle Buttons */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
                     <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
                     <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
                       Translation
@@ -455,6 +492,21 @@ const Surah = () => {
 
             {/* Mobile Layout */}
             <div className="sm:hidden space-y-3 sm:space-y-4 px-2">
+              {/* Juz Context Indicator */}
+              {fromJuz && (
+                <div className="text-center">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    Reading from Juz {fromJuz}
+                  </span>
+                  <button
+                    onClick={() => navigate('/juz')}
+                    className="ml-2 text-xs text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
+                  >
+                    Back to Juz
+                  </button>
+                </div>
+              )}
+              
               {/* Surah Title */}
               <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
                 {surahInfo?.arabic || "Loading..."}
@@ -482,11 +534,6 @@ const Surah = () => {
               {/* Surah Info */}
               <div className="flex items-center justify-start space-x-2">
                 <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
-                {/* <Link to="/surahinfo">
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
-                    Surah info
-                  </span>
-                </Link> */}
                 <Link to={`/surahinfo/${surahId}`}>
                   <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
                     Surah info
@@ -504,7 +551,7 @@ const Surah = () => {
                 </button>
                 <div className="flex justify-end">
                   <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-black dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
                       Ayah
                     </button>
                     <button
@@ -520,6 +567,21 @@ const Surah = () => {
 
             {/* Desktop Layout */}
             <div className="hidden sm:block">
+              {/* Juz Context Indicator */}
+              {fromJuz && (
+                <div className="mb-2 text-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Reading from Juz {fromJuz}
+                  </span>
+                  <button
+                    onClick={() => navigate('/juz')}
+                    className="ml-2 text-sm text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
+                  >
+                    Back to Juz
+                  </button>
+                </div>
+              )}
+              
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
                 <h1
@@ -553,7 +615,7 @@ const Surah = () => {
                   {/* Desktop Ayah wise / Block wise buttons */}
                   <div className="absolute top-0 right-0">
                     <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                      <button className="px-3 sm:px-4 py-1.5 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
+                      <button className="px-3 sm:px-4 py-1.5 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
                         Ayah wise
                       </button>
                       <button
@@ -588,7 +650,7 @@ const Surah = () => {
         </div>
 
         {/* Verses */}
-        <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-black">
+        <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-gray-900">
           <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {!loading && ayahData.length === 0 ? (
               <div className="text-center py-12">
@@ -623,17 +685,19 @@ const Surah = () => {
                   >
                     {/* Arabic Text */}
                     <div className="text-right mb-2 sm:mb-3 lg:mb-4">
-  <p
-    className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
-    style={{
-      fontFamily: quranFont,
-      fontSize: `${fontSize}px`,
-    }}
-  >
-    ﴾{finalArabicText}﴿ {toArabicNumber(index + 1)}
-  </p>
-</div>
-
+                      <p
+                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+                        style={{
+                          fontFamily: quranFont,
+                          fontSize: `${fontSize}px`,
+                        }}
+                      >
+                        <span className="inline">﴾{finalArabicText}﴿</span>
+                        <span className="inline whitespace-nowrap">
+                          {toArabicNumber(index + 1)}
+                        </span>
+                      </p>
+                    </div>
 
                     {/* Translation */}
                     <div className="mb-2 sm:mb-3">
@@ -778,7 +842,7 @@ const Surah = () => {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="bg-gray-50 dark:bg-black dark:border-gray-700 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 mt-6 sm:mt-8">
+        <div className="bg-gray-50 dark:bg-gray-900 dark:border-gray-700 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 mt-6 sm:mt-8">
           <div className="max-w-4xl mx-auto">
             {/* Mobile: Row + Bottom Button */}
             <div className="sm:hidden space-y-2">

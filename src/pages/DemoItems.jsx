@@ -22,7 +22,7 @@ const DemoItems = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-[#2A2C38]  w-90 max-h-96 flex flex-col shadow rounded-lg">
+      <div className="bg-white dark:bg-[#2A2C38] w-full  h-full flex flex-col  rounded-lg font-poppins">
         {/* Search Bar */}
         <div className="p-3">
           <input
@@ -35,7 +35,7 @@ const DemoItems = () => {
         </div>
 
         {/* Page List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-3">
+        <div className="flex-1 overflow-y-auto px-4 pb-3 ">
           {filteredPages.length > 0 ? (
             <div className="space-y-2">
               {filteredPages.map((page) => (

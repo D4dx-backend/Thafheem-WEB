@@ -2,18 +2,10 @@ import React from "react";
 
 const StarNumber = ({
   number,
-  size = 40,
+  size = 45,
   isHighlighted = false,
-  color = "rgb(218,218,218)",
-  textColor = "rgb(0,0,0)",
+  className = "",
 }) => {
-  // Colors (simulating your Flutter logic)
-  const defaultBgColor = "#EBEEF0"; // light mode default
-  const darkBgColor = "#343434"; // dark mode (you can improve with context)
-  const bgColor = isHighlighted ? "#2c3e50" : defaultBgColor; // secondaryDarkColor
-  const fgColor = isHighlighted ? "#fff" : textColor;
-
-  // Generate star points
   const getStarPath = (points = 12) => {
     const outerRadius = size / 2;
     const innerRadius = outerRadius * 0.9;
@@ -33,13 +25,21 @@ const StarNumber = ({
 
   return (
     <svg
-      width={size}
-      height={size}
+      width={`${size}px`}
+      height={`${size}px`}
       viewBox={`0 0 ${size} ${size}`}
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
     >
       {/* Star shape */}
-      <path d={getStarPath(12)} fill={bgColor} />
+      <path
+        d={getStarPath(12)}
+        className={`${
+          isHighlighted
+            ? "fill-[#2c3e50]"
+            : "fill-[#EBEEF0] dark:fill-[#323A3F]"
+        }`}
+      />
 
       {/* Number in center */}
       <text
@@ -49,7 +49,11 @@ const StarNumber = ({
         dominantBaseline="central"
         fontSize={size * 0.4}
         fontWeight="bold"
-        fill={fgColor}
+        className={`${
+          isHighlighted
+            ? "fill-white"
+            : "fill-black dark:fill-white"
+        }`}
       >
         {number}
       </text>

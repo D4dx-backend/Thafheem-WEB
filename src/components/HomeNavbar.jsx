@@ -28,7 +28,7 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
-  BookA, 
+  BookA,
   Book,
   LaptopMinimal,
   BookUser,
@@ -39,19 +39,27 @@ import {
   CircleAlert,
   MessageSquareMore,
   UserX,
+  ChevronDown,
 } from "lucide-react";
 import logo from "../assets/logo.png";
-import { useNavigate, useLocation } from "react-router-dom"; // Add useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
+import SettingsDrawer from "../pages/Settings";
 
 const HomepageNavbar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
@@ -59,6 +67,27 @@ const HomepageNavbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut(auth);
+      console.log("User signed out successfully");
+      navigate("/"); // Redirect to home page after successful logout
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const handleAuthButtonClick = () => {
+    if (user) {
+      handleSignOut();
+    } else {
+      navigate("/sign");
+    }
+  };
 
   const menuItems = [
     { icon: Home, label: "Home", path: "/" },
@@ -88,7 +117,7 @@ const HomepageNavbar = () => {
     { icon: Sparkles, label: "What's New", path: "/whatsnew" },
     { icon: Settings, label: "Settings", path: "/settings" },
     { icon: Bug, label: "Raise a bug", path: "/raisebug" },
-    { icon: MessageCircleQuestion , label: "Share App", path: "/share" },
+    { icon: MessageCircleQuestion, label: "Share App", path: "/share" },
     { icon: CircleAlert, label: "About Author", path: "/aboutauthor" },
     { icon: User, label: "About Us", path: "/about" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
@@ -98,13 +127,20 @@ const HomepageNavbar = () => {
   ];
 
   const dangerMenuItems = [
-    { icon: UserX, label: "Delete Account", path: "/deleteaccount", isDanger: true },
+    {
+      icon: UserX,
+      label: "Delete Account",
+      path: "/deleteaccount",
+      isDanger: true,
+    },
     { icon: LogOut, label: "Log Out", path: "/logout", isDanger: true },
   ];
 
   // Helper function to determine if a menu item is active
   const isActive = (path) => location.pathname === path;
-
+  const handleBookmarkClick = () => {
+    navigate("/bookmarkedverses");
+  };
   return (
     <>
       {/* Search Console Popup */}
@@ -135,19 +171,19 @@ const HomepageNavbar = () => {
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
+      <nav className="bg-white dark:bg-[#2A2C38] border-b border-gray-100 dark:border-gray-700 w-full relative z-50 ">
         <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
               onClick={toggleMenu}
-              className="flex fixed items-center space-x-2 p-2 sm:px-3 sm:py-2 
-                         text-gray-600 dark:text-gray-300 
-                         hover:text-gray-800 dark:hover:text-white 
-                         hover:bg-gray-100 dark:hover:bg-gray-800 
-                         rounded-lg transition-colors 
-                         min-h-[44px] min-w-[44px] justify-center 
-                         sm:min-h-auto sm:min-w-auto sm:justify-start"
+              className="flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
+             text-gray-600 dark:text-gray-300 
+             hover:text-gray-800 dark:hover:text-white 
+             hover:bg-gray-100 dark:hover:bg-gray-800 
+             rounded-lg transition-colors 
+             min-h-[44px] min-w-[44px] justify-center 
+             sm:min-h-auto sm:min-w-auto sm:justify-start"
             >
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
@@ -155,10 +191,8 @@ const HomepageNavbar = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-1">
-            <button className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap">
-              <span className="hidden xs:inline">Sign In</span>
-              <span className="xs:hidden">Sign</span>
-            </button>
+            {/* Sign In/Sign Out Button */}
+          
 
             <button
               onClick={() => setIsLanguageOpen(true)}
@@ -178,23 +212,51 @@ const HomepageNavbar = () => {
               )}
             </button>
 
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-              <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
+            <button
+      onClick={handleBookmarkClick}
+      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+    >
+      <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
+    </button>
 
             <button
-              onClick={() => navigate("/settings")}
+              onClick={() => setIsSettingsOpen(true)}
               className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
             >
               <Settings size={18} />
             </button>
-
+            {isSettingsOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
+              </div>
+            )}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
+            {user ? (
+             <button
+             onClick={handleAuthButtonClick}
+             disabled={isSigningOut}
+             className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+             {isSigningOut ? (
+               <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+             ) : (
+               <LogOut className="w-5 h-5" />
+             )}
+           </button>
+            ) : (
+              <button
+                onClick={handleAuthButtonClick}
+                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+              >
+                <span className="hidden xs:inline">Sign In</span>
+                <span className="xs:hidden">Sign</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -222,17 +284,21 @@ const HomepageNavbar = () => {
                   <X size={20} />
                 </button> */}
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100">MENU</h2>
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins">
+                MENU
+              </h2>
             </div>
 
-            <div className="py-2">
+            <div className="py-2 font-poppins">
               {menuItems.map((item, index) => {
                 const IconComponent = item.icon;
                 // Check if the main menu item or any submenu item is active
                 const isMainActive =
                   isActive(item.path) ||
                   (item.hasSubmenu &&
-                    item.submenuItems?.some((subItem) => isActive(subItem.path)));
+                    item.submenuItems?.some((subItem) =>
+                      isActive(subItem.path)
+                    ));
 
                 return (
                   <div key={index}>
@@ -248,7 +314,7 @@ const HomepageNavbar = () => {
                       className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${
                         isMainActive
                           ? "bg-[#ebeef0] dark:bg-black text-black dark:text-white"
-                          : "text-black dark:text-black hover:bg-[#ebeef0] dark:hover:bg-black"
+                          : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-black"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -256,26 +322,30 @@ const HomepageNavbar = () => {
                           size={18}
                           className={`flex-shrink-0 ${
                             isMainActive
-                              ? "text-black dark:text-white"
-                              : "text-[#d9d9d9] dark:text-[#d9d9d9]"
+                              ? "text-black dark:text-white "
+                              : "text-[#d9d9d9] dark:text-gray-400"
                           }`}
                         />
                         <span className="text-sm sm:text-sm leading-tight">
                           {item.label}
                         </span>
                       </div>
-                      {item.hasArrow && (
-                        <ChevronRight
-                          size={16}
-                          className={`text-black transition-transform flex-shrink-0 ${
-                            openSubmenu === index ? "rotate-90" : ""
-                          }`}
-                        />
-                      )}
+                      {item.hasArrow &&
+                        (openSubmenu === index ? (
+                          <ChevronDown
+                            size={16}
+                            className="text-black dark:text-white flex-shrink-0 transition-transform"
+                          />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className="text-black dark:text-white flex-shrink-0 transition-transform"
+                          />
+                        ))}
                     </button>
 
                     {item.hasSubmenu && openSubmenu === index && (
-                      <div className="bg-gray-50 dark:bg-[#2A2C38] ml-4 sm:ml-6">
+                      <div className="bg-gray-50 dark:bg-[#2A2C38] ml-4 sm:ml-6 ">
                         {item.submenuItems.map((subItem, subIndex) => {
                           const isSubActive = isActive(subItem.path);
                           return (
@@ -285,14 +355,16 @@ const HomepageNavbar = () => {
                                 navigate(subItem.path);
                                 setIsMenuOpen(false);
                               }}
-                              className={`w-full flex items-center px-4 sm:px-6 py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
+                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
                                 isSubActive
                                   ? "bg-gray-100 dark:bg-black text-black dark:text-white"
-                                  : "text-black dark:text-black hover:bg-gray-100 dark:hover:bg-black"
+                                  : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-black"
                               }`}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>
-                              <span className="leading-tight">{subItem.label}</span>
+                              <span className="leading-tight">
+                                {subItem.label}
+                              </span>
                             </button>
                           );
                         })}

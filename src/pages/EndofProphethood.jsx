@@ -1,19 +1,62 @@
-import React from 'react'
-import EndofProphethoodNavbar from '../components/EndofProphethoodNavbar'
-import EndofProphethoodContent from '../components/EndofProphethoodContent'
-import EndofProphethoodPlay from '../components/EndofProphethoodPlay'
+import React, { useState, useEffect } from "react";
+import EndofProphethoodNavbar from "../components/EndofProphethoodNavbar";
+import EndofProphethoodContent from "../components/EndofProphethoodContent";
+import EndofProphethoodPlay from "../components/EndofProphethoodPlay";
 
 const EndofProphethood = () => {
-  return (
-    <div>
-        <div className='flex'>
-        <EndofProphethoodNavbar/>
-        <EndofProphethoodContent/>
-        <EndofProphethoodPlay/>
-        </div>
-        
-    </div>
-  )
-}
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
+  const [activeSection, setActiveSection] = useState("The end of prophethood");
+  const [isMobile, setIsMobile] = useState(false);
 
-export default EndofProphethood
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint is 1024px
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  const handlePlayAudio = () => {
+    setShowAudioPlayer(prev => !prev);
+  };
+  
+
+  const handleCloseAudio = () => {
+    setShowAudioPlayer(false);
+  };
+
+  // Show audio player always on desktop, conditionally on mobile
+  const shouldShowAudioPlayer = !isMobile || showAudioPlayer;
+
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-gray-900 font-poppins">
+      <div className="flex flex-col lg:flex-row">
+        <EndofProphethoodNavbar
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+        />
+        <EndofProphethoodContent
+          onPlayAudio={handlePlayAudio}
+          activeSection={activeSection}
+          showPlayButton={true}  
+        />
+      </div>
+
+      {shouldShowAudioPlayer && (
+        <EndofProphethoodPlay
+          audioSrc="/path/to/audio.mp3"
+          title={activeSection}
+          onClose={handleCloseAudio}
+          autoPlay={false}
+          isMobile={isMobile}
+        />
+      )}
+    </div>
+  );
+};
+
+export default EndofProphethood;

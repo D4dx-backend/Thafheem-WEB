@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search,  X } from "lucide-react";
 
 const SearchConsole = ({ onClose }) => {
   const [englishPhraseType, setEnglishPhraseType] = useState("Translation");
@@ -36,10 +36,56 @@ const SearchConsole = ({ onClose }) => {
     console.log("Advanced search clicked");
     // Implement advanced search options
   };
-
+  const SlidersHorizontal = ({ className }) => (
+    <svg
+      width="20"
+      height="21"
+      viewBox="0 0 20 21"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M17.5 5.47656H2.5"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.33333 10.4766H2.5"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.33333 15.4766H2.5"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.166 15.4766C15.5467 15.4766 16.666 14.3573 16.666 12.9766C16.666 11.5959 15.5467 10.4766 14.166 10.4766C12.7853 10.4766 11.666 11.5959 11.666 12.9766C11.666 14.3573 12.7853 15.4766 14.166 15.4766Z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17.4993 16.3099L15.916 14.7266"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  
   return (
-    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-[#2A2C38] w-full max-w-sm mx-auto rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto relative">
+    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50 bg-gray-500/70 font-poppins">
+      <div className="bg-white mt-10 dark:bg-[#2A2C38] w-full max-w-sm mx-auto rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto relative">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -49,15 +95,15 @@ const SearchConsole = ({ onClose }) => {
         </button>
 
         {/* Header Toggle Buttons */}
-        <div className="p-4 flex justify-center">
-          <div className="flex rounded-full bg-gray-100 dark:bg-black p-1 w-max">
+        <div className="p-4 flex justify-center ">
+          <div className="flex rounded-full bg-gray-100 dark:bg-black p-1  w-[288px]">
             {/* Search Button */}
             <button
               onClick={handleSearch}
-              className={`px-6 py-2 rounded-full transition-all flex items-center justify-center ${
+              className={`px-6 py-2 rounded-full transition-all flex items-center justify-center w-[134px] ${
                 activeTab === "search"
                   ? "bg-white shadow text-gray-900 dark:text-white dark:bg-[#2A2C38]"
-                  : "text-gray-600 hover:text-gray-800"
+                  : "text-gray-600 hover:text-gray-800 dark:text-white"
               }`}
             >
               <Search size={20} />
@@ -66,10 +112,10 @@ const SearchConsole = ({ onClose }) => {
             {/* Advanced Search Button */}
             <button
               onClick={handleAdvancedSearch}
-              className={`px-6 py-2 rounded-full transition-all flex items-center justify-center ${
+              className={`px-6 py-2 rounded-full transition-all flex items-center justify-center  w-[134px] ${
                 activeTab === "advanced"
                   ? "bg-white shadow text-gray-900 dark:text-white dark:bg-[#2A2C38] "
-                  : "text-gray-600 hover:text-gray-800"
+                  : "text-gray-600 hover:text-gray-800 dark:text-white"
               }`}
             >
               <SlidersHorizontal size={20} />
@@ -80,7 +126,7 @@ const SearchConsole = ({ onClose }) => {
         <div className="px-4 pb-6 space-y-6">
           {/* English Phrase Section */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white mb-4 italic">
+            <h3 className="text-sm  text-gray-500 dark:text-white mb-4 italic">
               English phrase
             </h3>
 
@@ -126,7 +172,7 @@ const SearchConsole = ({ onClose }) => {
 
           {/* Arabic Phrase Section */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-4 italic dark:text-white">
+            <h3 className="text-sm  text-gray-500 mb-4 italic dark:text-white">
               Arabic phrase
             </h3>
             <div className="relative">
@@ -147,7 +193,7 @@ const SearchConsole = ({ onClose }) => {
 
           {/* Quran Subject Section */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white mb-4 italic">
+            <h3 className="text-sm  text-gray-500 dark:text-white mb-4 italic">
               Quran Subject
             </h3>
             <div className="relative">
@@ -167,7 +213,7 @@ const SearchConsole = ({ onClose }) => {
 
           {/* Glossary Search Section */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white mb-4 italic">
+            <h3 className="text-sm  text-gray-500 dark:text-white mb-4 italic">
               Glossary Search
             </h3>
 
@@ -213,6 +259,53 @@ const SearchConsole = ({ onClose }) => {
           </div>
         </div>
       </div>
+      <style jsx>{`
+      
+  input[type='radio'] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid black;
+    border-radius: 50%;
+    background-color: white;
+    position: relative;
+    cursor: pointer;
+  }
+
+  input[type='radio']:checked {
+    background-color: white;
+  }
+
+  input[type='radio']:checked::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* 🌙 Dark mode styles */
+  @media (prefers-color-scheme: dark) {
+    input[type='radio'] {
+      border: 1px solid white;
+      background-color: #2A2C38;
+    }
+
+    input[type='radio']:checked {
+      background-color: black;
+    }
+
+    input[type='radio']:checked::after {
+      background-color: white;
+    }
+      
+  }
+`}</style>
+
     </div>
   );
 };

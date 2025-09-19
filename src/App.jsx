@@ -6,7 +6,7 @@ import Sign from "./pages/Sign";
 import Surah from "./pages/Surah";
 import SurahInfo from "./pages/SurahInfo";
 import Reading from "./pages/Reading";
-import Ayah from "./pages/Ayah";
+
 import BlockWise from "./pages/BlockWise";
 import BookVerse from "./pages/bookmarkedVerses";
 import BookmarkBlock from "./pages/BookmarkBlock";
@@ -32,21 +32,25 @@ import Tajweed from "./pages/Tajweed";
 import QuranStudy from "./pages/QuranStudy";
 import EndofProphethood from "./pages/EndofProphethood";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <HomepageNavbar />
-        <Routes>
+      <AuthProvider>
+        <Router>
+          <HomepageNavbar />
+          <Routes>
           <Route path="/" element={<Home />} /> {/* Surah/Home */}
           <Route path="/juz" element={<Juz />} />
           <Route path="/sign" element={<Sign />} />
-          <Route path="/surah" element={<Surah />} />
-          <Route path="/surahinfo" element={<SurahInfo />} />
-          <Route path="/reading" element={<Reading />} />
-          <Route path="/ayah/:ayahNumber?" element={<Ayah />} />
-          <Route path="/blockwise" element={<BlockWise />} />
+          {/* <Route path="/surah" element={<Surah />} /> */}
+          <Route path="/surah/:surahId" element={<Surah />} />
+          {/* <Route path="/surahinfo" element={<SurahInfo />} /> */}
+          <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
+          <Route path="/reading/:surahId?" element={<Reading />} />
+
+          <Route path="/blockwise/:surahId" element={<BlockWise />} />
           <Route path="/bookmarkblock" element={<BookmarkBlock />} />
           <Route path="/bookmarkedverses" element={<BookVerse />} />
           <Route
@@ -78,6 +82,7 @@ function App() {
         </Routes>
         <Footer />
       </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

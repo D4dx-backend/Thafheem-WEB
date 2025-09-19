@@ -3,13 +3,13 @@ import { Languages } from 'lucide-react';
 
 const About = () => {
   return (
-    <div className="w-full mx-auto min-h-screen p-6 bg-white dark:bg-black">
-            <div className="max-w-5xl mx-auto">
+    <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-gray-900 font-poppins">
+            <div className="max-w-[1070px] w-full mx-auto">
 
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-white">About Us</h1>
-        <div className="w-full h-px bg-gray-200 "></div>
+        <div className=" h-px bg-gray-200 "></div>
       </div>
 
       {/* Content */}

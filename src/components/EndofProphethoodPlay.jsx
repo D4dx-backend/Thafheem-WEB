@@ -9,8 +9,9 @@ import {
   MoreHorizontal, 
   X 
 } from 'lucide-react';
-
-const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
+import ForwardIcon from '../assets/forward.png';
+import BackwardIcon from '../assets/backward.png';
+const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false, isMobile = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -121,14 +122,15 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38]  shadow-lg z-50">
-    {/* <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 shadow-lg z-50"> */}
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 shadow-lg z-50  h-[90px]">
       <audio
         ref={audioRef}
         src={audioSrc}
         preload="metadata"
       />
-         <div className="px-6 pb-4">
+      
+      {/* Progress Bar */}
+      <div className="px-4 sm:px-6 pb-4">
         <div className="relative">
           <div className="w-full h-1 bg-gray-200 rounded-full">
             <div
@@ -143,28 +145,29 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
           />
         </div>
       </div>
+
       {/* Main Player Bar */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 min-h-[60px]">
         
         {/* Left - Current Time */}
-        <div className="text-sm font-mono text-gray-600 w-16 dark:text-white">
+        <div className="text-xs sm:text-sm font-mono text-black w-12 sm:w-16 dark:text-white">
           {formatTime(currentTime)}
         </div>
 
         {/* Center - Controls */}
-        <div className="flex items-center space-x-4">
-          {/* Menu Button */}
-          <div className="relative">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Menu Button - Hidden on mobile */}
+          <div className="relative hidden sm:block">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+              className="p-2 text-black hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
             >
               <MoreHorizontal size={20} />
             </button>
             
             {/* Dropdown Menu */}
             {showMenu && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-40">
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-2 min-w-40">
                 {menuOptions.map((option, index) => (
                   <button
                     key={index}
@@ -172,7 +175,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
                       option.action();
                       setShowMenu(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     {option.label}
                   </button>
@@ -186,15 +189,15 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
             <button
               onClick={() => setShowVolumeSlider(!showVolumeSlider)}
               onMouseEnter={() => setShowVolumeSlider(true)}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
+              className="p-1.5 sm:p-2 text-gray-600 bg-[#D9D9D9] hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white dark:bg-gray-600"
             >
-              {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {isMuted || volume === 0 ? <VolumeX size={16} className="sm:w-5 sm:h-5" /> : <Volume2 size={16} className="sm:w-5 sm:h-5" />}
             </button>
             
             {/* Volume Slider */}
             {showVolumeSlider && (
               <div 
-                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3"
+                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-3"
                 onMouseLeave={() => setShowVolumeSlider(false)}
               >
                 <input
@@ -204,7 +207,7 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer volume-slider"
+                  className="w-16 sm:w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer volume-slider"
                 />
               </div>
             )}
@@ -212,50 +215,68 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
 
           {/* Previous Button */}
           <button
-            onClick={handleSkipBack}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
-          >
-            <SkipBack size={20} />
-          </button>
+  onClick={handleSkipBack}
+  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1A1C28] flex items-center justify-center"
+>
+  <img
+    src={BackwardIcon}
+    alt="Forward"
+    className="w-5 h-5 object-contain"
+  />
+  <img
+    src={BackwardIcon}
+    alt="Forward"
+    className="w-5 h-5 object-contain"
+  />
+</button>
 
           {/* Play/Pause Button */}
           <button
             onClick={togglePlayPause}
-            className="p-3 bg-black hover:bg-gray-700 text-white rounded-full transition-colors"
+            className="p-2 sm:p-3 bg-white text-black rounded-full transition-colors shadow-md hover:shadow-lg"
           >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+            {isPlaying ? <Pause size={18} className="sm:w-5 sm:h-5" /> : <Play size={18} className="sm:w-5 sm:h-5" />}
           </button>
 
           {/* Next Button */}
           <button
-            onClick={handleSkipForward}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
-          >
-            <SkipForward size={20} />
-          </button>
+  onClick={handleSkipForward}
+  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1A1C28] flex items-center justify-center"
+>
+  <img
+    src={ForwardIcon}
+    alt="Forward"
+    className="w-5 h-5 object-contain"
+  />
+  <img
+    src={ForwardIcon}
+    alt="Forward"
+    className="w-5 h-5 object-contain"
+  />
+</button>
 
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white"
-          >
-            <X size={20} />
-          </button>
+
+          {/* Close Button - Only show on mobile */}
+          {isMobile && (
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 text-black hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+            >
+              <X size={16} className="sm:w-5 sm:h-5" />
+            </button>
+          )}
         </div>
 
         {/* Right - Duration */}
-        <div className="text-sm font-mono text-gray-600 w-16 text-right dark:text-white">
+        <div className="text-xs sm:text-sm font-mono text-black w-12 sm:w-16 text-right dark:text-white">
           {formatTime(duration)}
         </div>
       </div>
 
-      {/* Progress Bar */}
-   
-
       {/* Track Info (if title provided) */}
       {title && (
-        <div className="px-6 pb-2">
-          <p className="text-sm text-gray-700 truncate">{title}</p>
+        <div className="px-4 sm:px-6 pb-2">
+          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 truncate">{title}</p>
         </div>
       )}
 
@@ -281,4 +302,4 @@ const QuranStudyPlay = ({ audioSrc, title, onClose, autoPlay = false }) => {
   );
 };
 
-export default QuranStudyPlay;
+export default EndofProphethoodPlay;

@@ -1,11 +1,62 @@
-// ThemeContext.jsx or ThemeProvider.jsx
+// // ThemeContext.jsx or ThemeProvider.jsx
+// import { createContext, useContext, useEffect, useState } from "react";
+
+// const ThemeContext = createContext();
+
+// export const ThemeProvider = ({ children }) => {
+//   const [theme, setTheme] = useState("light");
+
+//   useEffect(() => {
+//     const root = window.document.documentElement; // <html>
+//     if (theme === "dark") {
+//       root.classList.add("dark");
+//     } else {
+//       root.classList.remove("dark");
+//     }
+//   }, [theme]);
+
+//   const toggleTheme = () => {
+//     setTheme(theme === "dark" ? "light" : "dark");
+//   };
+
+//   return (
+//     <ThemeContext.Provider value={{ theme, toggleTheme }}>
+//       {children}
+//     </ThemeContext.Provider>
+//   );
+// };
+
+// export const useTheme = () => useContext(ThemeContext);
+
+
+// ThemeContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState("light");
+  // Initialize state with values from localStorage or defaults
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme || "light";
+  });
+  
+  const [quranFont, setQuranFont] = useState(() => {
+    const savedFont = localStorage.getItem("quranFont");
+    return savedFont || "Amiri Quran";
+  });
+  
+  const [fontSize, setFontSize] = useState(() => {
+    const savedFontSize = localStorage.getItem("fontSize");
+    return savedFontSize ? parseInt(savedFontSize) : 26;
+  });
+  
+  const [translationFontSize, setTranslationFontSize] = useState(() => {
+    const savedTranslationFontSize = localStorage.getItem("translationFontSize");
+    return savedTranslationFontSize ? parseInt(savedTranslationFontSize) : 17;
+  });
 
+  // Apply theme to document
   useEffect(() => {
     const root = window.document.documentElement; // <html>
     if (theme === "dark") {
@@ -13,14 +64,38 @@ export const ThemeProvider = ({ children }) => {
     } else {
       root.classList.remove("dark");
     }
+    // Save theme to localStorage
+    localStorage.setItem("theme", theme);
   }, [theme]);
+
+  // Save font settings to localStorage
+  useEffect(() => {
+    localStorage.setItem("quranFont", quranFont);
+  }, [quranFont]);
+
+  useEffect(() => {
+    localStorage.setItem("fontSize", fontSize.toString());
+  }, [fontSize]);
+
+  useEffect(() => {
+    localStorage.setItem("translationFontSize", translationFontSize.toString());
+  }, [translationFontSize]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      toggleTheme, 
+      quranFont, 
+      setQuranFont, 
+      fontSize, 
+      setFontSize, 
+      translationFontSize, 
+      setTranslationFontSize 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

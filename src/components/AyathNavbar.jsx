@@ -110,53 +110,7 @@ const AyathNavbar = ({
     console.log(`Language changed to: ${language}`);
   };
 
-  // Handle bookmark functionality
-  const handleBookmark = async () => {
-    try {
-      setIsBookmarking(true);
-      const userId = BookmarkService.getEffectiveUserId(user);
-      const surahName = surahInfo?.arabic || surahInfo?.name || `Surah ${surahId}`;
-      const verseText = verseData?.arabic || verseData?.translation || '';
-      
-      console.log('Bookmarking verse:', {
-        userId,
-        surahId,
-        verseId,
-        surahName,
-        verseText: verseText.substring(0, 50) + '...'
-      });
-      
-      const result = await BookmarkService.addBookmark(
-        userId,
-        surahId,
-        verseId,
-        'translation',
-        surahName,
-        verseText
-      );
-      
-      console.log('Bookmark saved successfully:', result);
-      
-      // Show success toast
-      if (showSuccess) {
-        showSuccess(`Verse bookmarked successfully!`);
-        console.log('Success toast triggered');
-      } else {
-        console.warn('showSuccess function not available');
-      }
-    } catch (error) {
-      console.error("Failed to bookmark verse:", error);
-      // Show error toast
-      if (showError) {
-        showError('Failed to save bookmark. Please try again.');
-        console.log('Error toast triggered');
-      } else {
-        console.warn('showError function not available');
-      }
-    } finally {
-      setTimeout(() => setIsBookmarking(false), 300);
-    }
-  };
+  
 
   // Handle share functionality
   const handleShare = async () => {
@@ -213,6 +167,10 @@ const AyathNavbar = ({
       if (error.name !== 'AbortError' && showError) {
         showError('Failed to share verse: ' + error.message);
       }
+    }
+  };
+  
+  // Handle bookmark functionality
   const handleBookmark = async () => {
     // Check if user is authenticated
     if (!user) {

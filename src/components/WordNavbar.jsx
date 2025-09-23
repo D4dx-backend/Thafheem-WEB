@@ -237,20 +237,7 @@ const WordNavbar = ({
     };
   }, []);
 
-  const handleSurahSelect = (selectedSurah) => {
-    setShowSurahDropdown(false);
-    setSurahSearchTerm("");
-    if (onSurahChange) {
-      onSurahChange(selectedSurah.number, 1); // Reset to verse 1 when changing surah
-    }
-  };
-
-  const handleVerseSelect = (verseNumber) => {
-    setShowVerseDropdown(false);
-    if (onVerseChange) {
-      onVerseChange(verseNumber);
-    }
-  };
+  
 
   // Generate verse numbers array
   const generateVerseNumbers = () => {

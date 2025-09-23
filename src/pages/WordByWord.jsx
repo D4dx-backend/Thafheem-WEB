@@ -134,21 +134,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
     setShowAyahModal(false);
   };
 
-  const handleSurahChange = (newSurahId, newVerseId = 1) => {
-    // Close the WordByWord modal/component first
-    if (onClose) {
-      onClose();
-    }
-    
-    // Navigate to the new surah page with wordByWord parameter to auto-open
-    navigate(`/surah/${newSurahId}?wordByWord=${newVerseId}`);
-  };
-
-  const handleVerseChange = (newVerseId) => {
-    if (onNavigate) {
-      onNavigate(newVerseId);
-    }
-  };
+  
 
   if (loading) {
     return (

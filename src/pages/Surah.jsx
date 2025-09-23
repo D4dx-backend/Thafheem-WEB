@@ -3,11 +3,9 @@ import {
   Bookmark,
   Share2,
   Copy,
-  FileText,
   AlignLeft,
   ChevronDown,
   BookOpen,
-  List,
   ChevronLeft,
   ChevronRight,
   ArrowUp,
@@ -26,6 +24,7 @@ import WordByWord from "./WordByWord";
 import StarNumber from "../components/StarNumber";
 import Bismi from "../assets/bismi.jpg";
 import { useTheme } from "../context/ThemeContext";
+import WordByWordIcon from "../components/WordByWordIcon";
 import { useAuth } from "../context/AuthContext";
 import BookmarkService from "../services/bookmarkService";
 import { useToast } from "../hooks/useToast";
@@ -757,7 +756,7 @@ const Surah = () => {
                           handleWordByWordClick(index + 1);
                         }}
                       >
-                        <List className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <WordByWordIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
 
                       {/* Bookmark */}

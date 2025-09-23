@@ -64,23 +64,7 @@ const BlockWise = () => {
           fetchArabicVerses(parseInt(surahId)),
         ]);
 
-        console.log("=== BLOCKWISE DEBUG ===");
-        console.log("Block-wise Response:", blockWiseResponse);
-        console.log("Ayah Response:", ayahResponse);
-        console.log("Arabic Response:", arabicResponse);
-        console.log("Aya Ranges from API:", blockWiseResponse?.ayaRanges);
-        console.log("Ayah Data length:", ayahResponse?.length);
-        console.log("Arabic Verses length:", arabicResponse?.length);
-        
-        // Debug the first few ayah data items
-        if (ayahResponse && ayahResponse.length > 0) {
-          console.log("First 3 ayah items:", ayahResponse.slice(0, 3));
-        }
-        
-        // Debug the first few Arabic verses
-        if (arabicResponse && arabicResponse.length > 0) {
-          console.log("First 3 Arabic verses:", arabicResponse.slice(0, 3));
-        }
+        // Data loaded successfully
 
         setBlockData(blockWiseResponse);
 
@@ -303,8 +287,7 @@ const BlockWise = () => {
                   (range.ayaTo || range.ayato || range.to || range.end || range.endAya)
                 );
 
-              console.log("Has valid ranges:", hasValidRanges);
-              console.log("Raw ayaRanges:", blockData?.ayaRanges);
+              // Checking range validity
 
               // If no valid ranges, create fallback ranges (every 5 verses)
               const rangesToUse = hasValidRanges ? blockData.ayaRanges : (() => {
@@ -316,7 +299,7 @@ const BlockWise = () => {
                     ayato: Math.min(i + 4, totalVerses)
                   });
                 }
-                console.log("Using fallback ranges:", fallbackRanges);
+                // Using fallback ranges
                 return fallbackRanges;
               })();
 
@@ -337,8 +320,7 @@ const BlockWise = () => {
                 rangeItem.endAya ||
                 start;
 
-              console.log(`Block ${blockIndex + 1} - Range Item:`, rangeItem);
-              console.log(`Block ${blockIndex + 1} - Start: ${start}, End: ${end}`);
+              // Processing block range
 
               const arabicSlice = Array.isArray(arabicVerses)
                 ? arabicVerses.slice(start - 1, end)
@@ -347,8 +329,7 @@ const BlockWise = () => {
                 ? ayahData.slice(start - 1, end)
                 : [];
 
-              console.log(`Block ${blockIndex + 1} - Arabic slice length:`, arabicSlice.length);
-              console.log(`Block ${blockIndex + 1} - Translation slice length:`, translationSlice.length);
+              // Processing block data
 
               return (
                 <div
@@ -398,22 +379,76 @@ const BlockWise = () => {
 
                 <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-3 sm:pt-4">
                   {/* Copy */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                  <button 
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                    onClick={async () => {
+                      try {
+                        // Get Arabic text
+                        const arabicText = arabicSlice.length > 0
+                          ? arabicSlice
+                              .map((verse, idx) => `${verse.text_uthmani} ﴿${start + idx}﴾`)
+                              .join(' ')
+                          : 'Loading Arabic text...';
+                        
+                        // Get translation text
+                        const translationText = translationSlice.length > 0
+                          ? translationSlice.map((ayah, idx) => {
+                              const ayahNumber = start + idx;
+                              return `(${surahId}:${ayahNumber}) ${ayah.Translation}`;
+                            }).join('\n')
+                          : 'Loading translation...';
+                        
+                        const textToCopy = `${arabicText}\n\n${translationText}`;
+                        await navigator.clipboard.writeText(textToCopy);
+                        showSuccess('Text copied to clipboard!');
+                      } catch (e) {
+                        console.error('Copy failed', e);
+                        showError('Failed to copy text');
+                      }
+                    }}
+                    title="Copy text"
+                  >
                     <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
                   {/* Play */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                  <button 
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                    onClick={() => {
+                      // Play button clicked
+                      // TODO: Implement audio playback functionality
+                      showSuccess('Audio playback feature coming soon!');
+                    }}
+                    title="Play audio"
+                  >
                     <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
-                  {/* Book */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                  {/* Book - Ayah Detail */}
+                  <button 
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                    onClick={() => {
+                      // Ayah detail button clicked
+                      // Navigate to surah page with hash to the first verse of the block
+                      const targetUrl = `/surah/${surahId}#verse-${start}`;
+                      navigate(targetUrl);
+                    }}
+                    title="View ayah details"
+                  >
                     <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
-                  {/* Note/Page */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                  {/* Note/Page - Word by Word */}
+                  <button 
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                    onClick={() => {
+                      // Word by word button clicked
+                      navigate(`/word-by-word/${surahId}/${start}`, {
+                        state: { from: location.pathname }
+                      });
+                    }}
+                    title="Word by word"
+                  >
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
@@ -447,7 +482,30 @@ const BlockWise = () => {
                   </button>
 
                   {/* Share */}
-                  <button className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center">
+                  <button 
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                    onClick={async () => {
+                      try {
+                        const shareText = `Surah ${surahId} • Verses ${start}-${end}`;
+                        const shareUrl = window.location.href;
+                        
+                        if (navigator.share) {
+                          await navigator.share({ 
+                            title: 'Thafheem - Quran Study', 
+                            text: shareText, 
+                            url: shareUrl 
+                          });
+                        } else {
+                          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+                          showSuccess('Link copied to clipboard!');
+                        }
+                      } catch (e) {
+                        console.error('Share failed', e);
+                        showError('Failed to share');
+                      }
+                    }}
+                    title="Share block"
+                  >
                     <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>

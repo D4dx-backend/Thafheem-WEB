@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import WordByWordIcon from "./WordByWordIcon";
 import { useNavigate } from "react-router-dom";
 
 const InterpretationNavbar = ({
@@ -20,6 +21,7 @@ const InterpretationNavbar = ({
   onSelectRange,
   onBookmark,
   onShare,
+  onWordByWord,
   bookmarking = false,
   surahOptions = [], // [{value: 1, label: '1- Al-Fatihah'}]
   rangeOptions = [], // ['1-7', '8-14', '15-21'] or ['5', '6']
@@ -124,7 +126,12 @@ const InterpretationNavbar = ({
           </div>
   
           <button
-            onClick={handleClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Close button clicked in mobile navbar');
+              handleClose();
+            }}
             className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-700 transition-colors ml-2"
           >
             <X size={20} className="text-black dark:text-white" />
@@ -138,16 +145,43 @@ const InterpretationNavbar = ({
           </h1>
   
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" onClick={onSelectRange}>
-              <List className="w-4 h-4 sm:w-6 sm:h-6" />
+            <button 
+              className="p-2 text-[#2AA0BF] hover:text-[#1e8ba3] transition-colors" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Word-by-word button clicked in navbar');
+                if (onWordByWord) {
+                  onWordByWord();
+                }
+              }}
+            >
+              <WordByWordIcon className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
             <button
               className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors relative ${bookmarking ? 'opacity-70 pointer-events-none' : ''}`}
-              onClick={onBookmark}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Bookmark button clicked in navbar');
+                if (onBookmark) {
+                  onBookmark();
+                }
+              }}
             >
               <Bookmark className={`w-4 h-4 sm:w-6 sm:h-6 ${bookmarking ? 'animate-pulse' : ''}`}/>
             </button>
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" onClick={onShare}>
+            <button 
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Share button clicked in navbar');
+                if (onShare) {
+                  onShare();
+                }
+              }}
+            >
               <Share2 className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
           </div>
@@ -218,21 +252,53 @@ const InterpretationNavbar = ({
           </div>
   
           <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" onClick={onSelectRange}>
-              <List size={20} />
+            <button 
+              className="p-2 text-[#2AA0BF] hover:text-[#1e8ba3] transition-colors" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Word-by-word button clicked in desktop navbar');
+                if (onWordByWord) {
+                  onWordByWord();
+                }
+              }}
+            >
+              <WordByWordIcon className="w-5 h-5" />
             </button>
             <button
               className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors relative ${bookmarking ? 'opacity-70 pointer-events-none' : ''}`}
-              onClick={onBookmark}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Bookmark button clicked in desktop navbar');
+                if (onBookmark) {
+                  onBookmark();
+                }
+              }}
             >
               <Bookmark size={20} className={`${bookmarking ? 'animate-pulse' : ''}`} />
             </button>
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" onClick={onShare}>
+            <button 
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Share button clicked in desktop navbar');
+                if (onShare) {
+                  onShare();
+                }
+              }}
+            >
               <Share2 size={20} />
             </button>
   
             <button
-              onClick={handleClose}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Close button clicked in desktop navbar');
+                handleClose();
+              }}
               className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-700 transition-colors ml-2"
             >
               <X size={20} className="text-black dark:text-white" />
@@ -244,7 +310,17 @@ const InterpretationNavbar = ({
       {/* Sub Navigation */}
       <div className="flex items-center justify-center py-3 bg-gray-50 dark:bg-[#2A2C38] border-t border-gray-100 dark:border-gray-600">
         <div className="flex items-center space-x-4">
-          <button onClick={onPrev} className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Previous navigation button clicked');
+              if (onPrev) {
+                onPrev();
+              }
+            }} 
+            className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
             <ChevronLeft size={16} />
           </button>
   
@@ -252,7 +328,17 @@ const InterpretationNavbar = ({
             click to navigate
           </span>
   
-          <button onClick={onNext} className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Next navigation button clicked');
+              if (onNext) {
+                onNext();
+              }
+            }} 
+            className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
             <ChevronRight size={16} />
           </button>
         </div>

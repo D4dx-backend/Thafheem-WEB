@@ -12,3 +12,4 @@ export const QURAN_TEXT_API = `${import.meta.env.VITE_API_BASE_URL}/qurantext`;
 export const QURAN_API_BASE = import.meta.env.VITE_QURAN_API_BASE;
 export const INTERPRETATION_API = `${import.meta.env.VITE_API_BASE_URL}/interpret`;
 export const QUIZ_API = `${import.meta.env.VITE_API_BASE_URL}/quizquests`;
+export const NOTES_API = `${import.meta.env.VITE_API_BASE_URL}/notes`;

@@ -256,7 +256,7 @@ const Quiz = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen dark:bg-black bg-white flex items-center justify-center">
+      <div className="min-h-screen dark:bg-gray-900 bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">
@@ -274,7 +274,7 @@ const Quiz = () => {
   const hasSubmittedCurrent = submittedQuestions[currentQuestion];
 
   return (
-    <div className="min-h-screen dark:bg-black bg-white">
+    <div className="min-h-screen dark:bg-gray-900 bg-white">
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-700 relative">
         <div className="w-full mx-auto px-2 sm:px-4 py-2 dark:bg-[#2A2C38]">
@@ -327,7 +327,7 @@ const Quiz = () => {
                 <div className="fixed inset-0 flex items-center justify-center sm:absolute sm:left-0 sm:top-full sm:inset-auto sm:mt-2 sm:flex-none sm:items-start sm:justify-start bg-gray-500/70 bg-opacity-50 sm:bg-transparent z-50">
                   <div className="bg-white dark:bg-[#2A2C38] sm:rounded-2xl shadow-xl w-[320px] sm:w-80 h-[600px] sm:h-96 overflow-hidden rounded-2xl">
                     <div className="flex items-center justify-between p-3 sm:p-4 border-b">
-                      <div className="flex bg-[#F8F9FA] w-full max-w-[244px] h-[40px] sm:h-[45px] dark:bg-black rounded-full p-1">
+                      <div className="flex bg-[#F8F9FA] w-full max-w-[244px] h-[40px] sm:h-[45px] dark:bg-gray-900 rounded-full p-1">
                         <button
                           className={`px-3 sm:px-4 py-1 text-xs sm:text-sm rounded-full transition flex-1 ${
                             activeTab === "Surah"
@@ -418,7 +418,7 @@ const Quiz = () => {
         <ArrowLeft className="hidden sm:inline w-4 h-4 sm:w-5 sm:h-5 text-gray-600 relative top-6 sm:top-8 left-4 sm:left-10" />
       </div>
 
-      <div className="bg-white dark:bg-black">
+      <div className="bg-white dark:bg-gray-900">
         <div className="w-full max-w-[884px] mx-auto border-b px-3 sm:px-4 py-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
             <div className="flex items-center gap-3">
@@ -429,8 +429,10 @@ const Quiz = () => {
                 {quizData?.title || "Loading..."}
               </h1>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 dark:text-white">
-              <span>മാർക്ക്: {score}</span>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-white"
+            
+            >
+              <span  className="font-malayalam">മാർക്ക്: {score}</span>
               <span className="ml-4">
                 Total: {quizData?.totalQuestions || 0}
               </span>
@@ -483,21 +485,21 @@ const Quiz = () => {
       {/* Main Content */}
       {quizData && currentQuestionData && (
         <div className="w-full max-w-[884px] mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="dark:bg-black rounded-lg p-4 sm:p-6 mb-4">
+          <div className="dark:bg-gray-900 rounded-lg p-4 sm:p-6 mb-4">
             <div className="bg-[#EBEEF0] dark:bg-[#323A3F] p-3 sm:p-2 mb-4 rounded-lg">
               <div className="mb-3 sm:mb-4">
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-white">
+                <span className="text-xs sm:text-lg text-gray-600 dark:text-white font-malayalam">
                   ചോദ്യം: {currentQuestion} / {quizData.totalQuestions}
                 </span>
               </div>
               <div className="mb-4 sm:mb-6">
-                <p className="text-sm sm:text-md text-gray-800 leading-relaxed dark:text-white">
+                <p className="text-sm sm:text-lg text-gray-800 leading-relaxed dark:text-white font-malayalam">
                   {currentQuestionData.question}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 ">
               {currentQuestionData.options.map((option, optionIndex) => (
                 <label
                   key={option.id}
@@ -508,7 +510,7 @@ const Quiz = () => {
                   }`}
                 >
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="flex items-center p-3 sm:p-4 justify-center w-[40px] h-[35px] sm:w-[47px] sm:h-[40px] rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white text-sm sm:text-base">
+                    <span className="flex  items-center p-3 sm:p-4 justify-center w-[40px] h-[35px] sm:w-[47px] sm:h-[40px] rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white text-sm sm:text-base">
                       {option.id}
                     </span>
                     <input
@@ -521,7 +523,7 @@ const Quiz = () => {
                     />
                   </div>
                   <div className="flex items-center p-3 sm:p-4 w-full rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white">
-                    <span className="text-gray-700 dark:text-white text-sm sm:text-base">
+                    <span className="text-gray-700 dark:text-white text-sm sm:text-lg font-malayalam">
                       {option.text || `Option ${option.id} - No text available`}
                     </span>
                   </div>
@@ -529,13 +531,6 @@ const Quiz = () => {
               ))}
             </div>
 
-            <div className="text-xs sm:text-sm text-gray-600 mb-4 dark:text-white">
-              <p>
-                {hasSubmittedCurrent
-                  ? "ഉത്തരം സമർപ്പിച്ചു. അടുത്ത ചോദ്യത്തിലേക്ക് പോകാൻ 'Next Question' ക്ലിക്ക് ചെയ്യുക."
-                  : "ഉത്തരം തെരഞ്ഞെടുത്ത് 'Submit Answer' ക്ലിക്ക് ചെയ്യുക."}
-              </p>
-            </div>
 
             {/* Submit Answer Button */}
             {selectedAnswer && !hasSubmittedCurrent && (
@@ -554,7 +549,7 @@ const Quiz = () => {
               <button
                 onClick={handlePrevious}
                 disabled={currentQuestion === 1}
-                className="flex items-center gap-2 px-4 py-2 bg-white border dark:bg-black dark:text-white dark:border rounded-2xl text-gray-600 hover:text-gray-800 disabled:opacity-50 w-full sm:w-auto justify-center text-sm sm:text-base"
+                className="flex items-center gap-2 px-4 py-2 bg-white border dark:bg-gray-900 dark:text-white dark:border rounded-2xl text-gray-600 hover:text-gray-800 disabled:opacity-50 w-full sm:w-auto justify-center text-sm sm:text-base"
               >
                 <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Previous
                 Question
@@ -566,7 +561,7 @@ const Quiz = () => {
                   !hasSubmittedCurrent ||
                   currentQuestion === quizData?.totalQuestions
                 }
-                className="flex items-center gap-2 px-4 py-2 bg-white border dark:bg-black dark:text-white dark:border rounded-2xl text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center text-sm sm:text-base"
+                className="flex items-center gap-2 px-4 py-2 bg-white border dark:bg-gray-900 dark:text-white dark:border rounded-2xl text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center text-sm sm:text-base"
               >
                 Next Question <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>

@@ -107,12 +107,7 @@ const BookmarkBlock = () => {
   return (
     <>
     <BookmarkNavbar/>
-    <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 mt-2">
-      <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
-        <ArrowLeft className="w-4 h-4" /> Back
-      </button>
-    </div>
-    <div className="mx-auto min-h-screen p-3 sm:p-4 lg:p-6 bg-white dark:bg-black font-poppins">
+    <div className="mx-auto min-h-screen p-3 sm:p-4 lg:p-6 bg-white dark:bg-gray-900 font-poppins">
     <div className="w-full max-w-[1290px] mx-auto">
 
       {loading ? (
@@ -120,7 +115,7 @@ const BookmarkBlock = () => {
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {bookmarkedBlocks.map((block) => (
-          <div key={block.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border dark:bg-black dark:text-white dark:hover:bg-gray-800 border-gray-200 hover:bg-gray-100 transition-colors">
+          <div key={block.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800 border-gray-200 hover:bg-gray-100 transition-colors">
             {/* Left Section - Block Info */}
             <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
               <div className="flex-shrink-0">

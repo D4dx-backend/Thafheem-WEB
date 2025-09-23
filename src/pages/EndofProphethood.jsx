@@ -33,7 +33,7 @@ const EndofProphethood = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-black font-poppins">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-gray-900 font-poppins">
       <div className="flex flex-col lg:flex-row">
         <EndofProphethoodNavbar
           activeSection={activeSection}

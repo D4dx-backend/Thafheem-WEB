@@ -137,9 +137,9 @@ const Reading = () => {
     <>
       <Transition showPageInfo={true} />
 
-      <div className="min-h-screen bg-gray-50 dark:bg-black">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-gray-50 px-3 sm:px-4 lg:px-6 py-6 sm:py-8 dark:bg-black">
+        <div className="bg-gray-50 px-3 sm:px-4 lg:px-6 py-6 sm:py-8 dark:bg-gray-900">
           <div className="max-w-4xl mx-auto text-center">
             {/* Toggle Buttons */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
@@ -153,7 +153,7 @@ const Reading = () => {
                       </span>
                     </Link>
                   </button>
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-black dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm">
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm">
                     <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white"/>
                     <span className="text-black dark:text-white">Reading</span>
                   </button>
@@ -320,7 +320,7 @@ const Reading = () => {
 
 {/* Verses Content */}
 {/* Verses Content */}
-<div className="dark:bg-black rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+<div className="dark:bg-gray-900 rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
   <div className="text-center">
     {/* Continuous text flow */}
     <p 
@@ -402,7 +402,7 @@ const Reading = () => {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="bg-white border-t dark:bg-black border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3 sm:py-4 mt-6 sm:mt-8">
+        <div className="bg-white border-t dark:bg-gray-900 border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3 sm:py-4 mt-6 sm:mt-8">
           {/* Mobile: Stack vertically */}
           <div className="sm:hidden space-y-2">
             {/* First row: Previous + Beginning */}

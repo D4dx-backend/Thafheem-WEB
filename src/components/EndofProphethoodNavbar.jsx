@@ -47,7 +47,7 @@ const EndofProphethoodNavbar = ({ activeSection, setActiveSection }) => {
                     onClick={() => handleItemClick(item)}
                     className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 border-b border-gray-100 dark:border-gray-600 last:border-b-0 ${
                       activeSection === item
-                        ? 'bg-[#D9D9D9] dark:bg-black text-black dark:text-white font-medium'
+                        ? 'bg-[#D9D9D9] dark:bg-gray-900 text-black dark:text-white font-medium'
                         : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -76,7 +76,7 @@ const EndofProphethoodNavbar = ({ activeSection, setActiveSection }) => {
                   onClick={() => handleItemClick(item)}
                   className={`w-[284px] text-left px-4 py-3 text-sm transition-all duration-200 ${
                     activeSection === item
-                      ? 'bg-[#D9D9D9] dark:bg-black border-l-black text-black dark:text-white font-medium'
+                      ? 'bg-[#D9D9D9] dark:bg-gray-900 border-l-black text-black dark:text-white font-medium'
                       : 'border-l-transparent text-gray-700 hover:border-l-gray-400 dark:text-white'
                   }`}
                 >

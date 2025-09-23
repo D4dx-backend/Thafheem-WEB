@@ -54,7 +54,7 @@ const QuranStudyNavbar = ({ activeItem, setActiveItem }) => {
                     onClick={() => handleItemClick(item)}
                     className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 hover:bg-gray-50 dark:hover:bg-[#1A1C28] ${
                       activeItem === item
-                        ? "bg-[#D9D9D9] dark:bg-black text-black dark:text-white font-medium"
+                        ? "bg-[#D9D9D9] dark:bg-gray-900 text-black dark:text-white font-medium"
                         : "text-gray-700 dark:text-white"
                     }`}
                   >
@@ -83,7 +83,7 @@ const QuranStudyNavbar = ({ activeItem, setActiveItem }) => {
                   onClick={() => handleItemClick(item)}
                   className={`w-[284px] text-left px-4 py-3 text-sm transition-all duration-200  ${
                     activeItem === item
-                      ? "bg-[#D9D9D9]  dark:border-0  text-black dark:bg-black dark:text-white font-medium"
+                      ? "bg-[#D9D9D9]  dark:border-0  text-black dark:bg-gray-900 dark:text-white font-medium"
                       : "border-l-transparent text-gray-700 dark:text-white hover:border-l-gray-300"
                   }`}
                 >

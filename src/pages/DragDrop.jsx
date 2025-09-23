@@ -518,7 +518,7 @@ const DragDropQuiz = () => {
 
   // Main game content - shows after start button is clicked
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-black">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Top Navigation Bar */}
       <div className="bg-white dark:bg-[#2A2C38]">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2">
@@ -562,7 +562,7 @@ const DragDropQuiz = () => {
           </div>
         </div>
       </div> */}
- <div className="sm:border-b dark:bg-black w-full max-w-[884px] mx-auto">
+ <div className="sm:border-b dark:bg-gray-900 w-full max-w-[884px] mx-auto">
   <div className="mx-auto px-3 sm:px-4 py-3">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
       
@@ -595,9 +595,9 @@ const DragDropQuiz = () => {
 
 
       {/* Main Content */}
-      <div className="w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 dark:bg-black">
+      <div className="w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 dark:bg-gray-900">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-gray-50 dark:bg-black rounded-lg p-3 sm:p-6">
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 sm:p-6">
             {/* Drag & Drop Area */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 justify-center">
               {/* Arabic Text Column */}
@@ -696,8 +696,8 @@ const DragDropQuiz = () => {
           className={`border rounded text-xs sm:text-sm w-full sm:w-60 lg:w-70 h-10 sm:h-12 flex items-center justify-center transition-shadow 
             ${
               option
-                ? "bg-white dark:bg-black dark:text-white border-gray-300 cursor-move hover:shadow-md"
-                : "bg-gray-100 dark:bg-black border-gray-300 text-gray-400"
+                ? "bg-white dark:bg-gray-900 dark:text-white border-gray-300 cursor-move hover:shadow-md"
+                : "bg-gray-100 dark:bg-gray-900 border-gray-300 text-gray-400"
             }`}
         >
           {option ? option.text : ""}

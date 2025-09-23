@@ -77,7 +77,7 @@ const VideoPlayer = () => {
               style={{ width: `${progressPercentage}%` }}
             />
             <div
-              className="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 bg-black rounded-full shadow-md"
+              className="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 bg-gray-900 rounded-full shadow-md"
               style={{ left: `${progressPercentage}%`, marginLeft: '-10px' }}
             />
           </div>

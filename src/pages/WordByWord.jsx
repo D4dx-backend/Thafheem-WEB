@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { X, ChevronLeft, ChevronRight, ChevronDown, Bookmark, Share2, NotepadText } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Bookmark,
+  Share2,
+  NotepadText,
+} from "lucide-react";
 import {
   fetchWordByWordMeaning,
   fetchThafheemWordMeanings,
@@ -21,7 +29,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   const currentSurahId = params.surahId || surahId;
   const currentVerseId = params.verseId ? parseInt(params.verseId) : selectedVerse;
   const { quranFont, fontSize, translationFontSize } = useTheme();
-  
+
   const [wordData, setWordData] = useState(null);
   const [thafheemWords, setThafheemWords] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
@@ -126,6 +134,22 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
     setShowAyahModal(false);
   };
 
+  const handleSurahChange = (newSurahId, newVerseId = 1) => {
+    // Close the WordByWord modal/component first
+    if (onClose) {
+      onClose();
+    }
+    
+    // Navigate to the new surah page with wordByWord parameter to auto-open
+    navigate(`/surah/${newSurahId}?wordByWord=${newVerseId}`);
+  };
+
+  const handleVerseChange = (newVerseId) => {
+    if (onNavigate) {
+      onNavigate(newVerseId);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -142,7 +166,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
           showSuccess={showSuccess}
           showError={showError}
         />
-        <div className="max-w-4xl mx-auto p-6 dark:bg-[#2A2C38] bg-white rounded-lg">
+        <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold dark:text-white">
               Word by Word
@@ -184,7 +208,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
           showSuccess={showSuccess}
           showError={showError}
         />
-        <div className="max-w-4xl mx-auto p-6 dark:bg-[#2A2C38] bg-white rounded-lg">
+        <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold dark:text-white">
               Word by Word
@@ -203,6 +227,12 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
               Failed to load word meanings
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         </div>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -211,7 +241,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+    <div className="bg-white dark:bg-gray-950 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
       <WordNavbar
         surahId={currentSurahId}
         selectedVerse={currentVerseId}
@@ -247,43 +277,42 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
           </div>
         </div>
 
-
         {/* Complete Verse */}
         {wordData && (
           <div className="text-right mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-600 pb-3 sm:pb-4">
-<h1
-  className="text-xl sm:text-2xl md:text-3xl lg:text-4xl dark:text-white text-gray-900 leading-loose px-2 sm:px-0"
-  style={{
-    fontFamily: quranFont,
-    fontSize: `${fontSize}px`,
-  }}
->
-  {wordData.text_uthmani ||
-    (wordData.words &&
-      wordData.words
-        .map((word) => word.text_uthmani || word.text_simple)
-        .join(" ")) ||
-    "Verse text not available"}{' '}
-</h1>
-
-
+            <h1
+              className="text-xl sm:text-2xl md:text-3xl lg:text-4xl dark:text-white text-gray-900 leading-loose px-2 sm:px-0"
+              style={{
+                fontFamily: quranFont,
+                fontSize: `${fontSize}px`,
+              }}
+            >
+              {wordData.text_uthmani ||
+                (wordData.words &&
+                  wordData.words
+                    .map((word) => word.text_uthmani || word.text_simple)
+                    .join(" ")) ||
+                "Verse text not available"}{" "}
+            </h1>
           </div>
         )}
 
         {/* Translation */}
-        {wordData && wordData.translations && wordData.translations.length > 0 && (
-          <div className="mb-4 sm:mb-6">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Translation:
-            </h4>
-            <p
-              className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
-              style={{ fontSize: `${translationFontSize}px` }}
-            >
-              {wordData.translations[0].text}
-            </p>
-          </div>
-        )}
+        {wordData &&
+          wordData.translations &&
+          wordData.translations.length > 0 && (
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Translation:
+              </h4>
+              <p
+                className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                style={{ fontSize: `${translationFontSize}px` }}
+              >
+                {wordData.translations[0].text}
+              </p>
+            </div>
+          )}
 
         {/* Word by Word Breakdown */}
         {wordData && wordData.words && wordData.words.length > 0 && (
@@ -315,9 +344,6 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
                             {word.text_simple}
                           </div>
                         )}
-                      {/* <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        #{word.word_number || index + 1}
-                      </div> */}
                     </div>
 
                     {/* Translation/Meaning */}

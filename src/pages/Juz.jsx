@@ -6,6 +6,7 @@ import StarNumber from "../components/StarNumber";
 import { Play, Book, Circle, BookOpen } from "lucide-react";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import { fetchJuzData } from "../api/apifunction";
+//mee
 const Juz = () => {
   // State management
   const [juzData, setJuzData] = useState([]);

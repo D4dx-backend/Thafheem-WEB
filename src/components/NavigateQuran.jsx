@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import NavigateSurah from '../pages/NavigateSurah';
 import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
-import DemoPage from '../pages/Demopage';
+import DemoPage from '../pages/DemoItems';
 
 const NavigateQuran = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('Surah');
@@ -12,13 +13,13 @@ const NavigateQuran = ({ onClose }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'Surah':
-        return null;
+        return <NavigateSurah onClose={onClose} />;
       case 'Verse':
-        return <Verse/>;
+        return <Verse onClose={onClose} />;
       case 'Juz':
-        return <JuzNavigate />;
+        return <JuzNavigate onClose={onClose} />;
       case 'Page':
-        return <DemoPage/>;
+        return <DemoPage onClose={onClose} />;
       default:
         return null;
     }

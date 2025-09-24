@@ -1,27 +1,107 @@
-import {
-  SURA_NAMES_API,
-  PAGE_RANGES_API,
-  AYAH_AUDIO_TRANSLATION_API,
-  AYA_RANGES_API,
-  QURAN_TEXT_API,
-  QURAN_API_BASE,
-  INTERPRETATION_API,
-  QUIZ_API,
-} from "./apis";
+
+import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE, INTERPRETATION_API,QUIZ_API, NOTES_API } from "./apis";
+
+// Helper function to add timeout to fetch requests
+const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - API took too long to respond');
+    }
+    // Handle network errors gracefully
+    if (error.message?.includes('Failed to fetch') || 
+        error.message?.includes('ERR_CONNECTION_CLOSED') ||
+        error.message?.includes('ERR_NETWORK')) {
+      throw new Error('Network error - API server may be unavailable');
+    }
+    throw error;
+  }
+};
+
+// (duplicate import block removed)
 
 export const fetchSurahs = async () => {
+  try {
+    const response = await fetchWithTimeout(SURA_NAMES_API, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const result = data.map((surah) => ({
+      number: surah.SuraID,
+      arabic: surah.ASuraName?.trim(),
+      name: surah.ESuraName?.trim(),
+      ayahs: surah.TotalAyas,
+      type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
+    }));
+    return result;
+  } catch (error) {
+    console.warn('Failed to fetch surahs from API, using fallback data:', error.message);
+    // Return basic fallback data when API is unavailable
+    return [
+      { number: 1, arabic: "الفاتحة", name: "Al-Fatiha", ayahs: 7, type: "Makki" },
+      { number: 2, arabic: "البقرة", name: "Al-Baqarah", ayahs: 286, type: "Madani" },
+      { number: 3, arabic: "آل عمران", name: "Ali 'Imran", ayahs: 200, type: "Madani" },
+      { number: 4, arabic: "النساء", name: "An-Nisa", ayahs: 176, type: "Madani" },
+      { number: 5, arabic: "المائدة", name: "Al-Ma'idah", ayahs: 120, type: "Madani" },
+      { number: 6, arabic: "الأنعام", name: "Al-An'am", ayahs: 165, type: "Makki" },
+    ];
+  }
+};
+
+/**
+ * List surah names with minimal fields for UI dropdowns or lists
+ * Returns: [{ id, arabic, english }]
+ */
+export const listSurahNames = async () => {
   const response = await fetch(SURA_NAMES_API);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   const data = await response.json();
-  return data.map((surah) => ({
-    number: surah.SuraID,
-    arabic: surah.ASuraName,
-    name: surah.ESuraName,
-    ayahs: surah.TotalAyas,
-    type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
+  const result = data.map((surah) => ({
+    id: surah.SuraID,
+    arabic: surah.ASuraName?.trim(),
+    english: surah.ESuraName?.trim(),
   }));
+  return result;
+};
+
+/**
+ * Get a single surah's names by id
+ * Returns: { id, arabic, english } | null
+ */
+export const getSurahNameById = async (surahId) => {
+  const names = await listSurahNames();
+  return names.find((s) => s.id === parseInt(surahId)) || null;
+};
+
+/**
+ * Build a flattened verse index from Surah data
+ * Returns: [{ id: "<surah>-<verse>", surahId, arabic, english, verse }]
+ */
+export const listSurahVerseIndex = async () => {
+  const surahs = await fetchSurahs();
+  const result = surahs.flatMap((s) =>
+    Array.from({ length: s.ayahs }, (_, i) => ({
+      id: `${s.number}-${i + 1}`,
+      surahId: s.number,
+      arabic: s.arabic,
+      english: s.name,
+      verse: i + 1,
+    }))
+  );
+  return result;
 };
 
 export const fetchJuzData = async () => {
@@ -122,28 +202,61 @@ export const fetchJuzData = async () => {
 
 // Fetch audio translations for a specific Surah or Ayah
 export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
-  const url = ayahNumber
-    ? `${AYAH_AUDIO_TRANSLATION_API}/${suraId}/${ayahNumber}`
-    : `${AYAH_AUDIO_TRANSLATION_API}/${suraId}`;
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  const data = await response.json();
-  return data;
-};
+    try {
+      const url = ayahNumber
+        ? `${AYAH_AUDIO_TRANSLATION_API}/${suraId}/${ayahNumber}`
+        : `${AYAH_AUDIO_TRANSLATION_API}/${suraId}`;
+    
+      const response = await fetchWithTimeout(url, {}, 5000); // 5 second timeout
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.warn('Failed to fetch translation from primary API, trying fallback:', error.message);
+      
+      // Try fallback translation from Quran.com API
+      try {
+        const fallbackUrl = `${QURAN_API_BASE}/quran/translations/131?chapter_number=${suraId}&verse_number=${ayahNumber}`;
+        const fallbackResponse = await fetchWithTimeout(fallbackUrl, {}, 5000);
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          if (fallbackData.translations && fallbackData.translations.length > 0) {
+            return [{
+              contiayano: ayahNumber,
+              AudioText: fallbackData.translations[0].text
+            }];
+          }
+        }
+      } catch (fallbackError) {
+        console.warn('Fallback translation also failed:', fallbackError.message);
+      }
+      
+      // Return null to indicate translation is not available
+      return null;
+    }
+  };
 
 // Fetch Arabic verses in Uthmani script from Quran.com API
 export const fetchArabicVerses = async (surahId) => {
-  const url = `${QURAN_API_BASE}/quran/verses/uthmani?chapter_number=${surahId}`;
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    const url = `${QURAN_API_BASE}/quran/verses/uthmani?chapter_number=${surahId}`;
+    
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.verses;
+  } catch (error) {
+    console.warn('Failed to fetch Arabic verses from API, using fallback:', error.message);
+    // Return basic fallback data when API is unavailable
+    return [
+      { id: 1, verse_number: 1, text_uthmani: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" },
+      { id: 2, verse_number: 2, text_uthmani: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ" },
+    ];
   }
-  const data = await response.json();
-  return data.verses;
 };
 
 // Fetch Arabic verses with page information from Quran.com API
@@ -309,69 +422,81 @@ export const fetchThafheemWordMeanings = async (surahId, verseId) => {
   }
 };
 
-// Fetch interpretation for specific verse from Thafheem API
-export const fetchInterpretation = async (
-  surahId,
-  verseId,
-  interpretationNo = 1,
-  language = "en"
-) => {
-  // Primary endpoint for individual verse interpretations
-  const primaryUrl = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
 
+// Fetch a note by id from Thafheem API
+export const fetchNoteById = async (noteId) => {
+  const id = String(noteId).trim();
+  const url = `${NOTES_API}/${encodeURIComponent(id)}`;
+  
+  // Fetching note by ID
+  
   try {
-    console.log("Fetching interpretation from:", primaryUrl);
-    const response = await fetch(primaryUrl);
+    const response = await fetchWithTimeout(url, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    }, 5000); // 5 second timeout
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log("Interpretation data received:", data);
-
-    // The API returns an array of interpretation objects
-    // Filter by interpretation number if multiple interpretations exist
-    if (Array.isArray(data) && data.length > 0) {
-      const filteredData = data.filter(
-        (item) => item.interptn_no === interpretationNo || !item.interptn_no
-      );
-      return filteredData.length > 0 ? filteredData : data;
-    }
-
     return data;
   } catch (error) {
-    console.error("Error fetching interpretation:", error);
+    console.warn('Error fetching note by id:', error.message);
+    // Return a fallback note when API is unavailable
+    return {
+      id: id,
+      note_text: `Note ${id} is currently unavailable. The API server may be down. Please try again later.`,
+      surah_id: null,
+      verse_id: null,
+      interpretation_no: null
+    };
+  }
+};
 
-    // Fallback: Try range-based endpoint (treating single verse as range)
+// Fetch interpretation for specific verse from Thafheem API
+export const fetchInterpretation = async (surahId, verseId, interpretationNo = 1, language = 'en') => {
+  // Primary endpoint: Use the working interpret endpoint instead of audiointerpret
+  const primaryUrl = `https://thafheem.net/thafheem-api/interpret/${surahId}/${verseId}/${interpretationNo}`;
+
+  try {
+    const response = await fetchWithTimeout(primaryUrl, {}, 8000);
+    if (!response.ok) {
+      console.warn(`Primary endpoint failed with status ${response.status}, trying fallback...`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Fallback: Try with language parameter
     try {
-      const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
-      console.log("Trying range-based interpretation URL:", rangeUrl);
-      const rangeResponse = await fetch(rangeUrl);
-      if (!rangeResponse.ok) {
-        throw new Error(`HTTP error! status: ${rangeResponse.status}`);
+      const langUrl = `https://thafheem.net/thafheem-api/interpret/${surahId}/${verseId}/${interpretationNo}/${language}`;
+      const langResponse = await fetchWithTimeout(langUrl, {}, 8000);
+      if (!langResponse.ok) {
+        throw new Error(`HTTP error! status: ${langResponse.status}`);
       }
-      const rangeData = await rangeResponse.json();
-      console.log("Range-based interpretation data received:", rangeData);
-      return rangeData;
-    } catch (rangeError) {
-      console.error("Range-based interpretation API also failed:", rangeError);
-
-      // Final fallback: Try with language parameter
+      const langData = await langResponse.json();
+      return langData;
+    } catch (_) {
+      // Final fallback: Try audiointerpret endpoint
       try {
-        const langUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${language}`;
-        console.log("Trying language-specific interpretation URL:", langUrl);
-        const langResponse = await fetch(langUrl);
-        if (!langResponse.ok) {
-          throw new Error(`HTTP error! status: ${langResponse.status}`);
+        const audioUrl = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
+        const audioResponse = await fetchWithTimeout(audioUrl, {}, 8000);
+        if (!audioResponse.ok) {
+          throw new Error(`HTTP error! status: ${audioResponse.status}`);
         }
-        const langData = await langResponse.json();
-        console.log(
-          "Language-specific interpretation data received:",
-          langData
-        );
-        return langData;
-      } catch (langError) {
-        console.error("All interpretation endpoints failed:", langError);
-        throw error; // Throw the original error
+        const audioData = await audioResponse.json();
+        if (Array.isArray(audioData) && audioData.length > 0) {
+          const filteredData = audioData.filter(item => item.interptn_no === interpretationNo || !item.interptn_no);
+          return filteredData.length > 0 ? filteredData : audioData;
+        }
+        return audioData;
+      } catch (_) {
+        // Return a graceful fallback object
+        return [{
+          interpret_text: `Interpretation not available for Surah ${surahId}, Verse ${verseId}. Please try again later.`,
+          interptn_no: interpretationNo
+        }];
       }
     }
   }

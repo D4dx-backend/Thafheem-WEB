@@ -1,95 +1,7 @@
-// import React from 'react';
-// import { Trash2 } from 'lucide-react';
-// import BookmarkNavbar from '../components/BookmarkNavbar';
-// import StarNumber from '../components/StarNumber';
-
-// const BookInterpretations = () => {
-//   const ayahWiseInterpretations = [
-//     { id: 1, number: 2, surah: 'Al-Baqarah', detail: 'Verse number: 1' },
-//     { id: 2, number: 2, surah: 'Al-Baqarah', detail: 'Verse number: 1' },
-//     { id: 3, number: 2, surah: 'Al-Baqarah', detail: 'Verse number: 1' }
-//   ];
-
-//   const blockWiseInterpretations = [
-//     { id: 4, number: 2, surah: 'Al-Baqarah', detail: 'Interpretation number: 2-1' },
-//     { id: 5, number: 2, surah: 'Al-Baqarah', detail: 'Interpretation number: 2-1' },
-//     { id: 6, number: 2, surah: 'Al-Baqarah', detail: 'Interpretation number: 2-1' }
-//   ];
-
-//   const handleDelete = (id, type) => {
-//     // Handle delete functionality
-//     console.log(`Delete ${type} interpretation with id:`, id);
-//   };
-
-//   const renderInterpretationCard = (interpretation, type) => (
-//     <div
-//       key={interpretation.id}
-//       className="flex items-center justify-between p-4  dark:bg-black dark:text-white dark:hover:bg-gray-800 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
-//     >
-//       {/* Left Section - Interpretation Info */}
-//       <div className="flex items-center space-x-4">
-//         <div className="flex-shrink-0">
-//           {/* <span className="text-lg font-semibold text-gray-800 dark:text-white">{interpretation.number}</span> */}
-//           <StarNumber number={interpretation.number} />
-
-//         </div>
-//         <div>
-//           <h3 className="text-base font-medium text-gray-900 dark:text-white">{interpretation.surah}</h3>
-//           <p className="text-sm text-gray-500 ">{interpretation.detail}</p>
-//         </div>
-//       </div>
-
-//       {/* Right Section - Delete Button */}
-//       <button
-//         onClick={() => handleDelete(interpretation.id, type)}
-//         className="p-2 text-black dark:text-white dark:hover:bg-transparent hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-//         aria-label="Delete interpretation bookmark"
-//       >
-//         <Trash2 size={18} />
-//       </button>
-//     </div>
-//   );
-
-//   return (
-//     <>
-//       <BookmarkNavbar />
-//       <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-black">
-//       <div className="w-[1290px] mx-auto">
-
-//         <div className="space-y-8">
-//           {/* Ayah wise interpretations section */}
-//           <div>
-//             <h2 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">Ayah wise interpretations</h2>
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-//               {ayahWiseInterpretations.map((interpretation) =>
-//                 renderInterpretationCard(interpretation, 'ayah-wise')
-//               )}
-//             </div>
-//           </div>
-
-//           {/* Block wise interpretations section */}
-//           <div>
-//             <h2 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">Block wise interpretations</h2>
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-//               {blockWiseInterpretations.map((interpretation) =>
-//                 renderInterpretationCard(interpretation, 'block-wise')
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       </div>
-//     </>
-//   );
-// };
-
-// export default BookInterpretations;
-
-
 import React, { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import BookmarkNavbar from '../components/BookmarkNavbar';
+import { ArrowLeft } from 'lucide-react';
 import StarNumber from '../components/StarNumber';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -137,7 +49,6 @@ const BookInterpretations = () => {
         }));
         
         // For now, we'll put all interpretation bookmarks in ayah-wise
-        // You can modify this logic based on your requirements
         setAyahWiseInterpretations(formattedBookmarks);
         setBlockWiseInterpretations([]); // Empty for now
       } catch (err) {
@@ -291,7 +202,7 @@ const BookInterpretations = () => {
         <BookmarkNavbar />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
-          <div className="w-full max-w-[1290px] mx-auto">
+          <div className="w-full max-w-[1290px] mx_auto">
             <div className="text-center py-12">
               <p className="text-red-500 dark:text-red-400 text-lg mb-4">{error}</p>
               <button
@@ -314,7 +225,7 @@ const BookInterpretations = () => {
         <BookmarkNavbar />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
-          <div className="w-full max-w-[1290px] mx-auto">
+          <div className="w_full max-w-[1290px] mx_auto">
             <div className="text-center py-12">
               <div className="mb-6">
                 <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,7 +263,7 @@ const BookInterpretations = () => {
           {ayahWiseInterpretations.length > 0 && (
             <div>
               <h2 className="text-base sm:text-lg lg:text-xl font-medium text-gray-900 mb-3 sm:mb-4 dark:text-white">Ayah wise interpretations</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid_cols-3 xl:grid_cols-3 gap-3 sm:gap-4 lg:gap-6">
                 {ayahWiseInterpretations.map((interpretation) =>
                   renderInterpretationCard(interpretation, 'ayah-wise')
                 )}
@@ -364,7 +275,7 @@ const BookInterpretations = () => {
           {blockWiseInterpretations.length > 0 && (
             <div>
               <h2 className="text-base sm:text-lg lg:text-xl font-medium text-gray-900 mb-3 sm:mb-4 dark:text-white">Block wise interpretations</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid_cols-3 xl:grid_cols-3 gap-3 sm:gap-4 lg:gap-6">
                 {blockWiseInterpretations.map((interpretation) =>
                   renderInterpretationCard(interpretation, 'block-wise')
                 )}

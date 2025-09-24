@@ -59,7 +59,7 @@ const Toast = ({ message, type = 'success', duration = 3000, onClose }) => {
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 flex items-center space-x-3 px-4 py-3 rounded-lg border shadow-lg transition-all duration-300 transform ${
+      className={`fixed top-4 right-4 z-[10000] flex items-center space-x-3 px-4 py-3 rounded-lg border shadow-lg transition-all duration-300 transform ${
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       } ${getBackgroundColor()}`}
       style={{ minWidth: '300px', maxWidth: '400px' }}
@@ -81,7 +81,7 @@ const Toast = ({ message, type = 'success', duration = 3000, onClose }) => {
 // Toast container component
 export const ToastContainer = ({ toasts, removeToast }) => {
   return (
-    <div className="fixed top-0 right-0 z-50 p-4 space-y-2">
+    <div className="fixed top-0 right-0 z-[10000] p-4 space-y-2 pointer-events-none">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}

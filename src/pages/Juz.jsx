@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import HomepageNavbar from "../components/HomeNavbar";
 import HomepageSearch from "../components/HomeSearch";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
-import { Play, Book, Circle, BookOpen } from "lucide-react";
+import { Play, Book, Circle, BookOpen, ArrowLeft } from "lucide-react";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import { fetchJuzData } from "../api/apifunction";
 //mee
@@ -16,6 +16,7 @@ const Juz = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { juzId } = useParams(); // Get Juz ID from URL if present
 
   const KaabaIcon = ({ className }) => (
     <svg
@@ -160,29 +161,61 @@ const Juz = () => {
     fetchData();
   }, []);
 
-  // Split juz data into three columns for display
+  // Split juz data into three columns for display (1-19, 20-28, 29-30)
   const getColumnData = (columnIndex) => {
-    const juzPerColumn = Math.ceil(juzData.length / 3);
-    const startIndex = columnIndex * juzPerColumn;
-    const endIndex = startIndex + juzPerColumn;
-    return juzData.slice(startIndex, endIndex);
+    let result;
+    if (columnIndex === 0) {
+      // First column: Juz 1-19
+      result = juzData.filter(juz => juz.id >= 1 && juz.id <= 19);
+    } else if (columnIndex === 1) {
+      // Second column: Juz 20-28
+      result = juzData.filter(juz => juz.id >= 20 && juz.id <= 28);
+    } else {
+      // Third column: Juz 29-30
+      result = juzData.filter(juz => juz.id >= 29 && juz.id <= 30);
+    }
+    console.log(`Column ${columnIndex} data:`, result);
+    return result;
+  };
+
+  // Get current Juz data if juzId is provided
+  const getCurrentJuz = () => {
+    if (!juzId) return null;
+    return juzData.find(juz => juz.id === parseInt(juzId));
   };
 
   // Handle juz click - navigate to first surah of the selected Juz
   const handleJuzClick = (juzId) => {
-    // Find the first surah in the selected Juz
     const selectedJuz = juzData.find((juz) => juz.id === juzId);
     if (selectedJuz && selectedJuz.surahs.length > 0) {
-      // Get the first surah number from the Juz
       const firstSurahNumber = selectedJuz.surahs[0].number;
-      // Navigate to the first surah with Juz context information
       navigate(`/surah/${firstSurahNumber}?fromJuz=${juzId}`);
     }
   };
 
   // Handle surah click within juz
-  const handleSurahClick = (surahId) => {
-    navigate(`/surah/${surahId}`);
+  const handleSurahClick = (surahOrId) => {
+    // Support both object (with verses) and plain id
+    if (typeof surahOrId === 'object' && surahOrId !== null) {
+      const firstVerse = surahOrId.startVerse ? String(surahOrId.startVerse) : '1';
+      const targetUrl = `/surah/${surahOrId.number}#verse-${firstVerse}`;
+      console.log('Surah click from home Juz grid:', {
+        surahId: surahOrId.number,
+        verses: surahOrId.verses,
+        firstVerse,
+        targetUrl,
+      });
+      navigate(targetUrl);
+      return;
+    }
+
+    // Fallback: plain id
+    navigate(`/surah/${surahOrId}`);
+  };
+
+  // Handle back to all Juz
+  const handleBackToAllJuz = () => {
+    navigate('/juz');
   };
 
   // Loading state
@@ -224,6 +257,9 @@ const Juz = () => {
     );
   }
 
+  // Get current Juz for individual page
+  const currentJuz = getCurrentJuz();
+
   return (
     <>
       <HomepageSearch />
@@ -245,7 +281,7 @@ const Juz = () => {
               <button
                 onClick={() => navigate("/juz")}
                 className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors min-h-[48px] flex items-center ${
-                  location.pathname === "/juz"
+                  location.pathname === "/juz" || location.pathname.startsWith("/juz/")
                     ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 }`}
@@ -255,104 +291,177 @@ const Juz = () => {
             </div>
           </div>
 
-          {/* Juz Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 pt-4 sm:pt-6">
-            {/* Render three columns */}
-            {[0, 1, 2].map((columnIndex) => (
-              <div key={columnIndex} className="w-full">
-                {getColumnData(columnIndex).map((juz) => (
+          {/* Conditional Rendering: Individual Juz or All Juz Grid */}
+          {currentJuz ? (
+            /* Individual Juz Page */
+            <div className="pt-4 sm:pt-6">
+              {/* Back Button */}
+              <div className="mb-4 sm:mb-6">
+                <button
+                  onClick={handleBackToAllJuz}
+                  className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="text-sm font-medium">Back to All Juz</span>
+                </button>
+              </div>
+
+              {/* Juz Header */}
+              <div className="text-center mb-6 sm:mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                  {currentJuz.title}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {currentJuz.surahs.length} Surahs in this Juz
+                </p>
+              </div>
+
+              {/* Surah List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {currentJuz.surahs.map((surah, index) => (
                   <div
-                    key={juz.id}
-                    className="bg-[#EBEEF0] dark:bg-[#323A3F] rounded-xl shadow-sm border-gray-100 overflow-hidden m-2 sm:m-4 w-full max-w-[400px] mx-auto lg:mx-0"
+                    key={`${currentJuz.id}-${surah.number}-${index}`}
+                    onClick={() => handleSurahClick(surah.number)}
+                    className="bg-white dark:bg-[#323A3F] rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 p-4 sm:p-6 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-400"
                   >
-                    {/* Header */}
-                    <div className="bg-[#EBEEF0] dark:bg-[#323A3F] dark:text-white px-3 sm:px-4 py-1 flex justify-between items-center">
-                      <h3 className="text-sm font-medium font-poppins text-gray-700 dark:text-white">
-                        {juz.title}
-                      </h3>
-                      <button
-                        onClick={() => handleJuzClick(juz.id)}
-                        className="text-black hover:text-black text-xs font-medium font-poppins dark:text-white min-h-[32px] px-2 hover:underline"
-                      >
-                        Read Juz
-                      </button>
-                    </div>
+                    {/* Surah Card */}
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                      {/* Star Badge */}
+                      <div className="flex-shrink-0">
+                        <StarNumber
+                          number={surah.number}
+                          color="#E5E7EB"
+                          textColor="#000"
+                        />
+                      </div>
 
-                    {/* Surah List */}
-                    <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 overflow-y-auto max-h-[600px]">
-                      {juz.surahs.map((surah, index) => (
-                        <div
-                          key={`${juz.id}-${surah.number}-${index}`}
-                          onClick={() => handleSurahClick(surah.number)}
-                          className="w-full min-h-[76px] flex flex-col p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-gray-900 hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-400 border border-transparent"
-                        >
-                          {/* Top Row: Number + English + Arabic */}
-                          <div className="flex items-center justify-between">
-                            {/* Left side: Number + Name + Icons */}
-                            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                              {/* Star Badge */}
-                              <div className="flex-shrink-0">
-                                <StarNumber
-                                  number={surah.number}
-                                  color="#E5E7EB"
-                                  textColor="#000"
-                                />
-                              </div>
-
-                              {/* Name + Icons stacked */}
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
-                                  {surah.name}
-                                </h4>
-
-                                {/* Icons row (under name) */}
-                                <div className="flex items-center space-x-1 sm:space-x-2 text-gray-500 dark:text-gray-400 mt-1">
-                                  {surah.type === "Makki" ? (
-                                    <KaabaIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                  ) : (
-                                    <div className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0">
-                                      {madIcon}
-                                    </div>
-                                  )}
-
-                                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-
-                                  <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                  <span className="text-xs sm:text-sm font-medium">
-                                    {surah.verses}
-                                  </span>
-                                </div>
-                              </div>
+                      {/* Surah Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                          {surah.name}
+                        </h3>
+                        
+                        {/* Icons and Info */}
+                        <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+                          {surah.type === "Makki" ? (
+                            <KaabaIcon className="h-4 w-4 flex-shrink-0" />
+                          ) : (
+                            <div className="h-4 w-4 flex-shrink-0">
+                              {madIcon}
                             </div>
+                          )}
 
-                            {/* Arabic name on the right */}
-                            <div className="text-right flex-shrink-0 ml-2">
-                              <p
-                                className="text-base sm:text-[30px] font-arabic text-gray-900 dark:text-white leading-tight"
-                                style={{ fontFamily: "SuraName, Amiri, serif" }}
-                              >
-                                {surahNameUnicodes[surah.number]
-                                  ? String.fromCharCode(
-                                      parseInt(
-                                        surahNameUnicodes[surah.number].replace(
-                                          "U+",
-                                          ""
-                                        ),
-                                        16
-                                      )
-                                    )
-                                  : surah.arabic}
-                              </p>
-                            </div>
-                          </div>
+                          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+
+                          <BookOpen className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm font-medium">
+                            {surah.verses}
+                          </span>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            /* All Juz Grid - panel style in 3 columns */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 pt-4 sm:pt-6">
+              {/* Render three columns */}
+              {[0, 1, 2].map((columnIndex) => (
+                <div key={columnIndex} className="w-full">
+                  {getColumnData(columnIndex).map((juz) => (
+                    <div
+                      key={juz.id}
+                      className="bg-[#EBEEF0] dark:bg-[#323A3F] rounded-xl shadow-sm border-gray-100 overflow-hidden m-2 sm:m-4 w-full max-w-[400px] mx-auto lg:mx-0"
+                    >
+                      {/* Header */}
+                      <div className="bg-[#EBEEF0] dark:bg-[#323A3F] dark:text-white px-3 sm:px-4 py-1 flex justify-between items-center">
+                        <h3 className="text-sm font-medium font-poppins text-gray-700 dark:text-white">
+                          {juz.title}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => handleJuzClick(juz.id)}
+                          className="text-xs font-semibold font-poppins min-h-[28px] px-3 py-1 text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                        >
+                          Read Juz
+                        </button>
+                      </div>
+
+                      {/* Surah List (no inner scroll) */}
+                      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                        {juz.surahs.map((surah, index) => (
+                          <div
+                            key={`${juz.id}-${surah.number}-${index}`}
+                            onClick={() => handleSurahClick(surah)}
+                            className="w-full min-h-[76px] flex flex-col p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-black hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-400 border border-transparent"
+                          >
+                            {/* Top Row: Number + English + Arabic */}
+                            <div className="flex items-center justify-between">
+                              {/* Left side: Number + Name + Icons */}
+                              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                                {/* Star Badge */}
+                                <div className="flex-shrink-0">
+                                  <StarNumber
+                                    number={surah.number}
+                                    color="#E5E7EB"
+                                    textColor="#000"
+                                  />
+                                </div>
+
+                                {/* Name + Icons stacked */}
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
+                                    {surah.name}
+                                  </h4>
+
+                                  {/* Icons row (under name) */}
+                                  <div className="flex items-center space-x-1 sm:space-x-2 text-gray-500 dark:text-gray-400 mt-1">
+                                    {surah.type === "Makki" ? (
+                                      <KaabaIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                    ) : (
+                                      <div className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0">
+                                        {madIcon}
+                                      </div>
+                                    )}
+
+                                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+
+                                    <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                    <span className="text-xs sm:text-sm font-medium">
+                                      {surah.verses}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Arabic name on the right */}
+                              <div className="text-right flex-shrink-0 ml-2">
+                                <p
+                                  className="text-base sm:text-[30px] font-arabic text-gray-900 dark:text-white leading-tight"
+                                  style={{ fontFamily: "SuraName, Amiri, serif" }}
+                                >
+                                  {surahNameUnicodes[surah.number]
+                                    ? String.fromCharCode(
+                                        parseInt(
+                                          surahNameUnicodes[surah.number].replace("U+", ""),
+                                          16
+                                        )
+                                      )
+                                    : surah.arabic}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* No data state */}
           {juzData.length === 0 && !loading && !error && (

@@ -324,7 +324,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         </div>
 
         {/* Fixed Bottom Navigation Buttons */}
-        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 bg-white dark:bg-gray-900">
           <button
             onClick={handlePreviousAyah}
             disabled={currentVerseId <= 1}

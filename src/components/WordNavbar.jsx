@@ -106,7 +106,7 @@ const WordNavbar = ({
   if (!visible) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-950 px-3 sm:px-4 py-3 space-y-3 relative">
+    <div className="bg-white dark:bg-gray-900 px-3 sm:px-4 py-3 space-y-3 relative">
       {/* Mobile Close Button - Positioned absolute on mobile */}
       <button
         className="absolute top-2 right-2 sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors bg-white dark:bg-gray-600 shadow-sm z-10"

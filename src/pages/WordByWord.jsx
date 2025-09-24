@@ -181,7 +181,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
       <WordNavbar
         surahId={surahId}
         selectedVerse={selectedVerse}
@@ -367,7 +367,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
       </div>
 
       {/* Fixed Bottom Navigation Buttons */}
-      <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38]">
+      <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4   bg-white dark:bg-gray-900">
         <button
           onClick={handlePrevious}
           disabled={selectedVerse <= 1}

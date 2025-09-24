@@ -313,8 +313,8 @@ const HomepageNavbar = () => {
                       }}
                       className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${
                         isMainActive
-                          ? "bg-[#ebeef0] dark:bg-black text-black dark:text-white"
-                          : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-black"
+                          ? "bg-[#ebeef0] dark:bg-gray-900 text-black dark:text-white"
+                          : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-gray-900"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -357,8 +357,8 @@ const HomepageNavbar = () => {
                               }}
                               className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
                                 isSubActive
-                                  ? "bg-gray-100 dark:bg-black text-black dark:text-white"
-                                  : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-black"
+                                  ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
+                                  : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
                               }`}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>

@@ -85,7 +85,7 @@ function App() {
           <Route path="/quranstudy" element={<QuranStudy />} />
           <Route path="/end" element={<EndofProphethood />} />
           <Route path="/word-by-word/:surahId/:verseId" element={<WordByWordPage />} />
-          <Route path="/interpretation/:surahId/:range/:ipt/:lang" element={<InterpretationBlockwise />} />
+          <Route path="/interpretation-blockwise" element={<InterpretationBlockwise />} />
           <Route path="/note/:id" element={<Note />} />
         </Routes>
         <Footer />

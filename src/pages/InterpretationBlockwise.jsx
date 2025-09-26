@@ -256,23 +256,22 @@ const InterpretationBlockwise = (props) => {
   const handleBookmark = async () => {
     try {
       setIsBookmarking(true);
-      // For blockwise page we bookmark the first ayah of the current range as interpretation
-      const firstAyah = /^\d+/.exec(String(range))?.[0] || "1";
       const userId = BookmarkService.getEffectiveUserId(user);
-      await BookmarkService.addAyahInterpretationBookmark(
+      
+      // Use the new block interpretation bookmark method
+      await BookmarkService.addBlockInterpretationBookmark(
         userId,
         surahId,
-        parseInt(firstAyah, 10),
-        surahDisplayName
+        range,
+        surahDisplayName,
+        iptNo,
+        lang
       );
-      if (typeof props.showSuccess === 'function') {
-        props.showSuccess(`Saved interpretation for ${surahId}:${firstAyah}`);
-      }
+      
+      alert(`Saved interpretation for Surah ${surahId}, verses ${range}`);
     } catch (e) {
       console.error("Failed to bookmark interpretation", e);
-      if (typeof props.showError === 'function') {
-        props.showError('Failed to save interpretation bookmark');
-      }
+      alert('Failed to save interpretation bookmark');
     } finally {
       setTimeout(() => setIsBookmarking(false), 300);
     }

@@ -59,21 +59,49 @@
 
 // export default BookmarkBlock;
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import BookmarkNavbar from '../components/BookmarkNavbar';
+import { ArrowLeft } from 'lucide-react';
 import StarNumber from '../components/StarNumber';
+import { useAuth } from '../context/AuthContext';
+import BookmarkService from '../services/bookmarkService';
 
 const BookmarkBlock = () => {
-  const bookmarkedBlocks = [
-    { id: 1, number: 2, surah: 'Al-Baqarah', verses: 'Verses 1-7' },
-    { id: 2, number: 2, surah: 'Al-Baqarah', verses: 'Verses 1-7' },
-    { id: 3, number: 2, surah: 'Al-Baqarah', verses: 'Verses 1-7' }
-  ];
+  const { user } = useAuth();
+  const [bookmarkedBlocks, setBookmarkedBlocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState({});
 
-  const handleDelete = (id) => {
-    // Handle delete functionality
-    console.log('Delete bookmark block with id:', id);
+  useEffect(() => {
+    const load = async () => {
+      if (!user) { setLoading(false); return; }
+      try {
+        setLoading(true);
+        const blocks = await BookmarkService.getBookmarks(user.uid, 'block');
+        const mapped = blocks.map(b => ({
+          id: b.id,
+          number: b.surahId,
+          surah: b.surahName || `Surah ${b.surahId}`,
+          verses: `Verses ${b.blockFrom}-${b.blockTo}`
+        }));
+        setBookmarkedBlocks(mapped);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user]);
+
+  const handleDelete = async (id) => {
+    if (!user) return;
+    setDeleteLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      await BookmarkService.deleteBookmark(id, user.uid);
+      setBookmarkedBlocks(prev => prev.filter(b => b.id !== id));
+    } finally {
+      setDeleteLoading(prev => ({ ...prev, [id]: false }));
+    }
   };
 
   return (
@@ -82,6 +110,9 @@ const BookmarkBlock = () => {
     <div className="mx-auto min-h-screen p-3 sm:p-4 lg:p-6 bg-white dark:bg-gray-900 font-poppins">
     <div className="w-full max-w-[1290px] mx-auto">
 
+      {loading ? (
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">Loading bookmarks...</div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {bookmarkedBlocks.map((block) => (
           <div key={block.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800 border-gray-200 hover:bg-gray-100 transition-colors">
@@ -102,11 +133,16 @@ const BookmarkBlock = () => {
               className="p-2 text-black dark:text-white dark:hover:bg-transparent hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center ml-2"
               aria-label="Delete bookmark block"
             >
-              <Trash2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              {deleteLoading[block.id] ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b border-current"></div>
+              ) : (
+                <Trash2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              )}
             </button>
           </div>
         ))}
       </div>
+      )}
     </div>
     </div>
 

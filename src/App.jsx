@@ -31,6 +31,10 @@ import Conclusion from "./pages/Conclusion";
 import Tajweed from "./pages/Tajweed";
 import QuranStudy from "./pages/QuranStudy";
 import EndofProphethood from "./pages/EndofProphethood";
+import WordByWord from "./pages/WordByWord";
+import WordByWordPage from "./pages/WordByWordPage";
+import InterpretationBlockwise from "./pages/InterpretationBlockwise";
+import Note from "./pages/Note";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -43,6 +47,7 @@ function App() {
           <Routes>
           <Route path="/" element={<Home />} /> {/* Surah/Home */}
           <Route path="/juz" element={<Juz />} />
+          <Route path="/juz/:juzId" element={<Juz />} />
           <Route path="/sign" element={<Sign />} />
           {/* <Route path="/surah" element={<Surah />} /> */}
           <Route path="/surah/:surahId" element={<Surah />} />
@@ -79,6 +84,9 @@ function App() {
           <Route path="/tajweed" element={<Tajweed />} />
           <Route path="/quranstudy" element={<QuranStudy />} />
           <Route path="/end" element={<EndofProphethood />} />
+          <Route path="/word-by-word/:surahId/:verseId" element={<WordByWordPage />} />
+          <Route path="/interpretation-blockwise" element={<InterpretationBlockwise />} />
+          <Route path="/note/:id" element={<Note />} />
         </Routes>
         <Footer />
       </Router>

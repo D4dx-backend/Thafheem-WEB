@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
 import DemoItems from '../pages/DemoItems';
+import { listSurahNames } from '../api/apifunction';
 
 
 
 const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const [activeTab, setActiveTab] = useState('Surah');
+  const [surahs, setSurahs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const tabs = ['Surah', 'Verse', 'Juz', 'Page'];
 
-  const surahs = [
+  // Fetch surah names from API
+  useEffect(() => {
+    const loadSurahs = async () => {
+      try {
+        setLoading(true);
+        const data = await listSurahNames();
+        setSurahs(data);
+      } catch (error) {
+        console.error('Error loading surahs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSurahs();
+  }, []);
+
+  // Fallback hardcoded surahs (in case API fails)
+  const fallbackSurahs = [
     { id: 1, name: "Al-Fatihah" },
     { id: 2, name: "Al-Baqarah" },
     { id: 3, name: "Aal-E-Imran" },
@@ -131,14 +153,24 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const NavigateSurah = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredSurahs = surahs.filter((s) =>
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredSurahs = (surahs.length > 0 ? surahs : fallbackSurahs).filter((s) =>
+      s.english?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.id.toString().includes(searchTerm)
     );
 
     const handleSurahClick = (surah) => {
+      // Navigate to the surah page
+      navigate(`/surah/${surah.id}`);
+      
+      // Call the onSurahSelect callback if provided
       if (onSurahSelect) {
         onSurahSelect(surah);
+      }
+      
+      // Close the navigation modal
+      if (onClose) {
+        onClose();
       }
     };
 
@@ -157,15 +189,17 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
 
         {/* Surah List */}
         <div className="flex-1 overflow-y-auto px-4 pb-3 ">
-          {filteredSurahs.length > 0 ? (
+          {loading ? (
+            <p className="text-sm text-gray-400 text-center py-4">Loading surahs...</p>
+          ) : filteredSurahs.length > 0 ? (
             <ol className="list-decimal list-inside space-y-2">
               {filteredSurahs.map((surah) => (
                 <li
                   key={surah.id}
                   onClick={() => handleSurahClick(surah)}
-                  className="cursor-pointer text-gray-800 dark:text-white  transition-colors"
+                  className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
                 >
-                  {surah.name}
+                  {surah.english || surah.name}
                 </li>
               ))}
             </ol>

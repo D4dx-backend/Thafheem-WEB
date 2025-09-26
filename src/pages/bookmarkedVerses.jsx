@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowLeft } from "lucide-react";
 import BookmarkNavbar from "../components/BookmarkNavbar";
 import StarNumber from "../components/StarNumber";
 import { useAuth } from "../context/AuthContext";

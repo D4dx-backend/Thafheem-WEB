@@ -429,8 +429,10 @@ const Quiz = () => {
                 {quizData?.title || "Loading..."}
               </h1>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 dark:text-white">
-              <span>മാർക്ക്: {score}</span>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-white"
+            
+            >
+              <span  className="font-malayalam">മാർക്ക്: {score}</span>
               <span className="ml-4">
                 Total: {quizData?.totalQuestions || 0}
               </span>
@@ -486,18 +488,18 @@ const Quiz = () => {
           <div className="dark:bg-gray-900 rounded-lg p-4 sm:p-6 mb-4">
             <div className="bg-[#EBEEF0] dark:bg-[#323A3F] p-3 sm:p-2 mb-4 rounded-lg">
               <div className="mb-3 sm:mb-4">
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-white">
+                <span className="text-xs sm:text-lg text-gray-600 dark:text-white font-malayalam">
                   ചോദ്യം: {currentQuestion} / {quizData.totalQuestions}
                 </span>
               </div>
               <div className="mb-4 sm:mb-6">
-                <p className="text-sm sm:text-md text-gray-800 leading-relaxed dark:text-white">
+                <p className="text-sm sm:text-lg text-gray-800 leading-relaxed dark:text-white font-malayalam">
                   {currentQuestionData.question}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 ">
               {currentQuestionData.options.map((option, optionIndex) => (
                 <label
                   key={option.id}
@@ -508,7 +510,7 @@ const Quiz = () => {
                   }`}
                 >
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="flex items-center p-3 sm:p-4 justify-center w-[40px] h-[35px] sm:w-[47px] sm:h-[40px] rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white text-sm sm:text-base">
+                    <span className="flex  items-center p-3 sm:p-4 justify-center w-[40px] h-[35px] sm:w-[47px] sm:h-[40px] rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white text-sm sm:text-base">
                       {option.id}
                     </span>
                     <input
@@ -521,7 +523,7 @@ const Quiz = () => {
                     />
                   </div>
                   <div className="flex items-center p-3 sm:p-4 w-full rounded-lg bg-[#EBEEF0] text-gray-800 dark:bg-[#323A3F] dark:text-white">
-                    <span className="text-gray-700 dark:text-white text-sm sm:text-base">
+                    <span className="text-gray-700 dark:text-white text-sm sm:text-lg font-malayalam">
                       {option.text || `Option ${option.id} - No text available`}
                     </span>
                   </div>

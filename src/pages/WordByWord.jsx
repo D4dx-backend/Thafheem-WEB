@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   X,
   ChevronLeft,
@@ -8,7 +9,6 @@ import {
   Share2,
   NotepadText,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Add this import
 import {
   fetchWordByWordMeaning,
   fetchThafheemWordMeanings,
@@ -17,10 +17,18 @@ import {
 import WordNavbar from "../components/WordNavbar";
 import AyahModal from "../components/AyahModal";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/Toast";
 
 const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Use URL parameters if available, otherwise fall back to props
+  const currentSurahId = params.surahId || surahId;
+  const currentVerseId = params.verseId ? parseInt(params.verseId) : selectedVerse;
   const { quranFont, fontSize, translationFontSize } = useTheme();
-  const navigate = useNavigate(); // Add this line
 
   const [wordData, setWordData] = useState(null);
   const [thafheemWords, setThafheemWords] = useState([]);
@@ -30,21 +38,22 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [totalVerses, setTotalVerses] = useState(0);
   const [showAyahModal, setShowAyahModal] = useState(false);
+  const { toasts, removeToast, showSuccess, showError } = useToast();
 
   useEffect(() => {
     const loadWordData = async () => {
-      if (!selectedVerse || !surahId) return;
+      if (!currentVerseId || !currentSurahId) return;
 
       try {
         setLoading(true);
         setError(null);
 
         const [quranComData, thafheemData, surahsData] = await Promise.all([
-          fetchWordByWordMeaning(surahId, selectedVerse),
-          fetchThafheemWordMeanings(surahId, selectedVerse).catch(() => []),
+          fetchWordByWordMeaning(currentSurahId, currentVerseId),
+          fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(() => []),
           fetchSurahs()
             .then((surahs) =>
-              surahs.find((s) => s.number === parseInt(surahId))
+              surahs.find((s) => s.number === parseInt(currentSurahId))
             )
             .catch(() => null),
         ]);
@@ -62,17 +71,37 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
     };
 
     loadWordData();
-  }, [selectedVerse, surahId]);
+  }, [currentVerseId, currentSurahId]);
 
   const handlePrevious = () => {
-    if (selectedVerse > 1 && onNavigate) {
-      onNavigate(selectedVerse - 1);
+    if (currentVerseId > 1) {
+      if (onNavigate) {
+        onNavigate(currentVerseId - 1);
+      } else {
+        navigate(`/word-by-word/${currentSurahId}/${currentVerseId - 1}`);
+      }
     }
   };
 
   const handleNext = () => {
     if (onNavigate) {
-      onNavigate(selectedVerse + 1);
+      onNavigate(currentVerseId + 1);
+    } else {
+      navigate(`/word-by-word/${currentSurahId}/${currentVerseId + 1}`);
+    }
+  };
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      // Navigate back to the previous page or home
+      const from = location.state?.from;
+      if (from) {
+        navigate(from);
+      } else {
+        navigate(-1);
+      }
     }
   };
 
@@ -80,37 +109,48 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
     setShowAyahModal(true);
   };
 
-  const handleCloseAyahModal = () => {
-    setShowAyahModal(false);
-  };
-
-  const handleSurahChange = (newSurahId, newVerseId = 1) => {
-    // Close the WordByWord modal/component first
-    if (onClose) {
-      onClose();
+  const handleSurahChange = (newSurahId) => {
+    if (onNavigate) {
+      onNavigate(1); // Navigate to first verse of new surah
+    } else {
+      navigate(`/word-by-word/${newSurahId}/1`);
     }
-    
-    // Navigate to the new surah page with wordByWord parameter to auto-open
-    navigate(`/surah/${newSurahId}?wordByWord=${newVerseId}`);
   };
 
   const handleVerseChange = (newVerseId) => {
     if (onNavigate) {
       onNavigate(newVerseId);
+    } else {
+      navigate(`/word-by-word/${currentSurahId}/${newVerseId}`);
     }
   };
+
+  const handleLanguageChange = (newLanguage) => {
+    setSelectedLanguage(newLanguage);
+    // You can add language-specific logic here if needed
+  };
+
+  const handleCloseAyahModal = () => {
+    setShowAyahModal(false);
+  };
+
+  
 
   if (loading) {
     return (
       <>
         <WordNavbar
-          surahId={surahId}
-          selectedVerse={selectedVerse}
+          surahId={currentSurahId}
+          selectedVerse={currentVerseId}
           surahInfo={surahInfo}
           onNavigate={onNavigate}
-          onClose={onClose}
+          onClose={handleClose}
           onSurahChange={handleSurahChange}
           onVerseChange={handleVerseChange}
+          onLanguageChange={handleLanguageChange}
+          wordData={wordData}
+          showSuccess={showSuccess}
+          showError={showError}
         />
         <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
@@ -133,6 +173,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
             </p>
           </div>
         </div>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </>
     );
   }
@@ -141,13 +182,17 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
     return (
       <>
         <WordNavbar
-          surahId={surahId}
-          selectedVerse={selectedVerse}
+          surahId={currentSurahId}
+          selectedVerse={currentVerseId}
           surahInfo={surahInfo}
           onNavigate={onNavigate}
-          onClose={onClose}
+          onClose={handleClose}
           onSurahChange={handleSurahChange}
           onVerseChange={handleVerseChange}
+          onLanguageChange={handleLanguageChange}
+          wordData={wordData}
+          showSuccess={showSuccess}
+          showError={showError}
         />
         <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
@@ -176,21 +221,26 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
             </button>
           </div>
         </div>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
       <WordNavbar
-        surahId={surahId}
-        selectedVerse={selectedVerse}
+        surahId={currentSurahId}
+        selectedVerse={currentVerseId}
         surahInfo={surahInfo}
         onNavigate={onNavigate}
-        onClose={onClose}
+        onClose={handleClose}
         onShowAyahModal={handleShowAyahModal}
         onSurahChange={handleSurahChange}
         onVerseChange={handleVerseChange}
+        onLanguageChange={handleLanguageChange}
+        wordData={wordData}
+        showSuccess={showSuccess}
+        showError={showError}
       />
 
       {/* Scrollable Content */}
@@ -205,10 +255,10 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
                 fontSize: `${fontSize}px`,
               }}
             >
-              {surahInfo?.arabic || `Surah ${surahId}`}
+              {surahInfo?.arabic || `Surah ${currentSurahId}`}
             </h3>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Verse {selectedVerse} of {totalVerses}
+              Verse {currentVerseId} of {totalVerses}
             </span>
           </div>
         </div>
@@ -367,12 +417,12 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
       </div>
 
       {/* Fixed Bottom Navigation Buttons */}
-      <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38]">
+      <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4   bg-white dark:bg-gray-900">
         <button
           onClick={handlePrevious}
-          disabled={selectedVerse <= 1}
+          disabled={currentVerseId <= 1}
           className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-            selectedVerse <= 1
+            currentVerseId <= 1
               ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
               : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
           }`}
@@ -383,9 +433,9 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
 
         <button
           onClick={handleNext}
-          disabled={selectedVerse >= totalVerses}
+          disabled={currentVerseId >= totalVerses}
           className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-            selectedVerse >= totalVerses
+            currentVerseId >= totalVerses
               ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
               : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
           }`}
@@ -398,11 +448,14 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
       {/* AyahModal */}
       {showAyahModal && (
         <AyahModal
-          surahId={surahId}
-          verseId={selectedVerse}
+          surahId={currentSurahId}
+          verseId={currentVerseId}
           onClose={handleCloseAyahModal}
         />
       )}
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

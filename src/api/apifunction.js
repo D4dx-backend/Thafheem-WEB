@@ -455,48 +455,68 @@ export const fetchNoteById = async (noteId) => {
 };
 
 // Fetch interpretation for specific verse from Thafheem API
-export const fetchInterpretation = async (surahId, verseId, interpretationNo = 1, language = 'en') => {
-  // Primary endpoint: Use the working interpret endpoint instead of audiointerpret
-  const primaryUrl = `https://thafheem.net/thafheem-api/interpret/${surahId}/${verseId}/${interpretationNo}`;
+export const fetchInterpretation = async (
+  surahId,
+  verseId,
+  interpretationNo = 1,
+  language = "en"
+) => {
+  // Primary endpoint for individual verse interpretations
+  const primaryUrl = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
 
   try {
-    const response = await fetchWithTimeout(primaryUrl, {}, 8000);
+    console.log("Fetching interpretation from:", primaryUrl);
+    const response = await fetch(primaryUrl);
     if (!response.ok) {
-      console.warn(`Primary endpoint failed with status ${response.status}, trying fallback...`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
+    console.log("Interpretation data received:", data);
+
+    // The API returns an array of interpretation objects
+    // Filter by interpretation number if multiple interpretations exist
+    if (Array.isArray(data) && data.length > 0) {
+      const filteredData = data.filter(
+        (item) => item.interptn_no === interpretationNo || !item.interptn_no
+      );
+      return filteredData.length > 0 ? filteredData : data;
+    }
+
     return data;
   } catch (error) {
-    // Fallback: Try with language parameter
+    console.error("Error fetching interpretation:", error);
+
+    // Fallback: Try range-based endpoint (treating single verse as range)
     try {
-      const langUrl = `https://thafheem.net/thafheem-api/interpret/${surahId}/${verseId}/${interpretationNo}/${language}`;
-      const langResponse = await fetchWithTimeout(langUrl, {}, 8000);
-      if (!langResponse.ok) {
-        throw new Error(`HTTP error! status: ${langResponse.status}`);
+      const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
+      console.log("Trying range-based interpretation URL:", rangeUrl);
+      const rangeResponse = await fetch(rangeUrl);
+      if (!rangeResponse.ok) {
+        throw new Error(`HTTP error! status: ${rangeResponse.status}`);
       }
-      const langData = await langResponse.json();
-      return langData;
-    } catch (_) {
-      // Final fallback: Try audiointerpret endpoint
+      const rangeData = await rangeResponse.json();
+      console.log("Range-based interpretation data received:", rangeData);
+      return rangeData;
+    } catch (rangeError) {
+      console.error("Range-based interpretation API also failed:", rangeError);
+
+      // Final fallback: Try with language parameter
       try {
-        const audioUrl = `https://thafheem.net/thafheem-api/audiointerpret/${surahId}/${verseId}`;
-        const audioResponse = await fetchWithTimeout(audioUrl, {}, 8000);
-        if (!audioResponse.ok) {
-          throw new Error(`HTTP error! status: ${audioResponse.status}`);
+        const langUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${language}`;
+        console.log("Trying language-specific interpretation URL:", langUrl);
+        const langResponse = await fetch(langUrl);
+        if (!langResponse.ok) {
+          throw new Error(`HTTP error! status: ${langResponse.status}`);
         }
-        const audioData = await audioResponse.json();
-        if (Array.isArray(audioData) && audioData.length > 0) {
-          const filteredData = audioData.filter(item => item.interptn_no === interpretationNo || !item.interptn_no);
-          return filteredData.length > 0 ? filteredData : audioData;
-        }
-        return audioData;
-      } catch (_) {
-        // Return a graceful fallback object
-        return [{
-          interpret_text: `Interpretation not available for Surah ${surahId}, Verse ${verseId}. Please try again later.`,
-          interptn_no: interpretationNo
-        }];
+        const langData = await langResponse.json();
+        console.log(
+          "Language-specific interpretation data received:",
+          langData
+        );
+        return langData;
+      } catch (langError) {
+        console.error("All interpretation endpoints failed:", langError);
+        throw error; // Throw the original error
       }
     }
   }

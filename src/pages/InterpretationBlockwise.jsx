@@ -26,7 +26,7 @@ const InterpretationBlockwise = (props) => {
       ipt: parseInt(props.ipt || searchParams.get("ipt") || state.ipt || 1),
       lang: props.lang || searchParams.get("lang") || state.lang || "en",
     };
-  }, [location.state, searchParams, routeParams]);
+  }, [location.state, searchParams, routeParams, props.surahId, props.range, props.ipt, props.lang]);
 
   const [surahId, setSurahId] = useState(initialParams.surahId);
   const [range, setRange] = useState(initialParams.range);
@@ -46,11 +46,30 @@ const InterpretationBlockwise = (props) => {
   const [ayahTarget, setAyahTarget] = useState({ surahId: null, verseId: null });
   const contentRefs = useRef([]);
 
+  // Update state when props change (important for when parent passes new values)
+  useEffect(() => {
+    if (props.surahId && parseInt(props.surahId) !== surahId) {
+      setSurahId(parseInt(props.surahId));
+    }
+    if (props.range && props.range !== range) {
+      setRange(props.range);
+    }
+    if (props.ipt && parseInt(props.ipt) !== iptNo) {
+      setIptNo(parseInt(props.ipt));
+    }
+    if (props.lang && props.lang !== lang) {
+      setLang(props.lang);
+    }
+  }, [props.surahId, props.range, props.ipt, props.lang, surahId, range, iptNo, lang]);
+
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
+        setContent([]); // Clear previous content immediately
+        
+        console.log(`Loading interpretation: Surah ${surahId}, Range ${range}, Interpretation ${iptNo}`);
 
         // Decide between single verse vs range (e.g., "5" vs "1-7")
         const isSingle = /^\d+$/.test(range);
@@ -58,6 +77,8 @@ const InterpretationBlockwise = (props) => {
           ? await fetchInterpretation(surahId, parseInt(range, 10), iptNo, lang)
           : await fetchInterpretationRange(surahId, range, iptNo, lang);
 
+        console.log(`Received interpretation data for ${surahId}:${range}:`, data);
+        
         // Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
         setContent(items);
@@ -81,7 +102,10 @@ const InterpretationBlockwise = (props) => {
       }
     };
 
-    load();
+    // Only load if we have valid parameters
+    if (surahId && range) {
+      load();
+    }
   }, [surahId, range, iptNo, lang]);
 
   // Enhanced styling for note and verse markers - relies on CSS classes

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   BookOpen,
   FileText,
@@ -36,6 +36,7 @@ const BlockWise = () => {
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { quranFont } = useTheme();
@@ -52,6 +53,7 @@ const BlockWise = () => {
   // Fetch block-wise data
   useEffect(() => {
     const loadBlockWiseData = async () => {
+      
       if (!surahId) return;
 
       try {
@@ -334,7 +336,7 @@ const BlockWise = () => {
               return (
                 <div
                   key={`block-${blockIndex}-${start}-${end}`}
-                  className="rounded-xl mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
+                  className="rounded-xl mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                 >
                   <div className="px-3 sm:px-4 pt-3 sm:pt-4 flex items-center justify-between">
                     <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium">
@@ -458,6 +460,18 @@ const BlockWise = () => {
                           blockBookmarkLoading[`${start}-${end}`] ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                         onClick={async () => {
+                          // Check if user is signed in
+                          if (!user) {
+                            showError('Please sign in to bookmark blocks');
+                            navigate('/sign', { 
+                              state: { 
+                                from: location.pathname,
+                                message: 'Sign in to bookmark blocks'
+                              }
+                            });
+                            return;
+                          }
+
                           const key = `${start}-${end}`;
                           try {
                             setBlockBookmarkLoading(prev => ({ ...prev, [key]: true }));
@@ -584,15 +598,19 @@ const BlockWise = () => {
           </div>
 
           {/* Overlay Popup for Interpretation */}
-          {showInterpretation && (
+          {showInterpretation && selectedNumber && (
             <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full">
                 <InterpretationBlockwise
+                  key={`interpretation-${surahId}-${selectedNumber}`} // Force re-render when number changes
                   surahId={parseInt(surahId)}
-                  range={`${selectedNumber}`}
+                  range={selectedNumber.toString()}
                   ipt={1}
                   lang="en"
-                  onClose={() => setShowInterpretation(false)}
+                  onClose={() => {
+                    setShowInterpretation(false);
+                    setSelectedNumber(null);
+                  }}
                   showSuccess={showSuccess}
                   showError={showError}
                 />

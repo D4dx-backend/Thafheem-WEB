@@ -20,7 +20,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         rx="6"
         ry="6"
         fill="none"
-        stroke="#2AA0BF"
+        stroke="white"
         strokeWidth="2"
       />
       
@@ -33,7 +33,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="#2AA0BF"
+        fill="white"
       />
       
       {/* Middle line - longest */}
@@ -44,7 +44,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="#2AA0BF"
+        fill="white"
       />
       
       {/* Bottom line - shortest */}
@@ -55,7 +55,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="#2AA0BF"
+        fill="white"
       />
     </svg>
   );

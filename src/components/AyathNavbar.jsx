@@ -5,9 +5,10 @@ import {
   ChevronRight,
   Bookmark,
   Share2,
-  X
+  X,
+  NotepadText,
+  List,
 } from "lucide-react";
-import WordByWordIcon from "./WordByWordIcon";
 import { useNavigate } from "react-router-dom";
 import { fetchSurahs } from "../api/apifunction";
 import { useAuth } from "../context/AuthContext";
@@ -29,7 +30,6 @@ const AyathNavbar = ({
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [verseDropdownOpen, setVerseDropdownOpen] = useState(false);
-  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [allSurahs, setAllSurahs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -38,8 +38,6 @@ const AyathNavbar = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
-
-  const languages = ["English", "Malayalam", "Arabic"];
 
   // Fetch all surahs for dropdown
   useEffect(() => {
@@ -103,74 +101,6 @@ const AyathNavbar = ({
     setVerseDropdownOpen(false);
   };
 
-  const handleLanguageChange = (language) => {
-    setSelectedLanguage(language);
-    setLanguageDropdownOpen(false);
-    // You can add language-specific logic here if needed
-    console.log(`Language changed to: ${language}`);
-  };
-
-  
-
-  // Handle share functionality
-  const handleShare = async () => {
-    try {
-      const surahName = surahInfo?.arabic || surahInfo?.name || `Surah ${surahId}`;
-      const arabicText = verseData?.arabic || '';
-      const translation = verseData?.translation || '';
-      
-      // Create shareable content
-      let shareText = `${surahName}, Verse ${verseId}\n\n`;
-      if (arabicText) {
-        shareText += `Arabic: ${arabicText}\n\n`;
-      }
-      if (translation) {
-        shareText += `Translation: ${translation}\n\n`;
-      }
-      shareText += `Shared from Thafheem - Quran Study`;
-      const shareUrl = window.location.href;
-      
-      if (navigator.share) {
-        await navigator.share({
-          title: `${surahName}, Verse ${verseId}`,
-          text: shareText,
-          url: shareUrl
-        });
-      } else {
-        // Fallback: copy to clipboard
-        const shareMessage = `${shareText}\n\nView full content: ${shareUrl}`;
-        
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(shareMessage);
-          if (showSuccess) {
-            showSuccess('Verse content copied to clipboard for sharing');
-          }
-        } else {
-          // Fallback for older browsers
-          const textArea = document.createElement('textarea');
-          textArea.value = shareMessage;
-          textArea.style.position = 'fixed';
-          textArea.style.left = '-999999px';
-          textArea.style.top = '-999999px';
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          if (showSuccess) {
-            showSuccess('Verse content copied to clipboard for sharing');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to share verse:', error);
-      if (error.name !== 'AbortError' && showError) {
-        showError('Failed to share verse: ' + error.message);
-      }
-    }
-  };
-  
-  // Handle bookmark functionality
   const handleBookmark = async () => {
     // Check if user is authenticated
     if (!user) {
@@ -308,33 +238,19 @@ const AyathNavbar = ({
       {/* Second Row */}
       <div className="flex flex-row items-center justify-between gap-3 sm:gap-0">
         <div className="relative">
-          <button 
-            onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-            className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
-          >
+          <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
             <span>{selectedLanguage}</span>
             <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
           </button>
-          
-          {/* Language Dropdown */}
-          {languageDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-40 bg-white dark:bg-[#323A3F] border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
-              {languages.map((language) => (
-                <button
-                  key={language}
-                  className={`w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm text-gray-700 dark:text-white border-b border-gray-100 dark:border-gray-600 last:border-b-0 ${
-                    language === selectedLanguage ? 'bg-blue-100 dark:bg-blue-900' : ''
-                  }`}
-                  onClick={() => handleLanguageChange(language)}
-                >
-                  {language}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg  transition-colors"
+            title="Copy"
+          >
+            <NotepadText className="w-4 sm:w-5 h-4 sm:h-5 dark:text-white text-gray-600" />
+          </button>
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
@@ -358,12 +274,11 @@ const AyathNavbar = ({
             title="Word by Word"
             onClick={() => onWordByWordClick && onWordByWordClick(verseId)}
           >
-            <WordByWordIcon className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+            <List className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
           <button
-            onClick={handleShare}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title="Share verse content"
+            title="Share"
           >
             <Share2 className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
           </button>

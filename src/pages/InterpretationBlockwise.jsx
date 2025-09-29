@@ -4,6 +4,8 @@ import InterpretationNavbar from "../components/InterpretationNavbar";
 import { fetchInterpretation, fetchInterpretationRange, listSurahNames, fetchSurahs, fetchNoteById } from "../api/apifunction";
 import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/Toast";
 import NotePopup from "../components/NotePopup";
 import AyahModal from "../components/AyahModal";
 
@@ -37,6 +39,7 @@ const InterpretationBlockwise = (props) => {
   const [content, setContent] = useState([]);
   const [surahDisplayName, setSurahDisplayName] = useState("");
   const { user } = useAuth?.() || { user: null };
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [surahOptions, setSurahOptions] = useState([]);
   const [rangeOptions, setRangeOptions] = useState([]);
@@ -268,10 +271,10 @@ const InterpretationBlockwise = (props) => {
         lang
       );
       
-      alert(`Saved interpretation for Surah ${surahId}, verses ${range}`);
+      showSuccess(`Saved interpretation for Surah ${surahId}, verses ${range}`);
     } catch (e) {
       console.error("Failed to bookmark interpretation", e);
-      alert('Failed to save interpretation bookmark');
+      showError('Failed to save interpretation bookmark');
     } finally {
       setTimeout(() => setIsBookmarking(false), 300);
     }
@@ -285,11 +288,11 @@ const InterpretationBlockwise = (props) => {
         await navigator.share({ title: document.title || "Thafheem", text: shareText, url: shareUrl });
       } else {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        alert("Link copied to clipboard");
+        showSuccess("Link copied to clipboard");
       }
     } catch (e) {
       console.error("Share failed", e);
-      alert("Share failed: " + e.message);
+      showError("Share failed: " + e.message);
     }
   };
 
@@ -666,6 +669,9 @@ const InterpretationBlockwise = (props) => {
           language={lang}
         />
       )}
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </>
   );
 };

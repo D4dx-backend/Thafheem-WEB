@@ -56,6 +56,11 @@ export const ThemeProvider = ({ children }) => {
     return savedTranslationFontSize ? parseInt(savedTranslationFontSize) : 17;
   });
 
+  const [viewType, setViewType] = useState(() => {
+    const savedViewType = localStorage.getItem("viewType");
+    return savedViewType || "Ayah Wise";
+  });
+
   // Apply theme to document
   useEffect(() => {
     const root = window.document.documentElement; // <html>
@@ -81,6 +86,10 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem("translationFontSize", translationFontSize.toString());
   }, [translationFontSize]);
 
+  useEffect(() => {
+    localStorage.setItem("viewType", viewType);
+  }, [viewType]);
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -94,7 +103,9 @@ export const ThemeProvider = ({ children }) => {
       fontSize, 
       setFontSize, 
       translationFontSize, 
-      setTranslationFontSize 
+      setTranslationFontSize,
+      viewType,
+      setViewType
     }}>
       {children}
     </ThemeContext.Provider>

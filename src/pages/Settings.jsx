@@ -21,6 +21,8 @@ const Settings = ({ onClose }) => {
     setFontSize: setContextFontSize,
     translationFontSize: contextTranslationFontSize,
     setTranslationFontSize: setContextTranslationFontSize,
+    viewType: contextViewType,
+    setViewType: setContextViewType,
   } = useTheme();
   const [theme, setTheme] = useState(
     contextTheme === "dark" ? "Dark" : "Light"
@@ -31,7 +33,7 @@ const Settings = ({ onClose }) => {
   const [translationFontSize, setTranslationFontSize] = useState(
     contextTranslationFontSize
   );
-  const [viewType, setViewType] = useState("Ayah Wise");
+  const [viewType, setViewType] = useState(contextViewType);
   const [quranAudio, setQuranAudio] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [rhythm, setRhythm] = useState(1.0);
@@ -67,6 +69,7 @@ const Settings = ({ onClose }) => {
     setTranslationFontSize(12);
     setContextTranslationFontSize(12);
     setViewType("Ayah Wise");
+    setContextViewType("Ayah Wise");
     setQuranAudio(true);
     setPlaybackSpeed(1.0);
     setRhythm(1.0);
@@ -78,6 +81,7 @@ const Settings = ({ onClose }) => {
     setContextQuranFont(quranFont);
     setContextFontSize(fontSize);
     setContextTranslationFontSize(translationFontSize);
+    setContextViewType(viewType);
     console.log("Settings saved");
     if (onClose) onClose();
   };
@@ -304,11 +308,14 @@ const Settings = ({ onClose }) => {
             <div className="flex rounded-full bg-gray-100 w-[287px] p-1 dark:bg-gray-950">
               {/* Ayah Wise Button */}
               <button
-                onClick={() => setViewType("Ayah Wise")}
+                onClick={() => {
+                  setViewType("Ayah Wise");
+                  setContextViewType("Ayah Wise");
+                }}
                 className={`px-6 py-2 rounded-full flex-1 transition-all ${
                   viewType === "Ayah Wise"
                     ? "bg-white shadow text-gray-900 dark:text-white dark:border-0 dark:bg-[#2A2C38]"
-                    : "text-gray-600 hover:text-gray-800"
+                    : "text-gray-600 hover:text-gray-800 dark:text-white"
                 }`}
               >
                 Ayah Wise
@@ -316,11 +323,14 @@ const Settings = ({ onClose }) => {
 
               {/* Block Wise Button */}
               <button
-                onClick={() => setViewType("Block Wise")}
+                onClick={() => {
+                  setViewType("Block Wise");
+                  setContextViewType("Block Wise");
+                }}
                 className={`px-6 py-2 rounded-full flex-1 transition-all ${
                   viewType === "Block Wise"
                     ? "bg-white shadow text-gray-900 dark:text-white dark:border-0 dark:bg-[#2A2C38]"
-                    : "text-gray-600 hover:text-gray-800"
+                    : "text-gray-600 hover:text-gray-800 dark:text-white"
                 }`}
               >
                 Block Wise

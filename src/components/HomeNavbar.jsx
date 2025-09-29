@@ -192,7 +192,6 @@ const HomepageNavbar = () => {
           {/* Right side */}
           <div className="flex items-center space-x-1">
             {/* Sign In/Sign Out Button */}
-          
 
             <button
               onClick={() => setIsLanguageOpen(true)}
@@ -213,11 +212,11 @@ const HomepageNavbar = () => {
             </button>
 
             <button
-      onClick={handleBookmarkClick}
-      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-    >
-      <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
-    </button>
+              onClick={handleBookmarkClick}
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
+              <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
+            </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -237,17 +236,17 @@ const HomepageNavbar = () => {
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             {user ? (
-             <button
-             onClick={handleAuthButtonClick}
-             disabled={isSigningOut}
-             className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-           >
-             {isSigningOut ? (
-               <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-             ) : (
-               <LogOut className="w-5 h-5" />
-             )}
-           </button>
+              <button
+                onClick={handleAuthButtonClick}
+                disabled={isSigningOut}
+                className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSigningOut ? (
+                  <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <LogOut className="w-5 h-5" />
+                )}
+              </button>
             ) : (
               <button
                 onClick={handleAuthButtonClick}

@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import { fetchSurahs } from "../api/apifunction"; // Import the API function
+import { useTheme } from "../context/ThemeContext";
 
 // Custom Kaaba Icon Component
 const KaabaIcon = ({ className }) => (
@@ -46,6 +47,7 @@ const Home = () => {
   const [surahs, setSurahs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { viewType } = useTheme();
 
   // Fetch Surah data using the extracted API function
   useEffect(() => {
@@ -82,7 +84,11 @@ const Home = () => {
       .finally(() => setLoading(false));
   };
   const handleSurahClick = (surahNumber) => {
-    navigate(`/surah/${surahNumber}`);
+    if (viewType === "Block Wise") {
+      navigate(`/blockwise/${surahNumber}`);
+    } else {
+      navigate(`/surah/${surahNumber}`);
+    }
   };
   return (
     <>

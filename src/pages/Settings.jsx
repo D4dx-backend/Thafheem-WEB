@@ -482,29 +482,6 @@ const Settings = ({ onClose }) => {
   }
 `}</style> */}
 
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #2aa0bf;
-          cursor: pointer;
-          border: none;
-          position: relative;
-          z-index: 20;
-        }
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #2aa0bf;
-          cursor: pointer;
-          border: none;
-          position: relative;
-          z-index: 20;
-        }
-      `}</style>
     </div>
   );
 };

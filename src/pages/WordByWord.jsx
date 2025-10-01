@@ -20,14 +20,22 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 
-const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
+const WordByWord = ({
+  selectedVerse,
+  surahId,
+  onClose,
+  onNavigate,
+  onSurahChange,
+}) => {
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Use URL parameters if available, otherwise fall back to props
   const currentSurahId = params.surahId || surahId;
-  const currentVerseId = params.verseId ? parseInt(params.verseId) : selectedVerse;
+  const currentVerseId = params.verseId
+    ? parseInt(params.verseId)
+    : selectedVerse;
   const { quranFont, fontSize, translationFontSize } = useTheme();
 
   const [wordData, setWordData] = useState(null);
@@ -50,7 +58,9 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
 
         const [quranComData, thafheemData, surahsData] = await Promise.all([
           fetchWordByWordMeaning(currentSurahId, currentVerseId),
-          fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(() => []),
+          fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(
+            () => []
+          ),
           fetchSurahs()
             .then((surahs) =>
               surahs.find((s) => s.number === parseInt(currentSurahId))
@@ -110,8 +120,13 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   };
 
   const handleSurahChange = (newSurahId) => {
-    if (onNavigate) {
-      onNavigate(1); // Navigate to first verse of new surah
+    if (onSurahChange) {
+      // Use the parent's surah change handler if provided
+      onSurahChange(newSurahId);
+    } else if (onNavigate) {
+      // When used as a modal, we need to close and navigate to the new surah
+      onClose();
+      navigate(`/surah/${newSurahId}?wordByWord=1`);
     } else {
       navigate(`/word-by-word/${newSurahId}/1`);
     }
@@ -133,8 +148,6 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
   const handleCloseAyahModal = () => {
     setShowAyahModal(false);
   };
-
-  
 
   if (loading) {
     return (
@@ -453,7 +466,7 @@ const WordByWord = ({ selectedVerse, surahId, onClose, onNavigate }) => {
           onClose={handleCloseAyahModal}
         />
       )}
-      
+
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>

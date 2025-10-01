@@ -603,53 +603,6 @@ const Quiz = () => {
         </div>
       )}
 
-      <style jsx>{`
-        input[type="radio"] {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border: 3px solid black;
-          border-radius: 50%;
-          background-color: white;
-          position: relative;
-          cursor: pointer;
-        }
-
-        input[type="radio"]:disabled {
-          cursor: not-allowed;
-          opacity: 0.6;
-        }
-
-        @media (min-width: 640px) {
-          input[type="radio"] {
-            width: 20px;
-            height: 20px;
-          }
-        }
-
-        input[type="radio"]:checked {
-          background-color: white;
-        }
-
-        input[type="radio"]:checked::after {
-          content: "";
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background-color: black;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-        }
-
-        @media (min-width: 640px) {
-          input[type="radio"]:checked::after {
-            width: 8px;
-            height: 8px;
-          }
-        }
-      `}</style>
     </div>
   );
 };

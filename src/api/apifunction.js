@@ -1924,3 +1924,35 @@ export const fetchPopularChapters = async (language = "en") => {
 };
 
 
+// Fetch Tajweed rules
+export const fetchTajweedRules = async (ruleNo = '0') => {
+  try {
+    // Replace dots with underscores in rule number as per API spec
+    const formattedRuleNo = ruleNo.toString().replace(/\./g, '_');
+    const url = `${API_BASE_URL}/thajweedrules/${formattedRuleNo}`;
+    
+    console.log('Fetching Tajweed rules from:', url);
+    const response = await fetchWithTimeout(url, {}, 8000);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Tajweed rules data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching Tajweed rules:', error);
+    throw error;
+  }
+};
+
+// Fetch all main Tajweed rules (ruleno = '0')
+export const fetchAllTajweedRules = async () => {
+  return fetchTajweedRules('0');
+};
+
+// Fetch specific Tajweed rule by rule number
+export const fetchSpecificTajweedRule = async (ruleNo) => {
+  return fetchTajweedRules(ruleNo);
+};

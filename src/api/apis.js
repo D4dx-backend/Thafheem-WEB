@@ -32,3 +32,5 @@ export const DIRECTUS_HOME_BANNER_API = `${DIRECTUS_BASE_URL}/items/thafheem_hom
 export const DIRECTUS_APP_SETTINGS_API = `${DIRECTUS_BASE_URL}/items/thafheem_app_settings`;
 export const DIRECTUS_AI_API_CONFIG = `${DIRECTUS_BASE_URL}/items/thafheem_ai_api`;
 
+// Add this to your existing apis.js file
+export const TAJWEED_RULES_API = `${API_BASE_URL}/thajweedrules`;

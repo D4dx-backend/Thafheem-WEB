@@ -996,6 +996,49 @@ export const fetchRandomQuizQuestions = async (surahId, count = 5) => {
   return fetchQuizQuestions(surahId, range);
 };
 
+// Fetch random quiz questions from entire Thafheem (all surahs)
+export const fetchRandomQuizQuestionsFromAllSurahs = async (count = 10) => {
+  try {
+    // Get a list of all surahs
+    const surahs = await fetchSurahs();
+    
+    // Randomly select different surahs and fetch questions from them
+    const randomQuestions = [];
+    const questionsPerSurah = Math.max(1, Math.floor(count / 5)); // Distribute across ~5 surahs
+    const selectedSurahs = [];
+    
+    // Randomly select 5 different surahs
+    while (selectedSurahs.length < Math.min(5, surahs.length)) {
+      const randomSurah = surahs[Math.floor(Math.random() * surahs.length)];
+      if (!selectedSurahs.find(s => s.number === randomSurah.number)) {
+        selectedSurahs.push(randomSurah);
+      }
+    }
+    
+    // Fetch questions from each selected surah
+    for (const surah of selectedSurahs) {
+      try {
+        const surahQuestions = await fetchRandomQuizQuestions(surah.number, questionsPerSurah);
+        if (surahQuestions && surahQuestions.length > 0) {
+          randomQuestions.push(...surahQuestions);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch questions from surah ${surah.number}:`, error.message);
+        // Continue with other surahs
+      }
+    }
+    
+    // Shuffle the combined questions and limit to requested count
+    const shuffledQuestions = randomQuestions.sort(() => Math.random() - 0.5);
+    return shuffledQuestions.slice(0, count);
+    
+  } catch (error) {
+    console.error('Error fetching random questions from all surahs:', error);
+    // Fallback to questions from Al-Fatiha
+    return fetchRandomQuizQuestions(1, count);
+  }
+};
+
 // Fetch quiz questions for specific verse range
 export const fetchQuizQuestionsForRange = async (
   surahId,

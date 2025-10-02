@@ -1,11 +1,23 @@
-
-import { SURA_NAMES_API, PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, QURAN_TEXT_API, QURAN_API_BASE_URL, INTERPRETATION_API,QUIZ_API, NOTES_API, DIRECTUS_BASE_URL, API_BASE_URL, AYAH_TRANSLATION_API } from "./apis";
+import {
+  SURA_NAMES_API,
+  PAGE_RANGES_API,
+  AYAH_AUDIO_TRANSLATION_API,
+  AYA_RANGES_API,
+  QURAN_TEXT_API,
+  QURAN_API_BASE_URL,
+  INTERPRETATION_API,
+  QUIZ_API,
+  NOTES_API,
+  DIRECTUS_BASE_URL,
+  API_BASE_URL,
+  AYAH_TRANSLATION_API,
+} from "./apis";
 
 // Helper function to add timeout to fetch requests
 const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -15,14 +27,16 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout - API took too long to respond');
+    if (error.name === "AbortError") {
+      throw new Error("Request timeout - API took too long to respond");
     }
     // Handle network errors gracefully
-    if (error.message?.includes('Failed to fetch') || 
-        error.message?.includes('ERR_CONNECTION_CLOSED') ||
-        error.message?.includes('ERR_NETWORK')) {
-      throw new Error('Network error - API server may be unavailable');
+    if (
+      error.message?.includes("Failed to fetch") ||
+      error.message?.includes("ERR_CONNECTION_CLOSED") ||
+      error.message?.includes("ERR_NETWORK")
+    ) {
+      throw new Error("Network error - API server may be unavailable");
     }
     throw error;
   }
@@ -32,34 +46,39 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 
 export const fetchSurahs = async () => {
   try {
-    console.log('Fetching surahs from URL:', SURA_NAMES_API);
-    
+    console.log("Fetching surahs from URL:", SURA_NAMES_API);
+
     // Fetch both surah names and page ranges to get accurate ayah counts
     const [surahResponse, pageRangesResponse] = await Promise.all([
       fetchWithTimeout(SURA_NAMES_API, {}, 8000),
-      fetchPageRanges().catch(() => []) // Don't fail if page ranges unavailable
+      fetchPageRanges().catch(() => []), // Don't fail if page ranges unavailable
     ]);
-    
+
     if (!surahResponse.ok) {
       throw new Error(`HTTP error! status: ${surahResponse.status}`);
     }
-    
+
     const surahData = await surahResponse.json();
-    
+
     // Create a function to get accurate ayah count from page ranges
     const getAyahCountFromPageRanges = (surahId, pageRanges) => {
-      const surahRanges = pageRanges.filter(range => range.SuraId === surahId);
+      const surahRanges = pageRanges.filter(
+        (range) => range.SuraId === surahId
+      );
       if (surahRanges.length === 0) return null;
-      
+
       // Find the maximum ayato value for this surah
-      return Math.max(...surahRanges.map(range => range.ayato));
+      return Math.max(...surahRanges.map((range) => range.ayato));
     };
-    
+
     const result = surahData.map((surah) => {
       // Get ayah count from page ranges API if available, otherwise use original data
-      const ayahCountFromPageRanges = getAyahCountFromPageRanges(surah.SuraID, pageRangesResponse);
+      const ayahCountFromPageRanges = getAyahCountFromPageRanges(
+        surah.SuraID,
+        pageRangesResponse
+      );
       const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
-      
+
       return {
         number: surah.SuraID,
         arabic: surah.ASuraName?.trim(),
@@ -68,15 +87,24 @@ export const fetchSurahs = async () => {
         type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
       };
     });
-    
-    console.log('Successfully fetched surahs with accurate ayah counts from page ranges API');
+
+    console.log(
+      "Successfully fetched surahs with accurate ayah counts from page ranges API"
+    );
     return result;
   } catch (error) {
-    console.warn('Failed to fetch surahs from Thafheem API, trying Quran.com fallback:', error.message);
-    
+    console.warn(
+      "Failed to fetch surahs from Thafheem API, trying Quran.com fallback:",
+      error.message
+    );
+
     // Try Quran.com API as fallback
     try {
-      const fallbackResponse = await fetchWithTimeout(`${QURAN_API_BASE_URL}/chapters`, {}, 8000);
+      const fallbackResponse = await fetchWithTimeout(
+        `${QURAN_API_BASE_URL}/chapters`,
+        {},
+        8000
+      );
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
         const result = fallbackData.chapters.map((chapter) => ({
@@ -86,130 +114,678 @@ export const fetchSurahs = async () => {
           ayahs: chapter.verses_count,
           type: chapter.revelation_place === "makkah" ? "Makki" : "Madani",
         }));
-        console.log('Successfully fetched surahs from Quran.com fallback API');
+        console.log("Successfully fetched surahs from Quran.com fallback API");
         return result;
       }
     } catch (fallbackError) {
-      console.warn('Quran.com fallback also failed:', fallbackError.message);
+      console.warn("Quran.com fallback also failed:", fallbackError.message);
     }
-    
+
     // Return comprehensive fallback data when all APIs are unavailable
-    console.warn('Using comprehensive hardcoded fallback data for all 114 Surahs');
+    console.warn(
+      "Using comprehensive hardcoded fallback data for all 114 Surahs"
+    );
     return [
-      { number: 1, arabic: "الفاتحة", name: "Al-Fatiha", ayahs: 7, type: "Makki" },
-      { number: 2, arabic: "البقرة", name: "Al-Baqarah", ayahs: 286, type: "Madani" },
-      { number: 3, arabic: "آل عمران", name: "Ali 'Imran", ayahs: 200, type: "Madani" },
-      { number: 4, arabic: "النساء", name: "An-Nisa", ayahs: 176, type: "Madani" },
-      { number: 5, arabic: "المائدة", name: "Al-Ma'idah", ayahs: 120, type: "Madani" },
-      { number: 6, arabic: "الأنعام", name: "Al-An'am", ayahs: 165, type: "Makki" },
-      { number: 7, arabic: "الأعراف", name: "Al-A'raf", ayahs: 206, type: "Makki" },
-      { number: 8, arabic: "الأنفال", name: "Al-Anfal", ayahs: 75, type: "Madani" },
-      { number: 9, arabic: "التوبة", name: "At-Tawbah", ayahs: 129, type: "Madani" },
+      {
+        number: 1,
+        arabic: "الفاتحة",
+        name: "Al-Fatiha",
+        ayahs: 7,
+        type: "Makki",
+      },
+      {
+        number: 2,
+        arabic: "البقرة",
+        name: "Al-Baqarah",
+        ayahs: 286,
+        type: "Madani",
+      },
+      {
+        number: 3,
+        arabic: "آل عمران",
+        name: "Ali 'Imran",
+        ayahs: 200,
+        type: "Madani",
+      },
+      {
+        number: 4,
+        arabic: "النساء",
+        name: "An-Nisa",
+        ayahs: 176,
+        type: "Madani",
+      },
+      {
+        number: 5,
+        arabic: "المائدة",
+        name: "Al-Ma'idah",
+        ayahs: 120,
+        type: "Madani",
+      },
+      {
+        number: 6,
+        arabic: "الأنعام",
+        name: "Al-An'am",
+        ayahs: 165,
+        type: "Makki",
+      },
+      {
+        number: 7,
+        arabic: "الأعراف",
+        name: "Al-A'raf",
+        ayahs: 206,
+        type: "Makki",
+      },
+      {
+        number: 8,
+        arabic: "الأنفال",
+        name: "Al-Anfal",
+        ayahs: 75,
+        type: "Madani",
+      },
+      {
+        number: 9,
+        arabic: "التوبة",
+        name: "At-Tawbah",
+        ayahs: 129,
+        type: "Madani",
+      },
       { number: 10, arabic: "يونس", name: "Yunus", ayahs: 109, type: "Makki" },
       { number: 11, arabic: "هود", name: "Hud", ayahs: 123, type: "Makki" },
       { number: 12, arabic: "يوسف", name: "Yusuf", ayahs: 111, type: "Makki" },
-      { number: 13, arabic: "الرعد", name: "Ar-Ra'd", ayahs: 43, type: "Madani" },
-      { number: 14, arabic: "إبراهيم", name: "Ibrahim", ayahs: 52, type: "Makki" },
-      { number: 15, arabic: "الحجر", name: "Al-Hijr", ayahs: 99, type: "Makki" },
-      { number: 16, arabic: "النحل", name: "An-Nahl", ayahs: 128, type: "Makki" },
-      { number: 17, arabic: "الإسراء", name: "Al-Isra", ayahs: 111, type: "Makki" },
-      { number: 18, arabic: "الكهف", name: "Al-Kahf", ayahs: 110, type: "Makki" },
+      {
+        number: 13,
+        arabic: "الرعد",
+        name: "Ar-Ra'd",
+        ayahs: 43,
+        type: "Madani",
+      },
+      {
+        number: 14,
+        arabic: "إبراهيم",
+        name: "Ibrahim",
+        ayahs: 52,
+        type: "Makki",
+      },
+      {
+        number: 15,
+        arabic: "الحجر",
+        name: "Al-Hijr",
+        ayahs: 99,
+        type: "Makki",
+      },
+      {
+        number: 16,
+        arabic: "النحل",
+        name: "An-Nahl",
+        ayahs: 128,
+        type: "Makki",
+      },
+      {
+        number: 17,
+        arabic: "الإسراء",
+        name: "Al-Isra",
+        ayahs: 111,
+        type: "Makki",
+      },
+      {
+        number: 18,
+        arabic: "الكهف",
+        name: "Al-Kahf",
+        ayahs: 110,
+        type: "Makki",
+      },
       { number: 19, arabic: "مريم", name: "Maryam", ayahs: 98, type: "Makki" },
       { number: 20, arabic: "طه", name: "Taha", ayahs: 135, type: "Makki" },
-      { number: 21, arabic: "الأنبياء", name: "Al-Anbiya", ayahs: 112, type: "Makki" },
-      { number: 22, arabic: "الحج", name: "Al-Hajj", ayahs: 78, type: "Madani" },
-      { number: 23, arabic: "المؤمنون", name: "Al-Mu'minun", ayahs: 118, type: "Makki" },
-      { number: 24, arabic: "النور", name: "An-Nur", ayahs: 64, type: "Madani" },
-      { number: 25, arabic: "الفرقان", name: "Al-Furqan", ayahs: 77, type: "Makki" },
-      { number: 26, arabic: "الشعراء", name: "Ash-Shu'ara", ayahs: 227, type: "Makki" },
-      { number: 27, arabic: "النمل", name: "An-Naml", ayahs: 93, type: "Makki" },
-      { number: 28, arabic: "القصص", name: "Al-Qasas", ayahs: 88, type: "Makki" },
-      { number: 29, arabic: "العنكبوت", name: "Al-Ankabut", ayahs: 69, type: "Makki" },
+      {
+        number: 21,
+        arabic: "الأنبياء",
+        name: "Al-Anbiya",
+        ayahs: 112,
+        type: "Makki",
+      },
+      {
+        number: 22,
+        arabic: "الحج",
+        name: "Al-Hajj",
+        ayahs: 78,
+        type: "Madani",
+      },
+      {
+        number: 23,
+        arabic: "المؤمنون",
+        name: "Al-Mu'minun",
+        ayahs: 118,
+        type: "Makki",
+      },
+      {
+        number: 24,
+        arabic: "النور",
+        name: "An-Nur",
+        ayahs: 64,
+        type: "Madani",
+      },
+      {
+        number: 25,
+        arabic: "الفرقان",
+        name: "Al-Furqan",
+        ayahs: 77,
+        type: "Makki",
+      },
+      {
+        number: 26,
+        arabic: "الشعراء",
+        name: "Ash-Shu'ara",
+        ayahs: 227,
+        type: "Makki",
+      },
+      {
+        number: 27,
+        arabic: "النمل",
+        name: "An-Naml",
+        ayahs: 93,
+        type: "Makki",
+      },
+      {
+        number: 28,
+        arabic: "القصص",
+        name: "Al-Qasas",
+        ayahs: 88,
+        type: "Makki",
+      },
+      {
+        number: 29,
+        arabic: "العنكبوت",
+        name: "Al-Ankabut",
+        ayahs: 69,
+        type: "Makki",
+      },
       { number: 30, arabic: "الروم", name: "Ar-Rum", ayahs: 60, type: "Makki" },
       { number: 31, arabic: "لقمان", name: "Luqman", ayahs: 34, type: "Makki" },
-      { number: 32, arabic: "السجدة", name: "As-Sajdah", ayahs: 30, type: "Makki" },
-      { number: 33, arabic: "الأحزاب", name: "Al-Ahzab", ayahs: 73, type: "Madani" },
+      {
+        number: 32,
+        arabic: "السجدة",
+        name: "As-Sajdah",
+        ayahs: 30,
+        type: "Makki",
+      },
+      {
+        number: 33,
+        arabic: "الأحزاب",
+        name: "Al-Ahzab",
+        ayahs: 73,
+        type: "Madani",
+      },
       { number: 34, arabic: "سبأ", name: "Saba", ayahs: 54, type: "Makki" },
       { number: 35, arabic: "فاطر", name: "Fatir", ayahs: 45, type: "Makki" },
       { number: 36, arabic: "يس", name: "Ya-Sin", ayahs: 83, type: "Makki" },
-      { number: 37, arabic: "الصافات", name: "As-Saffat", ayahs: 182, type: "Makki" },
+      {
+        number: 37,
+        arabic: "الصافات",
+        name: "As-Saffat",
+        ayahs: 182,
+        type: "Makki",
+      },
       { number: 38, arabic: "ص", name: "Sad", ayahs: 88, type: "Makki" },
-      { number: 39, arabic: "الزمر", name: "Az-Zumar", ayahs: 75, type: "Makki" },
+      {
+        number: 39,
+        arabic: "الزمر",
+        name: "Az-Zumar",
+        ayahs: 75,
+        type: "Makki",
+      },
       { number: 40, arabic: "غافر", name: "Ghafir", ayahs: 85, type: "Makki" },
-      { number: 41, arabic: "فصلت", name: "Fussilat", ayahs: 54, type: "Makki" },
-      { number: 42, arabic: "الشورى", name: "Ash-Shura", ayahs: 53, type: "Makki" },
-      { number: 43, arabic: "الزخرف", name: "Az-Zukhruf", ayahs: 89, type: "Makki" },
-      { number: 44, arabic: "الدخان", name: "Ad-Dukhan", ayahs: 59, type: "Makki" },
-      { number: 45, arabic: "الجاثية", name: "Al-Jathiyah", ayahs: 37, type: "Makki" },
-      { number: 46, arabic: "الأحقاف", name: "Al-Ahqaf", ayahs: 35, type: "Makki" },
-      { number: 47, arabic: "محمد", name: "Muhammad", ayahs: 38, type: "Madani" },
-      { number: 48, arabic: "الفتح", name: "Al-Fath", ayahs: 29, type: "Madani" },
-      { number: 49, arabic: "الحجرات", name: "Al-Hujurat", ayahs: 18, type: "Madani" },
+      {
+        number: 41,
+        arabic: "فصلت",
+        name: "Fussilat",
+        ayahs: 54,
+        type: "Makki",
+      },
+      {
+        number: 42,
+        arabic: "الشورى",
+        name: "Ash-Shura",
+        ayahs: 53,
+        type: "Makki",
+      },
+      {
+        number: 43,
+        arabic: "الزخرف",
+        name: "Az-Zukhruf",
+        ayahs: 89,
+        type: "Makki",
+      },
+      {
+        number: 44,
+        arabic: "الدخان",
+        name: "Ad-Dukhan",
+        ayahs: 59,
+        type: "Makki",
+      },
+      {
+        number: 45,
+        arabic: "الجاثية",
+        name: "Al-Jathiyah",
+        ayahs: 37,
+        type: "Makki",
+      },
+      {
+        number: 46,
+        arabic: "الأحقاف",
+        name: "Al-Ahqaf",
+        ayahs: 35,
+        type: "Makki",
+      },
+      {
+        number: 47,
+        arabic: "محمد",
+        name: "Muhammad",
+        ayahs: 38,
+        type: "Madani",
+      },
+      {
+        number: 48,
+        arabic: "الفتح",
+        name: "Al-Fath",
+        ayahs: 29,
+        type: "Madani",
+      },
+      {
+        number: 49,
+        arabic: "الحجرات",
+        name: "Al-Hujurat",
+        ayahs: 18,
+        type: "Madani",
+      },
       { number: 50, arabic: "ق", name: "Qaf", ayahs: 45, type: "Makki" },
-      { number: 51, arabic: "الذاريات", name: "Adh-Dhariyat", ayahs: 60, type: "Makki" },
+      {
+        number: 51,
+        arabic: "الذاريات",
+        name: "Adh-Dhariyat",
+        ayahs: 60,
+        type: "Makki",
+      },
       { number: 52, arabic: "الطور", name: "At-Tur", ayahs: 49, type: "Makki" },
-      { number: 53, arabic: "النجم", name: "An-Najm", ayahs: 62, type: "Makki" },
-      { number: 54, arabic: "القمر", name: "Al-Qamar", ayahs: 55, type: "Makki" },
-      { number: 55, arabic: "الرحمن", name: "Ar-Rahman", ayahs: 78, type: "Madani" },
-      { number: 56, arabic: "الواقعة", name: "Al-Waqi'ah", ayahs: 96, type: "Makki" },
-      { number: 57, arabic: "الحديد", name: "Al-Hadid", ayahs: 29, type: "Madani" },
-      { number: 58, arabic: "المجادلة", name: "Al-Mujadila", ayahs: 22, type: "Madani" },
-      { number: 59, arabic: "الحشر", name: "Al-Hashr", ayahs: 24, type: "Madani" },
-      { number: 60, arabic: "الممتحنة", name: "Al-Mumtahanah", ayahs: 13, type: "Madani" },
-      { number: 61, arabic: "الصف", name: "As-Saff", ayahs: 14, type: "Madani" },
-      { number: 62, arabic: "الجمعة", name: "Al-Jumu'ah", ayahs: 11, type: "Madani" },
-      { number: 63, arabic: "المنافقون", name: "Al-Munafiqun", ayahs: 11, type: "Madani" },
-      { number: 64, arabic: "التغابن", name: "At-Taghabun", ayahs: 18, type: "Madani" },
-      { number: 65, arabic: "الطلاق", name: "At-Talaq", ayahs: 12, type: "Madani" },
-      { number: 66, arabic: "التحريم", name: "At-Tahrim", ayahs: 12, type: "Madani" },
-      { number: 67, arabic: "الملك", name: "Al-Mulk", ayahs: 30, type: "Makki" },
-      { number: 68, arabic: "القلم", name: "Al-Qalam", ayahs: 52, type: "Makki" },
-      { number: 69, arabic: "الحاقة", name: "Al-Haqqah", ayahs: 52, type: "Makki" },
-      { number: 70, arabic: "المعارج", name: "Al-Ma'arij", ayahs: 44, type: "Makki" },
+      {
+        number: 53,
+        arabic: "النجم",
+        name: "An-Najm",
+        ayahs: 62,
+        type: "Makki",
+      },
+      {
+        number: 54,
+        arabic: "القمر",
+        name: "Al-Qamar",
+        ayahs: 55,
+        type: "Makki",
+      },
+      {
+        number: 55,
+        arabic: "الرحمن",
+        name: "Ar-Rahman",
+        ayahs: 78,
+        type: "Madani",
+      },
+      {
+        number: 56,
+        arabic: "الواقعة",
+        name: "Al-Waqi'ah",
+        ayahs: 96,
+        type: "Makki",
+      },
+      {
+        number: 57,
+        arabic: "الحديد",
+        name: "Al-Hadid",
+        ayahs: 29,
+        type: "Madani",
+      },
+      {
+        number: 58,
+        arabic: "المجادلة",
+        name: "Al-Mujadila",
+        ayahs: 22,
+        type: "Madani",
+      },
+      {
+        number: 59,
+        arabic: "الحشر",
+        name: "Al-Hashr",
+        ayahs: 24,
+        type: "Madani",
+      },
+      {
+        number: 60,
+        arabic: "الممتحنة",
+        name: "Al-Mumtahanah",
+        ayahs: 13,
+        type: "Madani",
+      },
+      {
+        number: 61,
+        arabic: "الصف",
+        name: "As-Saff",
+        ayahs: 14,
+        type: "Madani",
+      },
+      {
+        number: 62,
+        arabic: "الجمعة",
+        name: "Al-Jumu'ah",
+        ayahs: 11,
+        type: "Madani",
+      },
+      {
+        number: 63,
+        arabic: "المنافقون",
+        name: "Al-Munafiqun",
+        ayahs: 11,
+        type: "Madani",
+      },
+      {
+        number: 64,
+        arabic: "التغابن",
+        name: "At-Taghabun",
+        ayahs: 18,
+        type: "Madani",
+      },
+      {
+        number: 65,
+        arabic: "الطلاق",
+        name: "At-Talaq",
+        ayahs: 12,
+        type: "Madani",
+      },
+      {
+        number: 66,
+        arabic: "التحريم",
+        name: "At-Tahrim",
+        ayahs: 12,
+        type: "Madani",
+      },
+      {
+        number: 67,
+        arabic: "الملك",
+        name: "Al-Mulk",
+        ayahs: 30,
+        type: "Makki",
+      },
+      {
+        number: 68,
+        arabic: "القلم",
+        name: "Al-Qalam",
+        ayahs: 52,
+        type: "Makki",
+      },
+      {
+        number: 69,
+        arabic: "الحاقة",
+        name: "Al-Haqqah",
+        ayahs: 52,
+        type: "Makki",
+      },
+      {
+        number: 70,
+        arabic: "المعارج",
+        name: "Al-Ma'arij",
+        ayahs: 44,
+        type: "Makki",
+      },
       { number: 71, arabic: "نوح", name: "Nuh", ayahs: 28, type: "Makki" },
       { number: 72, arabic: "الجن", name: "Al-Jinn", ayahs: 28, type: "Makki" },
-      { number: 73, arabic: "المزمل", name: "Al-Muzzammil", ayahs: 20, type: "Makki" },
-      { number: 74, arabic: "المدثر", name: "Al-Muddaththir", ayahs: 56, type: "Makki" },
-      { number: 75, arabic: "القيامة", name: "Al-Qiyamah", ayahs: 40, type: "Makki" },
-      { number: 76, arabic: "الإنسان", name: "Al-Insan", ayahs: 31, type: "Madani" },
-      { number: 77, arabic: "المرسلات", name: "Al-Mursalat", ayahs: 50, type: "Makki" },
-      { number: 78, arabic: "النبأ", name: "An-Naba", ayahs: 40, type: "Makki" },
-      { number: 79, arabic: "النازعات", name: "An-Nazi'at", ayahs: 46, type: "Makki" },
+      {
+        number: 73,
+        arabic: "المزمل",
+        name: "Al-Muzzammil",
+        ayahs: 20,
+        type: "Makki",
+      },
+      {
+        number: 74,
+        arabic: "المدثر",
+        name: "Al-Muddaththir",
+        ayahs: 56,
+        type: "Makki",
+      },
+      {
+        number: 75,
+        arabic: "القيامة",
+        name: "Al-Qiyamah",
+        ayahs: 40,
+        type: "Makki",
+      },
+      {
+        number: 76,
+        arabic: "الإنسان",
+        name: "Al-Insan",
+        ayahs: 31,
+        type: "Madani",
+      },
+      {
+        number: 77,
+        arabic: "المرسلات",
+        name: "Al-Mursalat",
+        ayahs: 50,
+        type: "Makki",
+      },
+      {
+        number: 78,
+        arabic: "النبأ",
+        name: "An-Naba",
+        ayahs: 40,
+        type: "Makki",
+      },
+      {
+        number: 79,
+        arabic: "النازعات",
+        name: "An-Nazi'at",
+        ayahs: 46,
+        type: "Makki",
+      },
       { number: 80, arabic: "عبس", name: "Abasa", ayahs: 42, type: "Makki" },
-      { number: 81, arabic: "التكوير", name: "At-Takwir", ayahs: 29, type: "Makki" },
-      { number: 82, arabic: "الانفطار", name: "Al-Infitar", ayahs: 19, type: "Makki" },
-      { number: 83, arabic: "المطففين", name: "Al-Mutaffifin", ayahs: 36, type: "Makki" },
-      { number: 84, arabic: "الانشقاق", name: "Al-Inshiqaq", ayahs: 25, type: "Makki" },
-      { number: 85, arabic: "البروج", name: "Al-Buruj", ayahs: 22, type: "Makki" },
-      { number: 86, arabic: "الطارق", name: "At-Tariq", ayahs: 17, type: "Makki" },
-      { number: 87, arabic: "الأعلى", name: "Al-A'la", ayahs: 19, type: "Makki" },
-      { number: 88, arabic: "الغاشية", name: "Al-Ghashiyah", ayahs: 26, type: "Makki" },
-      { number: 89, arabic: "الفجر", name: "Al-Fajr", ayahs: 30, type: "Makki" },
-      { number: 90, arabic: "البلد", name: "Al-Balad", ayahs: 20, type: "Makki" },
-      { number: 91, arabic: "الشمس", name: "Ash-Shams", ayahs: 15, type: "Makki" },
-      { number: 92, arabic: "الليل", name: "Al-Layl", ayahs: 21, type: "Makki" },
-      { number: 93, arabic: "الضحى", name: "Ad-Duha", ayahs: 11, type: "Makki" },
-      { number: 94, arabic: "الشرح", name: "Ash-Sharh", ayahs: 8, type: "Makki" },
+      {
+        number: 81,
+        arabic: "التكوير",
+        name: "At-Takwir",
+        ayahs: 29,
+        type: "Makki",
+      },
+      {
+        number: 82,
+        arabic: "الانفطار",
+        name: "Al-Infitar",
+        ayahs: 19,
+        type: "Makki",
+      },
+      {
+        number: 83,
+        arabic: "المطففين",
+        name: "Al-Mutaffifin",
+        ayahs: 36,
+        type: "Makki",
+      },
+      {
+        number: 84,
+        arabic: "الانشقاق",
+        name: "Al-Inshiqaq",
+        ayahs: 25,
+        type: "Makki",
+      },
+      {
+        number: 85,
+        arabic: "البروج",
+        name: "Al-Buruj",
+        ayahs: 22,
+        type: "Makki",
+      },
+      {
+        number: 86,
+        arabic: "الطارق",
+        name: "At-Tariq",
+        ayahs: 17,
+        type: "Makki",
+      },
+      {
+        number: 87,
+        arabic: "الأعلى",
+        name: "Al-A'la",
+        ayahs: 19,
+        type: "Makki",
+      },
+      {
+        number: 88,
+        arabic: "الغاشية",
+        name: "Al-Ghashiyah",
+        ayahs: 26,
+        type: "Makki",
+      },
+      {
+        number: 89,
+        arabic: "الفجر",
+        name: "Al-Fajr",
+        ayahs: 30,
+        type: "Makki",
+      },
+      {
+        number: 90,
+        arabic: "البلد",
+        name: "Al-Balad",
+        ayahs: 20,
+        type: "Makki",
+      },
+      {
+        number: 91,
+        arabic: "الشمس",
+        name: "Ash-Shams",
+        ayahs: 15,
+        type: "Makki",
+      },
+      {
+        number: 92,
+        arabic: "الليل",
+        name: "Al-Layl",
+        ayahs: 21,
+        type: "Makki",
+      },
+      {
+        number: 93,
+        arabic: "الضحى",
+        name: "Ad-Duha",
+        ayahs: 11,
+        type: "Makki",
+      },
+      {
+        number: 94,
+        arabic: "الشرح",
+        name: "Ash-Sharh",
+        ayahs: 8,
+        type: "Makki",
+      },
       { number: 95, arabic: "التين", name: "At-Tin", ayahs: 8, type: "Makki" },
-      { number: 96, arabic: "العلق", name: "Al-Alaq", ayahs: 19, type: "Makki" },
+      {
+        number: 96,
+        arabic: "العلق",
+        name: "Al-Alaq",
+        ayahs: 19,
+        type: "Makki",
+      },
       { number: 97, arabic: "القدر", name: "Al-Qadr", ayahs: 5, type: "Makki" },
-      { number: 98, arabic: "البينة", name: "Al-Bayyinah", ayahs: 8, type: "Madani" },
-      { number: 99, arabic: "الزلزلة", name: "Az-Zalzalah", ayahs: 8, type: "Madani" },
-      { number: 100, arabic: "العاديات", name: "Al-Adiyat", ayahs: 11, type: "Makki" },
-      { number: 101, arabic: "القارعة", name: "Al-Qari'ah", ayahs: 11, type: "Makki" },
-      { number: 102, arabic: "التكاثر", name: "At-Takathur", ayahs: 8, type: "Makki" },
+      {
+        number: 98,
+        arabic: "البينة",
+        name: "Al-Bayyinah",
+        ayahs: 8,
+        type: "Madani",
+      },
+      {
+        number: 99,
+        arabic: "الزلزلة",
+        name: "Az-Zalzalah",
+        ayahs: 8,
+        type: "Madani",
+      },
+      {
+        number: 100,
+        arabic: "العاديات",
+        name: "Al-Adiyat",
+        ayahs: 11,
+        type: "Makki",
+      },
+      {
+        number: 101,
+        arabic: "القارعة",
+        name: "Al-Qari'ah",
+        ayahs: 11,
+        type: "Makki",
+      },
+      {
+        number: 102,
+        arabic: "التكاثر",
+        name: "At-Takathur",
+        ayahs: 8,
+        type: "Makki",
+      },
       { number: 103, arabic: "العصر", name: "Al-Asr", ayahs: 3, type: "Makki" },
-      { number: 104, arabic: "الهمزة", name: "Al-Humazah", ayahs: 9, type: "Makki" },
+      {
+        number: 104,
+        arabic: "الهمزة",
+        name: "Al-Humazah",
+        ayahs: 9,
+        type: "Makki",
+      },
       { number: 105, arabic: "الفيل", name: "Al-Fil", ayahs: 5, type: "Makki" },
       { number: 106, arabic: "قريش", name: "Quraysh", ayahs: 4, type: "Makki" },
-      { number: 107, arabic: "الماعون", name: "Al-Ma'un", ayahs: 7, type: "Makki" },
-      { number: 108, arabic: "الكوثر", name: "Al-Kawthar", ayahs: 3, type: "Makki" },
-      { number: 109, arabic: "الكافرون", name: "Al-Kafirun", ayahs: 6, type: "Makki" },
-      { number: 110, arabic: "النصر", name: "An-Nasr", ayahs: 3, type: "Madani" },
-      { number: 111, arabic: "المسد", name: "Al-Masad", ayahs: 5, type: "Makki" },
-      { number: 112, arabic: "الإخلاص", name: "Al-Ikhlas", ayahs: 4, type: "Makki" },
-      { number: 113, arabic: "الفلق", name: "Al-Falaq", ayahs: 5, type: "Makki" },
-      { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" }
+      {
+        number: 107,
+        arabic: "الماعون",
+        name: "Al-Ma'un",
+        ayahs: 7,
+        type: "Makki",
+      },
+      {
+        number: 108,
+        arabic: "الكوثر",
+        name: "Al-Kawthar",
+        ayahs: 3,
+        type: "Makki",
+      },
+      {
+        number: 109,
+        arabic: "الكافرون",
+        name: "Al-Kafirun",
+        ayahs: 6,
+        type: "Makki",
+      },
+      {
+        number: 110,
+        arabic: "النصر",
+        name: "An-Nasr",
+        ayahs: 3,
+        type: "Madani",
+      },
+      {
+        number: 111,
+        arabic: "المسد",
+        name: "Al-Masad",
+        ayahs: 5,
+        type: "Makki",
+      },
+      {
+        number: 112,
+        arabic: "الإخلاص",
+        name: "Al-Ikhlas",
+        ayahs: 4,
+        type: "Makki",
+      },
+      {
+        number: 113,
+        arabic: "الفلق",
+        name: "Al-Falaq",
+        ayahs: 5,
+        type: "Makki",
+      },
+      { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" },
     ];
   }
 };
@@ -223,29 +799,34 @@ export const listSurahNames = async () => {
     // Fetch both surah names and page ranges to get accurate ayah counts
     const [surahResponse, pageRangesResponse] = await Promise.all([
       fetchWithTimeout(SURA_NAMES_API, {}, 8000),
-      fetchPageRanges().catch(() => []) // Don't fail if page ranges unavailable
+      fetchPageRanges().catch(() => []), // Don't fail if page ranges unavailable
     ]);
-    
+
     if (!surahResponse.ok) {
       throw new Error(`HTTP error! status: ${surahResponse.status}`);
     }
-    
+
     const data = await surahResponse.json();
-    
+
     // Create a function to get accurate ayah count from page ranges
     const getAyahCountFromPageRanges = (surahId, pageRanges) => {
-      const surahRanges = pageRanges.filter(range => range.SuraId === surahId);
+      const surahRanges = pageRanges.filter(
+        (range) => range.SuraId === surahId
+      );
       if (surahRanges.length === 0) return null;
-      
+
       // Find the maximum ayato value for this surah
-      return Math.max(...surahRanges.map(range => range.ayato));
+      return Math.max(...surahRanges.map((range) => range.ayato));
     };
-    
+
     const result = data.map((surah) => {
       // Get ayah count from page ranges API if available, otherwise use original data
-      const ayahCountFromPageRanges = getAyahCountFromPageRanges(surah.SuraID, pageRangesResponse);
+      const ayahCountFromPageRanges = getAyahCountFromPageRanges(
+        surah.SuraID,
+        pageRangesResponse
+      );
       const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
-      
+
       return {
         id: surah.SuraID,
         arabic: surah.ASuraName?.trim(),
@@ -255,11 +836,18 @@ export const listSurahNames = async () => {
     });
     return result;
   } catch (error) {
-    console.warn('Failed to fetch surah names from Thafheem API, trying Quran.com fallback:', error.message);
-    
+    console.warn(
+      "Failed to fetch surah names from Thafheem API, trying Quran.com fallback:",
+      error.message
+    );
+
     // Try Quran.com API as fallback
     try {
-      const fallbackResponse = await fetchWithTimeout(`${QURAN_API_BASE_URL}/chapters`, {}, 8000);
+      const fallbackResponse = await fetchWithTimeout(
+        `${QURAN_API_BASE_URL}/chapters`,
+        {},
+        8000
+      );
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
         const result = fallbackData.chapters.map((chapter) => ({
@@ -268,15 +856,17 @@ export const listSurahNames = async () => {
           english: chapter.name_simple,
           ayahs: chapter.verses_count,
         }));
-        console.log('Successfully fetched surah names from Quran.com fallback API');
+        console.log(
+          "Successfully fetched surah names from Quran.com fallback API"
+        );
         return result;
       }
     } catch (fallbackError) {
-      console.warn('Quran.com fallback also failed:', fallbackError.message);
+      console.warn("Quran.com fallback also failed:", fallbackError.message);
     }
-    
+
     // Return basic fallback data when all APIs are unavailable
-    console.warn('Using hardcoded fallback data for surah names');
+    console.warn("Using hardcoded fallback data for surah names");
     return [
       { id: 1, arabic: "الفاتحة", english: "Al-Fatiha", ayahs: 7 },
       { id: 2, arabic: "البقرة", english: "Al-Baqarah", ayahs: 286 },
@@ -329,7 +919,10 @@ export const fetchPageRanges = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.warn('Failed to fetch page ranges from Thafheem API:', error.message);
+    console.warn(
+      "Failed to fetch page ranges from Thafheem API:",
+      error.message
+    );
     // Return empty array when API is unavailable
     return [];
   }
@@ -339,19 +932,23 @@ export const fetchPageRanges = async () => {
 export const getSurahAyahCount = async (surahId) => {
   try {
     const pageRanges = await fetchPageRanges();
-    const surahRanges = pageRanges.filter(range => range.SuraId === parseInt(surahId));
-    
+    const surahRanges = pageRanges.filter(
+      (range) => range.SuraId === parseInt(surahId)
+    );
+
     if (surahRanges.length === 0) {
       console.warn(`No page ranges found for surah ${surahId}, using fallback`);
       return null; // Will fallback to other methods
     }
-    
+
     // Find the maximum ayato value for this surah
-    const maxAyah = Math.max(...surahRanges.map(range => range.ayato));
-    console.log(`Surah ${surahId} has ${maxAyah} ayahs according to page ranges API`);
+    const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
+    console.log(
+      `Surah ${surahId} has ${maxAyah} ayahs according to page ranges API`
+    );
     return maxAyah;
   } catch (error) {
-    console.error('Error getting surah ayah count from page ranges:', error);
+    console.error("Error getting surah ayah count from page ranges:", error);
     return null;
   }
 };
@@ -360,19 +957,20 @@ export const fetchJuzData = async () => {
   try {
     // Fetch both APIs concurrently, but handle failures gracefully
     const [pageRangesData, surahsData] = await Promise.allSettled([
-      fetchPageRanges().catch(error => {
-        console.warn('Failed to fetch page ranges:', error.message);
+      fetchPageRanges().catch((error) => {
+        console.warn("Failed to fetch page ranges:", error.message);
         return []; // Return empty array on failure
       }),
-      fetchSurahs().catch(error => {
-        console.warn('Failed to fetch surahs:', error.message);
+      fetchSurahs().catch((error) => {
+        console.warn("Failed to fetch surahs:", error.message);
         return []; // Return empty array on failure
       }),
     ]);
-    
+
     // Extract the actual data from Promise.allSettled results
-    const pageRanges = pageRangesData.status === 'fulfilled' ? pageRangesData.value : [];
-    const surahs = surahsData.status === 'fulfilled' ? surahsData.value : [];
+    const pageRanges =
+      pageRangesData.status === "fulfilled" ? pageRangesData.value : [];
+    const surahs = surahsData.status === "fulfilled" ? surahsData.value : [];
 
     // Create surah names mapping with correct type classification
     const surahNamesMap = {};
@@ -464,48 +1062,53 @@ export const fetchJuzData = async () => {
 
 // Fetch audio translations for a specific Surah or Ayah
 export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
-    try {
-      const url = ayahNumber
-        ? `${AYAH_AUDIO_TRANSLATION_API}/${suraId}/${ayahNumber}`
-        : `${AYAH_AUDIO_TRANSLATION_API}/${suraId}`;
-    
-      const response = await fetchWithTimeout(url, {}, 5000); // 5 second timeout
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.warn('Failed to fetch translation from primary API, trying fallback:', error.message);
-      
-      // Try fallback translation from Quran.com API
-      try {
-        const fallbackUrl = `${QURAN_API_BASE_URL}/quran/translations/131?chapter_number=${suraId}&verse_number=${ayahNumber}`;
-        const fallbackResponse = await fetchWithTimeout(fallbackUrl, {}, 5000);
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          if (fallbackData.translations && fallbackData.translations.length > 0) {
-            return [{
-              contiayano: ayahNumber,
-              AudioText: fallbackData.translations[0].text
-            }];
-          }
-        }
-      } catch (fallbackError) {
-        console.warn('Fallback translation also failed:', fallbackError.message);
-      }
-      
-      // Return empty array instead of null to prevent null reference errors
-      console.warn('All translation APIs failed, returning empty array');
-      return [];
+  try {
+    const url = ayahNumber
+      ? `${AYAH_AUDIO_TRANSLATION_API}/${suraId}/${ayahNumber}`
+      : `${AYAH_AUDIO_TRANSLATION_API}/${suraId}`;
+
+    const response = await fetchWithTimeout(url, {}, 5000); // 5 second timeout
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn(
+      "Failed to fetch translation from primary API, trying fallback:",
+      error.message
+    );
+
+    // Try fallback translation from Quran.com API
+    try {
+      const fallbackUrl = `${QURAN_API_BASE_URL}/quran/translations/131?chapter_number=${suraId}&verse_number=${ayahNumber}`;
+      const fallbackResponse = await fetchWithTimeout(fallbackUrl, {}, 5000);
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.translations && fallbackData.translations.length > 0) {
+          return [
+            {
+              contiayano: ayahNumber,
+              AudioText: fallbackData.translations[0].text,
+            },
+          ];
+        }
+      }
+    } catch (fallbackError) {
+      console.warn("Fallback translation also failed:", fallbackError.message);
+    }
+
+    // Return empty array instead of null to prevent null reference errors
+    console.warn("All translation APIs failed, returning empty array");
+    return [];
+  }
+};
 
 // Fetch Arabic verses in Uthmani script from Quran.com API
 export const fetchArabicVerses = async (surahId) => {
   try {
     const url = `${QURAN_API_BASE_URL}/quran/verses/uthmani?chapter_number=${surahId}`;
-    
+
     const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -513,11 +1116,22 @@ export const fetchArabicVerses = async (surahId) => {
     const data = await response.json();
     return data.verses;
   } catch (error) {
-    console.warn('Failed to fetch Arabic verses from API, using fallback:', error.message);
+    console.warn(
+      "Failed to fetch Arabic verses from API, using fallback:",
+      error.message
+    );
     // Return basic fallback data when API is unavailable
     return [
-      { id: 1, verse_number: 1, text_uthmani: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" },
-      { id: 2, verse_number: 2, text_uthmani: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ" },
+      {
+        id: 1,
+        verse_number: 1,
+        text_uthmani: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+      },
+      {
+        id: 2,
+        verse_number: 2,
+        text_uthmani: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+      },
     ];
   }
 };
@@ -542,49 +1156,51 @@ export const fetchVersesForPage = async (surahId, pageId) => {
   try {
     // First get the page ranges to find the verse range for this page
     const pageRanges = await fetchPageRanges();
-    const pageRange = pageRanges.find(range => 
-      range.PageId === pageId && range.SuraId === parseInt(surahId)
+    const pageRange = pageRanges.find(
+      (range) => range.PageId === pageId && range.SuraId === parseInt(surahId)
     );
-    
+
     if (!pageRange) {
-      throw new Error(`No page range found for page ${pageId} in surah ${surahId}`);
+      throw new Error(
+        `No page range found for page ${pageId} in surah ${surahId}`
+      );
     }
-    
+
     // Fetch verses from Quran.com API for the specific verse range
     const verseStart = pageRange.ayafrom;
     const verseEnd = pageRange.ayato;
-    
+
     // Fetch all verses for the surah and then filter by verse range
     const url = `${QURAN_API_BASE_URL}/quran/verses/uthmani?chapter_number=${surahId}`;
-    
-    console.log('Fetching all verses for surah:', surahId);
-    console.log('Will filter verses:', `${verseStart}-${verseEnd}`);
-    console.log('Page range:', pageRange);
-    
+
+    console.log("Fetching all verses for surah:", surahId);
+    console.log("Will filter verses:", `${verseStart}-${verseEnd}`);
+    console.log("Page range:", pageRange);
+
     const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    
+
     // Filter verses to only include the ones in our page range
-    const filteredVerses = data.verses.filter(verse => {
-      const verseNumber = parseInt(verse.verse_key.split(':')[1]);
+    const filteredVerses = data.verses.filter((verse) => {
+      const verseNumber = parseInt(verse.verse_key.split(":")[1]);
       return verseNumber >= verseStart && verseNumber <= verseEnd;
     });
-    
-    console.log('Filtered verses:', filteredVerses);
-    console.log('Total verses in response:', data.verses.length);
-    console.log('Filtered verses count:', filteredVerses.length);
-    
+
+    console.log("Filtered verses:", filteredVerses);
+    console.log("Total verses in response:", data.verses.length);
+    console.log("Filtered verses count:", filteredVerses.length);
+
     return {
       verses: filteredVerses || [],
       pageRange: pageRange,
       verseStart: verseStart,
-      verseEnd: verseEnd
+      verseEnd: verseEnd,
     };
   } catch (error) {
-    console.error('Error fetching verses for page:', error);
+    console.error("Error fetching verses for page:", error);
     throw error;
   }
 };
@@ -594,12 +1210,12 @@ export const getSurahPages = async (surahId) => {
   try {
     const pageRanges = await fetchPageRanges();
     const surahPages = pageRanges
-      .filter(range => range.SuraId === parseInt(surahId))
+      .filter((range) => range.SuraId === parseInt(surahId))
       .sort((a, b) => a.PageId - b.PageId);
-    
+
     return surahPages;
   } catch (error) {
-    console.error('Error getting surah pages:', error);
+    console.error("Error getting surah pages:", error);
     throw error;
   }
 };
@@ -633,9 +1249,9 @@ export const fetchCompleteSurahInfo = async (surahId, language = "en") => {
 
 // Example of dependent functions you may already have in apifunctions.js
 export const fetchBasicChapterData = async (chapterId, language = "en") => {
-    const response = await fetch(
-      `${QURAN_API_BASE_URL}/chapters?language=${language}`
-    );
+  const response = await fetch(
+    `${QURAN_API_BASE_URL}/chapters?language=${language}`
+  );
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   return data.chapters.find((chapter) => chapter.id === parseInt(chapterId));
@@ -651,9 +1267,7 @@ export const fetchChapterInfo = async (chapterId, language = "en") => {
 };
 
 export const fetchThafheemPreface = async (suraId) => {
-  const response = await fetch(
-    `${API_BASE_URL}/preface/${suraId}`
-  );
+  const response = await fetch(`${API_BASE_URL}/preface/${suraId}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   return data[0]; // Take first element
@@ -672,20 +1286,23 @@ export const fetchAyaRanges = async (surahId) => {
 };
 
 // Fetch translations for specified ayah range using the new API
-export const fetchAyahTranslations = async (surahId, range, language = 'E') => {
+export const fetchAyahTranslations = async (surahId, range, language = "E") => {
   try {
     const url = `${AYAH_TRANSLATION_API}/${surahId}/${range}/${language}`;
-    console.log('Fetching ayah translations from:', url);
-    
+    console.log("Fetching ayah translations from:", url);
+
     const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Ayah translations data received:', data);
+    console.log("Ayah translations data received:", data);
     return data;
   } catch (error) {
-    console.warn('Failed to fetch ayah translations from new API:', error.message);
+    console.warn(
+      "Failed to fetch ayah translations from new API:",
+      error.message
+    );
     throw error;
   }
 };
@@ -771,34 +1388,37 @@ export const fetchThafheemWordMeanings = async (surahId, verseId) => {
   }
 };
 
-
 // Fetch a note by id from Thafheem API
 export const fetchNoteById = async (noteId) => {
   const id = String(noteId).trim();
   const url = `${NOTES_API}/${encodeURIComponent(id)}`;
-  
+
   // Fetching note by ID
-  
+
   try {
-    const response = await fetchWithTimeout(url, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    }, 5000); // 5 second timeout
+    const response = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+      5000
+    ); // 5 second timeout
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
     return data;
   } catch (error) {
-    console.warn('Error fetching note by id:', error.message);
+    console.warn("Error fetching note by id:", error.message);
     // Return a fallback note when API is unavailable
     return {
       id: id,
       note_text: `Note ${id} is currently unavailable. The API server may be down. Please try again later.`,
       surah_id: null,
       verse_id: null,
-      interpretation_no: null
+      interpretation_no: null,
     };
   }
 };
@@ -833,7 +1453,10 @@ export const fetchInterpretation = async (
 
     return data;
   } catch (error) {
-    console.error("Error fetching interpretation from primary endpoint:", error);
+    console.error(
+      "Error fetching interpretation from primary endpoint:",
+      error
+    );
 
     // Fallback: Try range-based endpoint (treating single verse as range)
     try {
@@ -865,7 +1488,9 @@ export const fetchInterpretation = async (
         return langData;
       } catch (langError) {
         console.error("All interpretation endpoints failed:", langError);
-        console.warn(`Interpretation not available for Surah ${surahId}, Verse ${verseId}. All API endpoints returned errors.`);
+        console.warn(
+          `Interpretation not available for Surah ${surahId}, Verse ${verseId}. All API endpoints returned errors.`
+        );
         // Return null instead of throwing error to allow graceful handling
         return null;
       }
@@ -1001,39 +1626,44 @@ export const fetchRandomQuizQuestionsFromAllSurahs = async (count = 10) => {
   try {
     // Get a list of all surahs
     const surahs = await fetchSurahs();
-    
+
     // Randomly select different surahs and fetch questions from them
     const randomQuestions = [];
     const questionsPerSurah = Math.max(1, Math.floor(count / 5)); // Distribute across ~5 surahs
     const selectedSurahs = [];
-    
+
     // Randomly select 5 different surahs
     while (selectedSurahs.length < Math.min(5, surahs.length)) {
       const randomSurah = surahs[Math.floor(Math.random() * surahs.length)];
-      if (!selectedSurahs.find(s => s.number === randomSurah.number)) {
+      if (!selectedSurahs.find((s) => s.number === randomSurah.number)) {
         selectedSurahs.push(randomSurah);
       }
     }
-    
+
     // Fetch questions from each selected surah
     for (const surah of selectedSurahs) {
       try {
-        const surahQuestions = await fetchRandomQuizQuestions(surah.number, questionsPerSurah);
+        const surahQuestions = await fetchRandomQuizQuestions(
+          surah.number,
+          questionsPerSurah
+        );
         if (surahQuestions && surahQuestions.length > 0) {
           randomQuestions.push(...surahQuestions);
         }
       } catch (error) {
-        console.warn(`Failed to fetch questions from surah ${surah.number}:`, error.message);
+        console.warn(
+          `Failed to fetch questions from surah ${surah.number}:`,
+          error.message
+        );
         // Continue with other surahs
       }
     }
-    
+
     // Shuffle the combined questions and limit to requested count
     const shuffledQuestions = randomQuestions.sort(() => Math.random() - 0.5);
     return shuffledQuestions.slice(0, count);
-    
   } catch (error) {
-    console.error('Error fetching random questions from all surahs:', error);
+    console.error("Error fetching random questions from all surahs:", error);
     // Fallback to questions from Al-Fatiha
     return fetchRandomQuizQuestions(1, count);
   }
@@ -1647,18 +2277,27 @@ export const searchQuranContent = async (query, language = "en") => {
 
     const data = await response.json();
     console.log("Search API response:", data); // Debug log
-    
+
     // Enhanced results with better formatting
     const results = data.search?.results || [];
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       ...result,
       // Ensure we have the translated text
-      text: result.text || result.translated_text || result.translation?.text || 'Translation not available',
+      text:
+        result.text ||
+        result.translated_text ||
+        result.translation?.text ||
+        "Translation not available",
       // Add chapter information if available
-      chapter: result.chapter || { name_simple: `Surah ${result.verse_key.split(':')[0]}` },
+      chapter: result.chapter || {
+        name_simple: `Surah ${result.verse_key.split(":")[0]}`,
+      },
       // Highlight matched terms (basic implementation)
-      highlighted_text: highlightSearchTerms(result.text || result.translated_text || '', query)
+      highlighted_text: highlightSearchTerms(
+        result.text || result.translated_text || "",
+        query
+      ),
     }));
   } catch (error) {
     console.error("Error searching Quran content:", error);
@@ -1669,16 +2308,19 @@ export const searchQuranContent = async (query, language = "en") => {
 // Helper function to highlight search terms in text
 const highlightSearchTerms = (text, query) => {
   if (!text || !query) return text;
-  
+
   try {
-    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+    const searchTerms = query
+      .toLowerCase()
+      .split(" ")
+      .filter((term) => term.length > 2);
     let highlightedText = text;
-    
-    searchTerms.forEach(term => {
-      const regex = new RegExp(`(${term})`, 'gi');
-      highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+
+    searchTerms.forEach((term) => {
+      const regex = new RegExp(`(${term})`, "gi");
+      highlightedText = highlightedText.replace(regex, "<mark>$1</mark>");
     });
-    
+
     return highlightedText;
   } catch (error) {
     return text; // Return original text if highlighting fails
@@ -1689,34 +2331,35 @@ const highlightSearchTerms = (text, query) => {
 export const searchVerseReference = async (query) => {
   const versePattern = /^(\d+):(\d+)(?:-(\d+))?$/;
   const match = query.trim().match(versePattern);
-  
+
   if (!match) return null;
-  
+
   const surahNumber = parseInt(match[1]);
   const startVerse = parseInt(match[2]);
   const endVerse = match[3] ? parseInt(match[3]) : startVerse;
-  
+
   try {
     // Get surah info
     const surahs = await fetchSurahs();
-    const surah = surahs.find(s => s.number === surahNumber);
-    
+    const surah = surahs.find((s) => s.number === surahNumber);
+
     if (!surah) return null;
-    
+
     // Create verse reference result
     const verseKey = `${surahNumber}:${startVerse}`;
-    const displayText = endVerse > startVerse 
-      ? `Verses ${startVerse}-${endVerse} from ${surah.name}`
-      : `Verse ${startVerse} from ${surah.name}`;
-    
+    const displayText =
+      endVerse > startVerse
+        ? `Verses ${startVerse}-${endVerse} from ${surah.name}`
+        : `Verse ${startVerse} from ${surah.name}`;
+
     return {
-      type: 'verse_reference',
+      type: "verse_reference",
       verse_key: verseKey,
       surah_number: surahNumber,
       verse_start: startVerse,
       verse_end: endVerse,
       surah_info: surah,
-      display_text: displayText
+      display_text: displayText,
     };
   } catch (error) {
     console.error("Error searching verse reference:", error);
@@ -1729,23 +2372,23 @@ export const searchQuranEnhanced = async (query, language = "en") => {
   try {
     // Check if query is a verse reference first
     const verseRef = await searchVerseReference(query);
-    
+
     const [surahResults, contentResults] = await Promise.all([
       searchSurahsByName(query),
-      query.trim().length >= 3 ? searchQuranContent(query, language) : []
+      query.trim().length >= 3 ? searchQuranContent(query, language) : [],
     ]);
 
     // Get surah names for verse results
     const surahsData = await fetchSurahs();
     const surahNamesMap = {};
-    surahsData.forEach(surah => {
+    surahsData.forEach((surah) => {
       surahNamesMap[surah.number] = surah;
     });
 
     // Enhance verse results with surah information
-    const enhancedVerses = contentResults.map(verse => ({
+    const enhancedVerses = contentResults.map((verse) => ({
       ...verse,
-      surahInfo: surahNamesMap[parseInt(verse.verse_key.split(':')[0])] || null
+      surahInfo: surahNamesMap[parseInt(verse.verse_key.split(":")[0])] || null,
     }));
 
     // Add verse reference result if found
@@ -1754,7 +2397,7 @@ export const searchQuranEnhanced = async (query, language = "en") => {
         ...verseRef,
         text: verseRef.display_text,
         verse_key: verseRef.verse_key,
-        surahInfo: verseRef.surah_info
+        surahInfo: verseRef.surah_info,
       });
     }
 
@@ -1763,7 +2406,7 @@ export const searchQuranEnhanced = async (query, language = "en") => {
       verses: enhancedVerses,
       hasResults: surahResults.length > 0 || enhancedVerses.length > 0,
       totalResults: surahResults.length + enhancedVerses.length,
-      hasVerseReference: !!verseRef
+      hasVerseReference: !!verseRef,
     };
   } catch (error) {
     console.error("Error in enhanced search:", error);
@@ -1778,7 +2421,7 @@ export const searchQuran = async (query, language = "en") => {
     return await searchQuranEnhanced(query, language);
   } catch (error) {
     console.error("Enhanced search failed, using fallback:", error);
-    
+
     // Fallback to original implementation
     const isLikelyName = /^(al-|an-|as-|\d+\.?\s*)?[a-z\s-]+$/i.test(
       query.trim()
@@ -1854,9 +2497,7 @@ export const fetchAppSettings = async () => {
 // Fetch AI API configuration from Directus CMS
 export const fetchAiApiConfig = async () => {
   try {
-    const response = await fetch(
-      `${DIRECTUS_BASE_URL}/items/thafheem_ai_api`
-    );
+    const response = await fetch(`${DIRECTUS_BASE_URL}/items/thafheem_ai_api`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -1923,33 +2564,32 @@ export const fetchPopularChapters = async (language = "en") => {
   }
 };
 
-
 // Fetch Tajweed rules
-export const fetchTajweedRules = async (ruleNo = '0') => {
+export const fetchTajweedRules = async (ruleNo = "0") => {
   try {
     // Replace dots with underscores in rule number as per API spec
-    const formattedRuleNo = ruleNo.toString().replace(/\./g, '_');
+    const formattedRuleNo = ruleNo.toString().replace(/\./g, "_");
     const url = `${API_BASE_URL}/thajweedrules/${formattedRuleNo}`;
-    
-    console.log('Fetching Tajweed rules from:', url);
+
+    console.log("Fetching Tajweed rules from:", url);
     const response = await fetchWithTimeout(url, {}, 8000);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    console.log('Tajweed rules data received:', data);
+    console.log("Tajweed rules data received:", data);
     return data;
   } catch (error) {
-    console.error('Error fetching Tajweed rules:', error);
+    console.error("Error fetching Tajweed rules:", error);
     throw error;
   }
 };
 
 // Fetch all main Tajweed rules (ruleno = '0')
 export const fetchAllTajweedRules = async () => {
-  return fetchTajweedRules('0');
+  return fetchTajweedRules("0");
 };
 
 // Fetch specific Tajweed rule by rule number

@@ -1545,7 +1545,7 @@ export const fetchInterpretationRange = async (
 export const fetchAllInterpretations = async (
   surahId,
   verseId,
-  language = "en"
+  _language = "en"
 ) => {
   try {
     const url = `${API_BASE_URL}/audiointerpret/${surahId}/${verseId}`;
@@ -2595,4 +2595,30 @@ export const fetchAllTajweedRules = async () => {
 // Fetch specific Tajweed rule by rule number
 export const fetchSpecificTajweedRule = async (ruleNo) => {
   return fetchTajweedRules(ruleNo);
+};
+
+// Fetch Arabic verse text from Quran.com API for Tajweed examples
+export const fetchArabicVerseForTajweed = async (verseKey) => {
+  try {
+    const response = await fetchWithTimeout(
+      `https://api.quran.com/api/v4/quran/verses/uthmani?verse_key=${verseKey}`,
+      {},
+      5000
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.verses && data.verses.length > 0) {
+      return data.verses[0].text_uthmani || "Arabic text not available";
+    } else {
+      throw new Error("No verse data found");
+    }
+  } catch (error) {
+    console.error("Error fetching Arabic verse for Tajweed:", error);
+    return "Arabic text not available";
+  }
 };

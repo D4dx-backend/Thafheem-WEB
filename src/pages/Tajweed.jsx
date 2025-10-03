@@ -14,6 +14,7 @@ import { useTheme } from "../context/ThemeContext";
 import {
   fetchAllTajweedRules,
   fetchSpecificTajweedRule,
+  fetchArabicVerseForTajweed,
 } from "../api/apifunction";
 
 const Tajweed = () => {
@@ -27,6 +28,9 @@ const Tajweed = () => {
   const [loadingSubRules, setLoadingSubRules] = useState({});
   const [expandedSubRules, setExpandedSubRules] = useState({});
   const [loadingNestedSubRules, setLoadingNestedSubRules] = useState({});
+  const [selectedArabicText, setSelectedArabicText] = useState("");
+  const [loadingArabicText, setLoadingArabicText] = useState(false);
+  const [currentRuleTitle, setCurrentRuleTitle] = useState("");
   const { quranFont } = useTheme();
 
   // Fetch Tajweed rules on component mount
@@ -294,12 +298,123 @@ const Tajweed = () => {
     }
   };
 
+  // Helper function to extract and clean Arabic text from mixed content
+  const extractArabicText = (text) => {
+    if (!text) return "";
+
+    // Arabic Unicode ranges
+    const arabicPattern =
+      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g;
+    const arabicMatches = text.match(arabicPattern);
+
+    if (arabicMatches && arabicMatches.length > 0) {
+      return arabicMatches.join(" ").trim();
+    }
+
+    return "";
+  };
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
       .toString()
       .padStart(2, "0")}`;
+  };
+
+  // Function to fetch Arabic ayah text
+  const fetchArabicAyah = async (verseKey) => {
+    try {
+      return await fetchArabicVerseForTajweed(verseKey);
+    } catch (error) {
+      console.error("Error fetching Arabic ayah:", error);
+      return "Arabic text not available";
+    }
+  };
+
+  // Function to handle title click and show Arabic text
+  const handleTitleClick = async (examples, ruleTitle = "") => {
+    if (!examples || examples.trim() === "") {
+      setSelectedArabicText("No examples available");
+      return;
+    }
+
+    try {
+      setLoadingArabicText(true);
+      setCurrentRuleTitle(ruleTitle);
+
+      // Extract verse references from examples (assuming format like "2:255" or "18:10")
+      // Also handle Arabic text patterns and common formats
+      const versePattern = /(\d+):(\d+)/g;
+      const matches = [...examples.matchAll(versePattern)];
+
+      if (matches.length > 0) {
+        // If multiple verse references, fetch the first one
+        const verseKey = `${matches[0][1]}:${matches[0][2]}`;
+        console.log(`Fetching Arabic text for verse: ${verseKey}`);
+
+        const arabicText = await fetchArabicAyah(verseKey);
+
+        // If multiple verses, add a note
+        if (matches.length > 1) {
+          const additionalVerses = matches
+            .slice(1)
+            .map((match) => `${match[1]}:${match[2]}`)
+            .join(", ");
+          setSelectedArabicText(`${arabicText}\n)`);
+        } else {
+          setSelectedArabicText(arabicText);
+        }
+      } else {
+        // If no verse reference found, check if the examples already contain Arabic text
+        const arabicPattern =
+          /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+        if (arabicPattern.test(examples)) {
+          // If examples contain Arabic text, clean and display it
+          const arabicWords = examples.match(
+            /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+/g
+          );
+
+          if (arabicWords && arabicWords.length > 0) {
+            // Join all Arabic text found
+            const cleanedArabicText = arabicWords.join(" ").trim();
+            setSelectedArabicText(cleanedArabicText);
+          } else {
+            setSelectedArabicText(examples);
+          }
+        } else {
+          // Try to find common Arabic transliterations and convert them
+          const transliterationPatterns = [
+            { pattern: /min\s+aamana/gi, arabic: "مِنْ آمَنَ" },
+            { pattern: /min\s+haadin/gi, arabic: "مِنْ هَادٍ" },
+            { pattern: /min\s+ilmin/gi, arabic: "مِنْ عِلْمٍ" },
+            { pattern: /bismillah/gi, arabic: "بِسْمِ اللَّهِ" },
+            { pattern: /alhamdulillah/gi, arabic: "الْحَمْدُ لِلَّهِ" },
+          ];
+
+          let foundTransliteration = false;
+          for (const { pattern, arabic } of transliterationPatterns) {
+            if (pattern.test(examples)) {
+              setSelectedArabicText(arabic);
+              foundTransliteration = true;
+              break;
+            }
+          }
+
+          if (!foundTransliteration) {
+            setSelectedArabicText(
+              `Examples: ${examples}\n\n(Click on rule titles with verse references like "2:255" to see Arabic text)`
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error handling title click:", error);
+      setSelectedArabicText("Error loading Arabic text");
+    } finally {
+      setLoadingArabicText(false);
+    }
   };
 
   // Loading state
@@ -320,7 +435,7 @@ const Tajweed = () => {
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 sm:gap-3">
             <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-tight font-malayalam">
               ഖുർആന്‍ പാരായണ ശാസ്ത്രം (علم التجويد)
@@ -330,7 +445,7 @@ const Tajweed = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <div className="bg-white rounded-lg dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
           {/* Error Message */}
           {error && (
@@ -382,8 +497,16 @@ const Tajweed = () => {
                       className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <div className="flex items-center gap-2 pr-2">
-                        <h3 className="text-sm sm:text-base font-medium text-blue-600 dark:text-blue-400 font-malayalam">
+                        <h3
+                          className="text-sm sm:text-base font-medium text-[#2AA0BF] dark:text-[#2AA0BF] font-malayalam cursor-pointer   transition-colors flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTitleClick(rule.examples, rule.title);
+                          }}
+                          title="Click to see Arabic examples"
+                        >
                           {rule.title}
+                          {/* <span className="text-xs opacity-60">📖</span> */}
                         </h3>
                         {/* {rule.hasSubRules && (
                           <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded">
@@ -423,25 +546,38 @@ const Tajweed = () => {
                           rule.subRulesLoaded &&
                           rule.subRules.length > 0 && (
                             <div className="mt-4 sm:mt-6">
-                              <h4 className="text-xs sm:text-sm font-medium text-blue-600 mb-3 sm:mb-4 dark:text-blue-400 font-malayalam">
+                              {/* <h4 className="text-xs sm:text-sm font-medium text-blue-600 mb-3 sm:mb-4 dark:text-blue-400 font-malayalam">
                                 ഉപനിയമങ്ങൾ ({rule.subRules.length}):
-                              </h4>
+                              </h4> */}
                               <div className="space-y-3">
                                 {rule.subRules.map((subRule, subIndex) => (
                                   <div
                                     key={subRule.id || subIndex}
-                                    className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-l-4 border-green-500"
+                                    className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-l-4 border-[#2AA0BF]"
                                   >
                                     <div className="flex items-start justify-between mb-2">
-                                      <h5 className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400 font-malayalam flex-1">
+                                      <h5
+                                        className="text-xs sm:text-sm font-medium text-[#2AA0BF] dark:text-[#2AA0BF] font-malayalam flex-1 cursor-pointer transition-colors flex items-center gap-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTitleClick(
+                                            subRule.examples,
+                                            subRule.title
+                                          );
+                                        }}
+                                        title="Click to see Arabic examples"
+                                      >
                                         {subRule.id}. {subRule.title}
+                                        <span className="text-xs opacity-60">
+                                          📖
+                                        </span>
                                       </h5>
                                       {subRule.hasSubRules && (
                                         <button
                                           onClick={() =>
                                             toggleSubRule(subRule.id, rule.id)
                                           }
-                                          className="text-xs bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 px-2 py-0.5 rounded ml-2 hover:bg-green-200 dark:hover:bg-green-800 transition-colors cursor-pointer"
+                                          className="text-xs bg-[#2AA0BF] dark:bg-gray-900 text-white dark:text-[#2AA0BF] px-2 py-0.5 rounded ml-2   transition-colors cursor-pointer"
                                         >
                                           {expandedSubRules[subRule.id] ? (
                                             <>
@@ -488,11 +624,11 @@ const Tajweed = () => {
                                       subRule.nestedSubRulesLoaded &&
                                       subRule.nestedSubRules &&
                                       subRule.nestedSubRules.length > 0 && (
-                                        <div className="mt-4 pl-4 border-l-2 border-yellow-400">
-                                          <h6 className="text-xs font-medium text-yellow-600 mb-2 dark:text-yellow-400 font-malayalam">
+                                        <div className="mt-4 pl-4 ">
+                                          {/* <h6 className="text-xs font-medium text-yellow-600 mb-2 dark:text-yellow-400 font-malayalam">
                                             നെസ്റ്റഡ് ഉപനിയമങ്ങൾ (
                                             {subRule.nestedSubRules.length}):
-                                          </h6>
+                                          </h6> */}
                                           <div className="space-y-2">
                                             {subRule.nestedSubRules.map(
                                               (nestedSubRule, nestedIndex) => (
@@ -501,11 +637,24 @@ const Tajweed = () => {
                                                     nestedSubRule.id ||
                                                     nestedIndex
                                                   }
-                                                  className="bg-yellow-50 dark:bg-yellow-900/20 p-2 sm:p-3 rounded border-l-2 border-yellow-500"
+                                                  className="bg-white dark:bg-gray-900 p-2 sm:p-3 rounded border-l-2 border-[#2AA0BF]"
                                                 >
-                                                  <h6 className="text-xs font-medium text-yellow-700 dark:text-yellow-300 font-malayalam mb-1">
+                                                  <h6
+                                                    className="text-xs font-medium text-[#2AA0BF] dark:text-[#2AA0BF] font-malayalam mb-1 cursor-pointer  transition-colors flex items-center gap-1"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleTitleClick(
+                                                        nestedSubRule.examples,
+                                                        nestedSubRule.title
+                                                      );
+                                                    }}
+                                                    title="Click to see Arabic examples"
+                                                  >
                                                     {nestedSubRule.id}.{" "}
                                                     {nestedSubRule.title}
+                                                    <span className="text-xs opacity-60">
+                                                      📖
+                                                    </span>
                                                   </h6>
                                                   <p className="text-xs text-gray-700 dark:text-gray-300 font-malayalam leading-relaxed">
                                                     {nestedSubRule.description}
@@ -513,7 +662,7 @@ const Tajweed = () => {
                                                   {nestedSubRule.examples &&
                                                     nestedSubRule.examples.trim() !==
                                                       "" && (
-                                                      <div className="mt-1 pt-1 border-t border-yellow-200 dark:border-yellow-700">
+                                                      <div className="mt-1 pt-1 border-t border-[#2AA0BF] dark:border-[#2AA0BF]">
                                                         <p className="text-xs text-gray-600 dark:text-gray-400 font-malayalam">
                                                           <span className="font-medium">
                                                             ഉദാഹരണങ്ങൾ:
@@ -561,100 +710,135 @@ const Tajweed = () => {
                             </div>
                           )}
 
-                        {/* Example Section with Audio Player */}
-                        {rule.examples && rule.examples.trim() !== "" && (
-                          <div className="mt-4 sm:mt-6">
-                            <h4 className="text-xs sm:text-sm font-medium text-green-600 mb-3 sm:mb-4 dark:text-green-400 font-malayalam">
-                              ഉദാഹരണം:
-                            </h4>
-                            <div className="mb-3">
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-malayalam">
-                                ഉദാഹരണ വാക്യങ്ങൾ:
-                              </p>
-                              <p className="text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-2 rounded font-malayalam">
-                                {rule.examples}
-                              </p>
+                        {/* Audio Player Section - Always show when rule is expanded */}
+                        <div className="mt-4 sm:mt-6">
+                          {/* Audio Player */}
+                          {/* Audio Player */}
+                          <div className="bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg">
+                            {/* Arabic Example Text Display */}
+                            <div className="text-center mb-6 sm:mb-8">
+                              <div className="w-full flex justify-center items-center gap-2 sm:gap-3 lg:gap-4 px-2 sm:px-4">
+                                {/* Left Navigation Button */}
+                                <button
+                                  className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm flex-shrink-0 self-center"
+                                  aria-label="Previous"
+                                >
+                                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
+                                </button>
+
+                                {/* Arabic Text Display */}
+                                <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 sm:p-4 lg:p-6 w-full max-w-[406px] min-h-[80px] sm:min-h-[200px] lg:min-h-[132px] flex items-center justify-center shadow-inner border border-gray-300/30 dark:border-gray-700/30 flex-shrink">
+                                  {loadingArabicText ? (
+                                    <div className="flex flex-col items-center justify-center gap-3">
+                                      <div className="animate-spin rounded-full h-8 w-8 border-3 border-gray-300 border-t-gray-600 dark:border-gray-600 dark:border-t-gray-300"></div>
+                                      <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+                                        Loading Arabic text...
+                                      </span>
+                                    </div>
+                                  ) : selectedArabicText ? (
+                                    <div className="text-center w-full px-2">
+                                      <p
+                                        className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white leading-relaxed mb-2"
+                                        style={{
+                                          fontFamily: `'${quranFont}', 'Amiri', 'Scheherazade New', serif`,
+                                          direction: "rtl",
+                                          lineHeight: "2",
+                                          textShadow:
+                                            "0 1px 2px rgba(0,0,0,0.1)",
+                                        }}
+                                      >
+                                        {selectedArabicText.split("\n\n")[0]}
+                                      </p>
+                                      {selectedArabicText.includes("\n\n") && (
+                                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-3 font-malayalam leading-relaxed">
+                                          {selectedArabicText.split("\n\n")[1]}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center px-4">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 font-malayalam mb-3 font-medium">
+                                        📖 Click on rule titles to see Arabic
+                                        examples
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-500 font-malayalam">
+                                        Look for verse references like "2:255"
+                                        in examples
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Right Navigation Button */}
+                                <button
+                                  className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm flex-shrink-0 self-center"
+                                  aria-label="Next"
+                                >
+                                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
+                                </button>
+                              </div>
                             </div>
 
-                            {/* Audio Player */}
-                            <div className="bg-[#D9D9D9] rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white dark:bg-gray-900">
-                              {/* Arabic Example Text Display */}
-                              <div className="text-center mb-6 sm:mb-8">
-                                <div className="w-full">
-                                  <div className="bg-[#B3B3B3] dark:bg-[#323A3F] rounded-lg p-3 sm:p-4 lg:p-6 mx-auto h-auto max-w-[406px] min-h-[80px] sm:min-h-[100px] lg:h-[132px] flex items-center justify-center">
-                                    <p
-                                      className="text-lg sm:text-lg lg:text-xl xl:text-2xl font-bold text-white leading-relaxed text-center px-2 font-malayalam"
-                                      style={{
-                                        fontFamily: `'${quranFont}', serif`,
-                                      }}
-                                    >
-                                      വാക്യ റഫറൻസുകൾ: {rule.examples}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Navigation Arrows */}
-                                <div className="flex sm:justify-around justify-between sm:gap-50 items-center mb-6 sm:mb-8 mt-4">
-                                  <button className="p-2 sm:p-3 rounded-full transition-colors duration-200">
-                                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white" />
-                                  </button>
-                                  <button className="p-2 sm:p-3 rounded-full transition-colors duration-200">
-                                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white" />
-                                  </button>
-                                </div>
+                            {/* Progress Bar */}
+                            <div className="mb-4 sm:mb-6 px-1 sm:px-2 flex flex-col items-center">
+                              <div className="w-full max-w-[406px] bg-gray-400/40 dark:bg-gray-700/40 rounded-full h-1.5 sm:h-2 overflow-hidden shadow-inner backdrop-blur-sm">
+                                <div
+                                  className="bg-gradient-to-r from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white h-full rounded-full transition-all duration-300 shadow-sm"
+                                  style={{
+                                    width: `${
+                                      (currentTime / totalTime) * 100
+                                    }%`,
+                                  }}
+                                ></div>
                               </div>
 
-                              {/* Progress Bar */}
-                              <div className="mb-4 sm:mb-6 px-1 sm:px-2 flex flex-col items-center">
-                                <div className="w-full max-w-[406px] bg-gray-600 dark:bg-[#4E4E4E] rounded-full h-1 sm:h-1.5">
-                                  <div
-                                    className="bg-black dark:bg-white h-1 sm:h-1.5 rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${
-                                        (currentTime / totalTime) * 100
-                                      }%`,
-                                    }}
-                                  ></div>
-                                </div>
-
-                                <div className="flex justify-between text-xs sm:text-sm text-black dark:text-white mt-2 w-full max-w-[406px]">
-                                  <span className="font-mono">
-                                    {formatTime(currentTime)}
-                                  </span>
-                                  <span className="font-mono">
-                                    {formatTime(totalTime)}
-                                  </span>
-                                </div>
+                              <div className="flex justify-between text-xs sm:text-sm text-gray-800 dark:text-gray-200 mt-3 w-full max-w-[406px] font-medium">
+                                <span className="font-mono tabular-nums">
+                                  {formatTime(currentTime)}
+                                </span>
+                                <span className="font-mono tabular-nums">
+                                  {formatTime(totalTime)}
+                                </span>
                               </div>
+                            </div>
 
-                              {/* Audio Controls */}
-                              <div className="flex justify-center items-center gap-3 sm:gap-4 lg:gap-6">
-                                <button className="p-2 sm:p-3 rounded-full transition-colors duration-200">
-                                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-black dark:text-white" />
-                                </button>
+                            {/* Audio Controls */}
+                            <div className="flex justify-center items-center gap-3 sm:gap-5 lg:gap-6">
+                              <button
+                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
+                                aria-label="Volume"
+                              >
+                                <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                              </button>
 
-                                <button className="p-2 sm:p-3 rounded-full transition-colors duration-200">
-                                  <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-black dark:text-white" />
-                                </button>
+                              <button
+                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
+                                aria-label="Skip back"
+                              >
+                                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                              </button>
 
-                                <button
-                                  onClick={togglePlay}
-                                  className="p-3 sm:p-4 hover:bg-gray-200 dark:text-white dark:bg-[#A2A2A2] rounded-full text-gray-800 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                >
-                                  {isPlaying ? (
-                                    <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
-                                  ) : (
-                                    <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
-                                  )}
-                                </button>
+                              <button
+                                onClick={togglePlay}
+                                className="p-4 sm:p-5 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white rounded-full text-white dark:text-gray-900 transition-all duration-200 transform hover:scale-110 active:scale-100 shadow-xl hover:shadow-2xl"
+                                aria-label={isPlaying ? "Pause" : "Play"}
+                              >
+                                {isPlaying ? (
+                                  <Pause className="w-6 h-6 sm:w-7 sm:h-7" />
+                                ) : (
+                                  <Play className="w-6 h-6 sm:w-7 sm:h-7 ml-1" />
+                                )}
+                              </button>
 
-                                <button className="p-2 sm:p-3 rounded-full transition-colors duration-200">
-                                  <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-black dark:text-white" />
-                                </button>
-                              </div>
+                              <button
+                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
+                                aria-label="Skip forward"
+                              >
+                                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                              </button>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>

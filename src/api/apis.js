@@ -1,19 +1,19 @@
 // Development proxy configuration to bypass CORS
 const isDevelopment = import.meta.env.DEV;
 // Force development mode for now to ensure proxy is used
-export const API_BASE_URL = '/api/thafheem';
-export const QURAN_API_BASE = '/api/quran';
-export const DIRECTUS_BASE_URL = '/api/directus';
+export const API_BASE_URL = "/api/thafheem";
+export const QURAN_API_BASE = "/api/quran";
+export const DIRECTUS_BASE_URL = "/api/directus";
 
 // Debug logging
-console.log('API Configuration:', {
+console.log("API Configuration:", {
   isDevelopment,
   API_BASE_URL,
   QURAN_API_BASE,
   DIRECTUS_BASE_URL,
   currentPort: window.location.port,
   importMetaEnv: import.meta.env,
-  SURA_NAMES_API: `${API_BASE_URL}/suranames/all`
+  SURA_NAMES_API: `${API_BASE_URL}/suranames/all`,
 });
 
 export const SURA_NAMES_API = `${API_BASE_URL}/suranames/all`;
@@ -34,3 +34,4 @@ export const DIRECTUS_AI_API_CONFIG = `${DIRECTUS_BASE_URL}/items/thafheem_ai_ap
 
 // Add this to your existing apis.js file
 export const TAJWEED_RULES_API = `${API_BASE_URL}/thajweedrules`;
+export const WORD_MEANINGS_API = `${API_BASE_URL}/wordmeanings`;

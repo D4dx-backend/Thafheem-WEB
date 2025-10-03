@@ -322,6 +322,24 @@ const Tajweed = () => {
       .padStart(2, "0")}`;
   };
 
+  // Function to convert English numbers to Arabic numbers
+  const convertToArabicNumbers = (englishNumber) => {
+    const arabicNumbers = {
+      '0': '٠',
+      '1': '١',
+      '2': '٢',
+      '3': '٣',
+      '4': '٤',
+      '5': '٥',
+      '6': '٦',
+      '7': '٧',
+      '8': '٨',
+      '9': '٩'
+    };
+    
+    return englishNumber.toString().replace(/[0-9]/g, (digit) => arabicNumbers[digit]);
+  };
+
   // Function to fetch Arabic ayah text
   const fetchArabicAyah = async (verseKey) => {
     try {
@@ -351,9 +369,15 @@ const Tajweed = () => {
       if (matches.length > 0) {
         // If multiple verse references, fetch the first one
         const verseKey = `${matches[0][1]}:${matches[0][2]}`;
+        const surahNumber = matches[0][1];
+        const ayahNumber = matches[0][2];
         console.log(`Fetching Arabic text for verse: ${verseKey}`);
 
         const arabicText = await fetchArabicAyah(verseKey);
+
+        // Add ayah number to the Arabic text (convert to Arabic numbers)
+        const arabicAyahNumber = convertToArabicNumbers(ayahNumber);
+        const arabicWithNumber = `${arabicText} ﴿${arabicAyahNumber}﴾`;
 
         // If multiple verses, add a note
         if (matches.length > 1) {
@@ -361,9 +385,9 @@ const Tajweed = () => {
             .slice(1)
             .map((match) => `${match[1]}:${match[2]}`)
             .join(", ");
-          setSelectedArabicText(`${arabicText}\n)`);
+          setSelectedArabicText(`${arabicWithNumber}\n\nSurah ${surahNumber}, Ayah ${ayahNumber} (Additional verses: ${additionalVerses})`);
         } else {
-          setSelectedArabicText(arabicText);
+          setSelectedArabicText(`${arabicWithNumber}\n\nSurah ${surahNumber}, Ayah ${ayahNumber}`);
         }
       } else {
         // If no verse reference found, check if the examples already contain Arabic text
@@ -740,7 +764,7 @@ const Tajweed = () => {
                                       <p
                                         className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white leading-relaxed mb-2"
                                         style={{
-                                          fontFamily: `'${quranFont}', 'Amiri', 'Scheherazade New', serif`,
+                                          fontFamily: `'${quranFont}', serif`,
                                           direction: "rtl",
                                           lineHeight: "2",
                                           textShadow:

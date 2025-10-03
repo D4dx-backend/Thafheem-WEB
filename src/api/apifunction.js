@@ -2587,6 +2587,33 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
   }
 };
 
+// Fetch word meanings for drag and drop quiz
+export const fetchWordMeanings = async (
+  surahId,
+  ayahNumber,
+  language = "E"
+) => {
+  try {
+    const url = language
+      ? `${API_BASE_URL}/wordmeanings/${surahId}/${ayahNumber}/${language}`
+      : `${API_BASE_URL}/wordmeanings/${surahId}/${ayahNumber}`;
+
+    console.log("Fetching word meanings from:", url);
+    const response = await fetchWithTimeout(url, {}, 8000);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Word meanings data received:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching word meanings:", error);
+    throw error;
+  }
+};
+
 // Fetch all main Tajweed rules (ruleno = '0')
 export const fetchAllTajweedRules = async () => {
   return fetchTajweedRules("0");

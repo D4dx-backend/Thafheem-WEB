@@ -21,6 +21,10 @@ const DragDropQuiz = () => {
   const [dynamicArabicTexts, setDynamicArabicTexts] = useState([]);
   const [dynamicMalayalamOptions, setDynamicMalayalamOptions] = useState([]);
   const [loadingWordMeanings, setLoadingWordMeanings] = useState(false);
+  
+  // Pagination states
+  const [currentWordPage, setCurrentWordPage] = useState(0);
+  const [wordsPerPage] = useState(9);
 
   // Surah selector state
   const [selectedSurahId, setSelectedSurahId] = useState(1);
@@ -140,21 +144,25 @@ const DragDropQuiz = () => {
 
             setDynamicArabicTexts(arabicTexts);
             setDynamicMalayalamOptions(malayalamOptions);
+            setCurrentWordPage(0); // Reset to first page when new data loads
           } else {
             // No valid words found
             setDynamicArabicTexts([]);
             setDynamicMalayalamOptions([]);
+            setCurrentWordPage(0);
           }
         } else {
           // Reset to fallback data if no API data
           setDynamicArabicTexts([]);
           setDynamicMalayalamOptions([]);
+          setCurrentWordPage(0);
         }
       } catch (error) {
         console.error("Failed to load word meanings:", error);
         // Reset to fallback data on error
         setDynamicArabicTexts([]);
         setDynamicMalayalamOptions([]);
+        setCurrentWordPage(0);
       } finally {
         setLoadingWordMeanings(false);
       }
@@ -183,12 +191,28 @@ const DragDropQuiz = () => {
     { id: "opt6", text: "പരമദയാലുവായ" },
   ];
 
-  const currentArabicTexts =
+  const allArabicTexts =
     dynamicArabicTexts.length > 0 ? dynamicArabicTexts : arabicTexts;
-  const currentMalayalamOptions =
+  const allMalayalamOptions =
     dynamicMalayalamOptions.length > 0
       ? dynamicMalayalamOptions
       : malayalamOptions;
+
+  // Get current page words
+  const startIndex = currentWordPage * wordsPerPage;
+  const endIndex = startIndex + wordsPerPage;
+  const currentArabicTexts = allArabicTexts.slice(startIndex, endIndex);
+  
+  // Get corresponding Malayalam options for current page
+  const currentPageMeanings = currentArabicTexts.map(word => word.correctTranslation);
+  const currentMalayalamOptions = allMalayalamOptions.filter(option => 
+    currentPageMeanings.includes(option.text)
+  );
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(allArabicTexts.length / wordsPerPage);
+  const hasNextPage = currentWordPage < totalPages - 1;
+  const hasPrevPage = currentWordPage > 0;
 
   const handleDragStart = (e, item) => {
     setDraggedItem(item);
@@ -231,6 +255,7 @@ const DragDropQuiz = () => {
     if (currentAyah > startVerse) {
       setCurrentAyah(currentAyah - 1);
       setDroppedItems({}); // Reset dropped items for new ayah
+      setCurrentWordPage(0); // Reset to first page
     }
   };
 
@@ -239,6 +264,22 @@ const DragDropQuiz = () => {
     if (currentAyah < endVerse) {
       setCurrentAyah(currentAyah + 1);
       setDroppedItems({}); // Reset dropped items for new ayah
+      setCurrentWordPage(0); // Reset to first page
+    }
+  };
+
+  // Word pagination handlers
+  const handleNextWordPage = () => {
+    if (hasNextPage) {
+      setCurrentWordPage(currentWordPage + 1);
+      setDroppedItems({}); // Reset dropped items for new page
+    }
+  };
+
+  const handlePrevWordPage = () => {
+    if (hasPrevPage) {
+      setCurrentWordPage(currentWordPage - 1);
+      setDroppedItems({}); // Reset dropped items for new page
     }
   };
 
@@ -268,6 +309,7 @@ const DragDropQuiz = () => {
       setShowSurahSelector(false);
       setDroppedItems({});
       setScore(0);
+      setCurrentWordPage(0); // Reset to first page
     }
   };
 
@@ -449,11 +491,17 @@ const DragDropQuiz = () => {
             </div>
             <div className="hidden sm:block text-xs sm:text-sm text-gray-600 dark:text-white">
               <span>Ayah: {currentAyah}</span>
+              {totalPages > 1 && (
+                <span className="ml-4">Page: {currentWordPage + 1}/{totalPages}</span>
+              )}
               <span className="ml-4">മാർക്ക്: {score}</span>
             </div>
           </div>
           <div className="sm:hidden border-t border-gray-300 mt-2 pt-2 text-xs text-gray-600 dark:text-white flex justify-end gap-4">
             <span>Ayah: {currentAyah}</span>
+            {totalPages > 1 && (
+              <span>Page: {currentWordPage + 1}/{totalPages}</span>
+            )}
             <span>മാർക്ക്: {score}</span>
           </div>
         </div>
@@ -533,8 +581,7 @@ const DragDropQuiz = () => {
                       Malayalam Options
                     </h3>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 font-malayalam">
-                      {Array.from({ length: 8 }).map((_, index) => {
-                        const option = getAvailableOptions()[index];
+                    {getAvailableOptions().map((option, index) => {
                         const handleOptionDrop = (e) => {
                           e.preventDefault();
                           if (draggedItem) {
@@ -551,27 +598,49 @@ const DragDropQuiz = () => {
 
                         return (
                           <div
-                            key={index}
-                            draggable={!!option}
-                            onDragStart={(e) =>
-                              option && handleDragStart(e, option)
-                            }
+                            key={option.id}
+                            draggable={true}
+                            onDragStart={(e) => handleDragStart(e, option)}
                             onDragOver={handleDragOver}
                             onDrop={handleOptionDrop}
-                            className={`border rounded text-xs sm:text-sm w-full sm:w-60 lg:w-70 h-10 sm:h-12 flex items-center justify-center transition-shadow 
-                        ${
-                          option
-                            ? "bg-white dark:bg-gray-900 dark:text-white border-gray-300 cursor-move hover:shadow-md"
-                            : "bg-gray-100 dark:bg-gray-900 border-gray-300 text-gray-400"
-                        }`}
+                            className="border rounded text-xs sm:text-sm w-full sm:w-60 lg:w-70 h-10 sm:h-12 flex items-center justify-center transition-shadow bg-white dark:bg-gray-900 dark:text-white border-gray-300 cursor-move hover:shadow-md"
                           >
-                            {option ? option.text : ""}
+                            {option.text}
                           </div>
                         );
                       })}
                     </div>
                   </div>
                 </div>
+
+                {/* Word Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-4 mt-4 mb-4">
+                    <button
+                      onClick={handlePrevWordPage}
+                      disabled={!hasPrevPage}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      style={{ backgroundColor: "#2AA0BF" }}
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      Previous Words
+                    </button>
+                    
+                    <span className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {currentWordPage + 1} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={handleNextWordPage}
+                      disabled={!hasNextPage}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      style={{ backgroundColor: "#2AA0BF" }}
+                    >
+                      Next Words
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex flex-row sm:flex-row justify-center gap-4 sm:gap-8 items-center pt-6 sm:pt-8 mt-6 sm:mt-8">
                   <button

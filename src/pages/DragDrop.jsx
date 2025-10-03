@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, ArrowLeft, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  X,
+  RotateCcw,
+} from "lucide-react";
 import {
   fetchSurahs,
   fetchAyaRanges,
@@ -21,7 +27,7 @@ const DragDropQuiz = () => {
   const [dynamicArabicTexts, setDynamicArabicTexts] = useState([]);
   const [dynamicMalayalamOptions, setDynamicMalayalamOptions] = useState([]);
   const [loadingWordMeanings, setLoadingWordMeanings] = useState(false);
-  
+
   // Pagination states
   const [currentWordPage, setCurrentWordPage] = useState(0);
   const [wordsPerPage] = useState(9);
@@ -202,10 +208,12 @@ const DragDropQuiz = () => {
   const startIndex = currentWordPage * wordsPerPage;
   const endIndex = startIndex + wordsPerPage;
   const currentArabicTexts = allArabicTexts.slice(startIndex, endIndex);
-  
+
   // Get corresponding Malayalam options for current page
-  const currentPageMeanings = currentArabicTexts.map(word => word.correctTranslation);
-  const currentMalayalamOptions = allMalayalamOptions.filter(option => 
+  const currentPageMeanings = currentArabicTexts.map(
+    (word) => word.correctTranslation
+  );
+  const currentMalayalamOptions = allMalayalamOptions.filter((option) =>
     currentPageMeanings.includes(option.text)
   );
 
@@ -233,10 +241,21 @@ const DragDropQuiz = () => {
       const isCorrect =
         targetArabic && targetArabic.correctTranslation === draggedItem.text;
 
-      setDroppedItems((prev) => ({
-        ...prev,
-        [targetId]: { text: draggedItem.text, correct: isCorrect },
-      }));
+      setDroppedItems((prev) => {
+        const newDropped = { ...prev };
+
+        // Remove the dragged item from its previous location if it was already dropped somewhere
+        for (const key in newDropped) {
+          if (newDropped[key]?.text === draggedItem.text) {
+            delete newDropped[key];
+          }
+        }
+
+        // Add the item to the new target location
+        newDropped[targetId] = { text: draggedItem.text, correct: isCorrect };
+
+        return newDropped;
+      });
 
       if (isCorrect) {
         setScore((prev) => prev + 1);
@@ -492,7 +511,9 @@ const DragDropQuiz = () => {
             <div className="hidden sm:block text-xs sm:text-sm text-gray-600 dark:text-white">
               <span>Ayah: {currentAyah}</span>
               {totalPages > 1 && (
-                <span className="ml-4">Page: {currentWordPage + 1}/{totalPages}</span>
+                <span className="ml-4">
+                  Page: {currentWordPage + 1}/{totalPages}
+                </span>
               )}
               <span className="ml-4">മാർക്ക്: {score}</span>
             </div>
@@ -500,7 +521,9 @@ const DragDropQuiz = () => {
           <div className="sm:hidden border-t border-gray-300 mt-2 pt-2 text-xs text-gray-600 dark:text-white flex justify-end gap-4">
             <span>Ayah: {currentAyah}</span>
             {totalPages > 1 && (
-              <span>Page: {currentWordPage + 1}/{totalPages}</span>
+              <span>
+                Page: {currentWordPage + 1}/{totalPages}
+              </span>
             )}
             <span>മാർക്ക്: {score}</span>
           </div>
@@ -581,7 +604,7 @@ const DragDropQuiz = () => {
                       Malayalam Options
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-1 font-malayalam">
-                    {getAvailableOptions().map((option, index) => {
+                      {getAvailableOptions().map((option) => {
                         const handleOptionDrop = (e) => {
                           e.preventDefault();
                           if (draggedItem) {
@@ -625,7 +648,7 @@ const DragDropQuiz = () => {
                       <ChevronLeft className="w-3 h-3" />
                       Previous Words
                     </button>
-                    
+
                     <span className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
                       {currentWordPage + 1} of {totalPages}
                     </span>

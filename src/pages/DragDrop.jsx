@@ -580,7 +580,7 @@ const DragDropQuiz = () => {
                     <h3 className="text-sm sm:text-base font-medium text-center mb-2 text-gray-700 dark:text-white lg:hidden">
                       Malayalam Options
                     </h3>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 font-malayalam">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-1 font-malayalam">
                     {getAvailableOptions().map((option, index) => {
                         const handleOptionDrop = (e) => {
                           e.preventDefault();

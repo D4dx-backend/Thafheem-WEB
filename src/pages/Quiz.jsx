@@ -11,11 +11,11 @@ import {
   fetchQuizWithSurahInfo,
   fetchRandomQuizQuestions,
   fetchQuizQuestionsForRange,
-  fetchSurahs,
   validateQuizData,
   transformQuizData,
   createFallbackQuizData,
 } from "../api/apifunction";
+import { useSurahData } from "../hooks/useSurahData";
 
 const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(1);
@@ -39,20 +39,9 @@ const Quiz = () => {
   const [selectedRange, setSelectedRange] = useState("1-7");
   const [isEntireSurah, setIsEntireSurah] = useState(true);
   const [isEntireThafheem, setIsEntireThafheem] = useState(false);
-  const [surahList, setSurahList] = useState([]);
-
-  // Load surahs on component mount
-  useEffect(() => {
-    const loadSurahs = async () => {
-      try {
-        const surahs = await fetchSurahs();
-        setSurahList(surahs);
-      } catch (error) {
-        console.error("Error loading surahs:", error);
-      }
-    };
-    loadSurahs();
-  }, []);
+  
+  // Use cached surah data hook
+  const { surahs: surahList } = useSurahData();
 
   // Load quiz data when surah or range changes
   useEffect(() => {
@@ -567,7 +556,6 @@ const Quiz = () => {
               </button>
             </div>
           </div>
-
           {showAnswer && (
             <div className="flex justify-center sm:justify-start">
               <div
@@ -603,53 +591,6 @@ const Quiz = () => {
         </div>
       )}
 
-      <style jsx>{`
-        input[type="radio"] {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border: 3px solid black;
-          border-radius: 50%;
-          background-color: white;
-          position: relative;
-          cursor: pointer;
-        }
-
-        input[type="radio"]:disabled {
-          cursor: not-allowed;
-          opacity: 0.6;
-        }
-
-        @media (min-width: 640px) {
-          input[type="radio"] {
-            width: 20px;
-            height: 20px;
-          }
-        }
-
-        input[type="radio"]:checked {
-          background-color: white;
-        }
-
-        input[type="radio"]:checked::after {
-          content: "";
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background-color: black;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-        }
-
-        @media (min-width: 640px) {
-          input[type="radio"]:checked::after {
-            width: 8px;
-            height: 8px;
-          }
-        }
-      `}</style>
     </div>
   );
 };

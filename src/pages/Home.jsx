@@ -5,7 +5,7 @@ import HomepageSearch from "../components/HomeSearch";
 import { useNavigate, useLocation } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
-import { fetchSurahs } from "../api/apifunction"; // Import the API function
+import { useSurahData } from "../hooks/useSurahData"; // Use cached hook
 import { useTheme } from "../context/ThemeContext";
 
 // Custom Kaaba Icon Component
@@ -44,45 +44,12 @@ const Mad = ({ className }) => (
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState("Quran");
-  const [surahs, setSurahs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { viewType } = useTheme();
-
-  // Fetch Surah data using the extracted API function
-  useEffect(() => {
-    const loadSurahs = async () => {
-      try {
-        setLoading(true);
-        setError(null); // Reset error state
-        const surahData = await fetchSurahs();
-        setSurahs(surahData);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching surahs:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSurahs();
-  }, []);
-
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleRetry = () => {
-    // Trigger a re-fetch by calling the effect again
-    setError(null);
-    setLoading(true);
-    fetchSurahs()
-      .then(setSurahs)
-      .catch((err) => {
-        setError(err.message);
-        console.error("Error fetching surahs on retry:", err);
-      })
-      .finally(() => setLoading(false));
-  };
+  
+  // Use cached surah data hook - prevents duplicate API calls
+  const { surahs, loading, error, retry: handleRetry } = useSurahData();
   const handleSurahClick = (surahNumber) => {
     if (viewType === "Block Wise") {
       navigate(`/blockwise/${surahNumber}`);

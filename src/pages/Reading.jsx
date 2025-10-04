@@ -7,7 +7,8 @@ import { ChevronLeft, ChevronRight, ArrowUp, X } from "lucide-react";
 import Bismi from "../assets/bismi.jpg";
 import { useTheme } from "../context/ThemeContext";
 import { surahNameUnicodes } from '../components/surahNameUnicodes';
-import { fetchArabicVersesWithPage, fetchSurahs } from '../api/apifunction';
+import { fetchArabicVersesWithPage } from '../api/apifunction';
+import { useSurahData } from '../hooks/useSurahData';
 
 const Reading = () => {
   const { surahId } = useParams();
@@ -19,6 +20,9 @@ const Reading = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [pageLoading, setPageLoading] = useState(false);
+  
+  // Use cached surah data
+  const { surahs } = useSurahData();
 
   // Fetch surah data and first page
   useEffect(() => {
@@ -30,15 +34,16 @@ const Reading = () => {
         
         const currentSurahId = surahId || 2;
         
-        // Fetch verses with pagination and surah info concurrently
-        const [versesData, surahsData] = await Promise.all([
-          fetchArabicVersesWithPage(currentSurahId, 1),
-          fetchSurahs()
-        ]);
+        // Fetch verses with pagination
+        const versesData = await fetchArabicVersesWithPage(currentSurahId, 1);
         
         setVerses(versesData.verses);
         setPagination(versesData.pagination);
-        setSurahInfo(surahsData.find(s => s.number === parseInt(currentSurahId)));
+        
+        // Get surah info from cached data
+        if (surahs.length > 0) {
+          setSurahInfo(surahs.find(s => s.number === parseInt(currentSurahId)));
+        }
         
       } catch (err) {
         console.error('Error fetching surah data:', err);
@@ -49,7 +54,7 @@ const Reading = () => {
     };
 
     fetchSurahData();
-  }, [surahId]);
+  }, [surahId, surahs]);
 
   // Fetch specific page data
   const fetchPage = async (pageNumber) => {

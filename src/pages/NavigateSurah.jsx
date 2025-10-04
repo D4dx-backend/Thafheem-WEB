@@ -4,33 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
 import DemoItems from '../pages/DemoItems';
-import { listSurahNames } from '../api/apifunction';
-
-
+import { useSurahNames } from '../hooks/useSurahData';
 
 const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const [activeTab, setActiveTab] = useState('Surah');
-  const [surahs, setSurahs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Use cached surah names hook
+  const { surahNames: surahs, loading } = useSurahNames();
 
   const tabs = ['Surah', 'Verse', 'Juz', 'Page'];
-
-  // Fetch surah names from API
-  useEffect(() => {
-    const loadSurahs = async () => {
-      try {
-        setLoading(true);
-        const data = await listSurahNames();
-        setSurahs(data);
-      } catch (error) {
-        console.error('Error loading surahs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSurahs();
-  }, []);
 
   // Fallback hardcoded surahs (in case API fails)
   const fallbackSurahs = [

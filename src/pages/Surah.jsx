@@ -112,19 +112,41 @@ const Surah = () => {
             fetchArabicVerses(parseInt(surahId)),
           ]);
 
-        console.log("Ayah Response length:", ayahResponse.length);
-        console.log("Arabic Response length:", arabicResponse.length);
+        console.log("Ayah Response:", ayahResponse);
+        console.log("Arabic Response:", arabicResponse);
 
-        const formattedAyahData = ayahResponse.map((ayah) => ({
-          number: ayah.contiayano || 0,
-          ArabicText: "",
-          Translation: (ayah.AudioText || "")
-            .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-            .replace(/\s+/g, " ") // Clean up multiple spaces
-            .trim(),
-        }));
+        // Handle null or empty responses from failed API calls
+        if (!ayahResponse || !Array.isArray(ayahResponse) || ayahResponse.length === 0) {
+          console.warn("Ayah response is null, not an array, or empty, using fallback data");
+          
+          // Try to get the correct verse count from surah names data
+          let verseCount = 7; // Default for Al-Fatiha
+          if (surahNamesResponse && Array.isArray(surahNamesResponse)) {
+            const currentSurah = surahNamesResponse.find(s => s.id === parseInt(surahId));
+            if (currentSurah && currentSurah.ayahs) {
+              verseCount = currentSurah.ayahs;
+            }
+          }
+          
+          const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+            number: index + 1,
+            ArabicText: "",
+            Translation: `Translation not available for verse ${index + 1}. The API server may be temporarily unavailable. Please try again later.`,
+          }));
+          setAyahData(fallbackAyahData);
+        } else {
+          console.log("Ayah Response length:", ayahResponse.length);
+          const formattedAyahData = ayahResponse.map((ayah) => ({
+            number: ayah.contiayano || 0,
+            ArabicText: "",
+            Translation: (ayah.AudioText || "")
+              .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+              .replace(/\s+/g, " ") // Clean up multiple spaces
+              .trim(),
+          }));
+          setAyahData(formattedAyahData);
+        }
 
-        setAyahData(formattedAyahData);
         setArabicVerses(arabicResponse || []);
 
         const currentSurah = surahNamesResponse.find(
@@ -714,12 +736,6 @@ const Surah = () => {
                 const finalArabicText =
                   arabicText || fallbackArabicVerse?.text_uthmani || "";
 
-                console.log(`Verse ${index + 1}:`, {
-                  translationVerse: verse,
-                  arabicVerse: arabicVerse,
-                  arabicText: finalArabicText,
-                  fallbackFound: !!fallbackArabicVerse,
-                });
 
                 return (
                   <div

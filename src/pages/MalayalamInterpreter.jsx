@@ -128,8 +128,9 @@ const MalayalamInterpreter = () => {
       console.log('Note data type:', typeof noteData);
       console.log('Note data keys:', noteData ? Object.keys(noteData) : 'No data');
       
-      // Try different possible content fields
-      const content = noteData?.content || 
+      // Try different possible content fields - prioritize NoteText from API response
+      const content = noteData?.NoteText || 
+                     noteData?.content || 
                      noteData?.html || 
                      noteData?.text || 
                      noteData?.body ||

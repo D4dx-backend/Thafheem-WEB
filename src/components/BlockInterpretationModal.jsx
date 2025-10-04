@@ -89,6 +89,8 @@ const BlockInterpretationModal = ({
 
   // Load interpretation content
   useEffect(() => {
+    console.log(`🔵 useEffect triggered - surahId: ${currentSurahId}, range: ${currentRange}, interpretation: ${currentInterpretationNo}, lang: ${currentLanguage}`);
+    
     const loadInterpretation = async () => {
       if (!currentSurahId || !currentRange) return;
 
@@ -98,7 +100,7 @@ const BlockInterpretationModal = ({
         setContent([]);
 
         console.log(
-          `Loading interpretation: Surah ${currentSurahId}, Range ${currentRange}, Interpretation ${currentInterpretationNo}`
+          `🔄 Loading interpretation: Surah ${currentSurahId}, Range ${currentRange}, Interpretation ${currentInterpretationNo}, Language: ${currentLanguage}`
         );
 
         // Decide between single verse vs range (e.g., "5" vs "1-7")
@@ -118,25 +120,66 @@ const BlockInterpretationModal = ({
             );
 
         console.log(
-          `Received interpretation data for ${currentSurahId}:${currentRange}:`,
+          `✅ Received interpretation data for ${currentSurahId}:${currentRange}:${currentInterpretationNo}:`,
           data
         );
 
         // Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
-        setContent(items);
+        
+        // Log interpretation numbers from the actual data
+        if (items.length > 0) {
+          const interpretationNos = items.map(item => item?.InterpretationNo || item?.interpretationNo || item?.interptn_no).filter(Boolean);
+          console.log(`📊 API returned ${items.length} item(s) with interpretation numbers:`, interpretationNos);
+          
+          // Show first item structure for debugging
+          if (items[0]) {
+            console.log(`📋 First item structure:`, {
+              ID: items[0].ID,
+              SuraID: items[0].SuraID,
+              InterpretationNo: items[0].InterpretationNo,
+              hasInterpretation: !!items[0].Interpretation,
+              interpretationLength: items[0].Interpretation?.length || 0
+            });
+          }
+        }
+        
+        // Check if we got empty or invalid data
+        if (items.length === 0 || 
+            (items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) ||
+            (items.length === 1 && items[0].Interpretation === '')) {
+          console.warn(`⚠️ No interpretation ${currentInterpretationNo} available for range ${currentRange}`);
+          
+          // Try to fetch interpretation 1 for this range as fallback
+          if (currentInterpretationNo !== 1) {
+            console.log(`🔄 Trying interpretation 1 for range ${currentRange} as fallback`);
+            setCurrentInterpretationNo(1);
+            alert(`Interpretation ${currentInterpretationNo} is not available for verses ${currentRange}. Loading interpretation 1.`);
+            return; // Will trigger useEffect again with interpretation=1
+          } else {
+            // Even interpretation 1 is not available for this range
+            alert(`No interpretation available for verses ${currentRange}.`);
+            setError(`No interpretation available for verses ${currentRange}.`);
+            setContent([]);
+          }
+        } else {
+          setContent(items);
+        }
       } catch (err) {
-        console.error("Failed to load interpretation:", err);
+        console.error(`❌ Failed to load interpretation ${currentInterpretationNo}:`, err);
+        
         let errorMessage = "Failed to load interpretation";
         if (err.message?.includes("500")) {
-          errorMessage = "Server error. Please try again later.";
+          errorMessage = `Server error loading interpretation ${currentInterpretationNo}. Please try again later.`;
         } else if (err.message?.includes("404")) {
-          errorMessage = "Interpretation not found for this selection.";
+          errorMessage = `Interpretation ${currentInterpretationNo} not found for this selection.`;
         } else if (
           err.message?.includes("network") ||
           err.message?.includes("fetch")
         ) {
           errorMessage = "Network error. Please check your connection.";
+        } else {
+          errorMessage = `Interpretation ${currentInterpretationNo} is not available.`;
         }
         setError(errorMessage);
       } finally {
@@ -238,8 +281,9 @@ const BlockInterpretationModal = ({
       // Try to fetch from API (but don't block the UI)
       const noteData = await fetchNoteById(noteId);
 
-      // Try different possible content fields
+      // Try different possible content fields - prioritize NoteText from API response
       const content =
+        noteData?.NoteText ||
         noteData?.content ||
         noteData?.html ||
         noteData?.text ||
@@ -392,39 +436,84 @@ const BlockInterpretationModal = ({
   };
 
   const handlePrev = () => {
-    // if range is a single ayah, decrement; if a-b, move to previous block
+    console.log('🔙 Previous block button clicked, current range:', currentRange);
+    
+    // Navigate to previous verse range/block (keeping same interpretation number)
     const current = String(currentRange);
+    
+    // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
-      const v = Math.max(1, parseInt(current, 10) - 1);
-      setCurrentRange(String(v));
+      // Single ayah: decrement to previous ayah
+      const v = parseInt(current, 10);
+      if (v <= 1) {
+        alert('Already at the first verse');
+        return;
+      }
+      const newVerse = v - 1;
+      console.log('🔙 Moving to verse:', newVerse);
+      setCurrentRange(String(newVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
+      // Range: move to previous block of same size
       const match = current.match(/^(\d+)-(\d+)$/);
       if (match) {
         const [, aStr, bStr] = match;
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
+        
+        if (a <= 1) {
+          alert('Already at the first block');
+          return;
+        }
+        
         const newA = Math.max(1, a - len);
         const newB = newA + len - 1;
+        console.log('🔙 Moving to range:', `${newA}-${newB}`);
         setCurrentRange(`${newA}-${newB}`);
       }
     }
   };
 
   const handleNext = () => {
+    console.log('▶️ Next block button clicked, current range:', currentRange);
+    
+    // Navigate to next verse range/block (keeping same interpretation number)
     const current = String(currentRange);
+    
+    // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
-      const nextVerse = parseInt(current, 10) + 1;
+      // Single ayah: increment to next ayah
+      const v = parseInt(current, 10);
+      
+      // Check if we're at the last verse of the surah
+      const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+      if (v >= maxVerse) {
+        alert('Already at the last verse of this surah');
+        return;
+      }
+      
+      const nextVerse = v + 1;
+      console.log('▶️ Moving to verse:', nextVerse);
       setCurrentRange(String(nextVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
+      // Range: move to next block of same size
       const match = current.match(/^(\d+)-(\d+)$/);
       if (match) {
         const [, aStr, bStr] = match;
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
+        
+        // Check if we're at the last block
+        const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+        if (b >= maxVerse) {
+          alert('Already at the last block of this surah');
+          return;
+        }
+        
         const newA = a + len;
-        const newB = newA + len - 1;
+        const newB = Math.min(maxVerse, newA + len - 1);
+        console.log('▶️ Moving to range:', `${newA}-${newB}`);
         setCurrentRange(`${newA}-${newB}`);
       }
     }
@@ -488,31 +577,47 @@ const BlockInterpretationModal = ({
   const extractText = (item) => {
     if (item == null) return "";
     if (typeof item === "string") return item;
-    // Common possible fields
+    
+    // Common possible fields (check both lowercase and capitalized versions)
     const preferredKeys = [
       "interpret_text",
+      "InterpretText",
+      "Interpret_Text",
       "interpretation",
+      "Interpretation",
       "text",
+      "Text",
       "content",
+      "Content",
       "meaning",
+      "Meaning",
       "body",
+      "Body",
       "desc",
+      "Desc",
       "description",
+      "Description",
     ];
+    
+    // Try each preferred key
     for (const key of preferredKeys) {
-      if (typeof item[key] === "string" && item[key].trim().length > 0)
+      if (typeof item[key] === "string" && item[key].trim().length > 0) {
+        // Removed excessive logging - only log on errors
         return item[key];
+      }
     }
-    // Fallback: first long string field
-    for (const [, v] of Object.entries(item)) {
-      if (typeof v === "string" && v.trim().length > 20) return v;
+    
+    // Fallback: find any string field with substantial content
+    for (const [k, v] of Object.entries(item)) {
+      if (typeof v === "string" && v.trim().length > 20) {
+        console.log(`📝 Extracted text from fallback field: ${k}`);
+        return v;
+      }
     }
-    // Final fallback
-    try {
-      return JSON.stringify(item);
-    } catch {
-      return String(item);
-    }
+    
+    // If we still have nothing, log the structure and return empty message
+    console.warn(`⚠️ No valid interpretation text found in item:`, item);
+    return `<p class="text-gray-500 italic">No interpretation content available for interpretation ${currentInterpretationNo}</p>`;
   };
 
   return (
@@ -611,18 +716,18 @@ const BlockInterpretationModal = ({
             )}
 
             {/* Header controls (read-only display) */}
-            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm text-gray-600 dark:text-gray-300">
-              <span>Surah: {currentSurahId}</span>
-              <span>• Range: {currentRange}</span>
-              <span>• Interpretation: {currentInterpretationNo}</span>
-              <span>• Lang: {currentLanguage}</span>
+            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+              <span className="text-gray-600 dark:text-gray-300">Surah: {currentSurahId}</span>
+              <span className="font-bold text-cyan-600 dark:text-cyan-400 text-base">• Range: {currentRange}</span>
+              <span className="text-gray-600 dark:text-gray-300">• Interpretation: {currentInterpretationNo}</span>
+              <span className="text-gray-600 dark:text-gray-300">• Lang: {currentLanguage}</span>
             </div>
 
             {/* Interpretation Content */}
-            <div className="space-y-6">
+            <div className="space-y-6" key={`block-${currentSurahId}-${currentRange}-${currentInterpretationNo}`}>
               {content.map((item, idx) => (
                 <div
-                  key={idx}
+                  key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
                   className="bg-gray-50 p-6 rounded-lg border-l-4 dark:bg-[#2A2C38] dark:border-[#2A2C38] border-white"
                 >
                   <div

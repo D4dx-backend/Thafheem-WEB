@@ -259,52 +259,6 @@ const SearchConsole = ({ onClose }) => {
           </div>
         </div>
       </div>
-      <style jsx>{`
-      
-  input[type='radio'] {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border: 1px solid black;
-    border-radius: 50%;
-    background-color: white;
-    position: relative;
-    cursor: pointer;
-  }
-
-  input[type='radio']:checked {
-    background-color: white;
-  }
-
-  input[type='radio']:checked::after {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: black;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  /* 🌙 Dark mode styles */
-  @media (prefers-color-scheme: dark) {
-    input[type='radio'] {
-      border: 1px solid white;
-      background-color: #2A2C38;
-    }
-
-    input[type='radio']:checked {
-      background-color: black;
-    }
-
-    input[type='radio']:checked::after {
-      background-color: white;
-    }
-      
-  }
-`}</style>
 
     </div>
   );

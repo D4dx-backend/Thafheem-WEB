@@ -32,7 +32,7 @@ const Note = () => {
   const resolveHtml = () => {
     if (typeof content === "string") return content;
     if (content && typeof content === "object") {
-      return content.html || content.content || content.text || JSON.stringify(content);
+      return content.NoteText || content.html || content.content || content.text || JSON.stringify(content);
     }
     return "<p>No content</p>";
   };

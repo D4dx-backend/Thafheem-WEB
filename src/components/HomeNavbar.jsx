@@ -40,6 +40,9 @@ import {
   MessageSquareMore,
   UserX,
   ChevronDown,
+  Copy,
+  ExternalLink,
+  Send,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -60,6 +63,7 @@ const HomepageNavbar = () => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
@@ -67,6 +71,29 @@ const HomepageNavbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
+
+  // Resolve share URL from env or current origin
+  const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+
+  // Share App handler (uses Web Share API with clipboard/modal fallback)
+  const handleShareApp = async () => {
+    const shareUrl = `${PUBLIC_URL}/`;
+    const shareData = {
+      title: "Thafheem ul Quran",
+      text: "Explore Thafheem ul Quran",
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        setIsShareOpen(true);
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      setIsShareOpen(true);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -111,13 +138,12 @@ const HomepageNavbar = () => {
     },
     { icon: BookOpen, label: "Thafeem", path: "/thafeem" },
     { icon: BookType, label: "Tajwid", path: "/tajweed" },
-    { icon: Heart, label: "Donate", path: "/donate" },
     { icon: BookOpenCheck, label: "Quiz", path: "/quiz" },
     { icon: LetterText, label: "Drag & drop", path: "/dragdrop" },
     { icon: Sparkles, label: "What's New", path: "/whatsnew" },
     { icon: Settings, label: "Settings", path: "/settings" },
     { icon: Bug, label: "Raise a bug", path: "/raisebug" },
-    { icon: MessageCircleQuestion, label: "Share App", path: "/share" },
+    { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp },
     { icon: CircleAlert, label: "About Author", path: "/aboutauthor" },
     { icon: User, label: "About Us", path: "/about" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
@@ -143,6 +169,66 @@ const HomepageNavbar = () => {
   };
   return (
     <>
+      {/* Share Modal */}
+      {isShareOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/30" onClick={() => setIsShareOpen(false)}></div>
+          <div className="relative z-10 w-full max-w-sm rounded-lg bg-white dark:bg-[#2A2C38] p-4 shadow-xl">
+            <div className="mb-3">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Share className="w-5 h-5" /> Share Thafheem
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Invite others with your favorite app or copy the link.</p>
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  const url = `${PUBLIC_URL}/`;
+                  const text = encodeURIComponent("Explore Thafheem ul Quran");
+                  const u = encodeURIComponent(url);
+                  window.open(`https://wa.me/?text=${text}%20${u}`, "_blank");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#25D366] text-white hover:opacity-90 transition"
+              >
+                <Send className="w-4 h-4" /> WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  const url = `${PUBLIC_URL}/`;
+                  const text = encodeURIComponent("Explore Thafheem ul Quran");
+                  const u = encodeURIComponent(url);
+                  window.open(`https://t.me/share/url?url=${u}&text=${text}`, "_blank");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#229ED9] text-white hover:opacity-90 transition"
+              >
+                <ExternalLink className="w-4 h-4" /> Telegram
+              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={`${PUBLIC_URL}/`}
+                  className="flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100"
+                />
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(`${PUBLIC_URL}/`);
+                    alert("Link copied to clipboard");
+                  }}
+                  className="px-3 py-2 rounded-md bg-gray-900 text-white dark:bg-gray-700 hover:opacity-90 transition flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" /> Copy
+                </button>
+              </div>
+              <button
+                onClick={() => setIsShareOpen(false)}
+                className="w-full mt-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Search Console Popup */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -275,6 +361,13 @@ const HomepageNavbar = () => {
                   alt="Thafheemul Quran"
                   className="h-10 sm:h-12 w-auto"
                 />
+                <button
+                  onClick={() => window.open('https://app.thafheem.net/', '_blank')}
+                  className="flex items-center gap-2 px-3 py-2 bg-[#2596be] hover:bg-[#1e7a9a] text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                >
+                  <Heart className="w-4 h-4" />
+                  <span className="hidden sm:inline">Donate Now</span>
+                </button>
                 {/* Uncomment if you want to re-enable the close button */}
                 {/* <button
                   onClick={toggleMenu}
@@ -305,6 +398,9 @@ const HomepageNavbar = () => {
                       onClick={() => {
                         if (item.hasSubmenu) {
                           toggleSubmenu(index);
+                        } else if (item.onClick) {
+                          item.onClick();
+                          setIsMenuOpen(false);
                         } else {
                           navigate(item.path);
                           setIsMenuOpen(false);

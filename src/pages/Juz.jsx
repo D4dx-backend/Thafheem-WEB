@@ -5,7 +5,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import StarNumber from "../components/StarNumber";
 import { Play, Book, Circle, BookOpen, ArrowLeft } from "lucide-react";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
-import { fetchJuzData } from "../api/apifunction";
+import { fetchPageRanges } from "../api/apifunction";
 //mee
 const Juz = () => {
   // State management
@@ -56,26 +56,14 @@ const Juz = () => {
       try {
         setLoading(true);
 
-        // Fetch page ranges data
-        const pageRangesResponse = await fetch(
-          "https://thafheem.net/thafheem-api/pageranges/all"
-        );
+        // Fetch page ranges data using the API function
+        const pageRangesData = await fetchPageRanges();
 
-        if (!pageRangesResponse.ok) {
-          throw new Error(`HTTP error! status: ${pageRangesResponse.status}`);
-        }
-
-        const pageRangesData = await pageRangesResponse.json();
-
-        // Fetch surah names for mapping
-        const surahNamesResponse = await fetch(
-          "https://thafheem.net/thafheem-api/suranames/all"
-        );
-
+        // Fetch surah names for mapping using the proxy
+        const surahNamesResponse = await fetch("/api/thafheem/suranames/all");
         if (!surahNamesResponse.ok) {
           throw new Error(`HTTP error! status: ${surahNamesResponse.status}`);
         }
-
         const surahNamesData = await surahNamesResponse.json();
 
         // Create surah names mapping - FIXED TYPE MAPPING
@@ -130,9 +118,11 @@ const Juz = () => {
                 number: parseInt(suraId),
                 name: surahInfo.name,
                 arabic: surahInfo.arabic,
-                verses: surahInfo.totalAyas, // Show total ayahs only
+                verses: ayaRange, // Use the actual verse range for this Juz
                 type: surahInfo.type,
                 ayahs: surahInfo.totalAyas,
+                startVerse: ayaFrom, // Add start verse for navigation
+                endVerse: ayaTo, // Add end verse for reference
               });
             }
           });
@@ -184,12 +174,26 @@ const Juz = () => {
     return juzData.find(juz => juz.id === parseInt(juzId));
   };
 
-  // Handle juz click - navigate to first surah of the selected Juz
+  // Handle juz click - navigate to first surah and verse of the selected Juz
   const handleJuzClick = (juzId) => {
     const selectedJuz = juzData.find((juz) => juz.id === juzId);
     if (selectedJuz && selectedJuz.surahs.length > 0) {
-      const firstSurahNumber = selectedJuz.surahs[0].number;
-      navigate(`/surah/${firstSurahNumber}?fromJuz=${juzId}`);
+      const firstSurah = selectedJuz.surahs[0];
+      
+      // Extract the first verse number from the verses string (e.g., "142-252" -> 142)
+      const firstVerse = firstSurah.verses.split('-')[0].split(',')[0].trim();
+      const targetUrl = `/surah/${firstSurah.number}#verse-${firstVerse}?fromJuz=${juzId}`;
+      
+      console.log('Juz navigation:', {
+        juz: selectedJuz.title,
+        surah: firstSurah.name,
+        surahId: firstSurah.number,
+        verses: firstSurah.verses,
+        firstVerse: firstVerse,
+        targetUrl
+      });
+      
+      navigate(targetUrl);
     }
   };
 
@@ -199,9 +203,10 @@ const Juz = () => {
     if (typeof surahOrId === 'object' && surahOrId !== null) {
       const firstVerse = surahOrId.startVerse ? String(surahOrId.startVerse) : '1';
       const targetUrl = `/surah/${surahOrId.number}#verse-${firstVerse}`;
-      console.log('Surah click from home Juz grid:', {
+      console.log('Surah click from Juz grid:', {
         surahId: surahOrId.number,
         verses: surahOrId.verses,
+        startVerse: surahOrId.startVerse,
         firstVerse,
         targetUrl,
       });

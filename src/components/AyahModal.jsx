@@ -316,7 +316,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               </h4>
               <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3 sm:p-4">
                 <p className="text-gray-500 dark:text-gray-400 text-sm italic">
-                  No interpretation available for this verse.
+                  No interpretation available for this verse. The interpretation API may be temporarily unavailable.
                 </p>
               </div>
             </div>

@@ -5,12 +5,12 @@ import EndofProphethoodPlay from "../components/EndofProphethoodPlay";
 
 const EndofProphethood = () => {
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
-  const [activeSection, setActiveSection] = useState("The end of prophethood");
+  const [activeSection, setActiveSection] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint is 1024px
+      setIsMobile(window.innerWidth < 1024);
     };
 
     checkScreenSize();
@@ -22,15 +22,12 @@ const EndofProphethood = () => {
   const handlePlayAudio = () => {
     setShowAudioPlayer(prev => !prev);
   };
-  
 
   const handleCloseAudio = () => {
     setShowAudioPlayer(false);
   };
 
-  // Show audio player always on desktop, conditionally on mobile
   const shouldShowAudioPlayer = !isMobile || showAudioPlayer;
-
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-gray-900 font-poppins">
@@ -42,14 +39,14 @@ const EndofProphethood = () => {
         <EndofProphethoodContent
           onPlayAudio={handlePlayAudio}
           activeSection={activeSection}
-          showPlayButton={true}  
+          showPlayButton={true}
         />
       </div>
 
       {shouldShowAudioPlayer && (
         <EndofProphethoodPlay
-          audioSrc="/path/to/audio.mp3"
-          title={activeSection}
+          audioSrc={activeSection?.audiourl || ""}
+          title={activeSection?.title || ""}
           onClose={handleCloseAudio}
           autoPlay={false}
           isMobile={isMobile}

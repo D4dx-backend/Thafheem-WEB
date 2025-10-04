@@ -11,6 +11,9 @@ import {
   DIRECTUS_BASE_URL,
   API_BASE_URL,
   AYAH_TRANSLATION_API,
+  MALARTICLES_API,
+  ENGARTICLES_API,
+  ARTICLES_API
 } from "./apis";
 
 // Helper function to add timeout to fetch requests
@@ -2647,5 +2650,354 @@ export const fetchArabicVerseForTajweed = async (verseKey) => {
   } catch (error) {
     console.error("Error fetching Arabic verse for Tajweed:", error);
     return "Arabic text not available";
+  }
+};
+
+// const fetchWithTimeout = (url, options = {}, timeout = 8000) => {
+//   return Promise.race([
+//     fetch(url, options),
+//     new Promise((_, reject) =>
+//       setTimeout(() => reject(new Error('Request timeout')), timeout)
+//     )
+//   ]);
+// };
+
+// Fetch list of Malarticles
+export const fetchMalarticles = async (page = 0, type = "muk") => {
+  try {
+    const url = `https://old.thafheem.net/thaf-api/malarticles/${page}/${type}`;
+    console.log("Fetching malarticles from URL:", url);
+
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Successfully fetched malarticles data:", data);
+    
+    // API returns array of objects with aid and title
+    if (Array.isArray(data)) {
+      return data.map((article) => ({
+        aid: article.aid,
+        title: article.title
+      }));
+    }
+    
+    throw new Error("Unexpected API response format");
+  } catch (error) {
+    console.warn("Failed to fetch malarticles from API:", error.message);
+
+    // Fallback data
+    return [
+      { aid: 1, title: "കുറിപ്പ്" },
+      { aid: 2, title: "ഖുര്‍ആന്‍ പഠനത്തിനൊരു മുഖവുര" },
+      { aid: 3, title: "സവിശേഷമായൊരു ഗ്രന്ഥം" },
+      { aid: 4, title: "ചില അടിസ്ഥാന വസ്തുതകള്‍" },
+      { aid: 5, title: "എങ്ങനെയൊരു ഗ്രന്ഥം?" },
+      { aid: 6, title: "ഖുര്‍ആന്‍ തത്ത്വം" },
+      { aid: 7, title: "വിഷയവും പ്രമേയവും" },
+      { aid: 8, title: "മാലയില്‍ കോര്‍ത്ത മുത്തുകള്‍" },
+      { aid: 9, title: "അവതരണ ഘട്ടങ്ങള്‍" },
+      { aid: 10, title: "നിര്‍ദ്ദേശപുസ്തകം" },
+      { aid: 11, title: "ആവര്‍ത്തനം എന്തിന്?" },
+      { aid: 12, title: "ഗ്രന്ഥീകരണം" },
+      { aid: 13, title: "ഗ്രന്ഥ ചിത്രീകരണം" },
+    ];
+  }
+};
+
+// Fetch single article by ID
+export const fetchMalarticleById = async (articleId) => {
+  try {
+    const url = `https://old.thafheem.net/thaf-api/malarticles/${articleId}/muk`;
+    console.log("Fetching malarticle by ID from URL:", url);
+
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Raw API response for article ID", articleId, ":", data);
+    
+    // API returns array with single object
+    const articleData = Array.isArray(data) ? data[0] : data;
+    
+    if (!articleData) {
+      throw new Error("No article data found");
+    }
+
+    return {
+      id: articleData.aid,
+      title: articleData.title,
+      matter: articleData.matter || "",
+      audiotext: articleData.audiotext || "",
+      audiourl: articleData.audiourl || ""
+    };
+  } catch (error) {
+    console.error("Failed to fetch malarticle by ID:", error.message);
+
+    // Fallback content
+    const fallbackContent = {
+      1: {
+        id: 1,
+        title: "കുറിപ്പ്",
+        matter: "ഖുര്‍ആന്‍ പഠിക്കുമ്പോള്‍ വായനക്കാരന്റെ മനസ്സില്‍ ഉയര്‍ന്നേക്കാവുന്ന എല്ലാപ്രശ്നങ്ങളെയും സംബന്ധിച്ച് ഇവിടെ പ്രതിപാദിക്കുക എന്നത് എന്റെ ഉദ്ദേശ്യമല്ല. കാരണം അവയില്‍ മിക്കവയും ഖുര്‍ആനിലെ ഏതെങ്കിലും വചനമോ അദ്ധ്യായമോ ദൃഷ്ടിയില്‍ വരുമ്പോഴാണ് ഉയര്‍ന്നു വരുക. അവയ്ക്കുള്ള ഉത്തരങ്ങള്‍ 'തഫ്ഹീമുല്‍ ഖുര്‍ആനി'ല്‍ അതത് സന്ദര്‍ഭങ്ങളില്‍ നല്‍കിയിട്ടുമുണ്ട്.",
+        audiotext: "",
+        audiourl: ""
+      },
+    };
+
+    return fallbackContent[articleId] || {
+      id: articleId,
+      title: "ഉള്ളടക്കം ലഭ്യമല്ല",
+      matter: "ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക.",
+      audiotext: "",
+      audiourl: ""
+    };
+  }
+};
+// Fetch list of English articles
+// Fetch list of English articles
+export const fetchEngarticles = async (page = 0, type = "par") => {
+  try {
+    const url = `https://thafheem.net/thafheem-api/engarticles/${page}/${type}`;
+    console.log("Fetching engarticles from URL:", url);
+
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Successfully fetched engarticles data:", data);
+    
+    // API returns array of objects with aid and title
+    if (Array.isArray(data)) {
+      return data.map((article) => ({
+        aid: article.aid,
+        title: article.title
+      }));
+    }
+    
+    throw new Error("Unexpected API response format");
+  } catch (error) {
+    console.warn("Failed to fetch engarticles from API:", error.message);
+
+    // Fallback data
+    return [
+      { aid: 1, title: "The end of prophethood" },
+      { aid: 2, title: "The meaning of Khatamunnabiyyin" },
+      { aid: 3, title: "The Prophet's sayings regarding the end of the world" },
+      { aid: 4, title: "The consensus of the Companions" },
+      { aid: 5, title: "The consensus of religious scholars" },
+      { aid: 6, title: "The Promised Messiah" },
+    ];
+  }
+};
+
+// Fetch single English article by ID
+export const fetchEngarticleById = async (articleId) => {
+  try {
+    const url = `https://thafheem.net/thafheem-api/engarticles/${articleId}/par`;
+    console.log("Fetching engarticle by ID from URL:", url);
+
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Raw API response for article ID", articleId, ":", data);
+    
+    // API returns array with single object
+    const articleData = Array.isArray(data) ? data[0] : data;
+    
+    if (!articleData) {
+      throw new Error("No article data found");
+    }
+
+    return {
+      id: articleData.aid,
+      title: articleData.title,
+      matter: articleData.matter || "",
+      audiotext: articleData.audiotext || "",
+      audiourl: articleData.audiourl || ""
+    };
+  } catch (error) {
+    console.error("Failed to fetch engarticle by ID:", error.message);
+
+    // Fallback content
+    const fallbackContent = {
+      1: {
+        id: 1,
+        title: "The end of prophethood",
+        matter: "The party that has created the 'Great Tribulation', which is the new Prophethood in this era, has given the word 'Khatam-un-Nabiyyin' the meaning of 'seal of the prophets'. That is, the prophets who come after Prophet Muhammad (peace be upon Him) become prophets with the seal of that prophethood.",
+      },
+      2: {
+        id: 2,
+        title: "The meaning of Khatamunnabiyyin",
+        matter: "Content for the meaning of Khatamunnabiyyin section...",
+      },
+      3: {
+        id: 3,
+        title: "The Prophet's sayings regarding the end of the world",
+        matter: "Content for the Prophet's sayings regarding the end of the world...",
+      },
+      4: {
+        id: 4,
+        title: "The consensus of the Companions",
+        matter: "Content for the consensus of the Companions section...",
+      },
+      5: {
+        id: 5,
+        title: "The consensus of religious scholars",
+        matter: "Content for the consensus of religious scholars section...",
+      },
+      6: {
+        id: 6,
+        title: "The Promised Messiah",
+        matter: "Content for the Promised Messiah section...",
+      },
+    };
+
+    return fallbackContent[articleId] || {
+      id: articleId,
+      title: "Article Content",
+      matter: "Content not available offline. Please check your internet connection.",
+    };
+  }
+};
+
+// Fetch single article by ID using the new articles API
+export const fetchArticleById = async (articleId) => {
+  try {
+    const url = `${ARTICLES_API}/${articleId}/par`;
+    console.log("Fetching article by ID from URL:", url);
+
+    const response = await fetchWithTimeout(url, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Raw API response for article ID", articleId, ":", data);
+    
+    // API returns array with single object or single object directly
+    const articleData = Array.isArray(data) ? data[0] : data;
+    
+    if (!articleData) {
+      throw new Error("No article data found");
+    }
+
+    return {
+      id: articleData.aid,
+      title: articleData.title,
+      matter: articleData.matter || "",
+      audiotext: articleData.audiotext || "",
+      audiourl: articleData.audiourl || ""
+    };
+  } catch (error) {
+    console.error("Failed to fetch article by ID:", error.message);
+
+    // Fallback content
+    const fallbackContent = {
+      1: {
+        id: 1,
+        title: "Introduction",
+        matter: "Content for Introduction section...",
+      },
+      2: {
+        id: 2,
+        title: "The meaning of Khatamunnabiyyin",
+        matter: "Content for the meaning of Khatamunnabiyyin section...",
+      },
+      3: {
+        id: 3,
+        title: "The Prophet's sayings regarding the end of the world",
+        matter: "Content for the Prophet's sayings regarding the end of the world...",
+      },
+      4: {
+        id: 4,
+        title: "The consensus of the Companions",
+        matter: "Content for the consensus of the Companions section...",
+      },
+      5: {
+        id: 5,
+        title: "The consensus of religious scholars",
+        matter: "Content for the consensus of religious scholars section...",
+      },
+      6: {
+        id: 6,
+        title: "The Promised Messiah",
+        matter: "Content for the Promised Messiah section...",
+      },
+      7: {
+        id: 7,
+        title: "The Promised Messiah",
+        matter: "Content for The Promised Messiah section...",
+      },
+      8: {
+        id: 8,
+        title: "Additional Article 8",
+        matter: "Content for Additional Article 8 section...",
+      },
+    };
+
+    return fallbackContent[articleId] || {
+      id: articleId,
+      title: "Article Content",
+      matter: "Content not available offline. Please check your internet connection.",
+    };
+  }
+};
+
+// Fetch list of articles (for navbar)
+export const fetchArticlesList = async () => {
+  try {
+    // Since we don't have a direct list endpoint, we'll fetch individual articles
+    // For now, we'll use a predefined list of article IDs
+    const articleIds = [1, 2, 3, 4, 5, 6, 7, 8]; // All available article IDs
+    
+    console.log("Fetching articles list for IDs:", articleIds);
+    
+    const articles = await Promise.all(
+      articleIds.map(async (id) => {
+        try {
+          const article = await fetchArticleById(id);
+          console.log(`Successfully fetched article ${id}:`, article);
+          return {
+            aid: article.id,
+            title: article.title
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch article ${id}:`, error.message);
+          return {
+            aid: id,
+            title: `Article ${id}`
+          };
+        }
+      })
+    );
+    
+    console.log("Final articles list:", articles);
+    return articles;
+  } catch (error) {
+    console.error("Failed to fetch articles list:", error.message);
+    
+    // Fallback data
+    const fallbackData = [
+      { aid: 1, title: "Introduction" },
+      { aid: 2, title: "The meaning of Khatamunnabiyyin" },
+      { aid: 3, title: "The Prophet's sayings regarding the end of the world" },
+      { aid: 4, title: "The consensus of the Companions" },
+      { aid: 5, title: "The consensus of religious scholars" },
+      { aid: 6, title: "The Promised Messiah" },
+      { aid: 7, title: "The Promised Messiah" },
+      { aid: 8, title: "Additional Article 8" },
+    ];
+    console.log("Using fallback data:", fallbackData);
+    return fallbackData;
   }
 };

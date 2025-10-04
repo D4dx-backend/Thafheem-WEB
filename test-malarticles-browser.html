@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Malarticles API</title>
+</head>
+<body>
+    <h1>Malarticles API Test</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testMalarticlesAPI() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // Test fetching all malarticles
+                console.log('Testing malarticles API...');
+                resultsDiv.innerHTML += '<h2>Testing fetchMalarticles...</h2>';
+                
+                const response1 = await fetch('/api/thafheem/malarticles/0/muk');
+                const articles = await response1.json();
+                
+                console.log('Articles response:', articles);
+                resultsDiv.innerHTML += `<p>Found ${articles.length} articles</p>`;
+                
+                if (articles.length > 0) {
+                    resultsDiv.innerHTML += `<p>First article: ${articles[0].title} (ID: ${articles[0].aid})</p>`;
+                    
+                    // Test fetching specific article
+                    resultsDiv.innerHTML += '<h2>Testing fetchMalarticleById...</h2>';
+                    const response2 = await fetch(`/api/thafheem/malarticles/${articles[0].aid}/muk`);
+                    const article = await response2.json();
+                    
+                    console.log('Article response:', article);
+                    resultsDiv.innerHTML += `<p>Article title: ${article.title}</p>`;
+                    resultsDiv.innerHTML += `<p>Content length: ${article.matter ? article.matter.length : 0} characters</p>`;
+                    resultsDiv.innerHTML += `<p>Has audio: ${article.audiourl ? 'Yes' : 'No'}</p>`;
+                }
+                
+                resultsDiv.innerHTML += '<h2 style="color: green;">✅ API test completed successfully!</h2>';
+            } catch (error) {
+                console.error('API test failed:', error);
+                resultsDiv.innerHTML += `<h2 style="color: red;">❌ API test failed: ${error.message}</h2>`;
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testMalarticlesAPI);
+    </script>
+</body>
+</html>

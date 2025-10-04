@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Article API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .loading { color: #666; }
+        .error { color: red; }
+        .success { color: green; }
+        .article { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .article-title { font-weight: bold; margin-bottom: 10px; font-size: 18px; }
+        .article-content { color: #555; line-height: 1.6; }
+        .test-buttons { margin: 20px 0; }
+        .test-buttons button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Individual Article API Integration Test</h1>
+    <div id="status" class="loading">Ready to test...</div>
+    
+    <div class="test-buttons">
+        <button onclick="testArticle(1)">Test Article 1</button>
+        <button onclick="testArticle(2)">Test Article 2</button>
+        <button onclick="testArticle(3)">Test Article 3</button>
+        <button onclick="testArticle(999)">Test Non-existent Article</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        window.testArticle = async function(articleId) {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.textContent = `Fetching article ${articleId}...`;
+                statusDiv.className = 'loading';
+                
+                // Test the individual article API endpoint
+                const response = await fetch(`/api/thafheem/malarticles/${articleId}/muk`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                statusDiv.textContent = `✅ Success! Fetched article ${articleId}`;
+                statusDiv.className = 'success';
+                
+                // Display the article
+                const articleDiv = document.createElement('div');
+                articleDiv.className = 'article';
+                
+                // Try different property names for title and content
+                const title = data.title || data.name || data.Title || data.Name || `Article ${articleId}`;
+                const content = data.content || data.text || data.body || data.Content || data.Text || data.Body || 'No content available';
+                
+                articleDiv.innerHTML = `
+                    <div class="article-title">Article ${articleId}: ${title}</div>
+                    <div class="article-content">${content}</div>
+                    <small><strong>Properties:</strong> ${Object.keys(data).join(', ')}</small>
+                `;
+                
+                // Clear previous results and add new one
+                resultsDiv.innerHTML = '';
+                resultsDiv.appendChild(articleDiv);
+                
+                // Log the raw response for debugging
+                console.log(`Article ${articleId} response:`, data);
+                
+            } catch (error) {
+                statusDiv.textContent = `❌ Error fetching article ${articleId}: ${error.message}`;
+                statusDiv.className = 'error';
+                console.error(`Article ${articleId} test failed:`, error);
+                
+                // Clear results on error
+                resultsDiv.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>

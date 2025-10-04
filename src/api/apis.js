@@ -35,3 +35,7 @@ export const DIRECTUS_AI_API_CONFIG = `${DIRECTUS_BASE_URL}/items/thafheem_ai_ap
 // Add this to your existing apis.js file
 export const TAJWEED_RULES_API = `${API_BASE_URL}/thajweedrules`;
 export const WORD_MEANINGS_API = `${API_BASE_URL}/wordmeanings`;
+
+export const MALARTICLES_API = "https://old.thafheem.net/thaf-api/malarticles";
+export const ENGARTICLES_API = "https://old.thafheem.net/thaf-api/engarticles";
+export const ARTICLES_API = "https://old.thafheem.net/thaf-api/articles";

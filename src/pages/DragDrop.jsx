@@ -19,6 +19,7 @@ const DragDropQuiz = () => {
   const [droppedItems, setDroppedItems] = useState({});
   const [gameStarted, setGameStarted] = useState(false);
   const [showSurahSelector, setShowSurahSelector] = useState(false);
+  const dropdownRef = useRef(null);
   const [currentSurah, setCurrentSurah] = useState({
     id: 1,
     name: "Al-Fatiha",
@@ -222,6 +223,11 @@ const DragDropQuiz = () => {
   const hasNextPage = currentWordPage < totalPages - 1;
   const hasPrevPage = currentWordPage > 0;
 
+  // Check if there are more ayahs available
+  const [, endVerse] = currentSurah.range.split("-").map(Number);
+  const hasNextAyah = currentAyah < endVerse;
+  const canShowNext = hasNextPage || hasNextAyah;
+
   const handleDragStart = (e, item) => {
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = "move";
@@ -292,6 +298,14 @@ const DragDropQuiz = () => {
     if (hasNextPage) {
       setCurrentWordPage(currentWordPage + 1);
       setDroppedItems({}); // Reset dropped items for new page
+    } else {
+      // If no more pages in current ayah, move to next ayah
+      const [, endVerse] = currentSurah.range.split("-").map(Number);
+      if (currentAyah < endVerse) {
+        setCurrentAyah(currentAyah + 1);
+        setDroppedItems({}); // Reset dropped items for new ayah
+        setCurrentWordPage(0); // Reset to first page
+      }
     }
   };
 
@@ -338,6 +352,20 @@ const DragDropQuiz = () => {
     setAyahRanges([]); // Clear previous ranges
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowSurahSelector(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
@@ -376,121 +404,133 @@ const DragDropQuiz = () => {
       <div className="bg-white dark:bg-[#2A2C38]">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div
+              className="flex items-center gap-3 sm:gap-4 relative"
+              ref={dropdownRef}
+            >
               <div
                 className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 px-1 sm:px-2 py-1 rounded transition-colors"
-                onClick={() => setShowSurahSelector(true)}
+                onClick={() => setShowSurahSelector(!showSurahSelector)}
               >
                 <span className="text-gray-800 font-medium dark:text-white text-sm sm:text-base font-poppins">
                   {currentSurah.name}
                 </span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 rotate-90" />
+                <ChevronRight
+                  className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform ${
+                    showSurahSelector ? "rotate-90" : "rotate-90"
+                  }`}
+                />
               </div>
               <span className="text-gray-400 dark:text-white">|</span>
               <span className="text-xs sm:text-sm text-gray-600 dark:text-white">
                 {currentSurah.range}
               </span>
+
+              {/* Dropdown Menu */}
+              {showSurahSelector && (
+                <div className="absolute top-full left-0 mt-1 w-80 bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                    <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+                      Select Surah & Range
+                    </h3>
+                    <button
+                      onClick={() => setShowSurahSelector(false)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    >
+                      <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 max-h-96 overflow-y-auto">
+                    {/* Surah Selection */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Select Surah
+                      </label>
+                      <select
+                        value={selectedSurahId}
+                        onChange={(e) =>
+                          handleSurahChange(Number(e.target.value))
+                        }
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      >
+                        {surahs.map((surah) => (
+                          <option key={surah.number} value={surah.number}>
+                            {surah.number}. {surah.name} ({surah.arabic}) -{" "}
+                            {surah.ayahs} verses
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Ayah Range Selection */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Available Ayah Ranges
+                      </label>
+                      {loadingRanges ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                          <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">
+                            Loading ranges...
+                          </span>
+                        </div>
+                      ) : ayahRanges.length > 0 ? (
+                        <select
+                          value={selectedRangeId || ""}
+                          onChange={(e) =>
+                            setSelectedRangeId(Number(e.target.value))
+                          }
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        >
+                          <option value="">Select a range</option>
+                          {ayahRanges.map((range, index) => (
+                            <option
+                              key={range.ID || index}
+                              value={range.ID || index}
+                            >
+                              Verses {range.AyaFrom}-{range.AyaTo} (
+                              {range.AyaTo - range.AyaFrom + 1} verses)
+                            </option>
+                          ))}
+                        </select>
+                      ) : selectedSurahId ? (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
+                          No ayah ranges available for this surah
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
+                          Please select a surah first
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex justify-end gap-2 pt-2 border-t dark:border-gray-700">
+                      <button
+                        onClick={() => setShowSurahSelector(false)}
+                        className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSurahSelect}
+                        disabled={!selectedSurahId || selectedRangeId === null}
+                        className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: "#2AA0BF" }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Surah Selector Modal */}
-      {showSurahSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                Select Surah & Range
-              </h2>
-              <button
-                onClick={() => setShowSurahSelector(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
-              {/* Surah Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Surah
-                </label>
-                <select
-                  value={selectedSurahId}
-                  onChange={(e) => handleSurahChange(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                >
-                  {surahs.map((surah) => (
-                    <option key={surah.number} value={surah.number}>
-                      {surah.number}. {surah.name} ({surah.arabic}) -{" "}
-                      {surah.ayahs} verses
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Ayah Range Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Available Ayah Ranges
-                </label>
-                {loadingRanges ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                      Loading ranges...
-                    </span>
-                  </div>
-                ) : ayahRanges.length > 0 ? (
-                  <select
-                    value={selectedRangeId || ""}
-                    onChange={(e) => setSelectedRangeId(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  >
-                    <option value="">Select a range</option>
-                    {ayahRanges.map((range, index) => (
-                      <option key={range.ID || index} value={range.ID || index}>
-                        Verses {range.AyaFrom}-{range.AyaTo} (
-                        {range.AyaTo - range.AyaFrom + 1} verses)
-                      </option>
-                    ))}
-                  </select>
-                ) : selectedSurahId ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                    No ayah ranges available for this surah
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                    Please select a surah first
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-3 p-4 border-t dark:border-gray-700">
-              <button
-                onClick={() => setShowSurahSelector(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSurahSelect}
-                disabled={!selectedSurahId || selectedRangeId === null}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "#2AA0BF" }}
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div>
         <ArrowLeft className="hidden sm:inline w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-white relative top-8 sm:top-10 left-4 sm:left-30" />
@@ -636,63 +676,33 @@ const DragDropQuiz = () => {
                   </div>
                 </div>
 
-                {/* Word Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center gap-4 mt-4 mb-4">
+                {/* Word Navigation Controls */}
+                <div className="flex justify-center gap-4 mt-4 mb-4">
+                  {hasPrevPage && (
                     <button
                       onClick={handlePrevWordPage}
-                      disabled={!hasPrevPage}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 text-sm"
                       style={{ backgroundColor: "#2AA0BF" }}
                     >
                       <ChevronLeft className="w-3 h-3" />
                       Previous Words
                     </button>
+                  )}
 
-                    <span className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                      {currentWordPage + 1} of {totalPages}
-                    </span>
+                  <span className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                    {currentWordPage + 1} of {totalPages}
+                  </span>
 
+                  {canShowNext && (
                     <button
                       onClick={handleNextWordPage}
-                      disabled={!hasNextPage}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 text-sm"
                       style={{ backgroundColor: "#2AA0BF" }}
                     >
-                      Next Words
+                      {hasNextPage ? "Next Words" : "Next Ayah"}
                       <ChevronRight className="w-3 h-3" />
                     </button>
-                  </div>
-                )}
-
-                <div className="flex flex-row sm:flex-row justify-center gap-4 sm:gap-8 items-center pt-6 sm:pt-8 mt-6 sm:mt-8">
-                  <button
-                    onClick={handlePrevious}
-                    disabled={(() => {
-                      const [startVerse] = currentSurah.range
-                        .split("-")
-                        .map(Number);
-                      return currentAyah <= startVerse;
-                    })()}
-                    className="flex items-center border gap-2 px-3 sm:px-4 py-2 bg-white text-black rounded-md shadow hover:text-[#d1d5db] disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center text-sm sm:text-base"
-                  >
-                    <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Previous Ayah
-                  </button>
-
-                  <button
-                    onClick={handleNext}
-                    disabled={(() => {
-                      const [, endVerse] = currentSurah.range
-                        .split("-")
-                        .map(Number);
-                      return currentAyah >= endVerse;
-                    })()}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border text-black rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center text-sm sm:text-base"
-                  >
-                    Next Ayah
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
+                  )}
                 </div>
               </>
             )}

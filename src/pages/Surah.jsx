@@ -35,6 +35,8 @@ import {
   listSurahNames,
   fetchArabicVerses,
   fetchInterpretation,
+  fetchPageRanges,
+  getSurahAyahCount,
 } from "../api/apifunction";
 
 const Surah = () => {
@@ -44,18 +46,20 @@ const Surah = () => {
   const navigate = useNavigate();
   const location = useLocation(); // Add this to get query parameters
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  
+
   // Check if user came from Juz view
-  const fromJuz = new URLSearchParams(location.search).get('fromJuz');
+  const fromJuz = new URLSearchParams(location.search).get("fromJuz");
   const [copiedVerse, setCopiedVerse] = useState(null);
-  
+
   // State management
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
-  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
+  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] =
+    useState(null);
   const [showAyahModal, setShowAyahModal] = useState(false);
-  const [selectedVerseForInterpretation, setSelectedVerseForInterpretation] = useState(null);
+  const [selectedVerseForInterpretation, setSelectedVerseForInterpretation] =
+    useState(null);
   const [ayahData, setAyahData] = useState([]);
   const [arabicVerses, setArabicVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
@@ -76,20 +80,20 @@ const Surah = () => {
   // Check for wordByWord query parameter and auto-open modal
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const wordByWordParam = urlParams.get('wordByWord');
-    
+    const wordByWordParam = urlParams.get("wordByWord");
+
     if (wordByWordParam) {
       const verseNumber = parseInt(wordByWordParam) || 1;
-      
+
       // Set a small delay to ensure the component is fully loaded
       const timer = setTimeout(() => {
         setSelectedVerseForWordByWord(verseNumber);
         setShowWordByWord(true);
-        
+
         // Clean up URL by removing the parameter
         const newUrl = new URL(window.location);
-        newUrl.searchParams.delete('wordByWord');
-        window.history.replaceState({}, '', newUrl.pathname);
+        newUrl.searchParams.delete("wordByWord");
+        window.history.replaceState({}, "", newUrl.pathname);
       }, 500);
 
       return () => clearTimeout(timer);
@@ -105,34 +109,80 @@ const Surah = () => {
         setLoading(true);
         setError(null);
 
-        const [ayahResponse, surahNamesResponse, arabicResponse] =
-          await Promise.all([
-            fetchAyahAudioTranslations(parseInt(surahId)),
-            listSurahNames(),
-            fetchArabicVerses(parseInt(surahId)),
-          ]);
+        const [
+          ayahResponse,
+          surahNamesResponse,
+          arabicResponse,
+          pageRangesResponse,
+        ] = await Promise.all([
+          fetchAyahAudioTranslations(parseInt(surahId)),
+          listSurahNames(),
+          fetchArabicVerses(parseInt(surahId)),
+          fetchPageRanges(),
+        ]);
 
         console.log("Ayah Response:", ayahResponse);
         console.log("Arabic Response:", arabicResponse);
+        console.log("Page Ranges Response:", pageRangesResponse);
+
+        // Get the correct verse count from page ranges API
+        const getVerseCountFromPageRanges = (surahId, pageRanges) => {
+          const surahRanges = pageRanges.filter(
+            (range) => range.SuraId === parseInt(surahId)
+          );
+          if (surahRanges.length === 0) return 7; // Default fallback
+
+          // Find the maximum ayato value for this surah
+          const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
+          return maxAyah;
+        };
 
         // Handle null or empty responses from failed API calls
-        if (!ayahResponse || !Array.isArray(ayahResponse) || ayahResponse.length === 0) {
-          console.warn("Ayah response is null, not an array, or empty, using fallback data");
-          
-          // Try to get the correct verse count from surah names data
-          let verseCount = 7; // Default for Al-Fatiha
-          if (surahNamesResponse && Array.isArray(surahNamesResponse)) {
-            const currentSurah = surahNamesResponse.find(s => s.id === parseInt(surahId));
+        if (
+          !ayahResponse ||
+          !Array.isArray(ayahResponse) ||
+          ayahResponse.length === 0
+        ) {
+          console.warn(
+            "Ayah response is null, not an array, or empty, using fallback data"
+          );
+
+          // Get the correct verse count from page ranges API
+          let verseCount = getVerseCountFromPageRanges(
+            surahId,
+            pageRangesResponse || []
+          );
+          console.log(
+            `Using page ranges API: Surah ${surahId} has ${verseCount} verses`
+          );
+
+          // Fallback to surah names data if page ranges failed
+          if (
+            verseCount === 7 &&
+            surahNamesResponse &&
+            Array.isArray(surahNamesResponse)
+          ) {
+            const currentSurah = surahNamesResponse.find(
+              (s) => s.id === parseInt(surahId)
+            );
             if (currentSurah && currentSurah.ayahs) {
               verseCount = currentSurah.ayahs;
+              console.log(
+                `Fallback to surah names API: Surah ${surahId} has ${verseCount} verses`
+              );
             }
           }
-          
-          const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-            number: index + 1,
-            ArabicText: "",
-            Translation: `Translation not available for verse ${index + 1}. The API server may be temporarily unavailable. Please try again later.`,
-          }));
+
+          const fallbackAyahData = Array.from(
+            { length: verseCount },
+            (_, index) => ({
+              number: index + 1,
+              ArabicText: "",
+              Translation: `Translation not available for verse ${
+                index + 1
+              }. The API server may be temporarily unavailable. Please try again later.`,
+            })
+          );
           setAyahData(fallbackAyahData);
         } else {
           console.log("Ayah Response length:", ayahResponse.length);
@@ -196,24 +246,26 @@ const Surah = () => {
   useEffect(() => {
     const handleScrollToVerse = () => {
       const hash = window.location.hash;
-      
-      if (hash && hash.startsWith('#verse-')) {
-        const verseNumber = parseInt(hash.replace('#verse-', ''));
-        
+
+      if (hash && hash.startsWith("#verse-")) {
+        const verseNumber = parseInt(hash.replace("#verse-", ""));
+
         if (verseNumber && !loading && ayahData.length > 0) {
           // Wait for the content to fully render
           setTimeout(() => {
-            const verseElement = document.getElementById(`verse-${verseNumber}`);
-            
+            const verseElement = document.getElementById(
+              `verse-${verseNumber}`
+            );
+
             if (verseElement) {
-              verseElement.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
+              verseElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
               });
               // Highlight the verse briefly
-              verseElement.style.backgroundColor = '#fef3c7';
+              verseElement.style.backgroundColor = "#fef3c7";
               setTimeout(() => {
-                verseElement.style.backgroundColor = '';
+                verseElement.style.backgroundColor = "";
               }, 2000);
             }
           }, 500); // Reduced delay for better responsiveness
@@ -228,12 +280,12 @@ const Surah = () => {
     }
 
     // Listen for hash changes and popstate (back/forward button)
-    window.addEventListener('hashchange', handleScrollToVerse);
-    window.addEventListener('popstate', handleScrollToVerse);
-    
+    window.addEventListener("hashchange", handleScrollToVerse);
+    window.addEventListener("popstate", handleScrollToVerse);
+
     return () => {
-      window.removeEventListener('hashchange', handleScrollToVerse);
-      window.removeEventListener('popstate', handleScrollToVerse);
+      window.removeEventListener("hashchange", handleScrollToVerse);
+      window.removeEventListener("popstate", handleScrollToVerse);
     };
   }, [loading, ayahData, surahId, window.location.hash]);
 
@@ -249,6 +301,13 @@ const Surah = () => {
 
   const handleWordByWordNavigate = (newVerseNumber) => {
     setSelectedVerseForWordByWord(newVerseNumber);
+  };
+
+  const handleWordByWordSurahChange = (newSurahId) => {
+    // Close the modal and navigate to the new surah with wordByWord parameter
+    setShowWordByWord(false);
+    setSelectedVerseForWordByWord(null);
+    navigate(`/surah/${newSurahId}?wordByWord=1`);
   };
 
   const handleInterpretationClick = async (verseNumber) => {
@@ -564,14 +623,14 @@ const Surah = () => {
                     Reading from Juz {fromJuz}
                   </span>
                   <button
-                    onClick={() => navigate('/juz')}
+                    onClick={() => navigate("/juz")}
                     className="ml-2 text-xs text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
                   >
                     Back to Juz
                   </button>
                 </div>
               )}
-              
+
               {/* Surah Title */}
               <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
                 {surahInfo?.arabic || "Loading..."}
@@ -639,14 +698,14 @@ const Surah = () => {
                     Reading from Juz {fromJuz}
                   </span>
                   <button
-                    onClick={() => navigate('/juz')}
+                    onClick={() => navigate("/juz")}
                     className="ml-2 text-sm text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline"
                   >
                     Back to Juz
                   </button>
                 </div>
               )}
-              
+
               {/* Surah Title */}
               <div className="mb-4 sm:mb-6 relative">
                 <h1
@@ -736,6 +795,12 @@ const Surah = () => {
                 const finalArabicText =
                   arabicText || fallbackArabicVerse?.text_uthmani || "";
 
+                console.log(`Verse ${index + 1}:`, {
+                  translationVerse: verse,
+                  arabicVerse: arabicVerse,
+                  arabicText: finalArabicText,
+                  fallbackFound: !!fallbackArabicVerse,
+                });
 
                 return (
                   <div
@@ -744,20 +809,23 @@ const Surah = () => {
                     className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700"
                   >
                     {/* Arabic Text */}
-                    <div className="text-right mb-2 sm:mb-3 lg:mb-4">
-                      <p
-                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
-                        style={{
-                          fontFamily: quranFont,
-                          fontSize: `${fontSize}px`,
-                        }}
-                      >
-                        <span className="inline">﴾{finalArabicText}﴿</span>
-                        <span className="inline whitespace-nowrap">
-                          {toArabicNumber(index + 1)}
-                        </span>
-                      </p>
-                    </div>
+       {/* Arabic Text */}
+<div className="text-right mb-2 sm:mb-3 lg:mb-4">
+  <p
+    className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+    style={{
+      fontFamily: quranFont,
+      fontSize: `${fontSize}px`,
+    }}
+    dir="rtl"
+  >
+    {finalArabicText}{" "}
+    <span className="whitespace-nowrap">
+      ﴿{toArabicNumber(arabicVerse?.verse_number || (index + 1))}﴾
+    </span>
+  </p>
+</div>
+
 
                     {/* Translation */}
                     <div className="mb-2 sm:mb-3">
@@ -998,6 +1066,7 @@ const Surah = () => {
                   surahId={surahId}
                   onClose={handleWordByWordClose}
                   onNavigate={handleWordByWordNavigate}
+                  onSurahChange={handleWordByWordSurahChange}
                 />
               </div>
             </div>

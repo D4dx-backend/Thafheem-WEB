@@ -10,6 +10,7 @@ import {
 import {
   fetchQuizWithSurahInfo,
   fetchRandomQuizQuestions,
+  fetchRandomQuizQuestionsFromAllSurahs,
   fetchQuizQuestionsForRange,
   validateQuizData,
   transformQuizData,
@@ -70,12 +71,14 @@ const Quiz = () => {
         let rawData;
 
         if (isEntireThafheem) {
-          console.log("Fetching random questions for entire Thafheem");
-          rawData = await fetchRandomQuizQuestions(selectedSurah.id, 10);
+          console.log(
+            "Fetching random questions from entire Thafheem (all surahs)"
+          );
+          rawData = await fetchRandomQuizQuestionsFromAllSurahs(15); // Increased to 15 questions for better variety
           const transformedQuestions = transformQuizData(rawData);
           quizResponse = {
             questions: transformedQuestions,
-            surahInfo: selectedSurah,
+            surahInfo: { id: "all", name: "Entire Thafheem" }, // Updated to reflect all surahs
             totalQuestions: transformedQuestions.length,
           };
         } else if (isEntireSurah) {
@@ -107,7 +110,9 @@ const Quiz = () => {
           validateQuizData(quizResponse.questions)
         ) {
           setQuizData({
-            title: "തഹാഫീസ് പ്രശ്നോത്തരി",
+            title: isEntireThafheem
+              ? "തഹാഫീസ് പ്രശ്നോത്തരി - സമ്പൂർണ്ണ തഹാഫീം"
+              : "തഹാഫീസ് പ്രശ്നോത്തരി",
             totalQuestions: quizResponse.questions.length,
             questions: quizResponse.questions,
             surahInfo: quizResponse.surahInfo || selectedSurah,
@@ -271,17 +276,21 @@ const Quiz = () => {
             <div className="flex flex-row sm:flex-row items-start sm:items-center gap-2 sm:gap-3 relative w-full sm:w-auto">
               <div className="flex flex-wrap items-center gap-4">
                 <div
-                  className="flex items-center gap-2 cursor-pointer px-2 sm:px-3 py-1 rounded"
-                  onClick={toggleSurahDropdown}
+                  className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded ${
+                    isEntireThafheem
+                      ? "cursor-default opacity-60"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={isEntireThafheem ? undefined : toggleSurahDropdown}
                 >
                   <span className="text-black font-medium dark:text-white text-sm sm:text-base">
-                    {selectedSurah.name}
+                    {isEntireThafheem ? "All Surahs" : selectedSurah.name}
                   </span>
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white" />
                 </div>
 
                 <span className="text-xs sm:text-sm text-black dark:text-white">
-                  {selectedRange}
+                  {isEntireThafheem ? "Random Mix" : selectedRange}
                 </span>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -303,10 +312,16 @@ const Quiz = () => {
                     name="scope"
                     checked={isEntireThafheem}
                     onChange={() => handleScopeChange("entireThafheem")}
-                    className="form-radio text-black focus:ring-0"
+                    className="form-radio text-cyan-500 focus:ring-cyan-500"
                   />
-                  <span className="text-xs sm:text-sm text-gray-300">
-                    Entire Thafheem
+                  <span
+                    className={`text-xs sm:text-sm ${
+                      isEntireThafheem
+                        ? "text-cyan-500 font-medium"
+                        : "text-gray-300"
+                    }`}
+                  >
+                    Entire Thafheem ✨
                   </span>
                 </label>
               </div>
@@ -360,7 +375,8 @@ const Quiz = () => {
                         placeholder="Verse"
                         value={selectedRange}
                         onChange={(e) => setSelectedRange(e.target.value)}
-                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 text-xs sm:text-sm bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:placeholder:text-white dark:text-white"
+                        disabled={isEntireThafheem}
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 text-xs sm:text-sm bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:placeholder:text-white dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
 
@@ -418,10 +434,8 @@ const Quiz = () => {
                 {quizData?.title || "Loading..."}
               </h1>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 dark:text-white"
-            
-            >
-              <span  className="font-malayalam">മാർക്ക്: {score}</span>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-white">
+              <span className="font-malayalam">മാർക്ക്: {score}</span>
               <span className="ml-4">
                 Total: {quizData?.totalQuestions || 0}
               </span>
@@ -519,7 +533,6 @@ const Quiz = () => {
                 </label>
               ))}
             </div>
-
 
             {/* Submit Answer Button */}
             {selectedAnswer && !hasSubmittedCurrent && (

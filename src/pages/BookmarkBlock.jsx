@@ -66,9 +66,11 @@ import { ArrowLeft } from 'lucide-react';
 import StarNumber from '../components/StarNumber';
 import { useAuth } from '../context/AuthContext';
 import BookmarkService from '../services/bookmarkService';
+import { useNavigate } from 'react-router-dom';
 
 const BookmarkBlock = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookmarkedBlocks, setBookmarkedBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState({});
@@ -104,6 +106,11 @@ const BookmarkBlock = () => {
     }
   };
 
+  const handleBlockClick = (block) => {
+    // Navigate to the blockwise page for the specific surah
+    navigate(`/blockwise/${block.number}`);
+  };
+
   return (
     <>
     <BookmarkNavbar/>
@@ -116,20 +123,26 @@ const BookmarkBlock = () => {
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {bookmarkedBlocks.map((block) => (
           <div key={block.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800 border-gray-200 hover:bg-gray-100 transition-colors">
-            {/* Left Section - Block Info */}
-            <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+            {/* Left Section - Block Info - Clickable */}
+            <div 
+              className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0 cursor-pointer"
+              onClick={() => handleBlockClick(block)}
+            >
               <div className="flex-shrink-0">
                 <StarNumber number={block.number} />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">{block.surah}</h3>
+                <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">{block.surah}</h3>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{block.verses}</p>
               </div>
             </div>
 
             {/* Right Section - Delete Button */}
             <button
-              onClick={() => handleDelete(block.id)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the block click
+                handleDelete(block.id);
+              }}
               className="p-2 text-black dark:text-white dark:hover:bg-transparent hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center ml-2"
               aria-label="Delete bookmark block"
             >

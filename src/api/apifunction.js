@@ -1705,6 +1705,14 @@ export const fetchInterpretation = async (
   const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
   const langUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${language}`;
 
+  // Special handling for Surah 114 - add additional debugging
+  if (parseInt(surahId) === 114) {
+    console.log(`🔍 Special handling for Surah 114, Verse ${verseId}`);
+    console.log("Primary URL:", primaryUrl);
+    console.log("Range URL:", rangeUrl);
+    console.log("Language URL:", langUrl);
+  }
+
   try {
     console.log("Fetching interpretation from:", primaryUrl);
     const response = await fetch(primaryUrl);
@@ -1714,6 +1722,11 @@ export const fetchInterpretation = async (
 
     const data = await response.json();
     console.log("Interpretation data received:", data);
+
+    // Special logging for Surah 114
+    if (parseInt(surahId) === 114) {
+      console.log(`✅ Surah 114 primary endpoint returned:`, data);
+    }
 
     // Filter by interpretation number if multiple interpretations exist
     if (Array.isArray(data) && data.length > 0) {
@@ -1726,6 +1739,9 @@ export const fetchInterpretation = async (
     return data;
   } catch (error) {
     console.error("Error fetching interpretation from primary endpoint:", error);
+    if (parseInt(surahId) === 114) {
+      console.log(`❌ Surah 114 primary endpoint failed:`, error.message);
+    }
   }
 
   // Fallback 1: Try range-based API
@@ -1738,9 +1754,17 @@ export const fetchInterpretation = async (
 
     const rangeData = await rangeResponse.json();
     console.log("Range-based interpretation data received:", rangeData);
+    
+    if (parseInt(surahId) === 114) {
+      console.log(`✅ Surah 114 range endpoint returned:`, rangeData);
+    }
+    
     return rangeData;
   } catch (rangeError) {
     console.error("Range-based interpretation API failed:", rangeError);
+    if (parseInt(surahId) === 114) {
+      console.log(`❌ Surah 114 range endpoint failed:`, rangeError.message);
+    }
   }
 
   // Fallback 2: Try language-specific API
@@ -1753,9 +1777,17 @@ export const fetchInterpretation = async (
 
     const langData = await langResponse.json();
     console.log("Language-specific interpretation data received:", langData);
+    
+    if (parseInt(surahId) === 114) {
+      console.log(`✅ Surah 114 language endpoint returned:`, langData);
+    }
+    
     return langData;
   } catch (langError) {
     console.error("All interpretation endpoints failed:", langError);
+    if (parseInt(surahId) === 114) {
+      console.log(`❌ All Surah 114 endpoints failed. This may be expected if no interpretation data exists for this surah.`);
+    }
     console.warn(
       `Interpretation not available for Surah ${surahId}, Verse ${verseId}.`
     );

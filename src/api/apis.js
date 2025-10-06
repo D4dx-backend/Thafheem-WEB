@@ -22,7 +22,6 @@ if (isDevelopment) {
 // export const PAGE_RANGES_API = `${API_BASE_URL}/pageranges/all`;
 // export const AYAH_AUDIO_TRANSLATION_API = `${API_BASE_URL}/ayaaudiotransl`;
 // export const AYA_RANGES_API = `${API_BASE_URL}/ayaranges`;
-export const AYA_TRANSLATION_API = `${API_BASE_URL}/ayatransl`;
 // export const QURAN_TEXT_API = `${API_BASE_URL}/qurantext`;
 // export const QURAN_API_BASE_URL = QURAN_API_BASE;
 // export const INTERPRETATION_API = `${API_BASE_URL}/interpret`;
@@ -44,7 +43,7 @@ export const AYA_TRANSLATION_API = `${API_BASE_URL}/ayatransl`;
 //   SURA_NAMES_API: `${API_BASE_URL}/suranames/all`,
 // });
 
-
+export const AYA_TRANSLATION_API = `${API_BASE_URL}/ayatransl`;
 export const SURA_NAMES_API = `${API_BASE_URL}/suranames/all`;
 export const PAGE_RANGES_API = `${API_BASE_URL}/pageranges/all`;
 export const AYAH_AUDIO_TRANSLATION_API = `${API_BASE_URL}/ayaaudiotransl`;

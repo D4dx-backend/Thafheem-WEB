@@ -1,7 +1,18 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { useLocation, useSearchParams, useParams, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useSearchParams,
+  useParams,
+  useNavigate,
+} from "react-router-dom";
 import InterpretationNavbar from "../components/InterpretationNavbar";
-import { fetchInterpretation, fetchInterpretationRange, listSurahNames, fetchSurahs, fetchNoteById } from "../api/apifunction";
+import {
+  fetchInterpretation,
+  fetchInterpretationRange,
+  listSurahNames,
+  fetchSurahs,
+  fetchNoteById,
+} from "../api/apifunction";
 import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
@@ -22,13 +33,25 @@ const InterpretationBlockwise = (props) => {
     const state = location.state || {};
     return {
       surahId: parseInt(
-        props.surahId || searchParams.get("surahId") || state.surahId || routeParams.surahId || 1
+        props.surahId ||
+          searchParams.get("surahId") ||
+          state.surahId ||
+          routeParams.surahId ||
+          1
       ),
       range: props.range || searchParams.get("range") || state.range || "1-7",
       ipt: parseInt(props.ipt || searchParams.get("ipt") || state.ipt || 1),
       lang: props.lang || searchParams.get("lang") || state.lang || "en",
     };
-  }, [location.state, searchParams, routeParams, props.surahId, props.range, props.ipt, props.lang]);
+  }, [
+    location.state,
+    searchParams,
+    routeParams,
+    props.surahId,
+    props.range,
+    props.ipt,
+    props.lang,
+  ]);
 
   const [surahId, setSurahId] = useState(initialParams.surahId);
   const [range, setRange] = useState(initialParams.range);
@@ -46,11 +69,11 @@ const InterpretationBlockwise = (props) => {
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState({ id: "", content: null });
   const [showInterpretationModal, setShowInterpretationModal] = useState(false);
-  const [interpretationTarget, setInterpretationTarget] = useState({ 
-    surahId: null, 
-    verseId: null, 
-    interpretationNo: null, 
-    language: null 
+  const [interpretationTarget, setInterpretationTarget] = useState({
+    surahId: null,
+    verseId: null,
+    interpretationNo: null,
+    language: null,
   });
   const contentRefs = useRef([]);
 
@@ -58,19 +81,39 @@ const InterpretationBlockwise = (props) => {
   // NOTE: Only depends on props, NOT on state variables, to avoid resetting user navigation
   useEffect(() => {
     if (props.surahId && parseInt(props.surahId) !== surahId) {
-      console.log('📥 Props changed: updating surahId from', surahId, 'to', props.surahId);
+      console.log(
+        "📥 Props changed: updating surahId from",
+        surahId,
+        "to",
+        props.surahId
+      );
       setSurahId(parseInt(props.surahId));
     }
     if (props.range && props.range !== range) {
-      console.log('📥 Props changed: updating range from', range, 'to', props.range);
+      console.log(
+        "📥 Props changed: updating range from",
+        range,
+        "to",
+        props.range
+      );
       setRange(props.range);
     }
     if (props.ipt && parseInt(props.ipt) !== iptNo) {
-      console.log('📥 Props changed: updating iptNo from', iptNo, 'to', props.ipt);
+      console.log(
+        "📥 Props changed: updating iptNo from",
+        iptNo,
+        "to",
+        props.ipt
+      );
       setIptNo(parseInt(props.ipt));
     }
     if (props.lang && props.lang !== lang) {
-      console.log('📥 Props changed: updating lang from', lang, 'to', props.lang);
+      console.log(
+        "📥 Props changed: updating lang from",
+        lang,
+        "to",
+        props.lang
+      );
       setLang(props.lang);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,19 +121,25 @@ const InterpretationBlockwise = (props) => {
 
   // Debug useEffect to track state changes
   useEffect(() => {
-    console.log(`🔄 State changed - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`);
+    console.log(
+      `🔄 State changed - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`
+    );
   }, [surahId, range, iptNo, lang]);
 
   useEffect(() => {
-    console.log(`🔵 useEffect triggered - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`);
-    
+    console.log(
+      `🔵 useEffect triggered - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`
+    );
+
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
         setContent([]); // Clear previous content immediately
-        
-        console.log(`🔄 Loading interpretation: Surah ${surahId}, Range ${range}, Interpretation ${iptNo}, Language: ${lang}`);
+
+        console.log(
+          `🔄 Loading interpretation: Surah ${surahId}, Range ${range}, Interpretation ${iptNo}, Language: ${lang}`
+        );
 
         // Decide between single verse vs range (e.g., "5" vs "1-7")
         const isSingle = /^\d+$/.test(range);
@@ -98,16 +147,29 @@ const InterpretationBlockwise = (props) => {
           ? await fetchInterpretation(surahId, parseInt(range, 10), iptNo, lang)
           : await fetchInterpretationRange(surahId, range, iptNo, lang);
 
-        console.log(`✅ Received interpretation data for ${surahId}:${range}:${iptNo}:`, data);
-        
+        console.log(
+          `✅ Received interpretation data for ${surahId}:${range}:${iptNo}:`,
+          data
+        );
+
         // Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
-        
+
         // Log interpretation numbers from the actual data
         if (items.length > 0) {
-          const interpretationNos = items.map(item => item?.InterpretationNo || item?.interpretationNo || item?.interptn_no).filter(Boolean);
-          console.log(`📊 API returned ${items.length} item(s) with interpretation numbers:`, interpretationNos);
-          
+          const interpretationNos = items
+            .map(
+              (item) =>
+                item?.InterpretationNo ||
+                item?.interpretationNo ||
+                item?.interptn_no
+            )
+            .filter(Boolean);
+          console.log(
+            `📊 API returned ${items.length} item(s) with interpretation numbers:`,
+            interpretationNos
+          );
+
           // Show first item structure for debugging
           if (items[0]) {
             console.log(`📋 First item structure:`, {
@@ -115,22 +177,31 @@ const InterpretationBlockwise = (props) => {
               SuraID: items[0].SuraID,
               InterpretationNo: items[0].InterpretationNo,
               hasInterpretation: !!items[0].Interpretation,
-              interpretationLength: items[0].Interpretation?.length || 0
+              interpretationLength: items[0].Interpretation?.length || 0,
             });
           }
         }
-        
+
         // Check if we got empty or invalid data
-        if (items.length === 0 || 
-            (items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) ||
-            (items.length === 1 && items[0].Interpretation === '')) {
-          console.warn(`⚠️ No interpretation ${iptNo} available for range ${range}`);
-          
+        if (
+          items.length === 0 ||
+          (items.length === 1 &&
+            (!items[0] || Object.keys(items[0]).length === 0)) ||
+          (items.length === 1 && items[0].Interpretation === "")
+        ) {
+          console.warn(
+            `⚠️ No interpretation ${iptNo} available for range ${range}`
+          );
+
           // Try to fetch interpretation 1 for this range as fallback
           if (iptNo !== 1) {
-            console.log(`🔄 Trying interpretation 1 for range ${range} as fallback`);
+            console.log(
+              `🔄 Trying interpretation 1 for range ${range} as fallback`
+            );
             setIptNo(1);
-            showError(`Interpretation ${iptNo} is not available for verses ${range}. Loading interpretation 1.`);
+            showError(
+              `Interpretation ${iptNo} is not available for verses ${range}. Loading interpretation 1.`
+            );
             return; // Will trigger useEffect again with interpretation=1
           } else {
             // Even interpretation 1 is not available for this range
@@ -143,14 +214,17 @@ const InterpretationBlockwise = (props) => {
         }
       } catch (err) {
         console.error(`❌ Failed to load interpretation ${iptNo}:`, err);
-        
+
         // Provide more specific error messages
         let errorMessage = "Failed to load interpretation";
-        if (err.message?.includes('500')) {
+        if (err.message?.includes("500")) {
           errorMessage = `Server error loading interpretation ${iptNo}. Please try again later.`;
-        } else if (err.message?.includes('404')) {
+        } else if (err.message?.includes("404")) {
           errorMessage = `Interpretation ${iptNo} not found for this selection.`;
-        } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        } else if (
+          err.message?.includes("network") ||
+          err.message?.includes("fetch")
+        ) {
           errorMessage = "Network error. Please check your connection.";
         } else {
           errorMessage = `Interpretation ${iptNo} is not available.`;
@@ -171,32 +245,34 @@ const InterpretationBlockwise = (props) => {
   const applySimpleStyling = () => {
     contentRefs.current.forEach((el) => {
       if (!el) return;
-      
+
       // Handle existing sup/a tags - set data attributes and remove conflicting inline styles
-      const markers = el.querySelectorAll('sup, a');
+      const markers = el.querySelectorAll("sup, a");
       markers.forEach((m) => {
-        const text = (m.innerText || m.textContent || '').trim();
+        const text = (m.innerText || m.textContent || "").trim();
         if (!text) return;
-        
+
         // Remove any existing inline styles that might interfere with CSS hover
-        m.style.removeProperty('color');
-        m.style.removeProperty('text-decoration');
-        m.style.removeProperty('cursor');
-        m.style.removeProperty('font-weight');
-        
+        m.style.removeProperty("color");
+        m.style.removeProperty("text-decoration");
+        m.style.removeProperty("cursor");
+        m.style.removeProperty("font-weight");
+
         // Apply data attributes for CSS styling and set click handlers
         if (/^N\d+$/.test(text)) {
           // Note references
-          m.setAttribute('data-type', 'note');
-          m.setAttribute('data-value', text);
+          m.setAttribute("data-type", "note");
+          m.setAttribute("data-value", text);
           m.onclick = handleNoteHighlightClick;
-        } else if (/^\(?\d+\s*[:：]\s*\d+\)?$/.test(text) || 
-                   /^\d+\s*[:：]\s*\d+$/.test(text) ||
-                   /അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*\d+\s+\d+:\d+/.test(text) || 
-                   /സൂക്തം:\s*\d+\s+\d+:\d+/.test(text)) {
+        } else if (
+          /^\(?\d+\s*[:：]\s*\d+\)?$/.test(text) ||
+          /^\d+\s*[:：]\s*\d+$/.test(text) ||
+          /അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*\d+\s+\d+:\d+/.test(text) ||
+          /സൂക്തം:\s*\d+\s+\d+:\d+/.test(text)
+        ) {
           // Verse references
-          m.setAttribute('data-type', 'verse');
-          m.setAttribute('data-value', text);
+          m.setAttribute("data-type", "verse");
+          m.setAttribute("data-value", text);
           m.onclick = handleNoteHighlightClick;
         }
       });
@@ -228,14 +304,22 @@ const InterpretationBlockwise = (props) => {
       try {
         const names = await listSurahNames();
         if (!mounted) return;
-        setSurahOptions(names.map(n => ({ value: n.id, label: `${n.id}- ${n.english || 'Surah'}` })));
+        setSurahOptions(
+          names.map((n) => ({
+            value: n.id,
+            label: `${n.id}- ${n.english || "Surah"}`,
+          }))
+        );
         const found = names.find((s) => s.id === Number(surahId));
-        if (mounted) setSurahDisplayName(`${surahId}- ${found?.english || "Surah"}`);
+        if (mounted)
+          setSurahDisplayName(`${surahId}- ${found?.english || "Surah"}`);
       } catch (_) {
         if (mounted) setSurahDisplayName(`${surahId}- Surah`);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [surahId]);
 
   // Build range options for current surah (1..total ayahs)
@@ -245,22 +329,25 @@ const InterpretationBlockwise = (props) => {
       try {
         const surahs = await fetchSurahs();
         if (!mounted) return;
-        const current = surahs.find(s => s.number === Number(surahId));
+        const current = surahs.find((s) => s.number === Number(surahId));
         const total = current?.ayahs || 286;
         const allAyahs = Array.from({ length: total }, (_, i) => String(i + 1));
         setRangeOptions(allAyahs);
       } catch (e) {
         // fallback to 1..50
-        if (mounted) setRangeOptions(Array.from({ length: 50 }, (_, i) => String(i + 1)));
+        if (mounted)
+          setRangeOptions(Array.from({ length: 50 }, (_, i) => String(i + 1)));
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [surahId]);
 
   const handleSelectSurah = () => {
     // Surah selection triggered
   };
-  
+
   const handleSelectRange = () => {
     // Range selection triggered
   };
@@ -273,89 +360,162 @@ const InterpretationBlockwise = (props) => {
     setRange(String(value));
   };
 
-
   const handlePrev = async () => {
-    console.log('🔙 Previous button clicked, current range:', range, 'current interpretation:', iptNo);
-    console.log('🔍 Current state - surahId:', surahId, 'range:', range, 'iptNo:', iptNo, 'lang:', lang);
-    
+    console.log(
+      "🔙 Previous button clicked, current range:",
+      range,
+      "current interpretation:",
+      iptNo
+    );
+    console.log(
+      "🔍 Current state - surahId:",
+      surahId,
+      "range:",
+      range,
+      "iptNo:",
+      iptNo,
+      "lang:",
+      lang
+    );
+
     // Try a simpler approach: first try to decrement interpretation in current block
     const prevInterpretation = iptNo - 1;
-    console.log('🔍 Trying previous interpretation in same block:', prevInterpretation);
-    
+    console.log(
+      "🔍 Trying previous interpretation in same block:",
+      prevInterpretation
+    );
+
     if (prevInterpretation >= 1) {
       try {
         // Test if the previous interpretation exists by making a quick API call
         const isSingle = /^\d+$/.test(range);
         const testData = isSingle
-          ? await fetchInterpretation(surahId, parseInt(range, 10), prevInterpretation, lang)
-          : await fetchInterpretationRange(surahId, range, prevInterpretation, lang);
-        
+          ? await fetchInterpretation(
+              surahId,
+              parseInt(range, 10),
+              prevInterpretation,
+              lang
+            )
+          : await fetchInterpretationRange(
+              surahId,
+              range,
+              prevInterpretation,
+              lang
+            );
+
         // Check if we got valid data
         const items = Array.isArray(testData) ? testData : [testData];
-        const hasValidData = items.length > 0 && 
-            !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-            !(items.length === 1 && items[0].Interpretation === '');
-        
+        const hasValidData =
+          items.length > 0 &&
+          !(
+            items.length === 1 &&
+            (!items[0] || Object.keys(items[0]).length === 0)
+          ) &&
+          !(items.length === 1 && items[0].Interpretation === "");
+
         if (hasValidData) {
-          console.log('✅ Previous interpretation exists in same block, moving to:', prevInterpretation);
-          console.log('🔄 Setting iptNo to:', prevInterpretation);
+          console.log(
+            "✅ Previous interpretation exists in same block, moving to:",
+            prevInterpretation
+          );
+          console.log("🔄 Setting iptNo to:", prevInterpretation);
           setIptNo(prevInterpretation);
           return;
         } else {
-          console.log('❌ Previous interpretation does not exist in current block, trying previous verse with same interpretation number');
+          console.log(
+            "❌ Previous interpretation does not exist in current block, trying previous verse with same interpretation number"
+          );
         }
       } catch (err) {
-        console.log('❌ Error testing previous interpretation, moving to previous block:', err.message);
+        console.log(
+          "❌ Error testing previous interpretation, moving to previous block:",
+          err.message
+        );
       }
     }
-    
+
     // If we reach here, the previous interpretation doesn't exist, so move to previous block
-    console.log('🔄 Moving to previous block');
-    
+    console.log("🔄 Moving to previous block");
+
     const current = String(range);
-    
+
     // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
       // Single ayah: decrement to previous ayah
       const v = parseInt(current, 10);
-      
+
       // Check if we're at the first verse of the surah
       if (v <= 1) {
-        showError('Already at the first verse of this surah');
+        showError("Already at the first verse of this surah");
         return;
       }
-      
+
       const prevVerse = v - 1;
-      console.log('🔙 Moving to previous verse:', prevVerse, 'with interpretation', iptNo);
-      
+      console.log(
+        "🔙 Moving to previous verse:",
+        prevVerse,
+        "with interpretation",
+        iptNo
+      );
+
       // Test if the previous verse has the same interpretation number
       try {
-        const testData = await fetchInterpretation(surahId, prevVerse, iptNo, lang);
+        const testData = await fetchInterpretation(
+          surahId,
+          prevVerse,
+          iptNo,
+          lang
+        );
         const items = Array.isArray(testData) ? testData : [testData];
-        const hasValidData = items.length > 0 && 
-            !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-            !(items.length === 1 && items[0].Interpretation === '');
-        
+        const hasValidData =
+          items.length > 0 &&
+          !(
+            items.length === 1 &&
+            (!items[0] || Object.keys(items[0]).length === 0)
+          ) &&
+          !(items.length === 1 && items[0].Interpretation === "");
+
         if (hasValidData) {
-          console.log('✅ Previous verse has the same interpretation, moving to:', prevVerse, 'with interpretation', iptNo);
+          console.log(
+            "✅ Previous verse has the same interpretation, moving to:",
+            prevVerse,
+            "with interpretation",
+            iptNo
+          );
           setRange(String(prevVerse));
           setIptNo(iptNo);
         } else {
-          console.log('❌ Previous verse does not have interpretation', iptNo, ', finding highest available interpretation');
-          
+          console.log(
+            "❌ Previous verse does not have interpretation",
+            iptNo,
+            ", finding highest available interpretation"
+          );
+
           // Find the highest available interpretation in the previous verse that is < current interpretation
           let highestInterpretation = 0;
-          for (let i = 1; i < iptNo; i++) { // Only check up to current interpretation - 1
+          for (let i = 1; i < iptNo; i++) {
+            // Only check up to current interpretation - 1
             try {
-              const testData = await fetchInterpretation(surahId, prevVerse, i, lang);
+              const testData = await fetchInterpretation(
+                surahId,
+                prevVerse,
+                i,
+                lang
+              );
               const items = Array.isArray(testData) ? testData : [testData];
-              const hasValidData = items.length > 0 && 
-                  !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-                  !(items.length === 1 && items[0].Interpretation === '');
-              
+              const hasValidData =
+                items.length > 0 &&
+                !(
+                  items.length === 1 &&
+                  (!items[0] || Object.keys(items[0]).length === 0)
+                ) &&
+                !(items.length === 1 && items[0].Interpretation === "");
+
               if (hasValidData) {
                 highestInterpretation = i;
-                console.log(`✅ Found interpretation ${i} in previous verse ${prevVerse}`);
+                console.log(
+                  `✅ Found interpretation ${i} in previous verse ${prevVerse}`
+                );
               } else {
                 break; // No more interpretations available
               }
@@ -363,18 +523,25 @@ const InterpretationBlockwise = (props) => {
               break; // Error means no more interpretations
             }
           }
-          
+
           if (highestInterpretation > 0) {
-            console.log('✅ Previous verse has highest interpretation', highestInterpretation, ', moving to:', prevVerse, 'with interpretation', highestInterpretation);
+            console.log(
+              "✅ Previous verse has highest interpretation",
+              highestInterpretation,
+              ", moving to:",
+              prevVerse,
+              "with interpretation",
+              highestInterpretation
+            );
             setRange(String(prevVerse));
             setIptNo(highestInterpretation);
           } else {
-            console.log('❌ Previous verse has no interpretations');
-            showError('No interpretations available for the previous verse');
+            console.log("❌ Previous verse has no interpretations");
+            showError("No interpretations available for the previous verse");
           }
         }
       } catch (err) {
-        console.log('❌ Error testing previous verse, trying interpretation 1');
+        console.log("❌ Error testing previous verse, trying interpretation 1");
         setRange(String(prevVerse));
         setIptNo(1);
       }
@@ -386,47 +553,87 @@ const InterpretationBlockwise = (props) => {
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
-        
+
         // Check if we're at the first block
         if (a <= 1) {
-          showError('Already at the first block of this surah');
+          showError("Already at the first block of this surah");
           return;
         }
-        
+
         const newA = Math.max(1, a - len);
         const newB = newA + len - 1;
         const prevRange = `${newA}-${newB}`;
-        
+
         // Test if this previous block has the same interpretation number
-        console.log('🔍 Testing if previous block has interpretation:', prevRange, iptNo);
+        console.log(
+          "🔍 Testing if previous block has interpretation:",
+          prevRange,
+          iptNo
+        );
         try {
-          const testData = await fetchInterpretationRange(surahId, prevRange, iptNo, lang);
+          const testData = await fetchInterpretationRange(
+            surahId,
+            prevRange,
+            iptNo,
+            lang
+          );
           const items = Array.isArray(testData) ? testData : [testData];
-          const hasValidData = items.length > 0 && 
-              !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-              !(items.length === 1 && items[0].Interpretation === '');
-          
+          const hasValidData =
+            items.length > 0 &&
+            !(
+              items.length === 1 &&
+              (!items[0] || Object.keys(items[0]).length === 0)
+            ) &&
+            !(items.length === 1 && items[0].Interpretation === "");
+
           if (hasValidData) {
-            console.log('✅ Previous block has the same interpretation, moving to:', prevRange, 'with interpretation', iptNo);
-            console.log('🔄 Setting range to:', prevRange, 'and iptNo to:', iptNo);
+            console.log(
+              "✅ Previous block has the same interpretation, moving to:",
+              prevRange,
+              "with interpretation",
+              iptNo
+            );
+            console.log(
+              "🔄 Setting range to:",
+              prevRange,
+              "and iptNo to:",
+              iptNo
+            );
             setRange(prevRange);
             setIptNo(iptNo);
           } else {
             // Find the highest available interpretation in the previous block that is < current interpretation
-            console.log('❌ Previous block does not have interpretation', iptNo, ', finding highest available interpretation <', iptNo);
-            
+            console.log(
+              "❌ Previous block does not have interpretation",
+              iptNo,
+              ", finding highest available interpretation <",
+              iptNo
+            );
+
             let highestInterpretation = 0;
-            for (let i = 1; i < iptNo; i++) { // Only check up to current interpretation - 1
+            for (let i = 1; i < iptNo; i++) {
+              // Only check up to current interpretation - 1
               try {
-                const testData = await fetchInterpretationRange(surahId, prevRange, i, lang);
+                const testData = await fetchInterpretationRange(
+                  surahId,
+                  prevRange,
+                  i,
+                  lang
+                );
                 const items = Array.isArray(testData) ? testData : [testData];
-                const hasValidData = items.length > 0 && 
-                    !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-                    !(items.length === 1 && items[0].Interpretation === '');
-                
+                const hasValidData =
+                  items.length > 0 &&
+                  !(
+                    items.length === 1 &&
+                    (!items[0] || Object.keys(items[0]).length === 0)
+                  ) &&
+                  !(items.length === 1 && items[0].Interpretation === "");
+
                 if (hasValidData) {
                   highestInterpretation = i;
-                  console.log(`✅ Found interpretation ${i} in previous block ${prevRange}`);
+                  console.log(
+                    `✅ Found interpretation ${i} in previous block ${prevRange}`
+                  );
                 } else {
                   break; // No more interpretations available
                 }
@@ -434,76 +641,138 @@ const InterpretationBlockwise = (props) => {
                 break; // Error means no more interpretations
               }
             }
-            
+
             if (highestInterpretation > 0) {
-              console.log('✅ Previous block has highest interpretation', highestInterpretation, ', moving to:', prevRange, 'with interpretation', highestInterpretation);
-              console.log('🔄 Setting range to:', prevRange, 'and iptNo to:', highestInterpretation);
+              console.log(
+                "✅ Previous block has highest interpretation",
+                highestInterpretation,
+                ", moving to:",
+                prevRange,
+                "with interpretation",
+                highestInterpretation
+              );
+              console.log(
+                "🔄 Setting range to:",
+                prevRange,
+                "and iptNo to:",
+                highestInterpretation
+              );
               setRange(prevRange);
               setIptNo(highestInterpretation);
             } else {
-              console.log('❌ Previous block has no interpretations, trying individual verses');
-            // Try individual verses starting from the last verse of the previous block
-            let foundValidVerse = false;
-            for (let verse = newB; verse >= newA && verse >= 1; verse--) {
-              try {
-                // Find the highest available interpretation for this verse that is < current interpretation
-                let highestInterpretation = 0;
-                for (let i = 1; i < iptNo; i++) { // Only check up to current interpretation - 1
-                  try {
-                    const verseData = await fetchInterpretation(surahId, verse, i, lang);
-                    const verseItems = Array.isArray(verseData) ? verseData : [verseData];
-                    const verseHasValidData = verseItems.length > 0 && 
-                        !(verseItems.length === 1 && (!verseItems[0] || Object.keys(verseItems[0]).length === 0)) &&
-                        !(verseItems.length === 1 && verseItems[0].Interpretation === '');
-                    
-                    if (verseHasValidData) {
-                      highestInterpretation = i;
-                      console.log(`✅ Found interpretation ${i} in verse ${verse}`);
-                    } else {
-                      break; // No more interpretations available
+              console.log(
+                "❌ Previous block has no interpretations, trying individual verses"
+              );
+              // Try individual verses starting from the last verse of the previous block
+              let foundValidVerse = false;
+              for (let verse = newB; verse >= newA && verse >= 1; verse--) {
+                try {
+                  // Find the highest available interpretation for this verse that is < current interpretation
+                  let highestInterpretation = 0;
+                  for (let i = 1; i < iptNo; i++) {
+                    // Only check up to current interpretation - 1
+                    try {
+                      const verseData = await fetchInterpretation(
+                        surahId,
+                        verse,
+                        i,
+                        lang
+                      );
+                      const verseItems = Array.isArray(verseData)
+                        ? verseData
+                        : [verseData];
+                      const verseHasValidData =
+                        verseItems.length > 0 &&
+                        !(
+                          verseItems.length === 1 &&
+                          (!verseItems[0] ||
+                            Object.keys(verseItems[0]).length === 0)
+                        ) &&
+                        !(
+                          verseItems.length === 1 &&
+                          verseItems[0].Interpretation === ""
+                        );
+
+                      if (verseHasValidData) {
+                        highestInterpretation = i;
+                        console.log(
+                          `✅ Found interpretation ${i} in verse ${verse}`
+                        );
+                      } else {
+                        break; // No more interpretations available
+                      }
+                    } catch (err) {
+                      break; // Error means no more interpretations
                     }
-                  } catch (err) {
-                    break; // Error means no more interpretations
                   }
+
+                  if (highestInterpretation > 0) {
+                    console.log(
+                      "✅ Found valid verse:",
+                      verse,
+                      "with highest interpretation",
+                      highestInterpretation
+                    );
+                    console.log(
+                      "🔄 Setting range to:",
+                      String(verse),
+                      "and iptNo to:",
+                      highestInterpretation
+                    );
+                    setRange(String(verse));
+                    setIptNo(highestInterpretation);
+                    foundValidVerse = true;
+                    break;
+                  }
+                } catch (err) {
+                  console.log("❌ Verse", verse, "has no interpretations");
                 }
-                
-                if (highestInterpretation > 0) {
-                  console.log('✅ Found valid verse:', verse, 'with highest interpretation', highestInterpretation);
-                  console.log('🔄 Setting range to:', String(verse), 'and iptNo to:', highestInterpretation);
-                  setRange(String(verse));
-                  setIptNo(highestInterpretation);
-                  foundValidVerse = true;
-                  break;
-                }
-              } catch (err) {
-                console.log('❌ Verse', verse, 'has no interpretations');
               }
-            }
-            
-            if (!foundValidVerse) {
-              showError('No more interpretations available in this surah');
-            }
+
+              if (!foundValidVerse) {
+                showError("No more interpretations available in this surah");
+              }
             }
           }
         } catch (err) {
-          console.log('❌ Error testing previous block, trying individual verses');
+          console.log(
+            "❌ Error testing previous block, trying individual verses"
+          );
           // Fallback: try individual verses
           let foundValidVerse = false;
           for (let verse = newB; verse >= newA && verse >= 1; verse--) {
             try {
               // Find the highest available interpretation for this verse that is < current interpretation
               let highestInterpretation = 0;
-              for (let i = 1; i < iptNo; i++) { // Only check up to current interpretation - 1
+              for (let i = 1; i < iptNo; i++) {
+                // Only check up to current interpretation - 1
                 try {
-                  const verseData = await fetchInterpretation(surahId, verse, i, lang);
-                  const verseItems = Array.isArray(verseData) ? verseData : [verseData];
-                  const verseHasValidData = verseItems.length > 0 && 
-                      !(verseItems.length === 1 && (!verseItems[0] || Object.keys(verseItems[0]).length === 0)) &&
-                      !(verseItems.length === 1 && verseItems[0].Interpretation === '');
-                  
+                  const verseData = await fetchInterpretation(
+                    surahId,
+                    verse,
+                    i,
+                    lang
+                  );
+                  const verseItems = Array.isArray(verseData)
+                    ? verseData
+                    : [verseData];
+                  const verseHasValidData =
+                    verseItems.length > 0 &&
+                    !(
+                      verseItems.length === 1 &&
+                      (!verseItems[0] ||
+                        Object.keys(verseItems[0]).length === 0)
+                    ) &&
+                    !(
+                      verseItems.length === 1 &&
+                      verseItems[0].Interpretation === ""
+                    );
+
                   if (verseHasValidData) {
                     highestInterpretation = i;
-                    console.log(`✅ Found interpretation ${i} in verse ${verse}`);
+                    console.log(
+                      `✅ Found interpretation ${i} in verse ${verse}`
+                    );
                   } else {
                     break; // No more interpretations available
                   }
@@ -511,21 +780,26 @@ const InterpretationBlockwise = (props) => {
                   break; // Error means no more interpretations
                 }
               }
-              
+
               if (highestInterpretation > 0) {
-                console.log('✅ Found valid verse:', verse, 'with highest interpretation', highestInterpretation);
+                console.log(
+                  "✅ Found valid verse:",
+                  verse,
+                  "with highest interpretation",
+                  highestInterpretation
+                );
                 setRange(String(verse));
                 setIptNo(highestInterpretation);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-              console.log('❌ Verse', verse, 'has no interpretations');
+              console.log("❌ Verse", verse, "has no interpretations");
             }
           }
-          
+
           if (!foundValidVerse) {
-            showError('No more interpretations available in this surah');
+            showError("No more interpretations available in this surah");
           }
         }
       }
@@ -535,83 +809,138 @@ const InterpretationBlockwise = (props) => {
   // Helper function to determine the maximum interpretation number available for a block
   const getMaxInterpretationNumber = async (surahId, range, lang) => {
     let maxInterpretation = 0; // Start with 0, will be set to actual number if found
-    
+
     // Try interpretation numbers sequentially until we find one that doesn't exist
     // Start with a reasonable upper limit, but we can optimize by checking common patterns
-    for (let i = 1; i <= 10; i++) { // Reasonable upper limit
+    for (let i = 1; i <= 10; i++) {
+      // Reasonable upper limit
       try {
         const isSingle = /^\d+$/.test(range);
         const data = isSingle
           ? await fetchInterpretation(surahId, parseInt(range, 10), i, lang)
           : await fetchInterpretationRange(surahId, range, i, lang);
-        
-        console.log(`🔍 Checking interpretation ${i} for ${surahId}:${range}:`, data);
-        
+
+        console.log(
+          `🔍 Checking interpretation ${i} for ${surahId}:${range}:`,
+          data
+        );
+
         // Check if we got valid data - use the same validation logic as the main useEffect
         const items = Array.isArray(data) ? data : [data];
-        const hasValidData = items.length > 0 && 
-            !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-            !(items.length === 1 && items[0].Interpretation === '');
-        
+        const hasValidData =
+          items.length > 0 &&
+          !(
+            items.length === 1 &&
+            (!items[0] || Object.keys(items[0]).length === 0)
+          ) &&
+          !(items.length === 1 && items[0].Interpretation === "");
+
         if (hasValidData) {
           maxInterpretation = i;
-          console.log(`✅ Interpretation ${i} is valid for ${surahId}:${range}`);
+          console.log(
+            `✅ Interpretation ${i} is valid for ${surahId}:${range}`
+          );
         } else {
           // No more interpretations available
-          console.log(`❌ Interpretation ${i} is invalid/empty for ${surahId}:${range}, stopping search`);
+          console.log(
+            `❌ Interpretation ${i} is invalid/empty for ${surahId}:${range}, stopping search`
+          );
           break;
         }
       } catch (err) {
         // If we get an error, assume no more interpretations
-        console.log(`⚠️ Error fetching interpretation ${i} for ${surahId}:${range}:`, err.message);
+        console.log(
+          `⚠️ Error fetching interpretation ${i} for ${surahId}:${range}:`,
+          err.message
+        );
         break;
       }
     }
-    
-    console.log(`📊 Found ${maxInterpretation} interpretation(s) for ${surahId}:${range}`);
+
+    console.log(
+      `📊 Found ${maxInterpretation} interpretation(s) for ${surahId}:${range}`
+    );
     return maxInterpretation;
   };
 
-
   const handleNext = async () => {
-    console.log('▶️ Next button clicked, current range:', range, 'current interpretation:', iptNo);
-    console.log('🔍 Current state - surahId:', surahId, 'range:', range, 'iptNo:', iptNo, 'lang:', lang);
-    
+    console.log(
+      "▶️ Next button clicked, current range:",
+      range,
+      "current interpretation:",
+      iptNo
+    );
+    console.log(
+      "🔍 Current state - surahId:",
+      surahId,
+      "range:",
+      range,
+      "iptNo:",
+      iptNo,
+      "lang:",
+      lang
+    );
+
     // Try a simpler approach: first try to increment interpretation in current block
     const nextInterpretation = iptNo + 1;
-    console.log('🔍 Trying next interpretation in same block:', nextInterpretation);
-    
+    console.log(
+      "🔍 Trying next interpretation in same block:",
+      nextInterpretation
+    );
+
     try {
       // Test if the next interpretation exists by making a quick API call
       const isSingle = /^\d+$/.test(range);
       const testData = isSingle
-        ? await fetchInterpretation(surahId, parseInt(range, 10), nextInterpretation, lang)
-        : await fetchInterpretationRange(surahId, range, nextInterpretation, lang);
-      
+        ? await fetchInterpretation(
+            surahId,
+            parseInt(range, 10),
+            nextInterpretation,
+            lang
+          )
+        : await fetchInterpretationRange(
+            surahId,
+            range,
+            nextInterpretation,
+            lang
+          );
+
       // Check if we got valid data
       const items = Array.isArray(testData) ? testData : [testData];
-      const hasValidData = items.length > 0 && 
-          !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-          !(items.length === 1 && items[0].Interpretation === '');
-      
+      const hasValidData =
+        items.length > 0 &&
+        !(
+          items.length === 1 &&
+          (!items[0] || Object.keys(items[0]).length === 0)
+        ) &&
+        !(items.length === 1 && items[0].Interpretation === "");
+
       if (hasValidData) {
-        console.log('✅ Next interpretation exists in same block, moving to:', nextInterpretation);
-        console.log('🔄 Setting iptNo to:', nextInterpretation);
+        console.log(
+          "✅ Next interpretation exists in same block, moving to:",
+          nextInterpretation
+        );
+        console.log("🔄 Setting iptNo to:", nextInterpretation);
         setIptNo(nextInterpretation);
         return;
       } else {
-        console.log('❌ Next interpretation does not exist in current block, trying next verse with same interpretation number');
-        
+        console.log(
+          "❌ Next interpretation does not exist in current block, trying next verse with same interpretation number"
+        );
+
         // Try the same interpretation number in the next verse/block
         const current = String(range);
         let nextRange;
-        
+
         if (/^\d+$/.test(current)) {
           // Single ayah: increment to next ayah
           const v = parseInt(current, 10);
-          const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+          const maxVerse =
+            rangeOptions.length > 0
+              ? parseInt(rangeOptions[rangeOptions.length - 1], 10)
+              : 286;
           if (v >= maxVerse) {
-            showError('Already at the last verse of this surah');
+            showError("Already at the last verse of this surah");
             return;
           }
           nextRange = String(v + 1);
@@ -623,69 +952,108 @@ const InterpretationBlockwise = (props) => {
             const a = parseInt(aStr, 10);
             const b = parseInt(bStr, 10);
             const len = b - a + 1;
-            
-            const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+
+            const maxVerse =
+              rangeOptions.length > 0
+                ? parseInt(rangeOptions[rangeOptions.length - 1], 10)
+                : 286;
             if (b >= maxVerse) {
-              showError('Already at the last block of this surah');
+              showError("Already at the last block of this surah");
               return;
             }
-            
+
             const newA = a + len;
             const newB = Math.min(maxVerse, newA + len - 1);
             nextRange = `${newA}-${newB}`;
           }
         }
-        
+
         if (nextRange) {
           // Test if the next range has the same interpretation number
-          console.log('🔍 Testing if next range has interpretation:', nextRange, nextInterpretation);
+          console.log(
+            "🔍 Testing if next range has interpretation:",
+            nextRange,
+            nextInterpretation
+          );
           try {
             const isSingle = /^\d+$/.test(nextRange);
             const testData = isSingle
-              ? await fetchInterpretation(surahId, parseInt(nextRange, 10), nextInterpretation, lang)
-              : await fetchInterpretationRange(surahId, nextRange, nextInterpretation, lang);
-            
+              ? await fetchInterpretation(
+                  surahId,
+                  parseInt(nextRange, 10),
+                  nextInterpretation,
+                  lang
+                )
+              : await fetchInterpretationRange(
+                  surahId,
+                  nextRange,
+                  nextInterpretation,
+                  lang
+                );
+
             const items = Array.isArray(testData) ? testData : [testData];
-            const hasValidData = items.length > 0 && 
-                !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-                !(items.length === 1 && items[0].Interpretation === '');
-            
+            const hasValidData =
+              items.length > 0 &&
+              !(
+                items.length === 1 &&
+                (!items[0] || Object.keys(items[0]).length === 0)
+              ) &&
+              !(items.length === 1 && items[0].Interpretation === "");
+
             if (hasValidData) {
-              console.log('✅ Next range has the same interpretation number, moving to:', nextRange, nextInterpretation);
+              console.log(
+                "✅ Next range has the same interpretation number, moving to:",
+                nextRange,
+                nextInterpretation
+              );
               setRange(nextRange);
               setIptNo(nextInterpretation);
               return;
             } else {
-              console.log('❌ Next range does not have the same interpretation, falling back to interpretation 1');
+              console.log(
+                "❌ Next range does not have the same interpretation, falling back to interpretation 1"
+              );
             }
           } catch (err) {
-            console.log('❌ Error testing next range, falling back to interpretation 1');
+            console.log(
+              "❌ Error testing next range, falling back to interpretation 1"
+            );
           }
         }
       }
     } catch (err) {
-      console.log('❌ Error testing next interpretation, moving to next block:', err.message);
+      console.log(
+        "❌ Error testing next interpretation, moving to next block:",
+        err.message
+      );
     }
-    
+
     // If we reach here, the next interpretation doesn't exist, so move to next block
-    console.log('🔄 Moving to next block');
-    
+    console.log("🔄 Moving to next block");
+
     const current = String(range);
-    
+
     // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
       // Single ayah: increment to next ayah
       const v = parseInt(current, 10);
-      
+
       // Check if we're at the last verse of the surah
-      const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+      const maxVerse =
+        rangeOptions.length > 0
+          ? parseInt(rangeOptions[rangeOptions.length - 1], 10)
+          : 286;
       if (v >= maxVerse) {
-        showError('Already at the last verse of this surah');
+        showError("Already at the last verse of this surah");
         return;
       }
-      
+
       const nextVerse = v + 1;
-      console.log('▶️ Moving to next verse:', nextVerse, 'with interpretation 1');
+      console.log(
+        "▶️ Moving to next verse:",
+        nextVerse,
+        "with interpretation 1"
+      );
       setRange(String(nextVerse));
       setIptNo(1); // Reset to first interpretation
     } else if (/^(\d+)-(\d+)$/.test(current)) {
@@ -696,87 +1064,148 @@ const InterpretationBlockwise = (props) => {
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
-        
+
         // Check if we're at the last block
-        const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
+        const maxVerse =
+          rangeOptions.length > 0
+            ? parseInt(rangeOptions[rangeOptions.length - 1], 10)
+            : 286;
         if (b >= maxVerse) {
-          showError('Already at the last block of this surah');
+          showError("Already at the last block of this surah");
           return;
         }
-        
+
         const newA = a + len;
         const newB = Math.min(maxVerse, newA + len - 1);
         const nextRange = `${newA}-${newB}`;
-        
+
         // Test if this next block has any interpretations
-        console.log('🔍 Testing if next block has interpretations:', nextRange);
+        console.log("🔍 Testing if next block has interpretations:", nextRange);
         try {
-          const testData = await fetchInterpretationRange(surahId, nextRange, 1, lang);
+          const testData = await fetchInterpretationRange(
+            surahId,
+            nextRange,
+            1,
+            lang
+          );
           const items = Array.isArray(testData) ? testData : [testData];
-          const hasValidData = items.length > 0 && 
-              !(items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) &&
-              !(items.length === 1 && items[0].Interpretation === '');
-          
+          const hasValidData =
+            items.length > 0 &&
+            !(
+              items.length === 1 &&
+              (!items[0] || Object.keys(items[0]).length === 0)
+            ) &&
+            !(items.length === 1 && items[0].Interpretation === "");
+
           if (hasValidData) {
-            console.log('✅ Next block has interpretations, moving to:', nextRange, 'with interpretation 1');
-            console.log('🔄 Setting range to:', nextRange, 'and iptNo to: 1');
+            console.log(
+              "✅ Next block has interpretations, moving to:",
+              nextRange,
+              "with interpretation 1"
+            );
+            console.log("🔄 Setting range to:", nextRange, "and iptNo to: 1");
             setRange(nextRange);
             setIptNo(1);
           } else {
-            console.log('❌ Next block has no interpretations, trying individual verses');
+            console.log(
+              "❌ Next block has no interpretations, trying individual verses"
+            );
             // Try individual verses starting from the first verse of the next block
             let foundValidVerse = false;
-            for (let verse = newA; verse <= newB && verse <= maxVerse; verse++) {
+            for (
+              let verse = newA;
+              verse <= newB && verse <= maxVerse;
+              verse++
+            ) {
               try {
-                const verseData = await fetchInterpretation(surahId, verse, 1, lang);
-                const verseItems = Array.isArray(verseData) ? verseData : [verseData];
-                const verseHasValidData = verseItems.length > 0 && 
-                    !(verseItems.length === 1 && (!verseItems[0] || Object.keys(verseItems[0]).length === 0)) &&
-                    !(verseItems.length === 1 && verseItems[0].Interpretation === '');
-                
+                const verseData = await fetchInterpretation(
+                  surahId,
+                  verse,
+                  1,
+                  lang
+                );
+                const verseItems = Array.isArray(verseData)
+                  ? verseData
+                  : [verseData];
+                const verseHasValidData =
+                  verseItems.length > 0 &&
+                  !(
+                    verseItems.length === 1 &&
+                    (!verseItems[0] || Object.keys(verseItems[0]).length === 0)
+                  ) &&
+                  !(
+                    verseItems.length === 1 &&
+                    verseItems[0].Interpretation === ""
+                  );
+
                 if (verseHasValidData) {
-                  console.log('✅ Found valid verse:', verse, 'with interpretation 1');
-                  console.log('🔄 Setting range to:', String(verse), 'and iptNo to: 1');
+                  console.log(
+                    "✅ Found valid verse:",
+                    verse,
+                    "with interpretation 1"
+                  );
+                  console.log(
+                    "🔄 Setting range to:",
+                    String(verse),
+                    "and iptNo to: 1"
+                  );
                   setRange(String(verse));
                   setIptNo(1);
                   foundValidVerse = true;
                   break;
                 }
               } catch (err) {
-                console.log('❌ Verse', verse, 'has no interpretations');
+                console.log("❌ Verse", verse, "has no interpretations");
               }
             }
-            
+
             if (!foundValidVerse) {
-              showError('No more interpretations available in this surah');
+              showError("No more interpretations available in this surah");
             }
           }
         } catch (err) {
-          console.log('❌ Error testing next block, trying individual verses');
+          console.log("❌ Error testing next block, trying individual verses");
           // Fallback: try individual verses
           let foundValidVerse = false;
           for (let verse = newA; verse <= newB && verse <= maxVerse; verse++) {
             try {
-              const verseData = await fetchInterpretation(surahId, verse, 1, lang);
-              const verseItems = Array.isArray(verseData) ? verseData : [verseData];
-              const verseHasValidData = verseItems.length > 0 && 
-                  !(verseItems.length === 1 && (!verseItems[0] || Object.keys(verseItems[0]).length === 0)) &&
-                  !(verseItems.length === 1 && verseItems[0].Interpretation === '');
-              
+              const verseData = await fetchInterpretation(
+                surahId,
+                verse,
+                1,
+                lang
+              );
+              const verseItems = Array.isArray(verseData)
+                ? verseData
+                : [verseData];
+              const verseHasValidData =
+                verseItems.length > 0 &&
+                !(
+                  verseItems.length === 1 &&
+                  (!verseItems[0] || Object.keys(verseItems[0]).length === 0)
+                ) &&
+                !(
+                  verseItems.length === 1 && verseItems[0].Interpretation === ""
+                );
+
               if (verseHasValidData) {
-                console.log('✅ Found valid verse:', verse, 'with interpretation 1');
+                console.log(
+                  "✅ Found valid verse:",
+                  verse,
+                  "with interpretation 1"
+                );
                 setRange(String(verse));
                 setIptNo(1);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-              console.log('❌ Verse', verse, 'has no interpretations');
+              console.log("❌ Verse", verse, "has no interpretations");
             }
           }
-          
+
           if (!foundValidVerse) {
-            showError('No more interpretations available in this surah');
+            showError("No more interpretations available in this surah");
           }
         }
       }
@@ -787,7 +1216,7 @@ const InterpretationBlockwise = (props) => {
     try {
       setIsBookmarking(true);
       const userId = BookmarkService.getEffectiveUserId(user);
-      
+
       // Use the new block interpretation bookmark method
       await BookmarkService.addBlockInterpretationBookmark(
         userId,
@@ -797,11 +1226,11 @@ const InterpretationBlockwise = (props) => {
         iptNo,
         lang
       );
-      
+
       showSuccess(`Saved interpretation for Surah ${surahId}, verses ${range}`);
     } catch (e) {
       console.error("Failed to bookmark interpretation", e);
-      showError('Failed to save interpretation bookmark');
+      showError("Failed to save interpretation bookmark");
     } finally {
       setTimeout(() => setIsBookmarking(false), 300);
     }
@@ -812,7 +1241,11 @@ const InterpretationBlockwise = (props) => {
     const shareUrl = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: document.title || "Thafheem", text: shareText, url: shareUrl });
+        await navigator.share({
+          title: document.title || "Thafheem",
+          text: shareText,
+          url: shareUrl,
+        });
       } else {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
         showSuccess("Link copied to clipboard");
@@ -826,103 +1259,107 @@ const InterpretationBlockwise = (props) => {
   const handleWordByWord = () => {
     // Extract the first verse from the range for word-by-word view
     const firstVerse = /^\d+/.exec(String(range))?.[0] || "1";
-    
+
     navigate(`/word-by-word/${surahId}/${firstVerse}`, {
       state: {
-        from: location.pathname + location.search
-      }
+        from: location.pathname + location.search,
+      },
     });
   };
 
   // Fallback note content for when API fails
   const getFallbackNoteContent = (noteId) => {
     const fallbackNotes = {
-      'N895': `
+      N895: `
         <div class="note-content">
           <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N895</h3>
           <p>ലാത്ത് - ഇത് ഒരു പ്രാചീന അറബ് ദേവതയുടെ പേരാണ്. ഇസ്ലാമിന് മുമ്പുള്ള അറേബ്യയിൽ ഈ ദേവതയെ ആരാധിച്ചിരുന്നു.</p>
           <p>ഖുർആനിൽ ഈ ദേവതയെ പരാമർശിക്കുന്നത് ബഹുദൈവവാദത്തിന്റെ തെറ്റിനെ വിശദീകരിക്കാനാണ്.</p>
         </div>
       `,
-      'N189': `
+      N189: `
         <div class="note-content">
           <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N189</h3>
           <p>ഉസ്സ - ഇതും ഒരു പ്രാചീന അറബ് ദേവതയാണ്. ലാത്ത്, ഉസ്സ, മനാത് എന്നിവ മക്കയിലെ പ്രധാന ദേവതകളായിരുന്നു.</p>
           <p>ഇവയെ "അല്ലാഹുവിന്റെ പുത്രിമാർ" എന്ന് അവർ വിളിച്ചിരുന്നു.</p>
         </div>
       `,
-      'N1514': `
+      N1514: `
         <div class="note-content">
           <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N1514</h3>
           <p>നബി(സ) തിരുമേനി ആ സന്ദർഭത്തിൽ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്.</p>
           <p>നബി(സ)ക്കും സഹചാരികൾക്കും എതിരാളികൾ ഏൽപിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതിൽനിന്ന് വ്യക്തമാണ്.</p>
         </div>
       `,
-      'N1462': `
+      N1462: `
         <div class="note-content">
           <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N1462</h3>
           <p>മുസ്ലിം ഹദീസ് ശേഖരത്തിലെ 1462-ാം നമ്പർ ഹദീസിനെ സൂചിപ്പിക്കുന്നു.</p>
           <p>ഈ ഹദീസ് നബി(സ)യുടെ ഉദാഹരണങ്ങളെക്കുറിച്ച് പ്രതിപാദിക്കുന്നു.</p>
         </div>
       `,
-      '3 26:3': `
+      "3 26:3": `
         <div class="note-content">
           <h3 style="color: #2AA0BF; margin-bottom: 10px;">Verse Reference 3:26:3</h3>
           <p>അശ്ശുഅറാഅ് സൂറയിലെ 26-ാം വാക്യത്തിന്റെ 3-ാം ഭാഗത്തെ സൂചിപ്പിക്കുന്നു.</p>
           <p>ഈ വാക്യം കവികളെക്കുറിച്ചും അവരുടെ പിന്തുടർച്ചക്കാരെക്കുറിച്ചും പ്രതിപാദിക്കുന്നു.</p>
         </div>
-      `
+      `,
     };
-    
+
     return fallbackNotes[noteId] || null;
   };
 
   const handleNoteClick = async (noteId) => {
     // Show loading state immediately
-    setSelectedNote({ id: noteId, content: 'Loading...' });
+    setSelectedNote({ id: noteId, content: "Loading..." });
     setIsNoteOpen(true);
-    
+
     // Try to get fallback content first (for immediate display)
     const fallbackContent = getFallbackNoteContent(noteId);
     if (fallbackContent) {
       setSelectedNote({ id: noteId, content: fallbackContent });
     }
-    
+
     try {
       // Try to fetch from API (but don't block the UI)
       const noteData = await fetchNoteById(noteId);
-      
+
       // Try different possible content fields - prioritize NoteText from API response
-      const content = noteData?.NoteText || 
-                     noteData?.content || 
-                     noteData?.html || 
-                     noteData?.text || 
-                     noteData?.body ||
-                     noteData?.description ||
-                     noteData?.note ||
-                     (typeof noteData === 'string' ? noteData : null);
-      
-      if (content && content !== 'Note content not available') {
+      const content =
+        noteData?.NoteText ||
+        noteData?.content ||
+        noteData?.html ||
+        noteData?.text ||
+        noteData?.body ||
+        noteData?.description ||
+        noteData?.note ||
+        (typeof noteData === "string" ? noteData : null);
+
+      if (content && content !== "Note content not available") {
         setSelectedNote({ id: noteId, content });
       } else {
         // Keep the fallback content that was already set
       }
     } catch (err) {
       // Error fetching note - only log non-500 and non-network errors to reduce console noise
-      if (!err.message?.includes('500') && !err.message?.includes('Network error')) {
+      if (
+        !err.message?.includes("500") &&
+        !err.message?.includes("Network error")
+      ) {
         console.warn(`Failed to fetch note ${noteId}:`, err.message);
       }
-      
+
       // If no fallback content was set, show a user-friendly error
       if (!fallbackContent) {
-        setSelectedNote({ 
-          id: noteId, 
+        setSelectedNote({
+          id: noteId,
           content: `
             <div class="note-content">
               <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note ${noteId}</h3>
               <p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>
             </div>
-          `
+          `,
         });
       }
       // Otherwise, keep the fallback content that was already set
@@ -933,82 +1370,84 @@ const InterpretationBlockwise = (props) => {
   const handleNoteHighlightClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const target = e.target;
-    const type = target.getAttribute('data-type');
-    const value = target.getAttribute('data-value');
-    const idText = target.innerText || target.textContent || '';
-    
+    const type = target.getAttribute("data-type");
+    const value = target.getAttribute("data-value");
+    const idText = target.innerText || target.textContent || "";
+
     if (!idText) return;
-    
+
     // Use data attributes if available, otherwise fall back to text parsing
-    if (type === 'verse' || type === 'range') {
+    if (type === "verse" || type === "range") {
       // Handle verse/range navigation
       const textToCheck = value || idText;
-      
+
       // Check for Malayalam verse pattern first
-      const malayalamMatch = textToCheck.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) || 
-                            textToCheck.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
+      const malayalamMatch =
+        textToCheck.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) ||
+        textToCheck.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
       if (malayalamMatch) {
         const [, s, v] = malayalamMatch;
-        setInterpretationTarget({ 
-          surahId: parseInt(s, 10), 
+        setInterpretationTarget({
+          surahId: parseInt(s, 10),
           verseId: parseInt(v, 10),
           interpretationNo: iptNo,
-          language: lang
+          language: lang,
         });
         setShowInterpretationModal(true);
         return;
       }
-      
+
       // Check for standard verse pattern
       const verseMatch = textToCheck.match(/^\(?(\d+)\s*[:：]\s*(\d+)\)?$/);
       if (verseMatch) {
         const [, s, v] = verseMatch;
-        setInterpretationTarget({ 
-          surahId: parseInt(s, 10), 
+        setInterpretationTarget({
+          surahId: parseInt(s, 10),
           verseId: parseInt(v, 10),
           interpretationNo: iptNo,
-          language: lang
+          language: lang,
         });
         setShowInterpretationModal(true);
         return;
       }
-    } else if (type === 'note') {
+    } else if (type === "note") {
       // Handle note navigation
       const noteId = value || idText;
       handleNoteClick(noteId);
       return;
     }
-    
+
     // Fallback: detect patterns in text
-    const malayalamMatch = idText.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) || 
-                          idText.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
+    const malayalamMatch =
+      idText.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) ||
+      idText.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
     if (malayalamMatch) {
       const [, s, v] = malayalamMatch;
-      setInterpretationTarget({ 
-        surahId: parseInt(s, 10), 
+      setInterpretationTarget({
+        surahId: parseInt(s, 10),
         verseId: parseInt(v, 10),
         interpretationNo: iptNo,
-        language: lang
+        language: lang,
       });
       setShowInterpretationModal(true);
       return;
     }
-    
+
     const verseMatch = idText.match(/^\(?(\d+)\s*[:：]\s*(\d+)\)?$/);
     if (verseMatch) {
       const [, s, v] = verseMatch;
-      setInterpretationTarget({ 
-        surahId: parseInt(s, 10), 
+      setInterpretationTarget({
+        surahId: parseInt(s, 10),
         verseId: parseInt(v, 10),
         interpretationNo: iptNo,
-        language: lang
+        language: lang,
       });
       setShowInterpretationModal(true);
       return;
     }
-    
+
     // Otherwise treat as note id
     handleNoteClick(idText);
   };
@@ -1036,16 +1475,16 @@ const InterpretationBlockwise = (props) => {
 
   const handleContentClick = (e) => {
     const target = e.target;
-    
+
     // Simple click detection for sup/a tags
-    if (target.tagName === 'SUP' || target.tagName === 'A') {
+    if (target.tagName === "SUP" || target.tagName === "A") {
       handleNoteHighlightClick(e);
       return;
     }
-    
+
     // Fallback: text-based detection
-    const clickedText = target.innerText || target.textContent || '';
-    
+    const clickedText = target.innerText || target.textContent || "";
+
     // Look for note patterns first (PRIORITY)
     const noteMatch = clickedText.match(/N(\d+)/);
     if (noteMatch) {
@@ -1053,37 +1492,37 @@ const InterpretationBlockwise = (props) => {
       handleNoteClick(noteId);
       return;
     }
-    
+
     // Look for Malayalam verse patterns first
-    const malayalamMatch = clickedText.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) || 
-                          clickedText.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
+    const malayalamMatch =
+      clickedText.match(/അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/) ||
+      clickedText.match(/സൂക്തം:\s*(\d+)\s+(\d+):(\d+)/);
     if (malayalamMatch) {
       const [, s, v] = malayalamMatch;
-      setInterpretationTarget({ 
-        surahId: parseInt(s, 10), 
+      setInterpretationTarget({
+        surahId: parseInt(s, 10),
         verseId: parseInt(v, 10),
         interpretationNo: iptNo,
-        language: lang
+        language: lang,
       });
       setShowInterpretationModal(true);
       return;
     }
-    
+
     // Look for standard verse patterns
     const verseMatch = clickedText.match(/\(?(\d+)\s*[:：]\s*(\d+)\)?/);
     if (verseMatch) {
       const [, s, v] = verseMatch;
-      setInterpretationTarget({ 
-        surahId: parseInt(s, 10), 
+      setInterpretationTarget({
+        surahId: parseInt(s, 10),
         verseId: parseInt(v, 10),
         interpretationNo: iptNo,
-        language: lang
+        language: lang,
       });
       setShowInterpretationModal(true);
       return;
     }
   };
-
 
   // Function to convert Western numerals to Arabic-Indic numerals
   const toArabicNumber = (num) => {
@@ -1097,12 +1536,12 @@ const InterpretationBlockwise = (props) => {
 
   // Function to process HTML content and convert ayah numbers to Arabic-Indic numerals
   const processAyahNumbers = (htmlContent) => {
-    if (!htmlContent || typeof htmlContent !== 'string') return htmlContent;
-    
+    if (!htmlContent || typeof htmlContent !== "string") return htmlContent;
+
     // Create a temporary div to parse HTML
-    const tempDiv = document.createElement('div');
+    const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlContent;
-    
+
     // Find all text nodes and process them
     const walker = document.createTreeWalker(
       tempDiv,
@@ -1110,33 +1549,33 @@ const InterpretationBlockwise = (props) => {
       null,
       false
     );
-    
+
     const textNodes = [];
     let node;
-    while (node = walker.nextNode()) {
+    while ((node = walker.nextNode())) {
       textNodes.push(node);
     }
-    
-    textNodes.forEach(textNode => {
+
+    textNodes.forEach((textNode) => {
       const text = textNode.textContent;
       // Convert ayah numbers in parentheses like (1), (2), (3) to Arabic-Indic numerals
       // But avoid converting interpretation numbers like ①, ②, ③ or other special characters
       const processedText = text.replace(/\((\d+)\)/g, (match, number) => {
         return `(${toArabicNumber(number)})`;
       });
-      
+
       if (processedText !== text) {
         textNode.textContent = processedText;
       }
     });
-    
+
     return tempDiv.innerHTML;
   };
 
   const extractText = (item) => {
     if (item == null) return "";
     if (typeof item === "string") return processAyahNumbers(item);
-    
+
     // Common possible fields (check both lowercase and capitalized versions)
     const preferredKeys = [
       "interpret_text",
@@ -1157,7 +1596,7 @@ const InterpretationBlockwise = (props) => {
       "description",
       "Description",
     ];
-    
+
     // Try each preferred key
     for (const key of preferredKeys) {
       if (typeof item[key] === "string" && item[key].trim().length > 0) {
@@ -1165,7 +1604,7 @@ const InterpretationBlockwise = (props) => {
         return processAyahNumbers(item[key]);
       }
     }
-    
+
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
@@ -1173,7 +1612,7 @@ const InterpretationBlockwise = (props) => {
         return processAyahNumbers(v);
       }
     }
-    
+
     // If we still have nothing, log the structure and return empty message
     console.warn(`⚠️ No valid interpretation text found in item:`, item);
     return `<p class="text-gray-500 italic">No interpretation content available for interpretation ${iptNo}</p>`;
@@ -1243,25 +1682,35 @@ const InterpretationBlockwise = (props) => {
         onNext={handleNext}
       />
       {/* Debug info */}
-      {console.log('🔍 Rendering InterpretationNavbar with props:', {
+      {console.log("🔍 Rendering InterpretationNavbar with props:", {
         interpretationNumber: iptNo,
         verseRange: range.replace(/-/g, " - "),
         surahId,
         range,
-        iptNo
+        iptNo,
       })}
 
       <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-[#2A2C38]">
         {/* Header controls (read-only display) */}
         <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-          <span className="text-gray-600 dark:text-gray-300">Surah: {surahId}</span>
-          <span className="font-bold text-cyan-600 dark:text-cyan-400 text-base">• Range: {range}</span>
-          <span className="text-gray-600 dark:text-gray-300">• Interpretation: {iptNo}</span>
-          <span className="text-gray-600 dark:text-gray-300">• Lang: {lang}</span>
+          <span className="text-gray-600 dark:text-gray-300">
+            Surah: {surahId}
+          </span>
+          <span className="font-bold text-cyan-600 dark:text-cyan-400 text-base">
+            • Range: {range}
+          </span>
+          <span className="text-gray-600 dark:text-gray-300">
+            • Interpretation: {iptNo}
+          </span>
+          <span className="text-gray-600 dark:text-gray-300">
+            • Lang: {lang}
+          </span>
         </div>
 
         {loading && (
-          <div className="text-center py-8 text-gray-600 dark:text-gray-300">Loading interpretation…</div>
+          <div className="text-center py-8 text-gray-600 dark:text-gray-300">
+            Loading interpretation…
+          </div>
         )}
 
         {error && (
@@ -1269,21 +1718,30 @@ const InterpretationBlockwise = (props) => {
         )}
 
         {!loading && !error && content.length === 0 && (
-          <div className="text-center py-10 text-gray-600 dark:text-gray-300">No interpretation found for this selection.</div>
+          <div className="text-center py-10 text-gray-600 dark:text-gray-300">
+            No interpretation found for this selection.
+          </div>
         )}
 
         {/* Content */}
         <div className="space-y-6" key={`block-${surahId}-${range}-${iptNo}`}>
           {content.map((item, idx) => (
             <div
-              key={`${surahId}-${range}-${iptNo}-${item?.ID || item?.id || idx}`}
+              key={`${surahId}-${range}-${iptNo}-${
+                item?.ID || item?.id || idx
+              }`}
               className="bg-gray-50 p-6 rounded-lg border-l-4 dark:bg-[#2A2C38] dark:border-[#2A2C38] border-white"
             >
               <div
-                className="interpretation-content text-gray-800 dark:text-white leading-relaxed text-justify whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none"
+                className="interpretation-content text-gray-800 dark:text-white  text-justify whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none"
                 ref={(el) => (contentRefs.current[idx] = el)}
                 onClick={handleContentClick}
-                style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
+                style={{
+                  pointerEvents: "auto",
+                  position: "relative",
+                  zIndex: 1,
+                  fontFamily: "NotoSansMalayalam, sans-serif",
+                }}
                 dangerouslySetInnerHTML={{ __html: extractText(item) }}
               />
             </div>
@@ -1296,16 +1754,18 @@ const InterpretationBlockwise = (props) => {
         noteId={selectedNote.id}
         noteContent={selectedNote.content}
       />
-      {showInterpretationModal && interpretationTarget.surahId && interpretationTarget.verseId && (
-        <InterpretationModal
-          surahId={interpretationTarget.surahId}
-          verseId={interpretationTarget.verseId}
-          interpretationNo={interpretationTarget.interpretationNo}
-          language={interpretationTarget.language}
-          onClose={() => setShowInterpretationModal(false)}
-        />
-      )}
-      
+      {showInterpretationModal &&
+        interpretationTarget.surahId &&
+        interpretationTarget.verseId && (
+          <InterpretationModal
+            surahId={interpretationTarget.surahId}
+            verseId={interpretationTarget.verseId}
+            interpretationNo={interpretationTarget.interpretationNo}
+            language={interpretationTarget.language}
+            onClose={() => setShowInterpretationModal(false)}
+          />
+        )}
+
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </>

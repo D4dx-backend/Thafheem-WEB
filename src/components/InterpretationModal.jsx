@@ -30,7 +30,13 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           parseInt(verseId), 
           interpretationNo || 1, 
           language || "en"
-        );
+        ).catch((error) => {
+          // Special handling for Surah 114
+          if (parseInt(surahId) === 114) {
+            console.log(`🔍 Interpretation fetch failed for Surah 114, Verse ${verseId}. This may be expected if no interpretation data exists.`);
+          }
+          throw error;
+        });
 
         console.log(`✅ Received interpretation data:`, interpretationResponse);
 
@@ -218,7 +224,10 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           ) : (
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
               <p className="text-gray-500 dark:text-gray-400 text-sm italic text-center">
-                No interpretation available for this verse.
+                {parseInt(surahId) === 114 
+                  ? "Interpretation data is not available for Surah An-Nas (114). This surah may not have interpretation content in the current database."
+                  : "No interpretation available for this verse. The interpretation API may be temporarily unavailable."
+                }
               </p>
             </div>
           )}

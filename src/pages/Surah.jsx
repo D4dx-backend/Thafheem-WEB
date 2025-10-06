@@ -318,6 +318,12 @@ const Surah = () => {
         "Verse",
         verseNumber
       );
+
+      // Special handling for Surah 114
+      if (parseInt(surahId) === 114) {
+        console.log("🔍 Opening interpretation for Surah 114 (An-Nas)");
+      }
+
       // Open the AyahModal instead of navigating
       setSelectedVerseForInterpretation(verseNumber);
       setShowAyahModal(true);
@@ -809,23 +815,26 @@ const Surah = () => {
                     className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700"
                   >
                     {/* Arabic Text */}
-       {/* Arabic Text */}
-<div className="text-right mb-2 sm:mb-3 lg:mb-4">
-  <p
-    className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
-    style={{
-      fontFamily: quranFont,
-      fontSize: `${fontSize}px`,
-    }}
-    dir="rtl"
-  >
-    {finalArabicText}{" "}
-    <span className="whitespace-nowrap">
-      ﴿{toArabicNumber(arabicVerse?.verse_number || (index + 1))}﴾
-    </span>
-  </p>
-</div>
-
+                    {/* Arabic Text */}
+                    <div className="text-right mb-2 sm:mb-3 lg:mb-4">
+                      <p
+                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+                        style={{
+                          fontFamily: quranFont,
+                          fontSize: `${fontSize}px`,
+                        }}
+                        dir="rtl"
+                      >
+                        {finalArabicText}{" "}
+                        <span className="whitespace-nowrap">
+                          ﴿
+                          {toArabicNumber(
+                            arabicVerse?.verse_number || index + 1
+                          )}
+                          ﴾
+                        </span>
+                      </p>
+                    </div>
 
                     {/* Translation */}
                     <div className="mb-2 sm:mb-3">

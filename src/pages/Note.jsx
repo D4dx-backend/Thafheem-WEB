@@ -57,6 +57,10 @@ const Note = () => {
           <div
             className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white"
             dangerouslySetInnerHTML={{ __html: resolveHtml() }}
+            style={{
+
+              fontFamily: "NotoSansMalayalam, sans-serif",
+            }}
           />
         )}
       </div>

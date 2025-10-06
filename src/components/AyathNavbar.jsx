@@ -60,7 +60,12 @@ const AyathNavbar = ({
     const checkBookmarkStatus = async () => {
       if (user && surahId && verseId) {
         try {
-          const bookmarked = await BookmarkService.isBookmarked(user.uid, surahId, verseId, 'interpretation');
+          const bookmarked = await BookmarkService.isBookmarked(
+            user.uid,
+            surahId,
+            verseId,
+            "interpretation"
+          );
           setIsBookmarked(bookmarked);
         } catch (error) {
           console.error("Error checking bookmark status:", error);
@@ -104,7 +109,7 @@ const AyathNavbar = ({
   const handleBookmark = async () => {
     // Check if user is authenticated
     if (!user) {
-      navigate('/sign');
+      navigate("/sign");
       return;
     }
 
@@ -113,11 +118,15 @@ const AyathNavbar = ({
 
       if (isBookmarked) {
         // Remove bookmark - we need to find the bookmark first
-        const bookmarks = await BookmarkService.getBookmarks(user.uid, 'interpretation');
-        const bookmark = bookmarks.find(b => 
-          b.surahId === parseInt(surahId) && b.verseId === parseInt(verseId)
+        const bookmarks = await BookmarkService.getBookmarks(
+          user.uid,
+          "interpretation"
         );
-        
+        const bookmark = bookmarks.find(
+          (b) =>
+            b.surahId === parseInt(surahId) && b.verseId === parseInt(verseId)
+        );
+
         if (bookmark) {
           await BookmarkService.deleteBookmark(bookmark.id, user.uid);
           setIsBookmarked(false);
@@ -125,18 +134,19 @@ const AyathNavbar = ({
         }
       } else {
         // Add bookmark
-        const surahName = surahInfo?.name || surahInfo?.arabic || `Surah ${surahId}`;
-        const verseText = verseData?.translation || verseData?.arabic || '';
-        
+        const surahName =
+          surahInfo?.name || surahInfo?.arabic || `Surah ${surahId}`;
+        const verseText = verseData?.translation || verseData?.arabic || "";
+
         await BookmarkService.addBookmark(
           user.uid,
           surahId,
           verseId,
-          'interpretation', // Use 'interpretation' type for AyathNavbar bookmarks
+          "interpretation", // Use 'interpretation' type for AyathNavbar bookmarks
           surahName,
           verseText
         );
-        
+
         setIsBookmarked(true);
         showSuccess("Verse bookmarked successfully");
       }
@@ -260,12 +270,12 @@ const AyathNavbar = ({
             {bookmarkLoading ? (
               <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b border-current"></div>
             ) : (
-              <Bookmark 
+              <Bookmark
                 className={`w-4 sm:w-5 h-4 sm:h-5 transition-colors ${
-                  isBookmarked 
-                    ? 'text-cyan-500 fill-cyan-500 dark:text-cyan-400 dark:fill-cyan-400' 
-                    : 'text-gray-600 dark:text-gray-300'
-                }`} 
+                  isBookmarked
+                    ? "text-cyan-500 fill-cyan-500 dark:text-cyan-400 dark:fill-cyan-400"
+                    : "text-gray-600 dark:text-gray-300"
+                }`}
               />
             )}
           </button>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page Ranges API</title>
+</head>
+<body>
+    <h1>Page Ranges API Test</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testPageRangesAPI() {
+            try {
+                console.log('Testing page ranges API...');
+                
+                // Test the page ranges API
+                const response = await fetch('/api/thafheem/pageranges/all');
+                const data = await response.json();
+                
+                console.log('Page ranges data:', data);
+                console.log('Total records:', data.length);
+                
+                // Test getting ayah count for Surah 1 (Al-Fatiha)
+                const surah1Ranges = data.filter(range => range.SuraId === 1);
+                console.log('Surah 1 ranges:', surah1Ranges);
+                
+                if (surah1Ranges.length > 0) {
+                    const maxAyah = Math.max(...surah1Ranges.map(range => range.ayato));
+                    console.log('Surah 1 (Al-Fatiha) has', maxAyah, 'ayahs according to page ranges API');
+                }
+                
+                // Test getting ayah count for Surah 2 (Al-Baqarah)
+                const surah2Ranges = data.filter(range => range.SuraId === 2);
+                console.log('Surah 2 ranges:', surah2Ranges);
+                
+                if (surah2Ranges.length > 0) {
+                    const maxAyah = Math.max(...surah2Ranges.map(range => range.ayato));
+                    console.log('Surah 2 (Al-Baqarah) has', maxAyah, 'ayahs according to page ranges API');
+                }
+                
+                // Display results on page
+                document.getElementById('results').innerHTML = `
+                    <h2>API Test Results:</h2>
+                    <p><strong>Total records:</strong> ${data.length}</p>
+                    <p><strong>Surah 1 ayahs:</strong> ${surah1Ranges.length > 0 ? Math.max(...surah1Ranges.map(range => range.ayato)) : 'Not found'}</p>
+                    <p><strong>Surah 2 ayahs:</strong> ${surah2Ranges.length > 0 ? Math.max(...surah2Ranges.map(range => range.ayato)) : 'Not found'}</p>
+                    <h3>Sample Data Structure:</h3>
+                    <pre>${JSON.stringify(data.slice(0, 5), null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('Error testing page ranges API:', error);
+                document.getElementById('results').innerHTML = `
+                    <h2>Error:</h2>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+        
+        // Run test when page loads
+        testPageRangesAPI();
+    </script>
+</body>
+</html>

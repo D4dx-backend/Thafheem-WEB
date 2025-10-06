@@ -30,10 +30,21 @@ const InterpretationNavbar = ({
   onPrev,
   onNext,
 }) => {
+  // Debug logging
+  console.log('🔍 InterpretationNavbar received props:', {
+    interpretationNumber,
+    verseRange,
+    surahName
+  });
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null); // 'surah' | 'range' | null
   const surahBtnRef = useRef(null);
   const rangeBtnRef = useRef(null);
+  
+  // Force re-render when interpretationNumber changes
+  useEffect(() => {
+    console.log('🔄 InterpretationNavbar: interpretationNumber changed to:', interpretationNumber);
+  }, [interpretationNumber]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -154,7 +165,7 @@ const InterpretationNavbar = ({
 
           {/* Middle Row - Title + Action Icons */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-600">
-            <h1 className="text-sm sm:text-lg font-medium text-[#2AA0BF]">
+            <h1 key={`interpretation-title-${interpretationNumber}`} className="text-sm sm:text-lg font-medium text-[#2AA0BF]">
               Interpretation {interpretationNumber}
             </h1>
 
@@ -280,7 +291,7 @@ const InterpretationNavbar = ({
             </div>
 
             <div className="flex-1 text-center">
-              <h1 className="text-lg font-medium text-[#2AA0BF]">
+              <h1 key={`interpretation-title-mobile-${interpretationNumber}`} className="text-lg font-medium text-[#2AA0BF]">
                 Interpretation {interpretationNumber}
               </h1>
             </div>
@@ -358,13 +369,19 @@ const InterpretationNavbar = ({
                   onPrev();
                 }
               }}
-              className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              disabled={!onPrev}
+              className={`p-2 rounded-lg transition-all ${
+                onPrev 
+                  ? 'text-[#19B5DD] dark:text-[#19B5DD] hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 cursor-pointer' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              }`}
+              title="Previous interpretation"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={20} />
             </button>
 
-            <span className="text-sm text-gray-500 dark:text-gray-400 px-2">
-              click to navigate
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-2 whitespace-nowrap">
+              Navigate
             </span>
 
             <button
@@ -376,9 +393,15 @@ const InterpretationNavbar = ({
                   onNext();
                 }
               }}
-              className="p-2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              disabled={!onNext}
+              className={`p-2 rounded-lg transition-all ${
+                onNext 
+                  ? 'text-[#19B5DD] dark:text-[#19B5DD] hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 cursor-pointer' 
+                  : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              }`}
+              title="Next interpretation"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>

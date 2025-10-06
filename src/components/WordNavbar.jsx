@@ -39,42 +39,16 @@ const WordNavbar = ({
 
   const surahDropdownRef = useRef(null);
   const verseDropdownRef = useRef(null);
+  const languageDropdownRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth?.() || { user: null };
 
   const languages = ["English", "Malayalam", "Arabic"];
   const totalVerses = surahInfo?.ayahs || 0;
 
-  useEffect(() => {
-    const loadSurahs = async () => {
-      try {
-        const surahsData = await fetchSurahs();
-        setSurahs(surahsData);
-      } catch (error) {
-        console.error("Failed to load surahs:", error);
-      }
-    };
-    loadSurahs();
-  }, []);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown-container')) {
-        setShowSurahDropdown(false);
-        setShowVerseDropdown(false);
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const handleSurahSelect = (selectedSurah) => {
     setShowSurahDropdown(false);
+    setSurahSearchTerm(""); // Clear search term
     if (onSurahChange) {
       onSurahChange(selectedSurah.number);
     }
@@ -96,7 +70,10 @@ const WordNavbar = ({
   };
 
   // Generate verse numbers array
-  const verseNumbers = Array.from({ length: totalVerses }, (_, i) => i + 1);
+  const generateVerseNumbers = () => {
+    const totalVerses = surahInfo?.ayahs || 0;
+    return Array.from({ length: totalVerses }, (_, i) => i + 1);
+  };
 
   // Handle bookmark functionality
   const handleBookmark = async () => {
@@ -197,7 +174,7 @@ const WordNavbar = ({
     }
   };
 
-  // Load surahs data
+  // Load surahs data and setup click outside handler
   useEffect(() => {
     const loadSurahs = async () => {
       try {
@@ -229,6 +206,12 @@ const WordNavbar = ({
       ) {
         setShowVerseDropdown(false);
       }
+      if (
+        languageDropdownRef.current &&
+        !languageDropdownRef.current.contains(event.target)
+      ) {
+        setShowLanguageDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -236,14 +219,6 @@ const WordNavbar = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  
-
-  // Generate verse numbers array
-  const generateVerseNumbers = () => {
-    const totalVerses = surahInfo?.ayahs || 286; // Default to Al-Baqarah's verse count
-    return Array.from({ length: totalVerses }, (_, i) => i + 1);
-  };
 
   // Filter surahs based on search term
   const filteredSurahs = surahs.filter(
@@ -271,7 +246,7 @@ const WordNavbar = ({
         {/* Left side - Chapter and Verse Dropdowns */}
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:space-x-3 pr-12 sm:pr-0">
           {/* Chapter Selector */}
-          <div className="relative" ref={surahDropdownRef}>
+          <div className="relative dropdown-container" ref={surahDropdownRef}>
             <button
               onClick={() => setShowSurahDropdown(!showSurahDropdown)}
               className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
@@ -284,14 +259,15 @@ const WordNavbar = ({
               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
             </button>
 
-            {/* Surah Dropdown */}
             {showSurahDropdown && !loading && (
               <div className="absolute sm:text-sm text-sm top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-auto w-80 sm:w-45 h-[calc(100vh-100px)] z-50">
-                {filteredSurahs.map((surah) => (
+                {surahs.map((surah) => (
                   <div
                     key={surah.number}
                     className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${
-                      parseInt(surahId) === surah.number ? 'bg-gray-100 dark:bg-gray-700' : ''
+                      surah.number === parseInt(surahId)
+                        ? "bg-gray-100 dark:bg-gray-700"
+                        : ""
                     }`}
                     onClick={() => handleSurahSelect(surah)}
                   >
@@ -303,7 +279,7 @@ const WordNavbar = ({
           </div>
 
           {/* Verse Selector */}
-          <div className="relative" ref={verseDropdownRef}>
+          <div className="relative dropdown-container" ref={verseDropdownRef}>
             <button
               onClick={() => setShowVerseDropdown(!showVerseDropdown)}
               className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
@@ -376,7 +352,7 @@ const WordNavbar = ({
       {/* Second Row - Language Selector and Navigation */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
         {/* Center - Navigation */}
-        <div className="relative dropdown-container">
+        <div className="relative language-dropdown-container" ref={languageDropdownRef}>
             <button 
               className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}

@@ -257,24 +257,6 @@ const PlayAudio = ({ audioSrc, title, onClose, autoPlay = false }) => {
         </div>
       )}
 
-      <style jsx>{`
-        .volume-slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 12px;
-          width: 12px;
-          border-radius: 50%;
-          background: black;
-          cursor: pointer;
-        }
-        .volume-slider::-moz-range-thumb {
-          height: 12px;
-          width: 12px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: none;
-        }
-      `}</style>
     </div>
   );
 };

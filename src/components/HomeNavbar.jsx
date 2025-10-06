@@ -40,6 +40,9 @@ import {
   MessageSquareMore,
   UserX,
   ChevronDown,
+  Copy,
+  ExternalLink,
+  Send,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -52,7 +55,7 @@ import { signOut } from "firebase/auth";
 import SettingsDrawer from "../pages/Settings";
 
 const HomepageNavbar = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setViewType } = useTheme();
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -60,6 +63,7 @@ const HomepageNavbar = () => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
@@ -67,6 +71,29 @@ const HomepageNavbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
+
+  // Resolve share URL from env or current origin
+  const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+
+  // Share App handler (uses Web Share API with clipboard/modal fallback)
+  const handleShareApp = async () => {
+    const shareUrl = `${PUBLIC_URL}/`;
+    const shareData = {
+      title: "Thafheem ul Quran",
+      text: "Explore Thafheem ul Quran",
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        setIsShareOpen(true);
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      setIsShareOpen(true);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -102,8 +129,8 @@ const HomepageNavbar = () => {
       hasArrow: true,
       hasSubmenu: true,
       submenuItems: [
-        { label: "Ayah wise", path: "/ayahwise" },
-        { label: "Block wise", path: "/blockwise" },
+        { label: "Ayah wise", action: "setAyahWise" },
+        { label: "Block wise", action: "setBlockWise" },
         { label: "Qur'an Study - Preface", path: "/quranstudy" },
         { label: "End of Prophethood", path: "/end" },
         { label: "Conclusion", path: "/conclusion" },
@@ -111,13 +138,12 @@ const HomepageNavbar = () => {
     },
     { icon: BookOpen, label: "Thafeem", path: "/thafeem" },
     { icon: BookType, label: "Tajwid", path: "/tajweed" },
-    { icon: Heart, label: "Donate", path: "/donate" },
     { icon: BookOpenCheck, label: "Quiz", path: "/quiz" },
     { icon: LetterText, label: "Drag & drop", path: "/dragdrop" },
     { icon: Sparkles, label: "What's New", path: "/whatsnew" },
     { icon: Settings, label: "Settings", path: "/settings" },
     { icon: Bug, label: "Raise a bug", path: "/raisebug" },
-    { icon: MessageCircleQuestion, label: "Share App", path: "/share" },
+    { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp },
     { icon: CircleAlert, label: "About Author", path: "/aboutauthor" },
     { icon: User, label: "About Us", path: "/about" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
@@ -143,6 +169,66 @@ const HomepageNavbar = () => {
   };
   return (
     <>
+      {/* Share Modal */}
+      {isShareOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/30" onClick={() => setIsShareOpen(false)}></div>
+          <div className="relative z-10 w-full max-w-sm rounded-lg bg-white dark:bg-[#2A2C38] p-4 shadow-xl">
+            <div className="mb-3">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Share className="w-5 h-5" /> Share Thafheem
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Invite others with your favorite app or copy the link.</p>
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  const url = `${PUBLIC_URL}/`;
+                  const text = encodeURIComponent("Explore Thafheem ul Quran");
+                  const u = encodeURIComponent(url);
+                  window.open(`https://wa.me/?text=${text}%20${u}`, "_blank");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#25D366] text-white hover:opacity-90 transition"
+              >
+                <Send className="w-4 h-4" /> WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  const url = `${PUBLIC_URL}/`;
+                  const text = encodeURIComponent("Explore Thafheem ul Quran");
+                  const u = encodeURIComponent(url);
+                  window.open(`https://t.me/share/url?url=${u}&text=${text}`, "_blank");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#229ED9] text-white hover:opacity-90 transition"
+              >
+                <ExternalLink className="w-4 h-4" /> Telegram
+              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={`${PUBLIC_URL}/`}
+                  className="flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100"
+                />
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(`${PUBLIC_URL}/`);
+                    alert("Link copied to clipboard");
+                  }}
+                  className="px-3 py-2 rounded-md bg-gray-900 text-white dark:bg-gray-700 hover:opacity-90 transition flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" /> Copy
+                </button>
+              </div>
+              <button
+                onClick={() => setIsShareOpen(false)}
+                className="w-full mt-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Search Console Popup */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -192,7 +278,6 @@ const HomepageNavbar = () => {
           {/* Right side */}
           <div className="flex items-center space-x-1">
             {/* Sign In/Sign Out Button */}
-          
 
             <button
               onClick={() => setIsLanguageOpen(true)}
@@ -213,11 +298,11 @@ const HomepageNavbar = () => {
             </button>
 
             <button
-      onClick={handleBookmarkClick}
-      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-    >
-      <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
-    </button>
+              onClick={handleBookmarkClick}
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
+              <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
+            </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -237,17 +322,17 @@ const HomepageNavbar = () => {
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             {user ? (
-             <button
-             onClick={handleAuthButtonClick}
-             disabled={isSigningOut}
-             className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-           >
-             {isSigningOut ? (
-               <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-             ) : (
-               <LogOut className="w-5 h-5" />
-             )}
-           </button>
+              <button
+                onClick={handleAuthButtonClick}
+                disabled={isSigningOut}
+                className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSigningOut ? (
+                  <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <LogOut className="w-5 h-5" />
+                )}
+              </button>
             ) : (
               <button
                 onClick={handleAuthButtonClick}
@@ -276,6 +361,13 @@ const HomepageNavbar = () => {
                   alt="Thafheemul Quran"
                   className="h-10 sm:h-12 w-auto"
                 />
+                <button
+                  onClick={() => window.open('https://app.thafheem.net/', '_blank')}
+                  className="flex items-center gap-2 px-3 py-2 bg-[#2596be] hover:bg-[#1e7a9a] text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                >
+                  <Heart className="w-4 h-4" />
+                  <span className="hidden sm:inline">Donate Now</span>
+                </button>
                 {/* Uncomment if you want to re-enable the close button */}
                 {/* <button
                   onClick={toggleMenu}
@@ -306,6 +398,9 @@ const HomepageNavbar = () => {
                       onClick={() => {
                         if (item.hasSubmenu) {
                           toggleSubmenu(index);
+                        } else if (item.onClick) {
+                          item.onClick();
+                          setIsMenuOpen(false);
                         } else {
                           navigate(item.path);
                           setIsMenuOpen(false);
@@ -347,13 +442,25 @@ const HomepageNavbar = () => {
                     {item.hasSubmenu && openSubmenu === index && (
                       <div className="bg-gray-50 dark:bg-[#2A2C38] ml-4 sm:ml-6 ">
                         {item.submenuItems.map((subItem, subIndex) => {
-                          const isSubActive = isActive(subItem.path);
+                          const isSubActive = subItem.path
+                            ? isActive(subItem.path)
+                            : false;
                           return (
                             <button
                               key={subIndex}
                               onClick={() => {
-                                navigate(subItem.path);
-                                setIsMenuOpen(false);
+                                if (subItem.action === "setAyahWise") {
+                                  setViewType("Ayah Wise");
+                                  navigate("/");
+                                  setIsMenuOpen(false);
+                                } else if (subItem.action === "setBlockWise") {
+                                  setViewType("Block Wise");
+                                  navigate("/");
+                                  setIsMenuOpen(false);
+                                } else if (subItem.path) {
+                                  navigate(subItem.path);
+                                  setIsMenuOpen(false);
+                                }
                               }}
                               className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
                                 isSubActive
@@ -413,266 +520,3 @@ const HomepageNavbar = () => {
 };
 
 export default HomepageNavbar;
-
-// import { useState } from "react";
-// import {
-//   Menu,
-//   Search,
-//   Settings,
-//   Moon,
-//   Sun,
-//   Languages,
-//   Bookmark,
-//   X,
-//   Home,
-//   FileText,
-//   User,
-//   BookOpen,
-//   Info,
-//   Zap,
-//   Heart,
-//   Download,
-//   Sparkles,
-//   Bug,
-//   Share,
-//   Users,
-//   UserCheck,
-//   Mail,
-//   MessageSquare,
-//   Shield,
-//   HelpCircle,
-//   Trash2,
-//   LogOut,
-//   ChevronRight,
-// } from "lucide-react";
-// import logo from "../assets/logo.png";
-// import { useNavigate } from "react-router-dom";
-// import SearchConsole from "./SearchConsole";
-// import LanguageConsole from "./LanguageConsole";
-// import { useTheme } from "../context/ThemeContext";
-
-// const HomepageNavbar = () => {
-//   const { theme, toggleTheme } = useTheme();
-//   const [isMenuOpen, setIsMenuOpen] = useState(false);
-//   const [openSubmenu, setOpenSubmenu] = useState(null);
-//   const [isSearchOpen, setIsSearchOpen] = useState(false);
-//   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-
-//   const navigate = useNavigate();
-
-//   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-//   const toggleSubmenu = (index) =>
-//     setOpenSubmenu(openSubmenu === index ? null : index);
-
-//   const menuItems = [
-//     { icon: Home, label: "Home", action: () => console.log("Navigate to Home") },
-//     { icon: FileText, label: "Table of Contents", action: () => navigate("/tablecontents") },
-//     { icon: User, label: "Sayyid Maududi", action: () => navigate("/maududi") },
-//     { icon: Languages, label: "English Translation", action: () => console.log("Navigate to English Translation") },
-//     { icon: Info, label: "Introduction", action: () => console.log("Navigate to Introduction") },
-//     { icon: Zap, label: "Digitisation", action: () => console.log("Navigate to Digitisation") },
-//     {
-//       icon: BookOpen,
-//       label: "Thafeem ul Quran",
-//       hasArrow: true,
-//       hasSubmenu: true,
-//       submenuItems: [
-//         { label: "Ayah wise", action: () => console.log("Navigate to Ayah wise") },
-//         { label: "Block wise", action: () => console.log("Navigate to Block wise") },
-//         { label: "Qur'an Study - Preface", action: () => navigate("/quranstudy") },
-//         { label: "End of Prophethood", action: () => navigate("/end") },
-//         { label: "Conclusion", action: () => navigate("/conclusion") },
-//       ],
-//     },
-//     { icon: BookOpen, label: "Thafeem", action: () => console.log("Navigate to Thafeem") },
-//     { icon: FileText, label: "Tajwid", action: () => navigate("/tajweed") },
-//     { icon: Heart, label: "Donate", action: () => console.log("Navigate to Donate") },
-//     { icon: BookOpen, label: "Quiz", action: () => navigate("/quiz") },
-//     { icon: Download, label: "Drag & drop", action: () => navigate("/dragdrop") },
-//     { icon: Sparkles, label: "What's New", action: () => navigate("/whatsnew") },
-//     { icon: Settings, label: "Settings", action: () => navigate("/settings") },
-//     { icon: Bug, label: "Raise a bug", action: () => console.log("Raise a bug") },
-//     { icon: Share, label: "Share App", action: () => console.log("Share App") },
-//     { icon: Users, label: "About Us", action: () => navigate("/about") },
-//     { icon: UserCheck, label: "About Author", action: () => console.log("Navigate to About Author") },
-//     { icon: Mail, label: "Contact Us", action: () => console.log("Navigate to Contact Us") },
-//     { icon: MessageSquare, label: "Feedback", action: () => console.log("Open Feedback") },
-//     { icon: Shield, label: "Privacy", action: () => console.log("Navigate to Privacy") },
-//     { icon: HelpCircle, label: "Help", action: () => console.log("Open Help") },
-//   ];
-
-//   const dangerMenuItems = [
-//     { icon: Trash2, label: "Delete Account", action: () => navigate("/deleteaccount"), isDanger: true },
-//     { icon: LogOut, label: "Log Out", action: () => navigate("/logout"), isDanger: true },
-//   ];
-
-//   return (
-//     <>
-//       {/* Search Console Popup */}
-//       {isSearchOpen && (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center">
-//           <div className="bg-white w-full max-w-lg rounded-lg relative">
-//             <SearchConsole onClose={() => setIsSearchOpen(false)} />
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Language Console Popup */}
-//       {isLanguageOpen && (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
-//           <div className="bg-white w-full max-w-lg rounded-lg shadow-lg relative">
-//             <div className="p-4">
-//               <LanguageConsole onClose={() => setIsLanguageOpen(false)} />
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 w-full relative z-50">
-//         <div className="flex items-center justify-between px-4 py-3">
-//           {/* Left side */}
-//           <div className="flex items-center space-x-3">
-//             <button
-//               onClick={toggleMenu}
-//               className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-//             >
-//               <Menu size={20} />
-//             </button>
-//             <img src={logo} alt="Thafheemul Quran" className="h-8 w-auto" />
-//           </div>
-
-//           {/* Right side */}
-//           <div className="flex items-center space-x-1">
-//             <button className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium">
-//               Sign In
-//             </button>
-
-//             <button
-//               onClick={() => setIsLanguageOpen(true)}
-//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-//             >
-//               <Languages size={18} />
-//             </button>
-
-//             {/* 🌙 / ☀️ Dark Mode Toggle */}
-//             <button
-//               onClick={toggleTheme}
-//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-//             >
-//               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-//             </button>
-
-//             <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-//               <Bookmark size={18} />
-//             </button>
-
-//             <button
-//               onClick={() => navigate("/settings")}
-//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-//             >
-//               <Settings size={18} />
-//             </button>
-
-//             <button
-//               onClick={() => setIsSearchOpen(true)}
-//               className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-//             >
-//               <Search size={18} />
-//             </button>
-//           </div>
-//         </div>
-//       </nav>
-
-//       {/* Sidebar */}
-//       {isMenuOpen && (
-//         <div className="fixed inset-0 z-40">
-//           <div className="absolute left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg overflow-y-auto">
-//             <div className="flex flex-col items-start p-4 border-b border-gray-200 dark:border-gray-700">
-//               <div className="flex items-center justify-between w-full mb-4">
-//                 <img src={logo} alt="Thafheemul Quran" className="h-12 w-auto" />
-//                 <button
-//                   onClick={toggleMenu}
-//                   className="p-1 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors"
-//                 >
-//                   <X size={20} />
-//                 </button>
-//               </div>
-//               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">MENU</h2>
-//             </div>
-
-//             <div className="py-2">
-//               {menuItems.map((item, index) => {
-//                 const IconComponent = item.icon;
-//                 return (
-//                   <div key={index}>
-//                     <button
-//                       onClick={() => {
-//                         if (item.hasSubmenu) {
-//                           toggleSubmenu(index);
-//                         } else {
-//                           item.action();
-//                           setIsMenuOpen(false);
-//                         }
-//                       }}
-//                       className="w-full flex items-center justify-between px-6 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
-//                     >
-//                       <div className="flex items-center space-x-3">
-//                         <IconComponent size={18} className="text-gray-500 dark:text-gray-400" />
-//                         <span className="text-sm">{item.label}</span>
-//                       </div>
-//                       {item.hasArrow && (
-//                         <ChevronRight
-//                           size={16}
-//                           className={`text-gray-400 transition-transform ${openSubmenu === index ? "rotate-90" : ""}`}
-//                         />
-//                       )}
-//                     </button>
-
-//                     {item.hasSubmenu && openSubmenu === index && (
-//                       <div className="bg-gray-50 dark:bg-gray-800 border-l-4 border-teal-500 ml-6">
-//                         {item.submenuItems.map((subItem, subIndex) => (
-//                           <button
-//                             key={subIndex}
-//                             onClick={() => {
-//                               subItem.action();
-//                               setIsMenuOpen(false);
-//                             }}
-//                             className="w-full flex items-center px-6 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left text-sm"
-//                           >
-//                             <span className="mr-3">•</span>
-//                             <span>{subItem.label}</span>
-//                           </button>
-//                         ))}
-//                       </div>
-//                     )}
-//                   </div>
-//                 );
-//               })}
-
-//               <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-//               {dangerMenuItems.map((item, index) => {
-//                 const IconComponent = item.icon;
-//                 return (
-//                   <button
-//                     key={`danger-${index}`}
-//                     onClick={() => {
-//                       item.action();
-//                       setIsMenuOpen(false);
-//                     }}
-//                     className="w-full flex items-center space-x-3 px-6 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-left"
-//                   >
-//                     <IconComponent size={18} />
-//                     <span className="text-sm">{item.label}</span>
-//                   </button>
-//                 );
-//               })}
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </>
-//   );
-// };
-
-// export default HomepageNavbar;

@@ -32,7 +32,7 @@ const Note = () => {
   const resolveHtml = () => {
     if (typeof content === "string") return content;
     if (content && typeof content === "object") {
-      return content.html || content.content || content.text || JSON.stringify(content);
+      return content.NoteText || content.html || content.content || content.text || JSON.stringify(content);
     }
     return "<p>No content</p>";
   };
@@ -57,6 +57,10 @@ const Note = () => {
           <div
             className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white"
             dangerouslySetInnerHTML={{ __html: resolveHtml() }}
+            style={{
+
+              fontFamily: "NotoSansMalayalam, sans-serif",
+            }}
           />
         )}
       </div>

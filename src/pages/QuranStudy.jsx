@@ -4,7 +4,7 @@ import QuranStudyContent from "../components/QuranStudyContent";
 import QuranStudyPlay from "../components/QuranStudyPlay";
 
 const QuranStudy = () => {
-  const [activeItem, setActiveItem] = useState("Note");
+  const [activeItem, setActiveItem] = useState(null);
   const [showMobilePlayer, setShowMobilePlayer] = useState(false);
 
   return (
@@ -17,26 +17,24 @@ const QuranStudy = () => {
         <QuranStudyContent
           activeItem={activeItem}
           onPlayAudio={() => setShowMobilePlayer(prev => !prev)}
-
         />
       </div>
 
-      {/* Always show on large screens */}
       <div className="hidden lg:block">
         <QuranStudyPlay
-          audioSrc="/path/to/audio.mp3"
-          title={activeItem}
-          onClose={() => {}} 
+          audioSrc={activeItem?.audiourl || ""}
+          title={activeItem?.title || ""}
+          onClose={() => {}}
         />
       </div>
 
- 
       {showMobilePlayer && (
         <div className="lg:hidden">
           <QuranStudyPlay
-            audioSrc="/path/to/audio.mp3"
-            title={activeItem}
+            audioSrc={activeItem?.audiourl || ""}
+            title={activeItem?.title || ""}
             onClose={() => setShowMobilePlayer(false)}
+            isMobile={true}
           />
         </div>
       )}

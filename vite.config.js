@@ -54,6 +54,17 @@ export default defineConfig({
             console.log('proxy error', err);
           });
         },
+      },
+      // Proxy audio files to bypass CORS
+      '/api/audio': {
+        target: 'https://old.thafheem.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/audio/, '/audio'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('audio proxy error', err);
+          });
+        },
       }
     }
   }

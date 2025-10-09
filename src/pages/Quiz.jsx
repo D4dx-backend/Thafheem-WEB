@@ -329,7 +329,7 @@ const Quiz = () => {
               {/* Surah Dropdown */}
               {showSurahDropdown && (
                 <div className="fixed inset-0 flex items-center justify-center sm:absolute sm:left-0 sm:top-full sm:inset-auto sm:mt-2 sm:flex-none sm:items-start sm:justify-start bg-gray-500/70 bg-opacity-50 sm:bg-transparent z-50">
-                  <div className="bg-white dark:bg-[#2A2C38] sm:rounded-2xl shadow-xl w-[320px] sm:w-80 h-[600px] sm:h-96 overflow-hidden rounded-2xl">
+                  <div className="bg-white dark:bg-[#2A2C38] sm:rounded-2xl shadow-xl w-[320px] sm:w-80 h-[600px] sm:h-96 overflow-hidden rounded-2xl flex flex-col">
                     <div className="flex items-center justify-between p-3 sm:p-4 border-b">
                       <div className="flex bg-[#F8F9FA] w-full max-w-[244px] h-[40px] sm:h-[45px] dark:bg-gray-900 rounded-full p-1">
                         <button
@@ -380,7 +380,7 @@ const Quiz = () => {
                       />
                     </div>
 
-                    <div className="overflow-y-auto h-full pb-20 sm:pb-4 font-poppins">
+                    <div className="overflow-y-auto flex-1 pb-20 sm:pb-4 font-poppins" style={{ maxHeight: 'calc(100% - 80px)' }}>
                       {surahList.map((surah) => (
                         <div
                           key={surah.number}

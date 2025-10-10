@@ -6,9 +6,10 @@ import {
   Info,
   LibraryBig,
   Notebook,
+  ChevronDown,
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import HomepageNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
 import { ChevronLeft, ChevronRight, ArrowUp } from "lucide-react";
@@ -21,6 +22,12 @@ import {
   fetchPageRanges,
 } from "../api/apifunction";
 
+const QIRATHS = {
+  "al-afasy": "QA",
+  "al-ghamidi": "QG",
+  "al-hudaify": "QH",
+};
+
 const Reading = () => {
   const { surahId } = useParams();
   const navigate = useNavigate();
@@ -29,6 +36,245 @@ const Reading = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pageRanges, setPageRanges] = useState([]);
+  const [selectedQirath, setSelectedQirath] = useState("al-afasy");
+  const [showQirathDropdown, setShowQirathDropdown] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentAyah, setCurrentAyah] = useState(null);
+  const [audioElement, setAudioElement] = useState(null);
+  const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
+  const currentAudioRef = useRef(null);
+
+  // Generate audio URL for the selected Qirath, surah, and ayah
+  const generateAudioUrl = (surahId, ayahId, qirathName, qirathCode) => {
+    // Format: https://old.thafheem.net/audio/qirath/{qirathName}/{prefix}{surahId_3digit}_{ayahId_3digit}.ogg
+    // Example: https://old.thafheem.net/audio/qirath/al-afasy/QA002_004.ogg
+    const surahIdPadded = String(surahId).padStart(3, '0');
+    const ayahIdPadded = String(ayahId).padStart(3, '0');
+    
+    // Use proxy in development to avoid CORS issues
+    if (import.meta.env.DEV) {
+      return `/api/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+    }
+    
+    return `https://old.thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+  };
+
+  // Play next ayah in sequence
+  const playAyahAtIndex = (index) => {
+    console.log(`playAyahAtIndex called with index: ${index}, verses.length: ${verses.length}`);
+    
+    if (index >= verses.length) {
+      // All ayahs played, stop playback
+      console.log('All ayahs played, stopping playback');
+      setIsPlaying(false);
+      setCurrentAyah(null);
+      setCurrentAyahIndex(0);
+      setAudioElement(null);
+      return;
+    }
+
+    // Stop any existing audio first
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      audioElement.onended = null;
+      audioElement.onerror = null;
+    }
+
+    const currentSurahId = parseInt(surahId) || 2;
+    const qirathCode = QIRATHS[selectedQirath];
+    const verse = verses[index];
+    const ayahId = index + 1; // Since verse_number is undefined, use index + 1
+    const audioUrl = generateAudioUrl(currentSurahId, ayahId, selectedQirath, qirathCode);
+    
+    console.log(`Playing audio for Surah ${currentSurahId}, Ayah ${ayahId} (${index + 1}/${verses.length}) with Qirath ${selectedQirath} (${qirathCode})`);
+    console.log(`Verse object:`, verse);
+    console.log(`Audio URL: ${audioUrl}`);
+    
+    // Create new audio element
+    const audio = new Audio(audioUrl);
+    
+    // Set audio properties before adding event listeners
+    audio.preload = 'none'; // Don't preload to avoid conflicts
+    // Removed crossOrigin to avoid CORS issues
+    
+    setAudioElement(audio);
+    currentAudioRef.current = audio;
+    setCurrentAyah(ayahId);
+    setCurrentAyahIndex(index);
+    
+    // Handle audio end - play next ayah
+    audio.onended = () => {
+      console.log(`Audio ended for ayah ${ayahId}, playing next ayah`);
+      // Only continue if this is still the current audio element
+      if (currentAudioRef.current === audio) {
+        playAyahAtIndex(index + 1);
+      }
+    };
+    
+    audio.onerror = (error) => {
+      console.error('Audio playback error:', error);
+      console.error('Failed URL:', audioUrl);
+      console.error('Audio element state:', audio);
+      // Only continue if this is still the current audio element
+      if (currentAudioRef.current === audio) {
+        playAyahAtIndex(index + 1);
+      }
+    };
+    
+    // Play the audio with better error handling
+    audio.play().then(() => {
+      console.log(`Successfully started playing ayah ${ayahId}`);
+    }).catch((error) => {
+      // If it's an abort error (interrupted by another play), don't log as error
+      if (error.name === 'AbortError') {
+        // This is normal - happens when switching between ayahs
+        // Don't log as error, just silently handle it
+        return;
+      }
+      
+      // Only log actual errors (not AbortErrors)
+      console.error('Error playing audio:', error);
+      console.error('Audio URL that failed:', audioUrl);
+      
+      // Handle CORS errors specifically
+      if (error.name === 'NotSupportedError' || error.message.includes('CORS')) {
+        console.error('CORS error - audio server does not allow cross-origin requests');
+        console.log('This is likely a development environment issue. Audio should work in production.');
+        // Try to continue to next ayah anyway
+        setTimeout(() => {
+          playAyahAtIndex(index + 1);
+        }, 1000);
+        return;
+      }
+      
+      // For other errors, reset the state
+      setIsPlaying(false);
+      setCurrentAyah(null);
+      setAudioElement(null);
+      currentAudioRef.current = null;
+    });
+  };
+
+  // Stop audio completely (reset to beginning)
+  const stopAudio = () => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentAyah(null);
+    setCurrentAyahIndex(0);
+    setAudioElement(null);
+    currentAudioRef.current = null;
+  };
+
+  // Handle clicking on a specific ayah
+  const handleAyahClick = (verseNumber) => {
+    console.log(`Clicked on ayah ${verseNumber} (type: ${typeof verseNumber})`);
+    console.log('First verse object:', verses[0]);
+    console.log('Available verse properties:', verses.length > 0 ? Object.keys(verses[0]) : 'No verses');
+    
+    // Since verse_number is undefined, use array index + 1 as the ayah number
+    const ayahIndex = parseInt(verseNumber) - 1; // Convert to 0-based index
+    
+    console.log(`Using ayah index: ${ayahIndex} for verse number ${verseNumber}`);
+    
+    if (ayahIndex >= 0 && ayahIndex < verses.length) {
+      // Stop any currently playing audio first and wait for it to stop
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        audioElement.onended = null; // Remove the onended handler to prevent automatic continuation
+        audioElement.onerror = null; // Remove error handlers
+      }
+      
+      // Clear the current audio element reference
+      setAudioElement(null);
+      currentAudioRef.current = null;
+      
+      // Small delay to ensure the previous audio is properly stopped
+      setTimeout(() => {
+        // Set the current ayah first to update button text
+        setCurrentAyah(parseInt(verseNumber));
+        setCurrentAyahIndex(ayahIndex);
+        
+        // Start playing from the clicked ayah
+        setIsPlaying(true);
+        playAyahAtIndex(ayahIndex);
+      }, 100);
+    } else {
+      console.error(`Invalid ayah index: ${ayahIndex} for verse number ${verseNumber}`);
+      console.error(`Valid range: 1 to ${verses.length}`);
+    }
+  };
+
+  // Handle audio playback
+  const handlePlayAudio = () => {
+    try {
+      if (isPlaying) {
+        // Pause playback but keep the current position
+        if (audioElement) {
+          audioElement.pause();
+        }
+        setIsPlaying(false);
+        // Don't clear currentAyah or currentAyahIndex - keep them for resume
+      } else {
+        // Resume playback from current ayah or start from beginning
+        if (currentAyahIndex > 0 || currentAyah) {
+          // Resume from current position
+          setIsPlaying(true);
+          playAyahAtIndex(currentAyahIndex);
+        } else {
+          // Start from first ayah
+          setIsPlaying(true);
+          playAyahAtIndex(0);
+        }
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
+      setCurrentAyah(null);
+      setAudioElement(null);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showQirathDropdown && !event.target.closest('.qirath-dropdown')) {
+        setShowQirathDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showQirathDropdown]);
+
+  // Stop audio and clear highlight when Qirath changes
+  useEffect(() => {
+    if (isPlaying && audioElement) {
+      stopAudio();
+    }
+  }, [selectedQirath]);
+
+  // Cleanup audio when component unmounts or surah changes
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+      currentAudioRef.current = null;
+    };
+  }, [surahId]);
+
+  // Stop audio when surah changes
+  useEffect(() => {
+    if (audioElement) {
+      stopAudio();
+    }
+  }, [surahId]);
 
   // Fetch all verses for the surah
   useEffect(() => {
@@ -279,13 +525,84 @@ const Reading = () => {
                   <span>{verses.length} verses</span>
                 </div>
 
-                {/* Right side */}
-                <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 transition-colors">
-                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="text-xs sm:text-sm font-medium">
-                    Play Audio
-                  </span>
-                </button>
+                {/* Right side - Play Audio and Qirath selector */}
+                <div className="flex items-center space-x-3">
+                  {/* Audio Controls */}
+                  <div className="flex items-center space-x-2">
+                    {/* Play/Pause Audio Button */}
+                    <button 
+                      className={`flex items-center space-x-2 transition-colors ${
+                        isPlaying 
+                          ? "text-red-500 hover:text-red-600" 
+                          : "text-cyan-500 hover:text-cyan-600"
+                      }`}
+                      onClick={handlePlayAudio}
+                    >
+                      {isPlaying ? (
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                      ) : (
+                        <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                      )}
+                      <span className="text-xs sm:text-sm font-medium">
+                        {isPlaying ? "Pause Audio" : (currentAyah ? "Resume Audio" : "Play Audio")}
+                      </span>
+                    </button>
+
+                    {/* Stop/Reset Button */}
+                    {currentAyah && (
+                      <button 
+                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
+                        onClick={stopAudio}
+                        title="Stop and reset to beginning"
+                      >
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 6h12v12H6z"/>
+                        </svg>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+                          Stop
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Qirath Selector Dropdown */}
+                  <div className="relative qirath-dropdown">
+                    <button
+                      onClick={() => setShowQirathDropdown(!showQirathDropdown)}
+                      className="flex items-center space-x-1 px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-300 
+                                 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 
+                                 transition-colors min-h-[32px]"
+                    >
+                      <span className="capitalize">{selectedQirath.replace("-", " ")}</span>
+                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showQirathDropdown && (
+                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 
+                                     dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-[140px]">
+                        {Object.keys(QIRATHS).map((qirath) => (
+                          <button
+                            key={qirath}
+                            onClick={() => {
+                              setSelectedQirath(qirath);
+                              setShowQirathDropdown(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-xs sm:text-sm transition-colors
+                                       ${selectedQirath === qirath 
+                                         ? "bg-cyan-50 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-400" 
+                                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                       } first:rounded-t-lg last:rounded-b-lg capitalize`}
+                          >
+                            {qirath.replace("-", " ")}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Verses Content - Grouped by Page */}
@@ -299,13 +616,27 @@ const Reading = () => {
                         className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-arabic leading-loose text-gray-900 dark:text-white"
                         dir="rtl"
                       >
-                        {pageGroup.verses.map((verse, index) => (
-                          <span key={verse.id || `verse-${verse.verse_number}`}>
-                            {verse.text_uthmani} ﴿
-                            {toArabicNumber(verse.verse_number.toString())}﴾
-                            {index < pageGroup.verses.length - 1 && "   "}
-                          </span>
-                        ))}
+                        {pageGroup.verses.map((verse, index) => {
+                          // Calculate the actual ayah number based on the verse position in the surah
+                          const actualAyahNumber = pageGroup.startVerse + index;
+                          
+                          return (
+                            <span 
+                              key={verse.id || `verse-${actualAyahNumber}`}
+                              onClick={() => handleAyahClick(actualAyahNumber)}
+                              className={`inline-block transition-all duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 ${
+                                currentAyah === actualAyahNumber 
+                                  ? "bg-blue-100 dark:bg-blue-900" 
+                                  : ""
+                              }`}
+                              title={`Click to play ayah ${actualAyahNumber}`}
+                            >
+                              {verse.text_uthmani} ﴿
+                              {toArabicNumber(actualAyahNumber.toString())}﴾
+                              {index < pageGroup.verses.length - 1 && "   "}
+                            </span>
+                          );
+                        })}
                       </p>
                       {/* Page Header */}
                       {pageGroup.pageNumber && (

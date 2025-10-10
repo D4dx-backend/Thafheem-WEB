@@ -42,12 +42,37 @@ const BlockWise = () => {
   const [activeView, setActiveView] = useState("Block wise");
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState(null);
+  const [selectedQirath, setSelectedQirath] = useState("al-hudaify");
+  const [playingBlock, setPlayingBlock] = useState(null); // Track which block is currently playing
+  const [currentAudioType, setCurrentAudioType] = useState(null); // Track which audio type is playing
+  const [currentAyahInBlock, setCurrentAyahInBlock] = useState(null); // Track which ayah within the block is playing
+  const [currentInterpretationNumber, setCurrentInterpretationNumber] = useState(1); // Track which interpretation number (1, 2, 3, etc.)
+  const [isContinuousPlay, setIsContinuousPlay] = useState(false); // Track if continuous playback is active
+  const [isPaused, setIsPaused] = useState(false); // Track if audio is paused
+  const audioRef = useRef(null); // Audio element reference
+  
+  // State management for API data
+  const [blockData, setBlockData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [ayahData, setAyahData] = useState([]);
+  const [arabicVerses, setArabicVerses] = useState([]);
+  const [blockBookmarkLoading, setBlockBookmarkLoading] = useState({});
+  const [blockRanges, setBlockRanges] = useState([]);
+  const [blockTranslations, setBlockTranslations] = useState({});
+  const [selectedInterpretation, setSelectedInterpretation] = useState(null);
+  const [loadingBlocks, setLoadingBlocks] = useState(new Set());
+  const hasFetchedRef = useRef(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { quranFont } = useTheme();
   const { surahId } = useParams();
+  
+  // Use cached surah data
+  const { surahs } = useSurahData();
 
   // Function to convert Western numerals to Arabic-Indic numerals
   const toArabicNumber = (num) => {
@@ -59,21 +84,352 @@ const BlockWise = () => {
       .join("");
   };
 
-  // State management for API data
-  const [blockData, setBlockData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [ayahData, setAyahData] = useState([]);
-  const [arabicVerses, setArabicVerses] = useState([]);
-  const [blockBookmarkLoading, setBlockBookmarkLoading] = useState({});
-  const [blockRanges, setBlockRanges] = useState([]);
-  const [blockTranslations, setBlockTranslations] = useState({});
-  const [selectedInterpretation, setSelectedInterpretation] = useState(null);
-  const [loadingBlocks, setLoadingBlocks] = useState(new Set()); // Track which blocks are currently loading
-  const hasFetchedRef = useRef(false);
-  
-  // Use cached surah data
-  const { surahs } = useSurahData();
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Qirath prefix mapping
+  const qirathPrefixes = {
+    "al-hudaify": "QH",
+    "al-afasy": "QA",
+    "al-ghamidi": "QG"
+  };
+
+  // Function to play audio for a specific block - starts from the first ayah
+  const playBlockAudio = (blockId, fromContinuous = false) => {
+    if (!audioRef.current) return;
+
+    console.log('playBlockAudio called with blockId:', blockId, 'fromContinuous:', fromContinuous);
+
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    // Find the block data
+    const blockInfo = blockRanges.find(b => (b.ID || b.id) === blockId);
+    if (!blockInfo) {
+      console.error('Block not found:', blockId);
+      return;
+    }
+
+    const startingAyah = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
+    
+    console.log('Block info:', blockInfo, 'Starting ayah:', startingAyah);
+
+    setIsContinuousPlay(true);
+    setPlayingBlock(blockId);
+    setCurrentAyahInBlock(startingAyah);
+    setCurrentInterpretationNumber(1); // Reset interpretation number for new block
+    setIsPaused(false);
+    
+    // Play the first ayah's qirath
+    playAyahAudio(blockId, startingAyah);
+  };
+
+  // Function to play audio for a specific ayah (qirath → translation → interpretation)
+  const playAyahAudio = (blockId, ayahNumber) => {
+    if (!audioRef.current) return;
+
+    // Stop any currently playing audio before starting new ayah
+    audioRef.current.pause();
+
+    const surahCode = String(surahId).padStart(3, "0");
+    const ayahCode = String(ayahNumber).padStart(3, "0");
+    
+    const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+    
+    console.log(`\n=== Starting Ayah ${ayahNumber} ===`);
+    console.log(`Playing ayah ${ayahNumber} - Qirath:`, qirathUrl);
+    
+    setCurrentAudioType('qirath');
+    setCurrentAyahInBlock(ayahNumber);
+    setCurrentInterpretationNumber(1); // Reset interpretation counter
+    
+    audioRef.current.src = qirathUrl;
+    audioRef.current.load();
+    audioRef.current.play().catch(err => {
+      console.error('Error playing qirath audio:', err.name, err.message, qirathUrl);
+      // If qirath fails to load, immediately try translation
+      playAyahTranslation(blockId, ayahNumber);
+    });
+  };
+
+  // Function to play translation audio for a specific ayah
+  const playAyahTranslation = (blockId, ayahNumber) => {
+    if (!audioRef.current) return;
+    
+    const surahCode = String(surahId).padStart(3, "0");
+    const ayahCode = String(ayahNumber).padStart(3, "0");
+    
+    const translationUrl = `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
+    
+    console.log(`Playing ayah ${ayahNumber} - Translation:`, translationUrl);
+    
+    setCurrentAudioType('translation');
+    audioRef.current.src = translationUrl;
+    audioRef.current.load();
+    audioRef.current.play().catch(err => {
+      console.error('Error loading translation audio:', err.name, err.message);
+      // If translation fails, try interpretation anyway
+      playAyahInterpretation(blockId, ayahNumber, 1);
+    });
+  };
+
+  // Function to play interpretation audio for a specific ayah (supports multiple interpretations)
+  const playAyahInterpretation = (blockId, ayahNumber, interpretationNum = 1) => {
+    if (!audioRef.current) return;
+    
+    const surahCode = String(surahId).padStart(3, "0");
+    const ayahCode = String(ayahNumber).padStart(3, "0");
+    
+    // First interpretation has no number suffix, subsequent ones have _02, _03, etc.
+    let interpretationUrl;
+    if (interpretationNum === 1) {
+      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
+    } else {
+      const interpretationCode = String(interpretationNum).padStart(2, "0");
+      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
+    }
+    
+    console.log(`Trying to play ayah ${ayahNumber} - Interpretation ${interpretationNum}:`, interpretationUrl);
+    
+    setCurrentAudioType('interpretation');
+    setCurrentInterpretationNumber(interpretationNum);
+    
+    // Create a promise to load and play the audio
+    audioRef.current.src = interpretationUrl;
+    
+    // Try to load the audio
+    audioRef.current.load();
+    
+    audioRef.current.play().catch(err => {
+      console.log(`Interpretation ${interpretationNum} not available for ayah ${ayahNumber}`);
+      
+      // If first interpretation doesn't exist, there are no interpretations for this ayah
+      // Move to next ayah immediately (no interpretations to play)
+      if (interpretationNum === 1) {
+        console.log('No interpretations for this ayah, moving to next ayah/block immediately');
+        // Use setTimeout to avoid conflicts with other audio events
+        setTimeout(() => {
+          moveToNextAyahOrBlock();
+        }, 100);
+      } else {
+        // If interpretation 2, 3, etc. doesn't exist, we've reached the end of interpretations
+        // Move to next ayah
+        console.log('All interpretations finished for this ayah, moving to next ayah/block');
+        setTimeout(() => {
+          moveToNextAyahOrBlock();
+        }, 100);
+      }
+    });
+  };
+
+  // Function to move to the next ayah in the block or the next block
+  const moveToNextAyahOrBlock = () => {
+    console.log(`\n>>> moveToNextAyahOrBlock called - Current ayah: ${currentAyahInBlock}, Playing block: ${playingBlock}`);
+    
+    if (!playingBlock || !currentAyahInBlock) {
+      console.log('No playing block or ayah, returning');
+      return;
+    }
+
+    const blockInfo = blockRanges.find(b => (b.ID || b.id) === playingBlock);
+    if (!blockInfo) {
+      console.log('Block info not found, returning');
+      return;
+    }
+
+    const ayaTo = blockInfo.AyaTo || blockInfo.ayato || blockInfo.to;
+    const nextAyah = currentAyahInBlock + 1;
+
+    console.log(`Block range: ${blockInfo.AyaFrom}-${ayaTo}, Next ayah would be: ${nextAyah}`);
+
+    // Check if there are more ayahs in this block
+    if (nextAyah <= ayaTo) {
+      console.log(`✓ Moving to ayah ${nextAyah} in same block`);
+      // Reset interpretation number for new ayah
+      setCurrentInterpretationNumber(1);
+      // Play the next ayah in the same block
+      playAyahAudio(playingBlock, nextAyah);
+    } else {
+      console.log('✓ Block finished');
+      // Block is finished, move to next block or stop
+      if (isContinuousPlay) {
+        console.log('Continuous mode: moving to next block');
+        setCurrentInterpretationNumber(1); // Reset for next block
+        playNextBlock();
+      } else {
+        console.log('Single block mode: stopping playback');
+        setPlayingBlock(null);
+        setCurrentAudioType(null);
+        setCurrentAyahInBlock(null);
+        setCurrentInterpretationNumber(1);
+        setIsPaused(false);
+      }
+    }
+  };
+
+  // Function to play next block in continuous mode
+  const playNextBlock = () => {
+    if (!isContinuousPlay || !blockRanges || blockRanges.length === 0) return;
+
+    const currentIndex = blockRanges.findIndex(block => {
+      const blockId = block.ID || block.id;
+      return blockId === playingBlock;
+    });
+
+    // Check if there's a next block
+    if (currentIndex !== -1 && currentIndex < blockRanges.length - 1) {
+      const nextBlock = blockRanges[currentIndex + 1];
+      const nextBlockId = nextBlock.ID || nextBlock.id;
+      playBlockAudio(nextBlockId, true); // Keep continuous mode active
+    } else {
+      // End of blocks, stop continuous play
+      setPlayingBlock(null);
+      setCurrentAudioType(null);
+      setCurrentAyahInBlock(null);
+      setCurrentInterpretationNumber(1);
+      setIsContinuousPlay(false);
+      setIsPaused(false);
+    }
+  };
+
+  // Handle main play/pause audio button (same pattern as Reading.jsx)
+  const handlePlayAudio = () => {
+    if (!blockRanges || blockRanges.length === 0) {
+      showError("No blocks available to play");
+      return;
+    }
+
+    try {
+      if (isContinuousPlay) {
+        // Pause playback but keep the current position
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        setIsContinuousPlay(false);
+        setIsPaused(true);
+        // Don't clear playingBlock, currentAyahInBlock - keep them for resume
+      } else {
+        // Resume playback from current position or start from beginning
+        if (playingBlock && currentAyahInBlock) {
+          // Resume from current position
+          console.log('Resuming from block:', playingBlock, 'ayah:', currentAyahInBlock);
+          setIsContinuousPlay(true);
+          setIsPaused(false);
+          if (audioRef.current) {
+            audioRef.current.play().catch(err => {
+              console.error('Error resuming audio:', err);
+            });
+          }
+        } else {
+          // Start from first block
+          console.log('Starting continuous play from first block');
+          setIsContinuousPlay(true);
+          setIsPaused(false);
+          const firstBlockId = blockRanges[0].ID || blockRanges[0].id;
+          console.log('Starting continuous play from block ID:', firstBlockId, 'Total blocks:', blockRanges.length);
+          playBlockAudio(firstBlockId);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handlePlayAudio:', error);
+      setIsContinuousPlay(false);
+      setPlayingBlock(null);
+      setCurrentAyahInBlock(null);
+    }
+  };
+
+  // Function to stop playback completely (same as Reading.jsx stopAudio)
+  const stopPlayback = () => {
+    console.log('Stopping playback completely and resetting to beginning');
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsContinuousPlay(false);
+    setPlayingBlock(null);
+    setCurrentAudioType(null);
+    setCurrentAyahInBlock(null);
+    setCurrentInterpretationNumber(1);
+    setIsPaused(false);
+  };
+
+  // Handle audio ended event to chain audio files
+  useEffect(() => {
+    const handleAudioEnded = () => {
+      if (!playingBlock || !currentAyahInBlock) return;
+
+      console.log(`Audio ended - Type: ${currentAudioType}, Ayah: ${currentAyahInBlock}, Interpretation #: ${currentInterpretationNumber}`);
+
+      if (currentAudioType === 'qirath') {
+        // Play translation after qirath for the same ayah
+        playAyahTranslation(playingBlock, currentAyahInBlock);
+      } else if (currentAudioType === 'translation') {
+        // Play first interpretation after translation for the same ayah
+        playAyahInterpretation(playingBlock, currentAyahInBlock, 1);
+      } else if (currentAudioType === 'interpretation') {
+        // After interpretation, try the next interpretation number
+        const nextInterpretationNum = currentInterpretationNumber + 1;
+        console.log(`Trying interpretation ${nextInterpretationNum} for ayah ${currentAyahInBlock}`);
+        playAyahInterpretation(playingBlock, currentAyahInBlock, nextInterpretationNum);
+      }
+    };
+
+    if (audioRef.current) {
+      audioRef.current.addEventListener('ended', handleAudioEnded);
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('ended', handleAudioEnded);
+        }
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingBlock, currentAudioType, currentAyahInBlock, currentInterpretationNumber, isContinuousPlay, blockRanges]);
+
+  // Cleanup audio when surahId changes
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPlayingBlock(null);
+        setCurrentAudioType(null);
+        setCurrentAyahInBlock(null);
+        setCurrentInterpretationNumber(1);
+        setIsContinuousPlay(false);
+        setIsPaused(false);
+      }
+    };
+  }, [surahId]);
+
+  // Restart qirath audio when selectedQirath changes during playback
+  useEffect(() => {
+    if (playingBlock && currentAyahInBlock && currentAudioType === 'qirath' && audioRef.current) {
+      // Restart qirath with new reciter for the current ayah
+      const surahCode = String(surahId).padStart(3, "0");
+      const ayahCode = String(currentAyahInBlock).padStart(3, "0");
+      const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+      
+      console.log("Qirath (changed reciter):", qirathUrl);
+      
+      audioRef.current.src = qirathUrl;
+      audioRef.current.play().catch(err => {
+        console.error('Error playing qirath audio:', err);
+        playAyahTranslation(playingBlock, currentAyahInBlock);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedQirath]);
 
   // Fetch block-wise data
   useEffect(() => {
@@ -467,12 +823,59 @@ const BlockWise = () => {
 
               {/* Play Audio */}
               <div className="flex justify-between">
-                <button className="flex items-center space-x-2 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors min-h-[44px] px-2">
+                <div className="flex items-center space-x-2">
+                  {/* Audio Controls */}
+                  <div className="flex items-center space-x-2">
+                    {/* Play/Pause Audio Button (same as Reading.jsx) */}
+                    <button 
+                      className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
+                        isContinuousPlay 
+                          ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500" 
+                          : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
+                      }`}
+                      onClick={handlePlayAudio}
+                    >
+                      {isContinuousPlay ? (
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                      ) : (
                   <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                      )}
                   <span className="text-xs sm:text-sm font-medium">
-                    Play Audio
+                        {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
                   </span>
                 </button>
+
+                    {/* Stop/Reset Button (same as Reading.jsx) */}
+                    {playingBlock && (
+                      <button 
+                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors min-h-[44px] px-2"
+                        onClick={stopPlayback}
+                        title="Stop and reset to beginning"
+                      >
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 6h12v12H6z"/>
+                        </svg>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+                          Stop
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Qirath Dropdown */}
+                  <select
+                    value={selectedQirath}
+                    onChange={(e) => setSelectedQirath(e.target.value)}
+                    className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
+                    aria-label="Select Qirath"
+                  >
+                    <option value="al-hudaify">Al-Hudaify</option>
+                    <option value="al-afasy">Al-Afasy</option>
+                    <option value="al-ghamidi">Al-Ghamidi</option>
+                  </select>
+                </div>
                 <div className="flex justify-end sm:hidden">
                   <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
@@ -626,13 +1029,23 @@ const BlockWise = () => {
 
                         {/* Play */}
                         <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                          onClick={() => {
-                            showSuccess("Audio playback feature coming soon!");
-                          }}
-                          title="Play audio"
+                          className={`p-1.5 sm:p-2 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                            playingBlock === blockId 
+                              ? 'text-cyan-500 dark:text-cyan-400' 
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                          onClick={() => playBlockAudio(blockId)}
+                          title={
+                            playingBlock === blockId 
+                              ? (isPaused ? "Resume audio" : "Pause audio") 
+                              : "Play audio"
+                          }
                         >
+                          {playingBlock === blockId && !isPaused ? (
+                            <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+                          ) : (
                           <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                          )}
                         </button>
 
                         {/* Book - Ayah Detail */}

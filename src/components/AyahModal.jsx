@@ -26,6 +26,11 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   const [totalVerses, setTotalVerses] = useState(0);
   const [showWordByWord, setShowWordByWord] = useState(false);
 
+  // Audio functionality states
+  const [playingAyah, setPlayingAyah] = useState(null);
+  const [selectedQari, setSelectedQari] = useState('al-afasy');
+  const [audioType, setAudioType] = useState('qirath');
+
   // Initialize verse from props
   useEffect(() => {
     if (verseId) {
@@ -158,6 +163,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
             verseData={verseData}
+            selectedQari={selectedQari}
+            onQariChange={setSelectedQari}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -186,6 +193,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
             verseData={verseData}
+            selectedQari={selectedQari}
+            onQariChange={setSelectedQari}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -220,6 +229,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           onClose={onClose}
           onWordByWordClick={handleWordByWordClick}
           verseData={verseData}
+          selectedQari={selectedQari}
+          onQariChange={setSelectedQari}
         />
 
         {/* Scrollable Content */}

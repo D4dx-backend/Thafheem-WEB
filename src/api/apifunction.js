@@ -31,8 +31,16 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
+      mode: 'cors', // Explicitly set CORS mode
     });
     clearTimeout(timeoutId);
+    
+    // Check if response is HTML (likely an error page)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      throw new Error(`Received HTML response instead of JSON from ${url}. This usually indicates a CORS or server error.`);
+    }
+    
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -43,9 +51,10 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
     if (
       error.message?.includes("Failed to fetch") ||
       error.message?.includes("ERR_CONNECTION_CLOSED") ||
-      error.message?.includes("ERR_NETWORK")
+      error.message?.includes("ERR_NETWORK") ||
+      error.message?.includes("CORS")
     ) {
-      throw new Error("Network error - API server may be unavailable");
+      throw new Error("Network error - API server may be unavailable or CORS blocked");
     }
     throw error;
   }

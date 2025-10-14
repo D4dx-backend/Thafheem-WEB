@@ -43,6 +43,7 @@ const Reading = () => {
   const [audioElement, setAudioElement] = useState(null);
   const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
   const currentAudioRef = useRef(null);
+  const audioRefForCleanup = useRef(null); // Track audio for cleanup
 
   // Generate audio URL for the selected Qirath, surah, and ayah
   const generateAudioUrl = (surahId, ayahId, qirathName, qirathCode) => {
@@ -61,11 +62,8 @@ const Reading = () => {
 
   // Play next ayah in sequence
   const playAyahAtIndex = (index) => {
-    console.log(`playAyahAtIndex called with index: ${index}, verses.length: ${verses.length}`);
-    
     if (index >= verses.length) {
       // All ayahs played, stop playback
-      console.log('All ayahs played, stopping playback');
       setIsPlaying(false);
       setCurrentAyah(null);
       setCurrentAyahIndex(0);
@@ -87,10 +85,6 @@ const Reading = () => {
     const ayahId = index + 1; // Since verse_number is undefined, use index + 1
     const audioUrl = generateAudioUrl(currentSurahId, ayahId, selectedQirath, qirathCode);
     
-    console.log(`Playing audio for Surah ${currentSurahId}, Ayah ${ayahId} (${index + 1}/${verses.length}) with Qirath ${selectedQirath} (${qirathCode})`);
-    console.log(`Verse object:`, verse);
-    console.log(`Audio URL: ${audioUrl}`);
-    
     // Create new audio element
     const audio = new Audio(audioUrl);
     
@@ -105,7 +99,6 @@ const Reading = () => {
     
     // Handle audio end - play next ayah
     audio.onended = () => {
-      console.log(`Audio ended for ayah ${ayahId}, playing next ayah`);
       // Only continue if this is still the current audio element
       if (currentAudioRef.current === audio) {
         playAyahAtIndex(index + 1);
@@ -124,7 +117,7 @@ const Reading = () => {
     
     // Play the audio with better error handling
     audio.play().then(() => {
-      console.log(`Successfully started playing ayah ${ayahId}`);
+      // Successfully started playing
     }).catch((error) => {
       // If it's an abort error (interrupted by another play), don't log as error
       if (error.name === 'AbortError') {
@@ -140,7 +133,6 @@ const Reading = () => {
       // Handle CORS errors specifically
       if (error.name === 'NotSupportedError' || error.message.includes('CORS')) {
         console.error('CORS error - audio server does not allow cross-origin requests');
-        console.log('This is likely a development environment issue. Audio should work in production.');
         // Try to continue to next ayah anyway
         setTimeout(() => {
           playAyahAtIndex(index + 1);
@@ -171,14 +163,8 @@ const Reading = () => {
 
   // Handle clicking on a specific ayah
   const handleAyahClick = (verseNumber) => {
-    console.log(`Clicked on ayah ${verseNumber} (type: ${typeof verseNumber})`);
-    console.log('First verse object:', verses[0]);
-    console.log('Available verse properties:', verses.length > 0 ? Object.keys(verses[0]) : 'No verses');
-    
     // Since verse_number is undefined, use array index + 1 as the ayah number
     const ayahIndex = parseInt(verseNumber) - 1; // Convert to 0-based index
-    
-    console.log(`Using ayah index: ${ayahIndex} for verse number ${verseNumber}`);
     
     if (ayahIndex >= 0 && ayahIndex < verses.length) {
       // Stop any currently playing audio first and wait for it to stop
@@ -258,22 +244,40 @@ const Reading = () => {
     }
   }, [selectedQirath]);
 
-  // Cleanup audio when component unmounts or surah changes
+  // Cleanup audio when component unmounts (navigating away)
   useEffect(() => {
     return () => {
-      if (audioElement) {
-        audioElement.pause();
-        audioElement.currentTime = 0;
+      // Stop and clear audio on unmount - use refs to get current audio
+      if (audioRefForCleanup.current) {
+        audioRefForCleanup.current.pause();
+        audioRefForCleanup.current.src = '';
+        audioRefForCleanup.current.currentTime = 0;
+        audioRefForCleanup.current.onended = null;
+        audioRefForCleanup.current.onerror = null;
+        audioRefForCleanup.current = null;
       }
-      currentAudioRef.current = null;
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.src = '';
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current = null;
+      }
     };
-  }, [surahId]);
-
-  // Stop audio when surah changes
+  }, []); // Only run on unmount
+  
+  // Update cleanup ref whenever audioElement changes
   useEffect(() => {
-    if (audioElement) {
-      stopAudio();
-    }
+    audioRefForCleanup.current = audioElement;
+  }, [audioElement]);
+
+  // Stop audio when surah changes (but keep this separate from unmount cleanup)
+  useEffect(() => {
+    // Only run when surahId actually changes, not on initial mount
+    return () => {
+      if (audioElement) {
+        stopAudio();
+      }
+    };
   }, [surahId]);
 
   // Fetch all verses for the surah

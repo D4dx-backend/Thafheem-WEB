@@ -15,7 +15,7 @@ import {
   LibraryBig,
   Notebook,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import HomepageNavbar from "../components/HomeNavbar";
 import { Link } from "react-router-dom";
@@ -76,6 +76,7 @@ const Surah = () => {
   const [showQariDropdown, setShowQariDropdown] = useState(false);
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
+  const audioRefForCleanup = useRef(null); // Track audio for cleanup
 
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -109,6 +110,26 @@ const Surah = () => {
     }
   }, [location.search, loading]); // Depend on loading to ensure data is ready
 
+  // Cleanup audio when component unmounts (navigating away)
+  useEffect(() => {
+    return () => {
+      // Stop and clear audio on unmount - use ref to get current audio
+      if (audioRefForCleanup.current) {
+        audioRefForCleanup.current.pause();
+        audioRefForCleanup.current.src = '';
+        audioRefForCleanup.current.currentTime = 0;
+        audioRefForCleanup.current.onended = null;
+        audioRefForCleanup.current.onerror = null;
+        audioRefForCleanup.current = null;
+      }
+    };
+  }, []); // Only run on unmount
+  
+  // Update ref whenever audioEl changes
+  useEffect(() => {
+    audioRefForCleanup.current = audioEl;
+  }, [audioEl]);
+
   // Fetch ayah data and surah info
   useEffect(() => {
     const loadSurahData = async () => {
@@ -129,10 +150,6 @@ const Surah = () => {
           fetchArabicVerses(parseInt(surahId)),
           fetchPageRanges(),
         ]);
-
-        console.log("Ayah Response:", ayahResponse);
-        console.log("Arabic Response:", arabicResponse);
-        console.log("Page Ranges Response:", pageRangesResponse);
 
         // Get the correct verse count from page ranges API
         const getVerseCountFromPageRanges = (surahId, pageRanges) => {
@@ -161,9 +178,6 @@ const Surah = () => {
             surahId,
             pageRangesResponse || []
           );
-          console.log(
-            `Using page ranges API: Surah ${surahId} has ${verseCount} verses`
-          );
 
           // Fallback to surah names data if page ranges failed
           if (
@@ -176,9 +190,6 @@ const Surah = () => {
             );
             if (currentSurah && currentSurah.ayahs) {
               verseCount = currentSurah.ayahs;
-              console.log(
-                `Fallback to surah names API: Surah ${surahId} has ${verseCount} verses`
-              );
             }
           }
 
@@ -194,7 +205,6 @@ const Surah = () => {
           );
           setAyahData(fallbackAyahData);
         } else {
-          console.log("Ayah Response length:", ayahResponse.length);
           const formattedAyahData = ayahResponse.map((ayah) => ({
             number: ayah.contiayano || 0,
             ArabicText: "",
@@ -1027,13 +1037,6 @@ const Surah = () => {
                 );
                 const finalArabicText =
                   arabicText || fallbackArabicVerse?.text_uthmani || "";
-
-                console.log(`Verse ${index + 1}:`, {
-                  translationVerse: verse,
-                  arabicVerse: arabicVerse,
-                  arabicText: finalArabicText,
-                  fallbackFound: !!fallbackArabicVerse,
-                });
 
                 return (
                   <div

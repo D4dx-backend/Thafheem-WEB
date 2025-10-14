@@ -1,10 +1,10 @@
-// Development proxy configuration to bypass CORS
+// Environment-based API configuration
 const isDevelopment = import.meta.env.DEV;
-// Force development mode for now to ensure proxy is used
 
-export const API_BASE_URL = '/api/thafheem';
-export const QURAN_API_BASE = '/api/quran';
-export const DIRECTUS_BASE_URL = '/api/directus';
+// Use proxy URLs in development, direct URLs in production
+export const API_BASE_URL = isDevelopment ? '/api/thafheem' : 'https://thafheem.net/thafheem-api';
+export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.com/api/v4';
+export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
 
 // Debug logging (only in development)
 if (isDevelopment) {

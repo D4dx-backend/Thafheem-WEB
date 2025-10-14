@@ -3,6 +3,26 @@
   publish = "dist"
   base = "."
 
+# API redirects for production
+[[redirects]]
+  from = "/api/thafheem/*"
+  to = "https://thafheem.net/thafheem-api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/quran/*"
+  to = "https://api.quran.com/api/v4/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/directus/*"
+  to = "https://directus.d4dx.co/:splat"
+  status = 200
+  force = true
+
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -16,3 +36,11 @@
   for = "/*"
   [headers.values]
     Permissions-Policy = "interest-cohort=()"
+
+# CORS headers for API calls
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"

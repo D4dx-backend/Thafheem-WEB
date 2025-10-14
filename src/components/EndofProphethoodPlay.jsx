@@ -51,6 +51,10 @@ const EndofProphethoodPlay = ({ audioSrc, title, onClose, autoPlay = false, isMo
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
+      // Stop audio when component unmounts (navigating away)
+      audio.pause();
+      audio.src = '';
+      audio.currentTime = 0;
     };
   }, [audioSrc, autoPlay]);
 

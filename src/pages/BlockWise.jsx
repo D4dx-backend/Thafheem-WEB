@@ -89,13 +89,22 @@ const BlockWise = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
     }
+    
+    // Cleanup: Stop audio when component unmounts (navigating away)
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current = null;
+        audioRef.current.src = ''; // Clear the source
+        audioRef.current.currentTime = 0;
       }
+      // Clear playback state
+      setPlayingBlock(null);
+      setCurrentAudioType(null);
+      setCurrentAyahInBlock(null);
+      setIsContinuousPlay(false);
+      setIsPaused(false);
     };
-  }, []);
+  }, []); // Only run on mount/unmount
 
   // Qirath prefix mapping
   const qirathPrefixes = {

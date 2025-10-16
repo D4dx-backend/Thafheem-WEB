@@ -68,7 +68,7 @@ const BlockWise = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  const { quranFont } = useTheme();
+  const { quranFont, translationLanguage } = useTheme();
   const { surahId } = useParams();
   
   // Use cached surah data
@@ -455,7 +455,7 @@ const BlockWise = () => {
         // Step 1: Fetch aya ranges and surah info
         const [ayaRangesResponse, arabicResponse] =
           await Promise.all([
-            fetchAyaRanges(parseInt(surahId)),
+            fetchAyaRanges(parseInt(surahId), translationLanguage || 'mal'),
             fetchArabicVerses(parseInt(surahId)),
           ]);
 
@@ -497,9 +497,10 @@ const BlockWise = () => {
                 if (ayaFrom && ayaTo) {
                   const range = `${ayaFrom}-${ayaTo}`;
 
-                  const translationData = await fetchAyaTranslation(
+                const translationData = await fetchAyaTranslation(
                     parseInt(surahId),
-                    range
+                    range,
+                    translationLanguage || 'mal'
                   );
 
                   return {
@@ -562,7 +563,15 @@ const BlockWise = () => {
     return () => {
       hasFetchedRef.current = false;
     };
-  }, [surahId, surahs]);
+  }, [surahId, surahs, translationLanguage]);
+
+  // When language changes, clear current block data to force re-render with new language
+  useEffect(() => {
+    setBlockTranslations({});
+    setBlockRanges([]);
+    setLoadingBlocks(new Set());
+    hasFetchedRef.current = false;
+  }, [translationLanguage]);
 
   const handleNumberClick = (number) => {
     setSelectedNumber(number);
@@ -616,6 +625,8 @@ const BlockWise = () => {
         `;
         sup.setAttribute("data-interpretation", number);
         sup.setAttribute("data-range", blockRange);
+        // Pass current language into dataset so handler can use it
+        sup.setAttribute("data-lang", translationLanguage === 'E' ? 'en' : 'mal');
         sup.setAttribute("title", `Click to view interpretation ${number}`);
         sup.className = "interpretation-link";
       }
@@ -631,6 +642,7 @@ const BlockWise = () => {
       if (target) {
         const interpretationNumber = target.getAttribute("data-interpretation");
         const range = target.getAttribute("data-range");
+        const langAttr = target.getAttribute("data-lang");
         if (interpretationNumber && range) {
           handleInterpretationClick(range, parseInt(interpretationNumber));
         }
@@ -1266,7 +1278,7 @@ const BlockWise = () => {
                   surahId={parseInt(surahId)}
                   range={selectedNumber.toString()}
                   ipt={1}
-                  lang="en"
+                  lang={translationLanguage === 'E' ? 'E' : 'mal'}
                   onClose={() => {
                     setShowInterpretation(false);
                     setSelectedNumber(null);
@@ -1287,7 +1299,7 @@ const BlockWise = () => {
                   surahId={parseInt(surahId)}
                   range={selectedInterpretation.range}
                   ipt={selectedInterpretation.interpretationNumber}
-                  lang="mal"
+                  lang={translationLanguage === 'E' ? 'E' : 'mal'}
                   onClose={() => setSelectedInterpretation(null)}
                   showSuccess={showSuccess}
                   showError={showError}

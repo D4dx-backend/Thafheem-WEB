@@ -1,5 +1,3 @@
-
-
 // import { PAGE_RANGES_API, AYAH_AUDIO_TRANSLATION_API, AYA_RANGES_API, AYA_TRANSLATION_API, QURAN_TEXT_API, QURAN_API_BASE_URL, INTERPRETATION_API,QUIZ_API, NOTES_API, DIRECTUS_BASE_URL, API_BASE_URL } from "./apis";
 
 import {
@@ -61,8 +59,10 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 };
 
 // (duplicate import block removed)
-export const fetchAyaTranslation = async (surahId, range) => {
-  const url = `${AYA_TRANSLATION_API}/${surahId}/${range}`;
+export const fetchAyaTranslation = async (surahId, range, language = 'mal') => {
+  // language: 'mal' (default Malayalam), 'E' for English
+  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
+  const url = `${AYA_TRANSLATION_API}/${surahId}/${range}${langSuffix}`;
   
   try {
     const response = await fetchWithTimeout(url, {}, 8000);
@@ -72,7 +72,7 @@ export const fetchAyaTranslation = async (surahId, range) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error(`Error fetching translation for ${surahId}:${range}:`, error.message);
+    console.error(`Error fetching translation for ${surahId}:${range}${language ? ':' + language : ''}:`, error.message);
     throw error;
   }
 };
@@ -1550,8 +1550,10 @@ export const fetchThafheemPreface = async (suraId) => {
 // Block-wise reading API functions
 
 // Fetch ayah ranges for block-based reading structure
-export const fetchAyaRanges = async (surahId) => {
-  const response = await fetch(`${AYA_RANGES_API}/${surahId}`);
+export const fetchAyaRanges = async (surahId, language = 'mal') => {
+  // Append /E for English; Malayalam (default) has no language suffix
+  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
+  const response = await fetch(`${AYA_RANGES_API}/${surahId}${langSuffix}`);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
@@ -1709,99 +1711,85 @@ export const fetchInterpretation = async (
   interpretationNo = 1,
   language = "en"
 ) => {
+  // Normalize language to API expectation
+  const langParam = (() => {
+    if (!language) return undefined;
+    const l = String(language).trim();
+    if (l.toLowerCase() === 'en' || l === 'E') return 'E';
+    if (l.toLowerCase() === 'mal') return undefined; // default Malayalam, no suffix
+    return l;
+  })();
   // Primary endpoint (Audio interpretation)
   const primaryUrl = `${API_BASE_URL}/audiointerpret/${surahId}/${verseId}`;
   const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
-  const langUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${language}`;
+  const langUrl = langParam
+    ? `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${langParam}`
+    : rangeUrl;
+  // Special single-ayah (English) endpoint pattern where interpretNo == verseId
+  const singleAyahLangUrl = langParam
+    ? `${INTERPRETATION_API}/${surahId}/${verseId}/${verseId}/${langParam}`
+    : undefined;
 
-  // Special handling for Surah 114 - add additional debugging
-  if (parseInt(surahId) === 114) {
-    console.log(`🔍 Special handling for Surah 114, Verse ${verseId}`);
-    console.log("Primary URL:", primaryUrl);
-    console.log("Range URL:", rangeUrl);
-    console.log("Language URL:", langUrl);
+  // Prefer English single-ayah URL first when language is provided
+  if (singleAyahLangUrl) {
+    try {
+      console.log("📡 Fetching interpretation from:", singleAyahLangUrl);
+      const resp = await fetch(singleAyahLangUrl);
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const data = await resp.json();
+      console.log("✅ Interpretation data received:", data);
+      return data;
+    } catch (e) {
+      console.warn("Single-ayah language URL failed, trying next:", e.message);
+    }
   }
 
+  // Next, try language-specific with provided interpretation number
+  if (langParam) {
+    try {
+      console.log("📡 Fetching interpretation from:", langUrl);
+      const langResponse = await fetch(langUrl);
+      if (!langResponse.ok) throw new Error(`HTTP error! status: ${langResponse.status}`);
+      const langData = await langResponse.json();
+      console.log("✅ Interpretation data received:", langData);
+      return langData;
+    } catch (langError) {
+      console.warn("Language-specific interpretation failed, trying fallbacks:", langError.message);
+    }
+  }
+
+  // Fallback A: audiointerpret (may return Malayalam)
   try {
-    console.log("Fetching interpretation from:", primaryUrl);
+    console.log("📡 Fetching interpretation from:", primaryUrl);
     const response = await fetch(primaryUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    console.log("Interpretation data received:", data);
-
-    // Special logging for Surah 114
-    if (parseInt(surahId) === 114) {
-      console.log(`✅ Surah 114 primary endpoint returned:`, data);
-    }
-
-    // Filter by interpretation number if multiple interpretations exist
+    console.log("✅ Interpretation data received:", data);
     if (Array.isArray(data) && data.length > 0) {
       const filteredData = data.filter(
         (item) => item.interptn_no === interpretationNo || !item.interptn_no
       );
       return filteredData.length > 0 ? filteredData : data;
     }
-
     return data;
   } catch (error) {
-    console.error("Error fetching interpretation from primary endpoint:", error);
-    if (parseInt(surahId) === 114) {
-      console.log(`❌ Surah 114 primary endpoint failed:`, error.message);
-    }
+    console.warn("Primary audiointerpret failed, trying range without language:", error.message);
   }
 
-  // Fallback 1: Try range-based API
+  // Fallback B: range without language
   try {
-    console.log("Trying range-based interpretation URL:", rangeUrl);
+    console.log("📡 Fetching interpretation from:", rangeUrl);
     const rangeResponse = await fetch(rangeUrl);
-    if (!rangeResponse.ok) {
-      throw new Error(`HTTP error! status: ${rangeResponse.status}`);
-    }
-
+    if (!rangeResponse.ok) throw new Error(`HTTP error! status: ${rangeResponse.status}`);
     const rangeData = await rangeResponse.json();
-    console.log("Range-based interpretation data received:", rangeData);
-    
-    if (parseInt(surahId) === 114) {
-      console.log(`✅ Surah 114 range endpoint returned:`, rangeData);
-    }
-    
+    console.log("✅ Interpretation data received:", rangeData);
     return rangeData;
   } catch (rangeError) {
-    console.error("Range-based interpretation API failed:", rangeError);
-    if (parseInt(surahId) === 114) {
-      console.log(`❌ Surah 114 range endpoint failed:`, rangeError.message);
-    }
+    console.error("All interpretation endpoints failed:", rangeError);
   }
 
-  // Fallback 2: Try language-specific API
-  try {
-    console.log("Trying language-specific interpretation URL:", langUrl);
-    const langResponse = await fetch(langUrl);
-    if (!langResponse.ok) {
-      throw new Error(`HTTP error! status: ${langResponse.status}`);
-    }
-
-    const langData = await langResponse.json();
-    console.log("Language-specific interpretation data received:", langData);
-    
-    if (parseInt(surahId) === 114) {
-      console.log(`✅ Surah 114 language endpoint returned:`, langData);
-    }
-    
-    return langData;
-  } catch (langError) {
-    console.error("All interpretation endpoints failed:", langError);
-    if (parseInt(surahId) === 114) {
-      console.log(`❌ All Surah 114 endpoints failed. This may be expected if no interpretation data exists for this surah.`);
-    }
-    console.warn(
-      `Interpretation not available for Surah ${surahId}, Verse ${verseId}.`
-    );
-    return null; // Graceful fallback
-  }
+  console.warn(`Interpretation not available for Surah ${surahId}, Verse ${verseId}.`);
+  return null; // Graceful fallback
 };
 
 
@@ -1812,8 +1800,19 @@ export const fetchInterpretationRange = async (
   interpretationNo = 1,
   language = "en"
 ) => {
-  // For ranges, use the range-based endpoint
-  const url = `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}/${language}`;
+  // Normalize language to API expectation
+  const langParam = (() => {
+    if (!language) return undefined;
+    const l = String(language).trim();
+    if (l.toLowerCase() === 'en' || l === 'E') return 'E';
+    if (l.toLowerCase() === 'mal') return undefined; // default Malayalam, no suffix
+    return l;
+  })();
+
+  // For ranges, use the range-based endpoint; append lang only if needed
+  const url = langParam
+    ? `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}/${langParam}`
+    : `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}`;
 
   try {
     console.log("Fetching range interpretation from:", url);

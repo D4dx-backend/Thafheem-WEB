@@ -32,6 +32,14 @@ export const ThemeProvider = ({ children }) => {
     return savedViewType || "Ayah Wise";
   });
 
+  // Selected translation language for APIs (Malayalam default)
+  // Store API code variants: 'mal' for Malayalam, 'E' for English
+  const [translationLanguage, setTranslationLanguage] = useState(() => {
+    const savedLang = localStorage.getItem("translationLanguage");
+    // Backward compatible default to Malayalam
+    return savedLang || "mal";
+  });
+
   // Apply theme to document
   useEffect(() => {
     const root = window.document.documentElement; // <html>
@@ -61,6 +69,10 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem("viewType", viewType);
   }, [viewType]);
 
+  useEffect(() => {
+    localStorage.setItem("translationLanguage", translationLanguage);
+  }, [translationLanguage]);
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -76,7 +88,9 @@ export const ThemeProvider = ({ children }) => {
       translationFontSize, 
       setTranslationFontSize,
       viewType,
-      setViewType
+      setViewType,
+      translationLanguage,
+      setTranslationLanguage
     }}>
       {children}
     </ThemeContext.Provider>

@@ -48,6 +48,7 @@ import logo from "../assets/logo.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
+import { useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { auth } from "../firebase";
@@ -55,7 +56,7 @@ import { signOut } from "firebase/auth";
 import SettingsDrawer from "../pages/Settings";
 
 const HomepageNavbar = () => {
-  const { theme, toggleTheme, setViewType } = useTheme();
+  const { theme, toggleTheme, setViewType, translationLanguage, setTranslationLanguage } = useTheme();
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -251,7 +252,16 @@ const HomepageNavbar = () => {
           ></div>
           <div className="relative z-10 max-h-[90vh] overflow-auto">
             <div className="p-4">
-              <LanguageConsole onClose={() => setIsLanguageOpen(false)} />
+              <LanguageConsole 
+                onClose={() => setIsLanguageOpen(false)} 
+                selectedLanguage={translationLanguage === 'E' ? 'English' : 'Malayalam'}
+                onLanguageSelect={(lang) => {
+                  // Map UI selection to API language codes
+                  const code = lang.code?.toLowerCase() === 'en' ? 'E' : 'mal';
+                  setTranslationLanguage(code);
+                  setIsLanguageOpen(false);
+                }}
+              />
             </div>
           </div>
         </div>

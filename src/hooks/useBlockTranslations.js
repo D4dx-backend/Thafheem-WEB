@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchAyaTranslation } from '../api/apifunction';
+import { useTheme } from '../context/ThemeContext';
 
 // In-memory cache for block translations
 // Structure: { 'surahId-range': translationData }
@@ -14,12 +15,13 @@ export const useBlockTranslations = (surahId) => {
   const [translations, setTranslations] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { translationLanguage } = useTheme();
 
   /**
    * Fetch a single block translation with caching
    */
   const fetchBlockTranslation = useCallback(async (range) => {
-    const cacheKey = `${surahId}-${range}`;
+    const cacheKey = `${surahId}-${range}-${translationLanguage || 'mal'}`;
     
     // Return cached data if available
     if (blockTranslationCache.has(cacheKey)) {
@@ -28,7 +30,7 @@ export const useBlockTranslations = (surahId) => {
 
     // Fetch from API
     try {
-      const data = await fetchAyaTranslation(parseInt(surahId), range);
+      const data = await fetchAyaTranslation(parseInt(surahId), range, translationLanguage || 'mal');
       
       // Cache the result
       if (blockTranslationCache.size >= MAX_CACHE_SIZE) {
@@ -43,7 +45,7 @@ export const useBlockTranslations = (surahId) => {
       console.error(`Error fetching translation for ${cacheKey}:`, err);
       throw err;
     }
-  }, [surahId]);
+  }, [surahId, translationLanguage]);
 
   /**
    * Fetch multiple block translations in batches with caching
@@ -117,9 +119,9 @@ export const useBlockTranslations = (surahId) => {
    * Check if a block is cached
    */
   const isCached = useCallback((range) => {
-    const cacheKey = `${surahId}-${range}`;
+    const cacheKey = `${surahId}-${range}-${translationLanguage || 'mal'}`;
     return blockTranslationCache.has(cacheKey);
-  }, [surahId]);
+  }, [surahId, translationLanguage]);
 
   /**
    * Get cache statistics

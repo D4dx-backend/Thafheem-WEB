@@ -1,18 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { fetchInterpretation } from "../api/apifunction";
+import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
 
 const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onClose }) => {
-  const { translationFontSize } = useTheme();
+  const { translationFontSize, translationLanguage } = useTheme();
   const { toasts, removeToast } = useToast();
 
   // State management
   const [interpretationData, setInterpretationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const rangesCacheRef = useRef(new Map()); // key: `${surahId}-E` -> ranges
+
+  const isEmptyInterpretation = (resp) => {
+    if (!resp) return true;
+    const items = Array.isArray(resp) ? resp : [resp];
+    if (items.length === 0) return true;
+    const getText = (o) => {
+      if (!o || typeof o !== 'object') return '';
+      return (
+        o.Interpretation || o.interpretation || o.AudioIntrerptn || o.text || o.content || ''
+      );
+    };
+    const someText = items.some((o) => {
+      const t = getText(o);
+      return typeof t === 'string' && t.trim().length > 0;
+    });
+    return !someText;
+  };
 
   // Fetch interpretation data when component mounts or props change
   useEffect(() => {
@@ -25,35 +44,67 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
 
         console.log(`🔄 Loading interpretation ${interpretationNo} for ${surahId}:${verseId} in ${language}`);
 
-        const interpretationResponse = await fetchInterpretation(
-          parseInt(surahId), 
-          parseInt(verseId), 
-          interpretationNo || 1, 
-          language || "en"
-        ).catch((error) => {
-          // Special handling for Surah 114
-          if (parseInt(surahId) === 114) {
-            console.log(`🔍 Interpretation fetch failed for Surah 114, Verse ${verseId}. This may be expected if no interpretation data exists.`);
+        const effectiveLang = language || (translationLanguage === 'E' ? 'E' : 'mal');
+
+        let interpretationResponse = null;
+
+        if (effectiveLang === 'E') {
+          // 1) Try single-ayah English endpoint (fast path)
+          try {
+            interpretationResponse = await fetchInterpretation(
+              parseInt(surahId),
+              parseInt(verseId),
+              parseInt(verseId), // interpretNo == ayahId for this endpoint
+              'E'
+            );
+          } catch (_) {}
+
+          // 2) If empty, try mapped English range with the requested interpretation number (one call)
+          if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) {
+            try {
+              let ranges = rangesCacheRef.current.get(`${surahId}-E`);
+              if (!ranges) {
+                ranges = await fetchAyaRanges(parseInt(surahId), 'E');
+                rangesCacheRef.current.set(`${surahId}-E`, ranges || []);
+              }
+              const v = parseInt(verseId);
+              const match = Array.isArray(ranges) ? ranges.find(r => {
+                const from = r.AyaFrom || r.ayafrom || r.from;
+                const to = r.AyaTo || r.ayato || r.to || from;
+                return from != null && to != null && v >= from && v <= to;
+              }) : null;
+              const rangeStr = match ? `${match.AyaFrom || match.ayafrom || match.from}-${match.AyaTo || match.ayato || match.to || (match.AyaFrom || match.ayafrom || match.from)}` : `${v}-${v}`;
+              interpretationResponse = await fetchInterpretationRange(
+                parseInt(surahId),
+                rangeStr,
+                interpretationNo || 1,
+                'E'
+              );
+            } catch (_) {}
           }
-          throw error;
-        });
+        }
+
+        // 3) Fallback to verse-based fetch (Malayalam or if English strategies failed)
+        if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) {
+          interpretationResponse = await fetchInterpretation(
+            parseInt(surahId),
+            parseInt(verseId),
+            interpretationNo || 1,
+            effectiveLang
+          );
+        }
+
+        if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) throw new Error('No interpretation content available');
 
         console.log(`✅ Received interpretation data:`, interpretationResponse);
 
         // Handle different response structures
-        if (interpretationResponse) {
-          if (Array.isArray(interpretationResponse)) {
-            setInterpretationData(interpretationResponse);
-          } else if (
-            interpretationResponse.data &&
-            Array.isArray(interpretationResponse.data)
-          ) {
-            setInterpretationData(interpretationResponse.data);
-          } else if (typeof interpretationResponse === "object") {
-            setInterpretationData([interpretationResponse]);
-          } else {
-            setInterpretationData(null);
-          }
+        if (Array.isArray(interpretationResponse)) {
+          setInterpretationData(interpretationResponse);
+        } else if (interpretationResponse?.data && Array.isArray(interpretationResponse.data)) {
+          setInterpretationData(interpretationResponse.data);
+        } else if (typeof interpretationResponse === "object") {
+          setInterpretationData([interpretationResponse]);
         } else {
           setInterpretationData(null);
         }
@@ -66,7 +117,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     };
 
     loadInterpretationData();
-  }, [surahId, verseId, interpretationNo, language]);
+  }, [surahId, verseId, interpretationNo, language, translationLanguage]);
 
   // Extract interpretation text from data
   const extractInterpretationText = (item) => {
@@ -76,7 +127,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     // Common possible fields for interpretation content
     const preferredKeys = [
       "interpret_text",
-      "InterpretText", 
+      "InterpretText",
       "Interpret_Text",
       "interpretation",
       "Interpretation",

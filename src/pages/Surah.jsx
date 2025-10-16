@@ -38,10 +38,12 @@ import {
   fetchInterpretation,
   fetchPageRanges,
   getSurahAyahCount,
+  fetchAyaTranslation,
+  fetchAyaRanges,
 } from "../api/apifunction";
 
 const Surah = () => {
-  const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { quranFont, fontSize, translationFontSize, translationLanguage } = useTheme();
   const { user } = useAuth();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
@@ -77,6 +79,9 @@ const Surah = () => {
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
   const audioRefForCleanup = useRef(null); // Track audio for cleanup
+
+  // In-memory cache for English per-ayah translation map
+  const englishAyahCacheRef = useRef(new Map()); // key: `${surahId}-E` -> Map(ayah->text)
 
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -140,12 +145,10 @@ const Surah = () => {
         setError(null);
 
         const [
-          ayahResponse,
           surahNamesResponse,
           arabicResponse,
           pageRangesResponse,
         ] = await Promise.all([
-          fetchAyahAudioTranslations(parseInt(surahId)),
           listSurahNames(),
           fetchArabicVerses(parseInt(surahId)),
           fetchPageRanges(),
@@ -163,57 +166,124 @@ const Surah = () => {
           return maxAyah;
         };
 
-        // Handle null or empty responses from failed API calls
+        // Compute verse count
+        let verseCount = getVerseCountFromPageRanges(
+          surahId,
+          pageRangesResponse || []
+        );
+
         if (
-          !ayahResponse ||
-          !Array.isArray(ayahResponse) ||
-          ayahResponse.length === 0
+          verseCount === 7 &&
+          surahNamesResponse &&
+          Array.isArray(surahNamesResponse)
         ) {
-          console.warn(
-            "Ayah response is null, not an array, or empty, using fallback data"
+          const currentSurahForCount = surahNamesResponse.find(
+            (s) => s.id === parseInt(surahId)
           );
-
-          // Get the correct verse count from page ranges API
-          let verseCount = getVerseCountFromPageRanges(
-            surahId,
-            pageRangesResponse || []
-          );
-
-          // Fallback to surah names data if page ranges failed
-          if (
-            verseCount === 7 &&
-            surahNamesResponse &&
-            Array.isArray(surahNamesResponse)
-          ) {
-            const currentSurah = surahNamesResponse.find(
-              (s) => s.id === parseInt(surahId)
-            );
-            if (currentSurah && currentSurah.ayahs) {
-              verseCount = currentSurah.ayahs;
-            }
+          if (currentSurahForCount && currentSurahForCount.ayahs) {
+            verseCount = currentSurahForCount.ayahs;
           }
+        }
 
-          const fallbackAyahData = Array.from(
-            { length: verseCount },
-            (_, index) => ({
-              number: index + 1,
-              ArabicText: "",
-              Translation: `Translation not available for verse ${
-                index + 1
-              }. The API server may be temporarily unavailable. Please try again later.`,
-            })
-          );
-          setAyahData(fallbackAyahData);
+        // Translation source depends on selected language
+        if (translationLanguage === 'E') {
+          // Use cache if available
+          const cacheKey = `${surahId}-E`;
+          const cachedMap = englishAyahCacheRef.current.get(cacheKey);
+          if (cachedMap) {
+            const formatted = Array.from({ length: verseCount }, (_, i) => ({
+              number: i + 1,
+              ArabicText: '',
+              Translation: cachedMap.get(i + 1) || '',
+            }));
+            setAyahData(formatted);
+          } else {
+            // Fetch ranges
+            const ranges = await fetchAyaRanges(parseInt(surahId), 'E').catch(() => []);
+            const htmlToPlain = (html) => {
+              const div = document.createElement('div');
+              div.innerHTML = html || '';
+              div.querySelectorAll('sup').forEach(s => s.remove());
+              return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+            };
+
+            const surahNum = parseInt(surahId);
+            const perAyah = new Map();
+
+            // Concurrency limiter
+            const limit = 4;
+            let i = 0;
+            while (i < ranges.length) {
+              const chunk = ranges.slice(i, i + limit);
+              await Promise.all(chunk.map(async (r) => {
+                const from = r.AyaFrom || r.ayafrom || r.from;
+                const to = r.AyaTo || r.ayato || r.to || from;
+                if (!from || !to) return;
+                const rangeStr = `${from}-${to}`;
+                try {
+                  const tData = await fetchAyaTranslation(parseInt(surahId), rangeStr, 'E');
+                  const raw = Array.isArray(tData) && tData.length > 0
+                    ? (tData[0].TranslationText || tData[0].translationText || tData[0].text || '')
+                    : (tData?.TranslationText || tData?.translationText || tData?.text || '');
+                  const content = htmlToPlain(raw);
+                  const re = new RegExp(`\\(\\s*${surahNum}\\s*:\\s*(\\d+)\\s*\\)`, 'g');
+                  let m;
+                  const idxs = [];
+                  while ((m = re.exec(content)) !== null) {
+                    idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
+                  }
+                  if (idxs.length === 0) {
+                    const reAlt = /\((\d+)\)/g;
+                    while ((m = reAlt.exec(content)) !== null) {
+                      idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
+                    }
+                  }
+                  if (idxs.length > 0) {
+                    for (let j = 0; j < idxs.length; j++) {
+                      const start = idxs[j].index;
+                      const end = j + 1 < idxs.length ? idxs[j + 1].index : content.length;
+                      const ay = idxs[j].ayah;
+                      const seg = content.slice(start, end).replace(re, '').replace(/\((\d+)\)/g, '').trim();
+                      if (ay >= from && ay <= to) perAyah.set(ay, seg);
+                    }
+                  }
+                  if (idxs.length === 0) {
+                    perAyah.set(from, content);
+                  }
+                } catch (_) { /* skip failed block */ }
+              }));
+              i += limit;
+            }
+
+            // Cache and set state
+            englishAyahCacheRef.current.set(cacheKey, perAyah);
+            const formattedAyahData = Array.from({ length: verseCount }, (_, k) => ({
+              number: k + 1,
+              ArabicText: '',
+              Translation: perAyah.get(k + 1) || '',
+            }));
+            setAyahData(formattedAyahData);
+          }
         } else {
-          const formattedAyahData = ayahResponse.map((ayah) => ({
-            number: ayah.contiayano || 0,
-            ArabicText: "",
-            Translation: (ayah.AudioText || "")
-              .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-              .replace(/\s+/g, " ") // Clean up multiple spaces
-              .trim(),
-          }));
-          setAyahData(formattedAyahData);
+          const ayahResponse = await fetchAyahAudioTranslations(parseInt(surahId));
+          if (!ayahResponse || !Array.isArray(ayahResponse) || ayahResponse.length === 0) {
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: `Translation not available for verse ${index + 1}. The API server may be temporarily unavailable. Please try again later.`,
+            }));
+            setAyahData(fallbackAyahData);
+          } else {
+            const formattedAyahData = ayahResponse.map((ayah) => ({
+              number: ayah.contiayano || 0,
+              ArabicText: '',
+              Translation: (ayah.AudioText || '')
+                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim(),
+            }));
+            setAyahData(formattedAyahData);
+          }
         }
 
         setArabicVerses(arabicResponse || []);
@@ -235,7 +305,7 @@ const Surah = () => {
     };
 
     loadSurahData();
-  }, [surahId]);
+  }, [surahId, translationLanguage]);
 
   // Load bookmarked verses for signed-in users
   useEffect(() => {

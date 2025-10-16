@@ -13,7 +13,7 @@ import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
 
 const AyahModal = ({ surahId, verseId, onClose }) => {
-  const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { quranFont, fontSize, translationFontSize, translationLanguage } = useTheme();
   const { toasts, removeToast } = useToast();
 
   // State management
@@ -56,7 +56,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           fetchSurahs(),
           fetchArabicVerses(parseInt(surahId)),
           fetchAyahAudioTranslations(parseInt(surahId), currentVerseId),
-          fetchInterpretation(parseInt(surahId), currentVerseId, 1, "en").catch(
+          fetchInterpretation(
+            parseInt(surahId),
+            currentVerseId,
+            1,
+            translationLanguage === 'E' ? 'E' : 'mal'
+          ).catch(
             (error) => {
               console.log("Interpretation API error:", error);
               // Special handling for Surah 114

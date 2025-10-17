@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urdu Translation Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button {
+            background-color: #19B5DD;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #17a2b8; }
+        .footnote {
+            background-color: #19B5DD;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .footnote:hover { background-color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>Urdu Translation Service Test</h1>
+    
+    <div class="test-section loading" id="status">
+        <h3>Status: Loading SQL.js...</h3>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Controls</h3>
+        <button onclick="testDatabaseConnection()">Test Database Connection</button>
+        <button onclick="testTranslation()">Test Translation (Surah 1, Ayah 1)</button>
+        <button onclick="testFootnote()">Test Footnote (ID: 182954)</button>
+        <button onclick="testFootnoteParsing()">Test Footnote Parsing</button>
+    </div>
+
+    <div class="test-section" id="results">
+        <h3>Test Results</h3>
+        <div id="output">Click a test button to see results...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>Sample Translation with Footnotes</h3>
+        <div id="sampleTranslation">
+            <p>اللہ کےنام سے جو رحمان و رحیم ہے<sup foot_note="182954">1</sup></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        let urduService = null;
+
+        // Initialize the service
+        async function initService() {
+            try {
+                const { default: UrduTranslationService } = await import('./src/services/urduTranslationService.js');
+                urduService = new UrduTranslationService();
+                updateStatus('success', 'SQL.js loaded successfully!');
+            } catch (error) {
+                updateStatus('error', `Failed to load service: ${error.message}`);
+            }
+        }
+
+        function updateStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `test-section ${type}`;
+            statusDiv.innerHTML = `<h3>Status: ${message}</h3>`;
+        }
+
+        function updateOutput(message) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = `<pre>${message}</pre>`;
+        }
+
+        async function testDatabaseConnection() {
+            if (!urduService) {
+                updateOutput('Error: Service not initialized');
+                return;
+            }
+
+            try {
+                updateOutput('Testing database connection...');
+                const db = await urduService.initUrduDB();
+                updateOutput('✅ Database connection successful!\n\nDatabase info:\n- Type: SQLite\n- Tables: urdu_tranlations, urdu_footnotes');
+            } catch (error) {
+                updateOutput(`❌ Database connection failed: ${error.message}`);
+            }
+        }
+
+        async function testTranslation() {
+            if (!urduService) {
+                updateOutput('Error: Service not initialized');
+                return;
+            }
+
+            try {
+                updateOutput('Testing translation for Surah 1, Ayah 1...');
+                const translation = await urduService.getAyahTranslation(1, 1);
+                updateOutput(`✅ Translation retrieved successfully!\n\nTranslation:\n${translation}`);
+            } catch (error) {
+                updateOutput(`❌ Translation test failed: ${error.message}`);
+            }
+        }
+
+        async function testFootnote() {
+            if (!urduService) {
+                updateOutput('Error: Service not initialized');
+                return;
+            }
+
+            try {
+                updateOutput('Testing footnote explanation for ID 182954...');
+                const explanation = await urduService.getFootnoteExplanation('182954');
+                updateOutput(`✅ Footnote explanation retrieved successfully!\n\nExplanation:\n${explanation}`);
+            } catch (error) {
+                updateOutput(`❌ Footnote test failed: ${error.message}`);
+            }
+        }
+
+        async function testFootnoteParsing() {
+            if (!urduService) {
+                updateOutput('Error: Service not initialized');
+                return;
+            }
+
+            try {
+                updateOutput('Testing footnote parsing...');
+                const sampleText = 'اللہ کےنام سے جو رحمان و رحیم ہے<sup foot_note="182954">1</sup>';
+                const parsed = urduService.parseUrduTranslationWithClickableFootnotes(sampleText, 1, 1);
+                
+                // Update the sample translation div
+                document.getElementById('sampleTranslation').innerHTML = `<p>${parsed}</p>`;
+                
+                updateOutput(`✅ Footnote parsing successful!\n\nOriginal:\n${sampleText}\n\nParsed:\n${parsed}`);
+            } catch (error) {
+                updateOutput(`❌ Footnote parsing test failed: ${error.message}`);
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initService);
+    </script>
+</body>
+</html>

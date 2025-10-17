@@ -41,6 +41,7 @@ import {
 } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
+import urduTranslationService from "../services/urduTranslationService";
 import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 
@@ -76,6 +77,11 @@ const Surah = () => {
   const [showHindiFootnoteModal, setShowHindiFootnoteModal] = useState(false);
   const [hindiFootnoteContent, setHindiFootnoteContent] = useState('');
   const [hindiFootnoteLoading, setHindiFootnoteLoading] = useState(false);
+
+  // Urdu footnote modal state
+  const [showUrduFootnoteModal, setShowUrduFootnoteModal] = useState(false);
+  const [urduFootnoteContent, setUrduFootnoteContent] = useState('');
+  const [urduFootnoteLoading, setUrduFootnoteLoading] = useState(false);
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
@@ -290,6 +296,42 @@ const Surah = () => {
               number: index + 1,
               ArabicText: '',
               Translation: 'Hindi translation service unavailable. Please try again later.'
+            }));
+            setAyahData(fallbackAyahData);
+          }
+        } else if (translationLanguage === 'ur') {
+          // Urdu translations from local SQLite database
+          try {
+            await urduTranslationService.initUrduDB();
+            // Build list of translations per ayah
+            const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
+            const items = await Promise.all(
+              verseNumbers.map(async (v) => {
+                const rawTranslation = await urduTranslationService.getAyahTranslation(parseInt(surahId), v) || '';
+                
+                // Store both raw and parsed versions
+                const parsedTranslation = urduTranslationService.parseUrduTranslationWithClickableFootnotes(
+                  rawTranslation, 
+                  parseInt(surahId), 
+                  v
+                );
+                
+                return {
+                  number: v,
+                  ArabicText: '',
+                  Translation: parsedTranslation,
+                  RawTranslation: rawTranslation // Store raw version for re-parsing if needed
+                };
+              })
+            );
+            setAyahData(items);
+            
+          } catch (error) {
+            console.error('Error fetching Urdu translations:', error);
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: 'Urdu translation service unavailable. Please try again later.'
             }));
             setAyahData(fallbackAyahData);
           }
@@ -845,6 +887,43 @@ const Surah = () => {
     };
   }, [translationLanguage, ayahData]); // Added ayahData as dependency
 
+  // Handle clicks on Urdu footnotes
+  useEffect(() => {
+    const handleUrduFootnoteClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.target.closest(".urdu-footnote-link");
+      if (target) {
+        const footnoteId = target.getAttribute("data-footnote-id");
+        const footnoteNumber = target.getAttribute("data-footnote-number");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+        
+        if (footnoteId && surahNo && ayahNo) {
+          setUrduFootnoteLoading(true);
+          setShowUrduFootnoteModal(true);
+          setUrduFootnoteContent('Loading...');
+          
+          try {
+            const explanation = await urduTranslationService.getFootnoteExplanation(footnoteId);
+            setUrduFootnoteContent(explanation);
+          } catch (error) {
+            console.error('❌ Error loading Urdu footnote:', error);
+            setUrduFootnoteContent(`Error loading explanation: ${error.message}`);
+          } finally {
+            setUrduFootnoteLoading(false);
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleUrduFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleUrduFootnoteClick);
+    };
+  }, [translationLanguage, ayahData]);
+
   // Debug modal state changes
   useEffect(() => {
   }, [showHindiFootnoteModal]);
@@ -1358,12 +1437,12 @@ const Surah = () => {
                   )}
                 </div>
                 <div className="flex justify-end">
-                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' ? 'w-[55px]' : 'w-[115px]'}`}>
+                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'ur' ? 'w-[55px]' : 'w-[115px]'}`}>
                     <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
                       Ayah
                     </button>
-                    {/* Hide blockwise for Tamil and Hindi */}
-                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                    {/* Hide blockwise for Tamil, Hindi, and Urdu */}
+                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && (
                       <button
                         className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
                         onClick={() => navigate(`/blockwise/${surahId}`)}
@@ -1458,8 +1537,8 @@ const Surah = () => {
                       <button className="px-3 sm:px-4 py-1.5 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
                         Ayah wise
                       </button>
-                      {/* Hide blockwise for Tamil and Hindi */}
-                      {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                      {/* Hide blockwise for Tamil, Hindi, and Urdu */}
+                      {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && (
                         <button
                           className="px-3 sm:px-4 py-1.5 text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs sm:text-sm font-medium hover:text-gray-700 dark:hover:text-white transition-colors"
                           onClick={() => navigate(`/blockwise/${surahId}`)}
@@ -1626,6 +1705,16 @@ const Surah = () => {
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-hindi-translation={verse.RawTranslation || verse.Translation}
+                          data-surah={surahId}
+                          data-ayah={verse.number}
+                          data-parsed={verse.Translation}
+                        />
+                      ) : translationLanguage === 'ur' ? (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                          dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                          data-urdu-translation={verse.RawTranslation || verse.Translation}
                           data-surah={surahId}
                           data-ayah={verse.number}
                           data-parsed={verse.Translation}
@@ -1943,6 +2032,51 @@ const Surah = () => {
                       style={{ fontSize: `${translationFontSize}px` }}
                     >
                       {hindiFootnoteContent}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Urdu Footnote Modal */}
+        {showUrduFootnoteModal && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+            <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Urdu Explanation
+                </h2>
+                <button
+                  onClick={() => setShowUrduFootnoteModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+                {urduFootnoteLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Loading explanation...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                    <div
+                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
+                      style={{ fontSize: `${translationFontSize}px` }}
+                    >
+                      {urduFootnoteContent}
                     </div>
                   </div>
                 )}

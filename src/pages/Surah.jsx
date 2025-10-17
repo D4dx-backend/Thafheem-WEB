@@ -35,15 +35,13 @@ import {
   fetchAyahAudioTranslations,
   listSurahNames,
   fetchArabicVerses,
-  fetchInterpretation,
   fetchPageRanges,
-  getSurahAyahCount,
   fetchAyaTranslation,
   fetchAyaRanges,
 } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
+import hindiTranslationService from "../services/hindiTranslationService";
 import translationCache from "../utils/translationCache";
-import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 
 const Surah = () => {
@@ -59,8 +57,6 @@ const Surah = () => {
   const [copiedVerse, setCopiedVerse] = useState(null);
 
   // State management
-  const [selectedVerse, setSelectedVerse] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showWordByWord, setShowWordByWord] = useState(false);
   const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] =
     useState(null);
@@ -75,12 +71,15 @@ const Surah = () => {
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});
   const [tamilDownloading, setTamilDownloading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  
+  // Hindi footnote modal state
+  const [showHindiFootnoteModal, setShowHindiFootnoteModal] = useState(false);
+  const [hindiFootnoteContent, setHindiFootnoteContent] = useState('');
+  const [hindiFootnoteLoading, setHindiFootnoteLoading] = useState(false);
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
   const [selectedQari, setSelectedQari] = useState('al-afasy');
-  const [audioType, setAudioType] = useState('qirath');
   const [showQariDropdown, setShowQariDropdown] = useState(false);
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
@@ -120,6 +119,46 @@ const Surah = () => {
       return () => clearTimeout(timer);
     }
   }, [location.search, loading]); // Depend on loading to ensure data is ready
+
+  // Additional effect to ensure Hindi footnotes are properly rendered after component mount
+  useEffect(() => {
+    if (translationLanguage === 'hi' && ayahData.length > 0 && !loading) {
+      // Run multiple checks with increasing delays to ensure footnotes are properly rendered
+      const timers = [200, 500, 1000, 2000].map(delay => 
+        setTimeout(() => {
+          const translationElements = document.querySelectorAll('p[data-hindi-translation]');
+          let reParsedCount = 0;
+          
+          translationElements.forEach((element, index) => {
+            const rawText = element.getAttribute('data-hindi-translation');
+            const surahNo = element.getAttribute('data-surah');
+            const ayahNo = element.getAttribute('data-ayah');
+            const currentHTML = element.innerHTML;
+            
+            // Check for raw HTML in both raw text and current HTML
+            const hasRawHTML = rawText && (rawText.includes('<sup class="f-note">') || rawText.includes('<sup>'));
+            const hasRawHTMLInCurrent = currentHTML.includes('<sup class="f-note">') || currentHTML.includes('<sup>');
+            const hasNoClickableFootnotes = !element.querySelector('.hindi-footnote-link');
+            
+            if ((hasRawHTML || hasRawHTMLInCurrent) && hasNoClickableFootnotes) {
+              
+              const parsed = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
+                rawText || currentHTML, 
+                parseInt(surahNo), 
+                parseInt(ayahNo)
+              );
+              element.innerHTML = parsed;
+              reParsedCount++;
+            }
+          });
+          
+          // Re-parsed Hindi translation elements
+        }, delay)
+      );
+      
+      return () => timers.forEach(timer => clearTimeout(timer));
+    }
+  }, [translationLanguage, ayahData, loading]);
 
   // Cleanup audio when component unmounts (navigating away)
   useEffect(() => {
@@ -214,6 +253,43 @@ const Surah = () => {
               number: index + 1,
               ArabicText: '',
               Translation: `Tamil translation service unavailable. Please try again later.`,
+            }));
+            setAyahData(fallbackAyahData);
+          }
+        } else if (translationLanguage === 'hi') {
+          // Hindi translations from local SQLite database
+          try {
+            await hindiTranslationService.initHindiDB();
+            // Build list of translations per ayah
+            const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
+            const items = await Promise.all(
+              verseNumbers.map(async (v) => {
+                const rawTranslation = await hindiTranslationService.getAyahTranslation(parseInt(surahId), v) || '';
+                
+                // Store both raw and parsed versions
+                const parsedTranslation = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
+                  rawTranslation, 
+                  parseInt(surahId), 
+                  v
+                );
+                
+                
+                return {
+                  number: v,
+                  ArabicText: '',
+                  Translation: parsedTranslation,
+                  RawTranslation: rawTranslation // Store raw version for re-parsing if needed
+                };
+              })
+            );
+            setAyahData(items);
+            
+          } catch (error) {
+            console.error('Error fetching Hindi translations:', error);
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: 'Hindi translation service unavailable. Please try again later.'
             }));
             setAyahData(fallbackAyahData);
           }
@@ -314,6 +390,7 @@ const Surah = () => {
                 
                 
               } catch (error) {
+                console.error('Error processing translation range:', error);
               }
             };
             
@@ -379,7 +456,8 @@ const Surah = () => {
                           try {
                             const data = await fetchAyaTranslation(surahToPreload, rangeStr, 'E');
                             await translationCache.setCachedTranslation(surahToPreload, rangeStr, data, 'E');
-                          } catch (_) { /* ignore preload errors */ }
+                          } catch (preloadError) { 
+                  }
                         }
                       }));
                     }
@@ -501,7 +579,7 @@ const Surah = () => {
       window.removeEventListener("hashchange", handleScrollToVerse);
       window.removeEventListener("popstate", handleScrollToVerse);
     };
-  }, [loading, ayahData, surahId, window.location.hash]);
+  }, [loading, ayahData, surahId]);
 
   const handleWordByWordClick = (verseNumber) => {
     setSelectedVerseForWordByWord(verseNumber);
@@ -529,6 +607,7 @@ const Surah = () => {
 
       // Special handling for Surah 114
       if (parseInt(surahId) === 114) {
+        // Add any special logic for Surah 114 if needed
       }
 
       // Open the AyahModal instead of navigating
@@ -629,6 +708,149 @@ const Surah = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [surahId]);
 
+  // Handle clicks on Hindi footnotes and ensure footnotes are always clickable
+  useEffect(() => {
+    const handleHindiFootnoteClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.target.closest(".hindi-footnote-link");
+      if (target) {
+        
+        const footnoteNumber = target.getAttribute("data-footnote");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+        
+        
+        if (footnoteNumber && surahNo && ayahNo) {
+          setHindiFootnoteLoading(true);
+          setShowHindiFootnoteModal(true);
+          setHindiFootnoteContent('Loading...');
+          
+          try {
+            const explanation = await hindiTranslationService.getExplanationByFootnote(
+              parseInt(surahNo), 
+              parseInt(ayahNo), 
+              parseInt(footnoteNumber)
+            );
+            setHindiFootnoteContent(explanation);
+          } catch (error) {
+            console.error('Error fetching Hindi footnote explanation:', error);
+            setHindiFootnoteContent(`Error loading explanation: ${error.message}`);
+          } finally {
+            setHindiFootnoteLoading(false);
+          }
+        } else {
+          console.error('Missing footnote data:', { footnoteNumber, surahNo, ayahNo });
+        }
+      }
+    };
+
+    // Function to ensure all Hindi footnotes are clickable
+    const ensureHindiFootnotesClickable = () => {
+      if (translationLanguage === 'hi' && ayahData.length > 0) {
+        
+        // Find all translation elements that might have raw HTML footnotes
+        const translationElements = document.querySelectorAll('p[data-hindi-translation]');
+        let reParsedCount = 0;
+        
+        translationElements.forEach((element, index) => {
+          const rawText = element.getAttribute('data-hindi-translation');
+          const surahNo = element.getAttribute('data-surah');
+          const ayahNo = element.getAttribute('data-ayah');
+          
+          // Check if this element has raw HTML footnotes that need parsing
+          // Also check if the current innerHTML contains raw HTML tags
+          const currentHTML = element.innerHTML;
+          const hasRawHTML = rawText && (rawText.includes('<sup class="f-note">') || rawText.includes('<sup>'));
+          const hasRawHTMLInCurrent = currentHTML.includes('<sup class="f-note">') || currentHTML.includes('<sup>');
+          const hasNoClickableFootnotes = !element.querySelector('.hindi-footnote-link');
+          
+          if ((hasRawHTML || hasRawHTMLInCurrent) && hasNoClickableFootnotes) {
+            
+            const parsed = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
+              rawText || currentHTML, 
+              parseInt(surahNo), 
+              parseInt(ayahNo)
+            );
+            element.innerHTML = parsed;
+            reParsedCount++;
+          }
+        });
+        
+        // Re-parsed Hindi translation elements
+      }
+    };
+
+    // Add CSS for hover and active effects
+    const style = document.createElement('style');
+    style.textContent = `
+      .hindi-footnote-link:hover {
+        background-color: #0891b2 !important;
+        transform: scale(1.05) !important;
+      }
+      .hindi-footnote-link:active {
+        background-color: #0e7490 !important;
+        transform: scale(0.95) !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Run the check immediately and then periodically
+    ensureHindiFootnotesClickable();
+    const interval = setInterval(ensureHindiFootnotesClickable, 1000); // Increased interval to 1 second
+
+    // Add global function for manual testing
+    window.testHindiFootnotes = () => {
+      ensureHindiFootnotesClickable();
+    };
+
+    // Add MutationObserver to watch for DOM changes and re-parse footnotes
+    const observer = new MutationObserver((mutations) => {
+      let shouldReparse = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' || mutation.type === 'attributes') {
+          // Check if any added nodes contain Hindi translation elements
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.matches && node.matches('p[data-hindi-translation]')) {
+                shouldReparse = true;
+              } else if (node.querySelector && node.querySelector('p[data-hindi-translation]')) {
+                shouldReparse = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (shouldReparse) {
+        setTimeout(ensureHindiFootnotesClickable, 100);
+      }
+    });
+
+    // Start observing
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-hindi-translation']
+    });
+
+    document.addEventListener("click", handleHindiFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleHindiFootnoteClick);
+      document.head.removeChild(style);
+      clearInterval(interval);
+      observer.disconnect();
+    };
+  }, [translationLanguage, ayahData]); // Added ayahData as dependency
+
+  // Debug modal state changes
+  useEffect(() => {
+  }, [showHindiFootnoteModal]);
+
+  // Cache busting comment - force browser refresh
+
   // Keep the navigation functions simple
   const handlePreviousSurah = () => {
     const prevSurahId = parseInt(surahId) - 1;
@@ -664,13 +886,13 @@ const Surah = () => {
   );
 
   const handleCopyVerse = async (arabicText, translation, verseNumber) => {
-    try {
-      const textToCopy = `${arabicText}
+    const textToCopy = `${arabicText}
   
   "${translation}"
   
   — Quran ${surahId}:${verseNumber}`;
 
+    try {
       await navigator.clipboard.writeText(textToCopy);
 
       // Show feedback
@@ -835,10 +1057,6 @@ const Surah = () => {
     setAudioEl(qirathEl);
   };
 
-  // Click handler from UI
-  const handlePlayAyah = (ayahNumber) => {
-    playAyahSequence(ayahNumber);
-  };
 
   const handleAyahPlayPause = (ayahNumber) => {
     // If this ayah is currently playing, toggle pause/resume
@@ -1140,16 +1358,19 @@ const Surah = () => {
                   )}
                 </div>
                 <div className="flex justify-end">
-                  <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' ? 'w-[55px]' : 'w-[115px]'}`}>
                     <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
                       Ayah
                     </button>
-                    <button
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={() => navigate(`/blockwise/${surahId}`)}
-                    >
-                      Block
-                    </button>
+                    {/* Hide blockwise for Tamil and Hindi */}
+                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                      <button
+                        className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                        onClick={() => navigate(`/blockwise/${surahId}`)}
+                      >
+                        Block
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1237,12 +1458,15 @@ const Surah = () => {
                       <button className="px-3 sm:px-4 py-1.5 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
                         Ayah wise
                       </button>
-                      <button
-                        className="px-3 sm:px-4 py-1.5 text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs sm:text-sm font-medium hover:text-gray-700 dark:hover:text-white transition-colors"
-                        onClick={() => navigate(`/blockwise/${surahId}`)}
-                      >
-                        Block wise
-                      </button>
+                      {/* Hide blockwise for Tamil and Hindi */}
+                      {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                        <button
+                          className="px-3 sm:px-4 py-1.5 text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs sm:text-sm font-medium hover:text-gray-700 dark:hover:text-white transition-colors"
+                          onClick={() => navigate(`/blockwise/${surahId}`)}
+                        >
+                          Block wise
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1396,12 +1620,24 @@ const Surah = () => {
 
                     {/* Translation */}
                     <div className="mb-2 sm:mb-3">
-                      <p
-                        className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
-                        style={{ fontSize: `${translationFontSize}px` }}
-                      >
-                        {verse.Translation}
-                      </p>
+                      {translationLanguage === 'hi' ? (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                          dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                          data-hindi-translation={verse.RawTranslation || verse.Translation}
+                          data-surah={surahId}
+                          data-ayah={verse.number}
+                          data-parsed={verse.Translation}
+                        />
+                      ) : (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                        >
+                          {verse.Translation}
+                        </p>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -1668,6 +1904,51 @@ const Surah = () => {
             verseId={selectedVerseForInterpretation}
             onClose={handleAyahModalClose}
           />
+        )}
+
+        {/* Hindi Footnote Modal */}
+        {showHindiFootnoteModal && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+            <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Hindi Explanation
+                </h2>
+                <button
+                  onClick={() => setShowHindiFootnoteModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+                {hindiFootnoteLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Loading explanation...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                    <div
+                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
+                      style={{ fontSize: `${translationFontSize}px` }}
+                    >
+                      {hindiFootnoteContent}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>

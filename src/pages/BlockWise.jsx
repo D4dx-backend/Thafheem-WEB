@@ -840,9 +840,12 @@ const BlockWise = () => {
                   >
                     Ayah wise
                   </button>
-                  <button className="px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
-                    Block wise
-                  </button>
+                  {/* Hide blockwise for Tamil and Hindi */}
+                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                    <button className="px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
+                      Block wise
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -913,16 +916,19 @@ const BlockWise = () => {
                   </select>
                 </div>
                 <div className="flex justify-end sm:hidden">
-                  <div className="flex bg-gray-100 w-[115px] dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' ? 'w-[55px]' : 'w-[115px]'}`}>
                     <button
                       onClick={() => navigate(`/surah/${surahId}`)}
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-xs font-medium hover:text-gray-700 transition-colors"
                     >
                       Ayah
                     </button>
-                    <button className="px-2 sm:px-3 py-1.5 w-[55px] dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Block
-                    </button>
+                    {/* Hide blockwise for Tamil and Hindi */}
+                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && (
+                      <button className="px-2 sm:px-3 py-1.5 w-[55px] dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                        Block
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

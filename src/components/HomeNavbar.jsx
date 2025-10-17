@@ -254,10 +254,19 @@ const HomepageNavbar = () => {
             <div className="p-4">
               <LanguageConsole 
                 onClose={() => setIsLanguageOpen(false)} 
-                selectedLanguage={translationLanguage === 'E' ? 'English' : 'Malayalam'}
+                selectedLanguage={
+                  translationLanguage === 'E' ? 'English' : 
+                  translationLanguage === 'ta' ? 'Tamil' : 
+                  'Malayalam'
+                }
                 onLanguageSelect={(lang) => {
                   // Map UI selection to API language codes
-                  const code = lang.code?.toLowerCase() === 'en' ? 'E' : 'mal';
+                  let code = 'mal'; // default to Malayalam
+                  if (lang.code?.toLowerCase() === 'en') {
+                    code = 'E';
+                  } else if (lang.code?.toLowerCase() === 'ta') {
+                    code = 'ta';
+                  }
                   setTranslationLanguage(code);
                   setIsLanguageOpen(false);
                 }}

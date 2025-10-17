@@ -67,9 +67,7 @@ const DragDropQuiz = () => {
 
       try {
         setLoadingRanges(true);
-        console.log("Loading ayah ranges for surah:", selectedSurahId);
         const ranges = await fetchAyaRanges(selectedSurahId);
-        console.log("Fetched ayah ranges:", ranges);
 
         // Ensure ranges is an array
         const rangesArray = Array.isArray(ranges) ? ranges : [];
@@ -81,7 +79,6 @@ const DragDropQuiz = () => {
           const firstRangeId =
             rangesArray[0].ID !== undefined ? rangesArray[0].ID : 0;
           setSelectedRangeId(firstRangeId);
-          console.log("Auto-selected range ID:", firstRangeId);
         }
       } catch (error) {
         console.error("Failed to load ayah ranges:", error);

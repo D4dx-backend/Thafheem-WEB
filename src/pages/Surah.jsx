@@ -41,6 +41,10 @@ import {
   fetchAyaTranslation,
   fetchAyaRanges,
 } from "../api/apifunction";
+import tamilTranslationService from "../services/tamilTranslationService";
+import translationCache from "../utils/translationCache";
+import { fetchDeduplicated } from "../utils/requestDeduplicator";
+import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize, translationLanguage } = useTheme();
@@ -70,6 +74,8 @@ const Surah = () => {
   const [error, setError] = useState(null);
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});
+  const [tamilDownloading, setTamilDownloading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
@@ -186,7 +192,32 @@ const Surah = () => {
         }
 
         // Translation source depends on selected language
-        if (translationLanguage === 'E') {
+        if (translationLanguage === 'ta') {
+          // Tamil translations from SQLite database (auto-load, no prompt)
+          try {
+            // Ensure DB is initialized; this will mark it as downloaded internally
+            await tamilTranslationService.initDB();
+            const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
+            if (tamilTranslations && tamilTranslations.length > 0) {
+              setAyahData(tamilTranslations);
+            } else {
+              const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+                number: index + 1,
+                ArabicText: '',
+                Translation: `Tamil translation not available for verse ${index + 1}`,
+              }));
+              setAyahData(fallbackAyahData);
+            }
+          } catch (error) {
+            console.error('Error fetching Tamil translations:', error);
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: `Tamil translation service unavailable. Please try again later.`,
+            }));
+            setAyahData(fallbackAyahData);
+          }
+        } else if (translationLanguage === 'E') {
           // Use cache if available
           const cacheKey = `${surahId}-E`;
           const cachedMap = englishAyahCacheRef.current.get(cacheKey);
@@ -210,59 +241,153 @@ const Surah = () => {
             const surahNum = parseInt(surahId);
             const perAyah = new Map();
 
-            // Concurrency limiter
-            const limit = 4;
-            let i = 0;
-            while (i < ranges.length) {
-              const chunk = ranges.slice(i, i + limit);
-              await Promise.all(chunk.map(async (r) => {
-                const from = r.AyaFrom || r.ayafrom || r.from;
-                const to = r.AyaTo || r.ayato || r.to || from;
-                if (!from || !to) return;
-                const rangeStr = `${from}-${to}`;
-                try {
-                  const tData = await fetchAyaTranslation(parseInt(surahId), rangeStr, 'E');
-                  const raw = Array.isArray(tData) && tData.length > 0
-                    ? (tData[0].TranslationText || tData[0].translationText || tData[0].text || '')
-                    : (tData?.TranslationText || tData?.translationText || tData?.text || '');
-                  const content = htmlToPlain(raw);
-                  const re = new RegExp(`\\(\\s*${surahNum}\\s*:\\s*(\\d+)\\s*\\)`, 'g');
-                  let m;
-                  const idxs = [];
-                  while ((m = re.exec(content)) !== null) {
-                    idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
-                  }
-                  if (idxs.length === 0) {
-                    const reAlt = /\((\d+)\)/g;
-                    while ((m = reAlt.exec(content)) !== null) {
-                      idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
-                    }
-                  }
-                  if (idxs.length > 0) {
-                    for (let j = 0; j < idxs.length; j++) {
-                      const start = idxs[j].index;
-                      const end = j + 1 < idxs.length ? idxs[j + 1].index : content.length;
-                      const ay = idxs[j].ayah;
-                      const seg = content.slice(start, end).replace(re, '').replace(/\((\d+)\)/g, '').trim();
-                      if (ay >= from && ay <= to) perAyah.set(ay, seg);
-                    }
-                  }
-                  if (idxs.length === 0) {
-                    perAyah.set(from, content);
-                  }
-                } catch (_) { /* skip failed block */ }
-              }));
-              i += limit;
-            }
 
             // Cache and set state
             englishAyahCacheRef.current.set(cacheKey, perAyah);
-            const formattedAyahData = Array.from({ length: verseCount }, (_, k) => ({
-              number: k + 1,
-              ArabicText: '',
-              Translation: perAyah.get(k + 1) || '',
-            }));
-            setAyahData(formattedAyahData);
+            
+            // Progressive loading: Update state as we process translations
+            const updateAyahData = (currentPerAyah) => {
+              const formattedAyahData = Array.from({ length: verseCount }, (_, k) => ({
+                number: k + 1,
+                ArabicText: '',
+                Translation: currentPerAyah.get(k + 1) || '',
+              }));
+              setAyahData(formattedAyahData);
+            };
+            
+            // Set initial state with empty translations
+            updateAyahData(new Map());
+            
+            // TRUE LAZY LOADING: Load each translation individually and update UI immediately
+            const processTranslationRange = async (r, rangeIndex) => {
+              const from = r.AyaFrom || r.ayafrom || r.from;
+              const to = r.AyaTo || r.ayato || r.to || from;
+              if (!from || !to) return;
+              
+              const rangeStr = `${from}-${to}`;
+              try {
+                // Check cache first
+                let tData = await translationCache.getCachedTranslation(parseInt(surahId), rangeStr, 'E');
+                
+                if (!tData) {
+                  // Cache miss - fetch from API
+                  tData = await fetchAyaTranslation(parseInt(surahId), rangeStr, 'E');
+                  // Cache the result for future use
+                  await translationCache.setCachedTranslation(parseInt(surahId), rangeStr, tData, 'E');
+                }
+                
+                const raw = Array.isArray(tData) && tData.length > 0
+                  ? (tData[0].TranslationText || tData[0].translationText || tData[0].text || '')
+                  : (tData?.TranslationText || tData?.translationText || tData?.text || '');
+                const content = htmlToPlain(raw);
+                const re = new RegExp(`\\(\\s*${surahNum}\\s*:\\s*(\\d+)\\s*\\)`, 'g');
+                let m;
+                const idxs = [];
+                while ((m = re.exec(content)) !== null) {
+                  idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
+                }
+                if (idxs.length === 0) {
+                  const reAlt = /\((\d+)\)/g;
+                  while ((m = reAlt.exec(content)) !== null) {
+                    idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
+                  }
+                }
+                if (idxs.length > 0) {
+                  for (let j = 0; j < idxs.length; j++) {
+                    const start = idxs[j].index;
+                    const end = j + 1 < idxs.length ? idxs[j + 1].index : content.length;
+                    const ay = idxs[j].ayah;
+                    const seg = content.slice(start, end).replace(re, '').replace(/\((\d+)\)/g, '').trim();
+                    if (ay >= from && ay <= to) perAyah.set(ay, seg);
+                  }
+                }
+                if (idxs.length === 0) {
+                  perAyah.set(from, content);
+                }
+                
+                // IMMEDIATE UI UPDATE: Update UI as soon as this range completes
+                updateAyahData(perAyah);
+                
+                // Update progress
+                const progress = Math.round(((rangeIndex + 1) / ranges.length) * 100);
+                setLoadingProgress(progress);
+                
+                
+              } catch (error) {
+              }
+            };
+            
+            // VIEWPORT-BASED LOADING: Load visible content first, then background
+            const prioritizeRanges = (ranges) => {
+              // First 3 ranges are likely visible (above the fold)
+              const visibleRanges = ranges.slice(0, 3);
+              const backgroundRanges = ranges.slice(3);
+              
+              return { visibleRanges, backgroundRanges };
+            };
+            
+            const { visibleRanges, backgroundRanges } = prioritizeRanges(ranges);
+            
+            // Load visible ranges first (high priority)
+            const visiblePromises = visibleRanges.map((r, index) => processTranslationRange(r, index));
+            
+            // Load background ranges after a short delay (low priority)
+            setTimeout(() => {
+              const backgroundPromises = backgroundRanges.map((r, index) => 
+                processTranslationRange(r, index + visibleRanges.length)
+              );
+              
+              Promise.allSettled(backgroundPromises).then((results) => {
+                const successful = results.filter(r => r.status === 'fulfilled').length;
+              });
+            }, 100); // 100ms delay for background loading
+            
+            // Monitor all loading completion
+            Promise.allSettled(visiblePromises).then((results) => {
+              const successful = results.filter(r => r.status === 'fulfilled').length;
+            });
+            
+            // Preload strategy: Preload popular surahs in background
+            const popularSurahs = [1, 2, 18, 36, 67]; // Al-Fatiha, Al-Baqarah, Al-Kahf, Ya-Sin, Al-Mulk
+            const currentSurahNum = parseInt(surahId);
+            
+            // Preload next/previous surah if they're popular
+            const preloadCandidates = [
+              currentSurahNum - 1,
+              currentSurahNum + 1
+            ].filter(num => num >= 1 && num <= 114 && popularSurahs.includes(num));
+            
+            // Background preload (don't await)
+            if (preloadCandidates.length > 0) {
+              preloadCandidates.forEach(surahToPreload => {
+                // Preload in background without blocking UI
+                setTimeout(async () => {
+                  try {
+                    const preloadRanges = await fetchAyaRanges(surahToPreload, 'E').catch(() => []);
+                    if (preloadRanges && preloadRanges.length > 0) {
+                      // Preload first few ranges only to avoid overwhelming
+                      const firstFewRanges = preloadRanges.slice(0, 3);
+                      await Promise.all(firstFewRanges.map(async (r) => {
+                        const from = r.AyaFrom || r.ayafrom || r.from;
+                        const to = r.AyaTo || r.ayato || r.to || from;
+                        if (!from || !to) return;
+                        const rangeStr = `${from}-${to}`;
+                        
+                        // Check if already cached
+                        const cached = await translationCache.getCachedTranslation(surahToPreload, rangeStr, 'E');
+                        if (!cached) {
+                          try {
+                            const data = await fetchAyaTranslation(surahToPreload, rangeStr, 'E');
+                            await translationCache.setCachedTranslation(surahToPreload, rangeStr, data, 'E');
+                          } catch (_) { /* ignore preload errors */ }
+                        }
+                      }));
+                    }
+                  } catch (error) {
+                  }
+                }, 1000); // Delay preload to not interfere with current loading
+              });
+            }
           }
         } else {
           const ayahResponse = await fetchAyahAudioTranslations(parseInt(surahId));
@@ -401,16 +526,9 @@ const Surah = () => {
 
   const handleInterpretationClick = async (verseNumber) => {
     try {
-      console.log(
-        "Opening interpretation for Surah",
-        surahId,
-        "Verse",
-        verseNumber
-      );
 
       // Special handling for Surah 114
       if (parseInt(surahId) === 114) {
-        console.log("🔍 Opening interpretation for Surah 114 (An-Nas)");
       }
 
       // Open the AyahModal instead of navigating
@@ -470,7 +588,6 @@ const Surah = () => {
           return newSet;
         });
         showSuccess("Bookmark removed successfully");
-        console.log("Bookmark removed for verse:", verseKey);
       } else {
         // Add bookmark
         await BookmarkService.addBookmark(
@@ -484,7 +601,6 @@ const Surah = () => {
 
         setBookmarkedVerses((prev) => new Set([...prev, verseKey]));
         showSuccess("Verse bookmarked successfully");
-        console.log("Bookmark added for verse:", verseKey);
       }
     } catch (error) {
       console.error("Error managing bookmark:", error);
@@ -762,6 +878,87 @@ const Surah = () => {
     setAudioEl(null);
   };
 
+  // Handle Tamil database download
+  const handleTamilDownload = async () => {
+    try {
+      setTamilDownloading(true);
+      await tamilTranslationService.downloadDatabase();
+      showSuccess("Tamil database downloaded successfully!");
+      
+      // Reload the surah data to show Tamil translations
+      const loadSurahData = async () => {
+        if (!surahId) return;
+        
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const [surahNamesResponse, arabicResponse, pageRangesResponse] = await Promise.all([
+            listSurahNames(),
+            fetchArabicVerses(parseInt(surahId)),
+            fetchPageRanges(),
+          ]);
+          
+          const getVerseCountFromPageRanges = (surahId, pageRanges) => {
+            const surahRanges = pageRanges.filter(
+              (range) => range.SuraId === parseInt(surahId)
+            );
+            if (surahRanges.length === 0) return 7;
+            const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
+            return maxAyah;
+          };
+          
+          let verseCount = getVerseCountFromPageRanges(surahId, pageRangesResponse || []);
+          
+          if (verseCount === 7 && surahNamesResponse && Array.isArray(surahNamesResponse)) {
+            const currentSurahForCount = surahNamesResponse.find(
+              (s) => s.id === parseInt(surahId)
+            );
+            if (currentSurahForCount && currentSurahForCount.ayahs) {
+              verseCount = currentSurahForCount.ayahs;
+            }
+          }
+          
+          // Now fetch Tamil translations since database is downloaded
+          const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
+          if (tamilTranslations && tamilTranslations.length > 0) {
+            setAyahData(tamilTranslations);
+          } else {
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: `Tamil translation not available for verse ${index + 1}`,
+            }));
+            setAyahData(fallbackAyahData);
+          }
+          
+          setArabicVerses(arabicResponse || []);
+          
+          const currentSurah = surahNamesResponse.find(
+            (s) => s.id === parseInt(surahId)
+          );
+          setSurahInfo(
+            currentSurah
+              ? { arabic: currentSurah.arabic, number: currentSurah.id }
+              : { arabic: "Unknown Surah", number: parseInt(surahId) }
+          );
+        } catch (err) {
+          setError(err.message);
+          console.error("Error fetching surah data:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      await loadSurahData();
+    } catch (error) {
+      console.error('Error downloading Tamil database:', error);
+      showError("Failed to download Tamil database. Please try again.");
+    } finally {
+      setTamilDownloading(false);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -857,6 +1054,35 @@ const Surah = () => {
                 {surahInfo?.arabic || "Loading..."}
               </h1>
 
+              {/* Tamil Download Button */}
+              {translationLanguage === 'ta' && !tamilTranslationService.isDatabaseDownloaded() && (
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="text-center">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      Tamil translation database is not downloaded. Download to view Tamil translations.
+                    </p>
+                    <button
+                      onClick={handleTamilDownload}
+                      disabled={tamilDownloading}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        tamilDownloading
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      }`}
+                    >
+                      {tamilDownloading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Downloading...</span>
+                        </div>
+                      ) : (
+                        'Download Tamil Database'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-3 sm:space-x-4">
                 <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -946,17 +1172,46 @@ const Surah = () => {
                 </div>
               )}
 
-              {/* Surah Title */}
-              <div className="mb-4 sm:mb-6 relative">
-                <h1
-                  className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
-                  style={{
-                    fontFamily: quranFont,
-                    fontSize: `${fontSize + 20}px`, // Increase the base font size by 8px
-                  }}
-                >
-                  {surahInfo?.arabic || `Surah ${surahId}`}
-                </h1>
+                {/* Surah Title */}
+                <div className="mb-4 sm:mb-6 relative">
+                  <h1
+                    className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
+                    style={{
+                      fontFamily: quranFont,
+                      fontSize: `${fontSize + 20}px`, // Increase the base font size by 8px
+                    }}
+                  >
+                    {surahInfo?.arabic || `Surah ${surahId}`}
+                  </h1>
+
+                  {/* Tamil Download Button - Desktop */}
+                  {translationLanguage === 'ta' && !tamilTranslationService.isDatabaseDownloaded() && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                          Tamil translation database is not downloaded. Download to view Tamil translations.
+                        </p>
+                        <button
+                          onClick={handleTamilDownload}
+                          disabled={tamilDownloading}
+                          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                            tamilDownloading
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          }`}
+                        >
+                          {tamilDownloading ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Downloading...</span>
+                            </div>
+                          ) : (
+                            'Download Tamil Database'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Action Icons */}
                 <div className="flex items-center justify-center space-x-3 sm:space-x-4">
@@ -1089,7 +1344,9 @@ const Surah = () => {
         {/* Verses */}
         <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-gray-900">
           <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-            {!loading && ayahData.length === 0 ? (
+            {loading && ayahData.length === 0 ? (
+              <VersesSkeleton count={7} />
+            ) : !loading && ayahData.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400">
                   No ayah data available for this surah.

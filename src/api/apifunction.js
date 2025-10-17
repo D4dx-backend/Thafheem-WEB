@@ -1413,7 +1413,6 @@ export const fetchVersesForPage = async (surahId, pageId) => {
 
     console.log("Fetching all verses for surah:", surahId);
     console.log("Will filter verses:", `${verseStart}-${verseEnd}`);
-    console.log("Page range:", pageRange);
 
     const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
@@ -1566,7 +1565,6 @@ export const fetchAyaRanges = async (surahId, language = 'mal') => {
 export const fetchAyahTranslations = async (surahId, range, language = "E") => {
   try {
     const url = `${AYAH_TRANSLATION_API}/${surahId}/${range}/${language}`;
-    console.log("Fetching ayah translations from:", url);
 
     const response = await fetchWithTimeout(url, {}, 8000);
 
@@ -1575,7 +1573,6 @@ export const fetchAyahTranslations = async (surahId, range, language = "E") => {
     }
 
     const data = await response.json();
-    console.log("Ayah translations data received:", data);
 
     return data;
   } catch (error) {
@@ -1733,7 +1730,6 @@ export const fetchInterpretation = async (
   // Prefer English single-ayah URL first when language is provided
   if (singleAyahLangUrl) {
     try {
-      console.log("📡 Fetching interpretation from:", singleAyahLangUrl);
       const resp = await fetch(singleAyahLangUrl);
       if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
       const data = await resp.json();
@@ -1778,11 +1774,9 @@ export const fetchInterpretation = async (
 
   // Fallback B: range without language
   try {
-    console.log("📡 Fetching interpretation from:", rangeUrl);
     const rangeResponse = await fetch(rangeUrl);
     if (!rangeResponse.ok) throw new Error(`HTTP error! status: ${rangeResponse.status}`);
     const rangeData = await rangeResponse.json();
-    console.log("✅ Interpretation data received:", rangeData);
     return rangeData;
   } catch (rangeError) {
     console.error("All interpretation endpoints failed:", rangeError);
@@ -1815,13 +1809,11 @@ export const fetchInterpretationRange = async (
     : `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}`;
 
   try {
-    console.log("Fetching range interpretation from:", url);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log("Range interpretation data received:", data);
     return data;
   } catch (error) {
     console.error("Error fetching interpretation range:", error);
@@ -1829,7 +1821,6 @@ export const fetchInterpretationRange = async (
     // Fallback: Try without language parameter
     try {
       const noLangUrl = `${INTERPRETATION_API}/${surahId}/${range}/${interpretationNo}`;
-      console.log("Trying range interpretation without language:", noLangUrl);
       const noLangResponse = await fetch(noLangUrl);
       if (!noLangResponse.ok) {
         throw new Error(`HTTP error! status: ${noLangResponse.status}`);
@@ -1880,7 +1871,6 @@ export const fetchQuizQuestions = async (surahId, range) => {
     console.log("=== FETCHING QUIZ QUESTIONS ===");
     console.log("URL:", url);
     console.log("Surah ID:", surahId);
-    console.log("Range:", range);
 
     const response = await fetch(url);
     console.log("Response status:", response.status);

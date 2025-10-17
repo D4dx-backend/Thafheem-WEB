@@ -89,7 +89,6 @@ const BlockInterpretationModal = ({
 
   // Load interpretation content
   useEffect(() => {
-    console.log(`🔵 useEffect triggered - surahId: ${currentSurahId}, range: ${currentRange}, interpretation: ${currentInterpretationNo}, lang: ${currentLanguage}`);
     
     const loadInterpretation = async () => {
       if (!currentSurahId || !currentRange) return;
@@ -152,7 +151,6 @@ const BlockInterpretationModal = ({
           
           // Try to fetch interpretation 1 for this range as fallback
           if (currentInterpretationNo !== 1) {
-            console.log(`🔄 Trying interpretation 1 for range ${currentRange} as fallback`);
             setCurrentInterpretationNo(1);
             alert(`Interpretation ${currentInterpretationNo} is not available for verses ${currentRange}. Loading interpretation 1.`);
             return; // Will trigger useEffect again with interpretation=1
@@ -436,7 +434,6 @@ const BlockInterpretationModal = ({
   };
 
   const handlePrev = () => {
-    console.log('🔙 Previous block button clicked, current range:', currentRange);
     
     // Navigate to previous verse range/block (keeping same interpretation number)
     const current = String(currentRange);
@@ -468,14 +465,12 @@ const BlockInterpretationModal = ({
         
         const newA = Math.max(1, a - len);
         const newB = newA + len - 1;
-        console.log('🔙 Moving to range:', `${newA}-${newB}`);
         setCurrentRange(`${newA}-${newB}`);
       }
     }
   };
 
   const handleNext = () => {
-    console.log('▶️ Next block button clicked, current range:', currentRange);
     
     // Navigate to next verse range/block (keeping same interpretation number)
     const current = String(currentRange);
@@ -513,7 +508,6 @@ const BlockInterpretationModal = ({
         
         const newA = a + len;
         const newB = Math.min(maxVerse, newA + len - 1);
-        console.log('▶️ Moving to range:', `${newA}-${newB}`);
         setCurrentRange(`${newA}-${newB}`);
       }
     }

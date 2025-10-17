@@ -42,7 +42,6 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
         setLoading(true);
         setError(null);
 
-        console.log(`🔄 Loading interpretation ${interpretationNo} for ${surahId}:${verseId} in ${language}`);
 
         const effectiveLang = language || (translationLanguage === 'E' ? 'E' : 'mal');
 

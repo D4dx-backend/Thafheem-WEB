@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Translation Service Test</title>
+    <!-- SQL.js for Tamil translation database -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .translation {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>தமிழ் Translation Service Test</h1>
+    <p>This page tests the Tamil translation service functionality.</p>
+    
+    <div id="status" class="test-result info">
+        Initializing Tamil translation service...
+    </div>
+    
+    <div>
+        <button onclick="testAvailability()">Test Service Availability</button>
+        <button onclick="testSurah1()">Test Surah 1 (Al-Fatiha)</button>
+        <button onclick="testSurah2()">Test Surah 2 (Al-Baqarah)</button>
+        <button onclick="clearCache()">Clear Cache</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        // Import the Tamil translation service
+        import tamilTranslationService from './src/services/tamilTranslationService.js';
+        
+        // Make it available globally for testing
+        window.tamilTranslationService = tamilTranslationService;
+        
+        async function testAvailability() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.textContent = 'Testing Tamil translation service availability...';
+                statusDiv.className = 'test-result info';
+                
+                const isAvailable = await tamilTranslationService.isAvailable();
+                
+                if (isAvailable) {
+                    statusDiv.textContent = '✅ Tamil translation service is available!';
+                    statusDiv.className = 'test-result success';
+                } else {
+                    statusDiv.textContent = '❌ Tamil translation service is not available';
+                    statusDiv.className = 'test-result error';
+                }
+            } catch (error) {
+                statusDiv.textContent = `❌ Error testing availability: ${error.message}`;
+                statusDiv.className = 'test-result error';
+            }
+        }
+        
+        async function testSurah(surahId, surahName) {
+            const resultsDiv = document.getElementById('results');
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                statusDiv.textContent = `Testing ${surahName} (Surah ${surahId})...`;
+                statusDiv.className = 'test-result info';
+                
+                const translations = await tamilTranslationService.getSurahTranslations(surahId);
+                
+                if (translations && translations.length > 0) {
+                    statusDiv.textContent = `✅ Successfully loaded ${translations.length} Tamil translations for ${surahName}`;
+                    statusDiv.className = 'test-result success';
+                    
+                    // Display first few translations
+                    let html = `<h3>${surahName} - Sample Translations:</h3>`;
+                    translations.slice(0, 5).forEach(translation => {
+                        html += `
+                            <div class="translation">
+                                <strong>Verse ${translation.number}:</strong>
+                                <p>${translation.Translation}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    if (translations.length > 5) {
+                        html += `<p><em>... and ${translations.length - 5} more verses</em></p>`;
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    statusDiv.textContent = `❌ No Tamil translations found for ${surahName}`;
+                    statusDiv.className = 'test-result error';
+                    resultsDiv.innerHTML = '';
+                }
+            } catch (error) {
+                statusDiv.textContent = `❌ Error testing ${surahName}: ${error.message}`;
+                statusDiv.className = 'test-result error';
+                resultsDiv.innerHTML = '';
+            }
+        }
+        
+        async function testSurah1() {
+            await testSurah(1, 'Al-Fatiha');
+        }
+        
+        async function testSurah2() {
+            await testSurah(2, 'Al-Baqarah');
+        }
+        
+        function clearCache() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            tamilTranslationService.clearCache();
+            const stats = tamilTranslationService.getCacheStats();
+            
+            statusDiv.textContent = `Cache cleared. Cache size: ${stats.size}`;
+            statusDiv.className = 'test-result info';
+            resultsDiv.innerHTML = '';
+        }
+        
+        // Make functions available globally
+        window.testAvailability = testAvailability;
+        window.testSurah1 = testSurah1;
+        window.testSurah2 = testSurah2;
+        window.clearCache = clearCache;
+        
+        // Auto-test availability on load
+        testAvailability();
+    </script>
+</body>
+</html>

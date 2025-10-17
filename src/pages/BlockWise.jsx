@@ -36,6 +36,9 @@ import {
   fetchAyaTranslation,
 } from "../api/apifunction";
 import { useSurahData } from "../hooks/useSurahData";
+import translationCache from "../utils/translationCache";
+import { fetchDeduplicated } from "../utils/requestDeduplicator";
+import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -117,7 +120,6 @@ const BlockWise = () => {
   const playBlockAudio = (blockId, fromContinuous = false) => {
     if (!audioRef.current) return;
 
-    console.log('playBlockAudio called with blockId:', blockId, 'fromContinuous:', fromContinuous);
 
     // Stop any currently playing audio
     if (audioRef.current) {
@@ -133,7 +135,6 @@ const BlockWise = () => {
 
     const startingAyah = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
     
-    console.log('Block info:', blockInfo, 'Starting ayah:', startingAyah);
 
     setIsContinuousPlay(true);
     setPlayingBlock(blockId);
@@ -157,8 +158,6 @@ const BlockWise = () => {
     
     const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
     
-    console.log(`\n=== Starting Ayah ${ayahNumber} ===`);
-    console.log(`Playing ayah ${ayahNumber} - Qirath:`, qirathUrl);
     
     setCurrentAudioType('qirath');
     setCurrentAyahInBlock(ayahNumber);
@@ -182,7 +181,6 @@ const BlockWise = () => {
     
     const translationUrl = `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
     
-    console.log(`Playing ayah ${ayahNumber} - Translation:`, translationUrl);
     
     setCurrentAudioType('translation');
     audioRef.current.src = translationUrl;
@@ -210,7 +208,6 @@ const BlockWise = () => {
       interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
     }
     
-    console.log(`Trying to play ayah ${ayahNumber} - Interpretation ${interpretationNum}:`, interpretationUrl);
     
     setCurrentAudioType('interpretation');
     setCurrentInterpretationNumber(interpretationNum);
@@ -222,12 +219,10 @@ const BlockWise = () => {
     audioRef.current.load();
     
     audioRef.current.play().catch(err => {
-      console.log(`Interpretation ${interpretationNum} not available for ayah ${ayahNumber}`);
       
       // If first interpretation doesn't exist, there are no interpretations for this ayah
       // Move to next ayah immediately (no interpretations to play)
       if (interpretationNum === 1) {
-        console.log('No interpretations for this ayah, moving to next ayah/block immediately');
         // Use setTimeout to avoid conflicts with other audio events
         setTimeout(() => {
           moveToNextAyahOrBlock();
@@ -235,7 +230,6 @@ const BlockWise = () => {
       } else {
         // If interpretation 2, 3, etc. doesn't exist, we've reached the end of interpretations
         // Move to next ayah
-        console.log('All interpretations finished for this ayah, moving to next ayah/block');
         setTimeout(() => {
           moveToNextAyahOrBlock();
         }, 100);
@@ -245,40 +239,32 @@ const BlockWise = () => {
 
   // Function to move to the next ayah in the block or the next block
   const moveToNextAyahOrBlock = () => {
-    console.log(`\n>>> moveToNextAyahOrBlock called - Current ayah: ${currentAyahInBlock}, Playing block: ${playingBlock}`);
     
     if (!playingBlock || !currentAyahInBlock) {
-      console.log('No playing block or ayah, returning');
       return;
     }
 
     const blockInfo = blockRanges.find(b => (b.ID || b.id) === playingBlock);
     if (!blockInfo) {
-      console.log('Block info not found, returning');
       return;
     }
 
     const ayaTo = blockInfo.AyaTo || blockInfo.ayato || blockInfo.to;
     const nextAyah = currentAyahInBlock + 1;
 
-    console.log(`Block range: ${blockInfo.AyaFrom}-${ayaTo}, Next ayah would be: ${nextAyah}`);
 
     // Check if there are more ayahs in this block
     if (nextAyah <= ayaTo) {
-      console.log(`✓ Moving to ayah ${nextAyah} in same block`);
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the next ayah in the same block
       playAyahAudio(playingBlock, nextAyah);
     } else {
-      console.log('✓ Block finished');
       // Block is finished, move to next block or stop
       if (isContinuousPlay) {
-        console.log('Continuous mode: moving to next block');
         setCurrentInterpretationNumber(1); // Reset for next block
         playNextBlock();
       } else {
-        console.log('Single block mode: stopping playback');
         setPlayingBlock(null);
         setCurrentAudioType(null);
         setCurrentAyahInBlock(null);
@@ -333,7 +319,6 @@ const BlockWise = () => {
         // Resume playback from current position or start from beginning
         if (playingBlock && currentAyahInBlock) {
           // Resume from current position
-          console.log('Resuming from block:', playingBlock, 'ayah:', currentAyahInBlock);
           setIsContinuousPlay(true);
           setIsPaused(false);
           if (audioRef.current) {
@@ -343,11 +328,9 @@ const BlockWise = () => {
           }
         } else {
           // Start from first block
-          console.log('Starting continuous play from first block');
           setIsContinuousPlay(true);
           setIsPaused(false);
           const firstBlockId = blockRanges[0].ID || blockRanges[0].id;
-          console.log('Starting continuous play from block ID:', firstBlockId, 'Total blocks:', blockRanges.length);
           playBlockAudio(firstBlockId);
         }
       }
@@ -361,7 +344,6 @@ const BlockWise = () => {
 
   // Function to stop playback completely (same as Reading.jsx stopAudio)
   const stopPlayback = () => {
-    console.log('Stopping playback completely and resetting to beginning');
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -379,7 +361,6 @@ const BlockWise = () => {
     const handleAudioEnded = () => {
       if (!playingBlock || !currentAyahInBlock) return;
 
-      console.log(`Audio ended - Type: ${currentAudioType}, Ayah: ${currentAyahInBlock}, Interpretation #: ${currentInterpretationNumber}`);
 
       if (currentAudioType === 'qirath') {
         // Play translation after qirath for the same ayah
@@ -390,7 +371,6 @@ const BlockWise = () => {
       } else if (currentAudioType === 'interpretation') {
         // After interpretation, try the next interpretation number
         const nextInterpretationNum = currentInterpretationNumber + 1;
-        console.log(`Trying interpretation ${nextInterpretationNum} for ayah ${currentAyahInBlock}`);
         playAyahInterpretation(playingBlock, currentAyahInBlock, nextInterpretationNum);
       }
     };
@@ -429,7 +409,6 @@ const BlockWise = () => {
       const ayahCode = String(currentAyahInBlock).padStart(3, "0");
       const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
       
-      console.log("Qirath (changed reciter):", qirathUrl);
       
       audioRef.current.src = qirathUrl;
       audioRef.current.play().catch(err => {
@@ -474,79 +453,115 @@ const BlockWise = () => {
         setArabicVerses(arabicResponse || []);
         setBlockRanges(ayaRangesResponse || []);
 
-        // Step 2: Fetch translations for each block in batches
+        // Step 2: TRUE LAZY LOADING - Load each block individually and update UI immediately
         if (ayaRangesResponse && ayaRangesResponse.length > 0) {
-          // Load blocks in batches to prevent API overwhelming
-          const batchSize = 5; // Load 5 blocks at a time
-          const delayBetweenBatches = 500; // 500ms delay between batches
           
-          for (let i = 0; i < ayaRangesResponse.length; i += batchSize) {
-            const batch = ayaRangesResponse.slice(i, i + batchSize);
-            
-            // Mark blocks in this batch as loading
-            const batchBlockIds = batch.map(block => block.ID || block.id);
-            setLoadingBlocks(prev => new Set([...prev, ...batchBlockIds]));
-            
-            // Fetch translations for this batch
-            const batchPromises = batch.map(async (block) => {
-              try {
-                const ayaFrom = block.AyaFrom || block.ayafrom || block.from;
-                const ayaTo = block.AyaTo || block.ayato || block.to;
-                const blockId = block.ID || block.id;
+          const processBlockTranslation = async (block, blockIndex) => {
+            const ayaFrom = block.AyaFrom || block.ayafrom || block.from;
+            const ayaTo = block.AyaTo || block.ayato || block.to;
+            const blockId = block.ID || block.id;
 
-                if (ayaFrom && ayaTo) {
-                  const range = `${ayaFrom}-${ayaTo}`;
+            if (!ayaFrom || !ayaTo) return;
 
-                const translationData = await fetchAyaTranslation(
+            const range = `${ayaFrom}-${ayaTo}`;
+
+            try {
+              // Mark this specific block as loading
+              setLoadingBlocks(prev => new Set([...prev, blockId]));
+
+              // Check cache first for English translations
+              let translationData;
+              if (translationLanguage === 'E') {
+                translationData = await translationCache.getCachedTranslation(
+                  parseInt(surahId),
+                  range,
+                  'E'
+                );
+                
+                if (!translationData) {
+                  // Cache miss - fetch from API
+                  translationData = await fetchAyaTranslation(
                     parseInt(surahId),
                     range,
-                    translationLanguage || 'mal'
+                    'E'
                   );
-
-                  return {
-                    blockId,
-                    data: {
-                      range: range,
-                      ayaFrom: ayaFrom,
-                      ayaTo: ayaTo,
-                      data: translationData,
-                    }
-                  };
+                  // Cache the result for future use
+                  await translationCache.setCachedTranslation(
+                    parseInt(surahId),
+                    range,
+                    translationData,
+                    'E'
+                  );
                 }
-                return null;
-              } catch (blockErr) {
-                console.error(`Error fetching translation for block:`, blockErr);
-                // Return null for failed blocks
-                return null;
+              } else {
+                // For non-English translations, use original API call
+                translationData = await fetchAyaTranslation(
+                  parseInt(surahId),
+                  range,
+                  translationLanguage || 'mal'
+                );
               }
-            });
 
-            // Wait for this batch to complete
-            const batchResults = await Promise.all(batchPromises);
-            
-            // Update translations with results from this batch
-            setBlockTranslations(prev => {
-              const updated = { ...prev };
-              batchResults.forEach(result => {
-                if (result) {
-                  updated[result.blockId] = result.data;
+              // IMMEDIATE UI UPDATE: Update this block's translation as soon as it loads
+              setBlockTranslations(prev => ({
+                ...prev,
+                [blockId]: {
+                  range: range,
+                  ayaFrom: ayaFrom,
+                  ayaTo: ayaTo,
+                  data: translationData,
                 }
+              }));
+
+              // Remove from loading set
+              setLoadingBlocks(prev => {
+                const updated = new Set(prev);
+                updated.delete(blockId);
+                return updated;
               });
-              return updated;
-            });
-            
-            // Remove blocks from loading set
-            setLoadingBlocks(prev => {
-              const updated = new Set(prev);
-              batchBlockIds.forEach(id => updated.delete(id));
-              return updated;
-            });
-            
-            // Add delay between batches (except for the last batch)
-            if (i + batchSize < ayaRangesResponse.length) {
-              await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+
+
+            } catch (error) {
+              console.error(`❌ BlockWise: Failed to load block ${range}:`, error.message);
+              
+              // Remove from loading set even on error
+              setLoadingBlocks(prev => {
+                const updated = new Set(prev);
+                updated.delete(blockId);
+                return updated;
+              });
             }
-          }
+          };
+
+          // VIEWPORT-BASED LOADING: Load visible blocks first, then background
+          const prioritizeBlocks = (blocks) => {
+            // First 2 blocks are likely visible (above the fold)
+            const visibleBlocks = blocks.slice(0, 2);
+            const backgroundBlocks = blocks.slice(2);
+            
+            return { visibleBlocks, backgroundBlocks };
+          };
+          
+          const { visibleBlocks, backgroundBlocks } = prioritizeBlocks(ayaRangesResponse);
+          
+          // Load visible blocks first (high priority)
+          const visiblePromises = visibleBlocks.map((block, index) => processBlockTranslation(block, index));
+          
+          // Load background blocks after a short delay (low priority)
+          setTimeout(() => {
+            const backgroundPromises = backgroundBlocks.map((block, index) => 
+              processBlockTranslation(block, index + visibleBlocks.length)
+            );
+            
+            Promise.allSettled(backgroundPromises).then((results) => {
+              const successful = results.filter(r => r.status === 'fulfilled').length;
+            });
+          }, 100); // 100ms delay for background loading
+          
+          // Monitor visible loading completion
+          Promise.allSettled(visiblePromises).then((results) => {
+            const successful = results.filter(r => r.status === 'fulfilled').length;
+          });
         }
       } catch (err) {
         setError(err.message);
@@ -918,7 +933,9 @@ const BlockWise = () => {
           <div className="max-w-full sm:max-w-[1290px] mx-auto pb-6 sm:pb-8">
             
             {/* Render blocks based on aya ranges */}
-            {blockRanges && blockRanges.length > 0 ? (
+            {loading && blockRanges.length === 0 ? (
+              <BlocksSkeleton count={5} />
+            ) : blockRanges && blockRanges.length > 0 ? (
               blockRanges.map((block, blockIndex) => {
                 const blockId = block.ID || block.id;
                 const start = block.AyaFrom || block.ayafrom || block.from || 1;
@@ -995,10 +1012,7 @@ const BlockWise = () => {
                           )}
                         </div>
                       ) : loadingBlocks.has(blockId) ? (
-                        <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 text-sm">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500"></div>
-                          <span>Loading translation...</span>
-                        </div>
+                        <CompactLoading message="Loading translation..." />
                       ) : (
                         <p className="text-gray-500 dark:text-gray-400 text-sm">
                           Translation not available

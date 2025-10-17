@@ -435,7 +435,6 @@ const InterpretationBlockwise = (props) => {
     }
 
     // If we reach here, the previous interpretation doesn't exist, so move to previous block
-    console.log("🔄 Moving to previous block");
 
     const current = String(range);
 
@@ -1029,7 +1028,6 @@ const InterpretationBlockwise = (props) => {
     }
 
     // If we reach here, the next interpretation doesn't exist, so move to next block
-    console.log("🔄 Moving to next block");
 
     const current = String(range);
 
@@ -1080,7 +1078,6 @@ const InterpretationBlockwise = (props) => {
         const nextRange = `${newA}-${newB}`;
 
         // Test if this next block has any interpretations
-        console.log("🔍 Testing if next block has interpretations:", nextRange);
         try {
           const testData = await fetchInterpretationRange(
             surahId,
@@ -1103,7 +1100,6 @@ const InterpretationBlockwise = (props) => {
               nextRange,
               "with interpretation 1"
             );
-            console.log("🔄 Setting range to:", nextRange, "and iptNo to: 1");
             setRange(nextRange);
             setIptNo(1);
           } else {
@@ -1164,7 +1160,6 @@ const InterpretationBlockwise = (props) => {
             }
           }
         } catch (err) {
-          console.log("❌ Error testing next block, trying individual verses");
           // Fallback: try individual verses
           let foundValidVerse = false;
           for (let verse = newA; verse <= newB && verse <= maxVerse; verse++) {

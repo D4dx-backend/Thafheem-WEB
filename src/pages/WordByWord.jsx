@@ -16,6 +16,7 @@ import {
 } from "../api/apifunction";
 import tamilWordByWordService from "../services/tamilWordByWordService";
 import hindiWordByWordService from "../services/hindiWordByWordService";
+import banglaWordByWordService from "../services/banglaWordByWordService";
 import WordNavbar from "../components/WordNavbar";
 import AyahModal from "../components/AyahModal";
 import { useTheme } from "../context/ThemeContext";
@@ -58,7 +59,7 @@ const WordByWord = ({
         setError(null);
 
         // For Malayalam, we only need Thafheem data, not the regular word-by-word API
-        // For Tamil and Hindi, we use our local databases instead of quran.com API
+        // For Tamil, Hindi, and Bangla, we use our local databases instead of quran.com API
         const promises = [
           translationLanguage === 'ta' 
             ? tamilWordByWordService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
@@ -74,15 +75,25 @@ const WordByWord = ({
                     // Fallback to English if Hindi service fails
                     return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
                   })
+            : translationLanguage === 'bn'
+              ? banglaWordByWordService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
+                  .catch(async (error) => {
+                    console.warn('Bangla word-by-word service failed, falling back to English:', error);
+                    // Fallback to English if Bangla service fails
+                    return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
+                  })
             : translationLanguage !== 'mal' 
               ? fetchWordByWordMeaning(currentSurahId, currentVerseId, translationLanguage) 
               : Promise.resolve(null),
           fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(() => []),
-          fetchSurahs()
-            .then((surahs) =>
-              surahs.find((s) => s.number === parseInt(currentSurahId))
-            )
-            .catch(() => null),
+          // Only fetch surahs if we don't already have surah info
+          surahInfo 
+            ? Promise.resolve(surahInfo)
+            : fetchSurahs()
+                .then((surahs) =>
+                  surahs.find((s) => s.number === parseInt(currentSurahId))
+                )
+                .catch(() => null),
         ];
 
         const [quranComData, thafheemData, surahsData] = await Promise.all(promises);
@@ -130,11 +141,11 @@ const WordByWord = ({
     } else {
       // Navigate back to the surah page or previous page
       const from = location.state?.from;
-      if (from) {
+      if (from && from !== '/surah/all' && from !== '/surah') {
         navigate(from);
       } else {
-        // If no specific 'from' location, navigate to the current surah page
-        // This ensures we go back to the surah page instead of browser history
+        // If no specific 'from' location or if 'from' is the all surahs page,
+        // navigate to the current surah page to avoid redirecting to all surahs
         navigate(`/surah/${currentSurahId}`);
       }
     }
@@ -353,9 +364,12 @@ const WordByWord = ({
         {/* Word by Word Breakdown - Hide for Malayalam since we have Thafheem section */}
         {translationLanguage !== 'mal' && wordData && wordData.words && wordData.words.length > 0 && (
           <div className="mb-6 sm:mb-8">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Word Breakdown ({currentDisplayLanguage}):
-            </h4>
+            {/* Hide title for Bangla word breakdown */}
+            {translationLanguage !== 'bn' && (
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Word Breakdown ({currentDisplayLanguage}):
+              </h4>
+            )}
             <div className="space-y-3">
               {wordData.words.map((word, index) => (
                 <div

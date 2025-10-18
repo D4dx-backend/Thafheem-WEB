@@ -259,6 +259,7 @@ const HomepageNavbar = () => {
                   translationLanguage === 'ta' ? 'Tamil' : 
                   translationLanguage === 'hi' ? 'Hindi' : 
                   translationLanguage === 'ur' ? 'Urdu' : 
+                  translationLanguage === 'bn' ? 'Bangla' : 
                   'Malayalam'
                 }
                 onLanguageSelect={(lang) => {
@@ -272,6 +273,8 @@ const HomepageNavbar = () => {
                     code = 'hi';
                   } else if (lang.code?.toLowerCase() === 'ur') {
                     code = 'ur';
+                  } else if (lang.code?.toLowerCase() === 'bn') {
+                    code = 'bn';
                   }
                   setTranslationLanguage(code);
                   setIsLanguageOpen(false);

@@ -33,7 +33,7 @@ export const ThemeProvider = ({ children }) => {
   });
 
   // Selected translation language for APIs (Malayalam default)
-  // Store API code variants: 'mal' for Malayalam, 'E' for English, 'ta' for Tamil
+  // Store API code variants: 'mal' for Malayalam, 'E' for English, 'ta' for Tamil, 'bn' for Bangla
   const [translationLanguage, setTranslationLanguage] = useState(() => {
     const savedLang = localStorage.getItem("translationLanguage");
     // Backward compatible default to Malayalam

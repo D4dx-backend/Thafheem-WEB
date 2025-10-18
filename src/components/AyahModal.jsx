@@ -13,6 +13,8 @@ import { API_BASE_URL } from "../api/apis";
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
+import banglaTranslationService from "../services/banglaTranslationService";
+import banglaInterpretationService from "../services/banglaInterpretationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
@@ -63,7 +65,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         console.log('🔍 Translation language === "E":', translationLanguage === 'E');
         console.log('🔍 Translation language === "en":', translationLanguage === 'en');
         
-        // For Tamil and Hindi, use their respective translation services instead of interpretation API
+        // For Tamil, Hindi, Urdu, and Bangla, use their respective translation services instead of interpretation API
         const interpretationPromise = translationLanguage === 'ta' 
           ? (() => {
               console.log('🔍 Taking Tamil translation path');
@@ -85,7 +87,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     AudioIntrerptn: exp.explanation,
                     text: exp.explanation,
                     content: exp.explanation,
-                    explanation_no_BN: exp.explanation_no_BN,
+                    explanation_no_BNG: exp.explanation_no_BNG,
                     explanation_no_EN: exp.explanation_no_EN
                   })) : [])
                   .catch(() => []);
@@ -102,6 +104,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     explanation_no: exp.explanation_no
                   })) : [])
                   .catch(() => []);
+              })()
+          : translationLanguage === 'bn'
+            ? (() => {
+                console.log('🔍 Taking Bangla interpretation path');
+                return banglaInterpretationService.getAllExplanations(parseInt(surahId), currentVerseId)
+                  .then(explanations => {
+                    console.log('🔍 Bangla explanations received:', explanations);
+                    return explanations && explanations.length > 0 ? explanations.map(exp => ({ 
+                      interpretation: exp.explanation, 
+                      AudioIntrerptn: exp.explanation,
+                      text: exp.explanation,
+                      content: exp.explanation,
+                      explanation_no_BNG: exp.explanation_no_BNG,
+                      explanation_no_EN: exp.explanation_no_EN
+                    })) : [];
+                  })
+                  .catch(error => {
+                    console.error('❌ Error fetching Bangla explanations in AyahModal:', error);
+                    return [];
+                  });
               })()
             : translationLanguage === 'E'
               ? (() => {
@@ -226,8 +248,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   );
                 })();
 
-        // Only fetch translation data if not using Tamil/Hindi services
-        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi') 
+        // Only fetch translation data if not using Tamil/Hindi/Bangla services
+        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn') 
           ? Promise.resolve(null) 
           : fetchAyahAudioTranslations(parseInt(surahId), currentVerseId);
 
@@ -329,6 +351,47 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
     loadVerseData();
   }, [surahId, currentVerseId]);
+
+  // Handle clicks on Bangla explanation numbers
+  useEffect(() => {
+    const handleBanglaExplanationClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.target.closest(".bangla-explanation-link");
+      if (target) {
+        const explanationNumber = target.getAttribute("data-explanation-number");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+        
+        if (explanationNumber && surahNo && ayahNo) {
+          try {
+            const explanation = await banglaTranslationService.getExplanationByNumber(
+              parseInt(surahNo), 
+              parseInt(ayahNo), 
+              explanationNumber
+            );
+            
+            if (explanation) {
+              // Show explanation in a simple alert for now
+              // You can replace this with a modal or toast notification
+              alert(`Explanation ${explanationNumber}:\n\n${explanation}`);
+            } else {
+              alert('Explanation not found.');
+            }
+          } catch (error) {
+            console.error('❌ Error loading Bangla explanation:', error);
+            alert('Error loading explanation.');
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleBanglaExplanationClick);
+    return () => {
+      document.removeEventListener("click", handleBanglaExplanationClick);
+    };
+  }, []);
 
   const handleNextAyah = () => {
     if (currentVerseId < totalVerses) {
@@ -475,7 +538,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {(() => {
                   console.log('🔍 Label logic - translationLanguage:', translationLanguage);
-                  if (translationLanguage === 'hi' || translationLanguage === 'ur') {
+                  if (translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn') {
                     return 'Explanation:';
                   } else if (translationLanguage === 'E') {
                     return 'Interpretation:';
@@ -484,12 +547,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   }
                 })()}
               </h4>
-              <p
-                className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
-                style={{ fontSize: `${translationFontSize}px` }}
-              >
-                {verseData.translation}
-              </p>
+              {translationLanguage === 'bn' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
+                      verseData.translation, 
+                      parseInt(surahId), 
+                      currentVerseId
+                    )
+                  }}
+                />
+              ) : (
+                <p
+                  className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                >
+                  {verseData.translation}
+                </p>
+              )}
             </div>
           )}
 
@@ -523,6 +600,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   // For Hindi, Urdu, and English, show explanation/interpretation numbers
                   const explanationNumber = translationLanguage === 'hi' 
                     ? (interpretation.explanation_no_BN || interpretation.explanation_no_EN || index + 1)
+                    : translationLanguage === 'bn'
+                    ? (interpretation.explanation_no_BNG || interpretation.explanation_no_EN || index + 1)
                     : translationLanguage === 'ur'
                     ? (interpretation.explanation_no || index + 1)
                     : translationLanguage === 'E'

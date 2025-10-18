@@ -4,6 +4,7 @@ import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from ".
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
+import banglaInterpretationService from "../services/banglaInterpretationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
@@ -92,6 +93,20 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
             }
           } catch (error) {
             console.log("Urdu translation error:", error);
+          }
+        } else if (effectiveLang === 'bn') {
+          try {
+            const banglaExplanation = await banglaInterpretationService.getExplanation(parseInt(surahId), parseInt(verseId));
+            if (banglaExplanation && banglaExplanation !== 'N/A') {
+              interpretationResponse = [{
+                interpretation: banglaExplanation,
+                AudioIntrerptn: banglaExplanation,
+                text: banglaExplanation,
+                content: banglaExplanation
+              }];
+            }
+          } catch (error) {
+            console.log("Bangla interpretation error:", error);
           }
         } else if (effectiveLang === 'E') {
           // 1) Try single-ayah English endpoint (fast path)

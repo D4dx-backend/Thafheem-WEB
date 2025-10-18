@@ -10,11 +10,11 @@ const WordByWordPage = () => {
   const handleClose = () => {
     // Navigate back to the surah page or previous page
     const from = location.state?.from;
-    if (from) {
+    if (from && from !== '/surah/all' && from !== '/surah') {
       navigate(from);
     } else {
-      // If no specific 'from' path, navigate to the current surah page
-      // This ensures we go back to the surah page instead of browser history
+      // If no specific 'from' path or if 'from' is the all surahs page,
+      // navigate to the current surah page to avoid redirecting to all surahs
       navigate(`/surah/${params.surahId}`);
     }
   };

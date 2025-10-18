@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from "../api/apifunction";
+import tamilTranslationService from "../services/tamilTranslationService";
+import hindiTranslationService from "../services/hindiTranslationService";
+import urduTranslationService from "../services/urduTranslationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
@@ -43,11 +46,54 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
         setError(null);
 
 
-        const effectiveLang = language || (translationLanguage === 'E' ? 'E' : 'mal');
+        const effectiveLang = language || translationLanguage;
 
         let interpretationResponse = null;
 
-        if (effectiveLang === 'E') {
+        // For Tamil and Hindi, use their respective translation services
+        if (effectiveLang === 'ta') {
+          try {
+            const tamilTranslation = await tamilTranslationService.getAyahTranslation(parseInt(surahId), parseInt(verseId));
+            if (tamilTranslation) {
+              interpretationResponse = [{
+                interpretation: tamilTranslation,
+                AudioIntrerptn: tamilTranslation,
+                text: tamilTranslation,
+                content: tamilTranslation
+              }];
+            }
+          } catch (error) {
+            console.log("Tamil translation error:", error);
+          }
+        } else if (effectiveLang === 'hi') {
+          try {
+            const hindiExplanation = await hindiTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
+            if (hindiExplanation && hindiExplanation !== 'N/A') {
+              interpretationResponse = [{
+                interpretation: hindiExplanation,
+                AudioIntrerptn: hindiExplanation,
+                text: hindiExplanation,
+                content: hindiExplanation
+              }];
+            }
+          } catch (error) {
+            console.log("Hindi translation error:", error);
+          }
+        } else if (effectiveLang === 'ur') {
+          try {
+            const urduExplanation = await urduTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
+            if (urduExplanation && urduExplanation !== 'N/A') {
+              interpretationResponse = [{
+                interpretation: urduExplanation,
+                AudioIntrerptn: urduExplanation,
+                text: urduExplanation,
+                content: urduExplanation
+              }];
+            }
+          } catch (error) {
+            console.log("Urdu translation error:", error);
+          }
+        } else if (effectiveLang === 'E') {
           // 1) Try single-ayah English endpoint (fast path)
           try {
             interpretationResponse = await fetchInterpretation(

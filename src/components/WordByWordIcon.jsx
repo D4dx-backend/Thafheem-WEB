@@ -20,11 +20,11 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         rx="6"
         ry="6"
         fill="none"
-        stroke="white"
+        stroke="currentColor"
         strokeWidth="2"
       />
       
-      {/* Three horizontal blue lines with rounded ends - different lengths */}
+      {/* Three horizontal lines with rounded ends - different lengths */}
       {/* Top line - medium length */}
       <rect
         x="7"
@@ -33,7 +33,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="white"
+        fill="currentColor"
       />
       
       {/* Middle line - longest */}
@@ -44,7 +44,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="white"
+        fill="currentColor"
       />
       
       {/* Bottom line - shortest */}
@@ -55,7 +55,7 @@ const WordByWordIcon = ({ className = "w-4 h-4", size }) => {
         height="2"
         rx="1"
         ry="1"
-        fill="white"
+        fill="currentColor"
       />
     </svg>
   );

@@ -22,28 +22,23 @@ const WordNavbar = ({
   onShowAyahModal,
   onSurahChange,
   onVerseChange,
-  onLanguageChange,
   wordData = null,
   showSuccess = null,
   showError = null,
 }) => {
   const [visible, setVisible] = useState(true);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [surahs, setSurahs] = useState([]);
   const [showSurahDropdown, setShowSurahDropdown] = useState(false);
   const [showVerseDropdown, setShowVerseDropdown] = useState(false);
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [surahSearchTerm, setSurahSearchTerm] = useState("");
 
   const surahDropdownRef = useRef(null);
   const verseDropdownRef = useRef(null);
-  const languageDropdownRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth?.() || { user: null };
 
-  const languages = ["English", "Malayalam", "Arabic"];
   const totalVerses = surahInfo?.ayahs || 0;
 
   const handleSurahSelect = (selectedSurah) => {
@@ -61,13 +56,6 @@ const WordNavbar = ({
     }
   };
 
-  const handleLanguageSelect = (language) => {
-    setSelectedLanguage(language);
-    setShowLanguageDropdown(false);
-    if (onLanguageChange) {
-      onLanguageChange(language);
-    }
-  };
 
   // Generate verse numbers array
   const generateVerseNumbers = () => {
@@ -206,12 +194,6 @@ const WordNavbar = ({
       ) {
         setShowVerseDropdown(false);
       }
-      if (
-        languageDropdownRef.current &&
-        !languageDropdownRef.current.contains(event.target)
-      ) {
-        setShowLanguageDropdown(false);
-      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -349,38 +331,6 @@ const WordNavbar = ({
         </div>
       </div>
 
-      {/* Second Row - Language Selector and Navigation */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-        {/* Center - Navigation */}
-        <div className="relative language-dropdown-container" ref={languageDropdownRef}>
-            <button 
-              className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-            >
-              <span>{selectedLanguage}</span>
-              <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-            </button>
-            
-            {/* Language Dropdown */}
-            {showLanguageDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-40 bg-white dark:bg-[#323A3F] border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
-                {languages.map((language) => (
-                  <button
-                    key={language}
-                    className={`w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm text-gray-700 dark:text-white border-b border-gray-100 dark:border-gray-600 last:border-b-0 ${
-                      language === selectedLanguage ? 'bg-blue-100 dark:bg-blue-900' : ''
-                    }`}
-                    onClick={() => handleLanguageSelect(language)}
-                  >
-                    {language}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        {/* Right side - Empty space for alignment */}
-        <div className="hidden sm:block w-[140px]"></div>
-      </div>
     </div>
   );
 };

@@ -134,6 +134,136 @@ class UrduTranslationService {
     }
   }
 
+  // Get explanation for an ayah (check if there's an explanation table)
+  async getExplanation(surahNo, ayahNo) {
+    const cacheKey = `${surahNo}:${ayahNo}`;
+    if (this.footnoteCache.has(cacheKey)) return this.footnoteCache.get(cacheKey);
+
+    try {
+      const db = await this.initUrduDB();
+      
+      // First try to get from urdu_explanation table (if it exists)
+      try {
+        const stmt = db.prepare(
+          `SELECT explanation FROM urdu_explanation WHERE surah_no = ? AND ayah_no = ?`
+        );
+        const row = stmt.getAsObject([surahNo, ayahNo]);
+        stmt.free();
+        
+        if (row && row.explanation) {
+          const text = row.explanation;
+          this.footnoteCache.set(cacheKey, text);
+          return text;
+        }
+      } catch (tableError) {
+        // Table doesn't exist, try alternative approach
+        console.log('urdu_explanation table not found, trying alternative approach');
+      }
+      
+      // If no explanation table, return the translation as explanation
+      const translation = await this.getAyahTranslation(surahNo, ayahNo);
+      const text = translation || 'N/A';
+      this.footnoteCache.set(cacheKey, text);
+      return text;
+    } catch (error) {
+      console.error('❌ Error in getExplanation:', error);
+      return 'N/A';
+    }
+  }
+
+  // Get all explanations for an ayah (returns array of explanations from footnotes)
+  async getAllExplanations(surahNo, ayahNo) {
+    const cacheKey = `${surahNo}:${ayahNo}:all`;
+    if (this.footnoteCache.has(cacheKey)) return this.footnoteCache.get(cacheKey);
+
+    try {
+      const db = await this.initUrduDB();
+      
+      // First try to get from urdu_explanation table (if it exists)
+      try {
+        const stmt = db.prepare(
+          `SELECT explanation, explanation_no FROM urdu_explanation WHERE surah_no = ? AND ayah_no = ? ORDER BY explanation_no ASC`
+        );
+        stmt.bind([surahNo, ayahNo]);
+        
+        const explanations = [];
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          if (row.explanation && row.explanation.trim() !== '') {
+            explanations.push({
+              explanation: row.explanation,
+              explanation_no: row.explanation_no
+            });
+          }
+        }
+        stmt.free();
+        
+        if (explanations.length > 0) {
+          this.footnoteCache.set(cacheKey, explanations);
+          return explanations;
+        }
+      } catch (tableError) {
+        // Table doesn't exist, try footnote-based approach
+        console.log('urdu_explanation table not found, extracting explanations from footnotes');
+      }
+      
+      // Extract explanations from footnotes in the translation
+      const translation = await this.getAyahTranslation(surahNo, ayahNo);
+      if (translation && translation.trim() !== '') {
+        const explanations = await this.extractExplanationsFromFootnotes(translation, surahNo, ayahNo);
+        if (explanations.length > 0) {
+          this.footnoteCache.set(cacheKey, explanations);
+          return explanations;
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Error in getAllExplanations:', error);
+      return [];
+    }
+  }
+
+  // Extract explanations from footnotes in translation text
+  async extractExplanationsFromFootnotes(translationText, surahNo, ayahNo) {
+    try {
+      const explanations = [];
+      
+      // Parse the translation text to find footnote references
+      const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
+      let match;
+      const footnoteIds = new Set();
+      
+      while ((match = footnoteRegex.exec(translationText)) !== null) {
+        const footnoteId = match[1];
+        const footnoteNumber = match[2];
+        footnoteIds.add(footnoteId);
+      }
+      
+      // Get explanations for each footnote
+      let explanationIndex = 1;
+      for (const footnoteId of footnoteIds) {
+        try {
+          const explanation = await this.getFootnoteExplanation(footnoteId);
+          if (explanation && explanation.trim() !== '' && explanation !== 'Explanation not available') {
+            explanations.push({
+              explanation: explanation,
+              explanation_no: explanationIndex
+            });
+            explanationIndex++;
+          }
+        } catch (error) {
+          console.warn(`Failed to get explanation for footnote ${footnoteId}:`, error);
+        }
+      }
+      
+      return explanations;
+    } catch (error) {
+      console.error('❌ Error extracting explanations from footnotes:', error);
+      return [];
+    }
+  }
+
   async fetchBlockwiseUrdu(surahNo, startAyah, endAyah) {
     const db = await this.initUrduDB();
 

@@ -8,13 +8,14 @@ const WordByWordPage = () => {
   const location = useLocation();
 
   const handleClose = () => {
-    // Navigate back to the previous page or home
+    // Navigate back to the surah page or previous page
     const from = location.state?.from;
     if (from) {
       navigate(from);
     } else {
-      // If no specific 'from' path, go back in history
-      navigate(-1);
+      // If no specific 'from' path, navigate to the current surah page
+      // This ensures we go back to the surah page instead of browser history
+      navigate(`/surah/${params.surahId}`);
     }
   };
 

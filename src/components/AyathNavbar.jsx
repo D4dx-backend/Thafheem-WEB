@@ -29,10 +29,8 @@ const AyathNavbar = ({
   onQariChange,
 }) => {
   const [visible, setVisible] = useState(true);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [verseDropdownOpen, setVerseDropdownOpen] = useState(false);
-  const [qariDropdownOpen, setQariDropdownOpen] = useState(false);
   const [allSurahs, setAllSurahs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -251,67 +249,7 @@ const AyathNavbar = ({
       {/* Second Row */}
       <div className="flex flex-row items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center gap-2">
-          {/* Language Selector */}
-          <div className="relative">
-            <button className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors">
-              <span>{selectedLanguage}</span>
-              <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-            </button>
-          </div>
-
-          {/* Qari Selector */}
-          <div className="relative">
-            <button
-              onClick={() => setQariDropdownOpen((prev) => !prev)}
-              className="flex font-poppins items-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-[#323A3F] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors"
-              title="Select Reciter"
-            >
-              <span>
-                {selectedQari === 'al-ghamidi' && 'Al-Ghamidi'}
-                {selectedQari === 'al-afasy' && 'Al-Afasy'}
-                {selectedQari === 'al-hudaify' && 'Al-Hudaify'}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-            </button>
-
-            {qariDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#2A2C38] shadow-lg rounded-lg overflow-hidden w-40 z-50">
-                <div
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                    selectedQari === 'al-ghamidi' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  }`}
-                  onClick={() => {
-                    onQariChange('al-ghamidi');
-                    setQariDropdownOpen(false);
-                  }}
-                >
-                  Al-Ghamidi
-                </div>
-                <div
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                    selectedQari === 'al-afasy' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  }`}
-                  onClick={() => {
-                    onQariChange('al-afasy');
-                    setQariDropdownOpen(false);
-                  }}
-                >
-                  Al-Afasy
-                </div>
-                <div
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                    selectedQari === 'al-hudaify' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  }`}
-                  onClick={() => {
-                    onQariChange('al-hudaify');
-                    setQariDropdownOpen(false);
-                  }}
-                >
-                  Al-Hudaify
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Language and Qari dropdowns removed as requested */}
         </div>
 
         <div className="flex items-center space-x-1 sm:space-x-2">

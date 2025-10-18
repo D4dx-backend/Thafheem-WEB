@@ -11,6 +11,8 @@ import NotePopup from "./NotePopup";
 import AyahModal from "./AyahModal";
 import InterpretationNavbar from "./InterpretationNavbar";
 import BookmarkService from "../services/bookmarkService";
+import hindiTranslationService from "../services/hindiTranslationService";
+import urduTranslationService from "../services/urduTranslationService";
 import { useAuth } from "../context/AuthContext";
 
 const BlockInterpretationModal = ({
@@ -102,21 +104,75 @@ const BlockInterpretationModal = ({
           `🔄 Loading interpretation: Surah ${currentSurahId}, Range ${currentRange}, Interpretation ${currentInterpretationNo}, Language: ${currentLanguage}`
         );
 
-        // Decide between single verse vs range (e.g., "5" vs "1-7")
-        const isSingle = /^\d+$/.test(currentRange);
-        const data = isSingle
-          ? await fetchInterpretation(
-              currentSurahId,
-              parseInt(currentRange, 10),
-              currentInterpretationNo,
-              currentLanguage
-            )
-          : await fetchInterpretationRange(
-              currentSurahId,
-              currentRange,
-              currentInterpretationNo,
-              currentLanguage
-            );
+        // For Hindi and Urdu, use their respective translation services instead of interpretation API
+        let data;
+        if (currentLanguage === 'hi') {
+          const isSingle = /^\d+$/.test(currentRange);
+          if (isSingle) {
+            // Single verse - get explanation for that verse
+            const explanation = await hindiTranslationService.getExplanation(currentSurahId, parseInt(currentRange, 10));
+            data = explanation && explanation !== 'N/A' ? [{
+              Interpretation: explanation,
+              AudioIntrerptn: explanation,
+              text: explanation,
+              content: explanation,
+              InterpretationNo: currentInterpretationNo
+            }] : [];
+          } else {
+            // Range - parse range and get block-wise data
+            const [startAyah, endAyah] = currentRange.split('-').map(num => parseInt(num.trim(), 10));
+            const blockwiseData = await hindiTranslationService.fetchBlockwiseHindi(currentSurahId, startAyah, endAyah);
+            data = blockwiseData.map(item => ({
+              Interpretation: item.explanation,
+              AudioIntrerptn: item.explanation,
+              text: item.explanation,
+              content: item.explanation,
+              InterpretationNo: currentInterpretationNo,
+              ayah: item.ayah
+            }));
+          }
+        } else if (currentLanguage === 'ur') {
+          const isSingle = /^\d+$/.test(currentRange);
+          if (isSingle) {
+            // Single verse - get explanation for that verse
+            const explanation = await urduTranslationService.getExplanation(currentSurahId, parseInt(currentRange, 10));
+            data = explanation && explanation !== 'N/A' ? [{
+              Interpretation: explanation,
+              AudioIntrerptn: explanation,
+              text: explanation,
+              content: explanation,
+              InterpretationNo: currentInterpretationNo
+            }] : [];
+          } else {
+            // Range - parse range and get block-wise data
+            const [startAyah, endAyah] = currentRange.split('-').map(num => parseInt(num.trim(), 10));
+            const blockwiseData = await urduTranslationService.fetchBlockwiseUrdu(currentSurahId, startAyah, endAyah);
+            data = blockwiseData.map(item => ({
+              Interpretation: item.translation, // Urdu blockwise only has translation
+              AudioIntrerptn: item.translation,
+              text: item.translation,
+              content: item.translation,
+              InterpretationNo: currentInterpretationNo,
+              ayah: item.ayah
+            }));
+          }
+        } else {
+          // For other languages, use the original interpretation API
+          const isSingle = /^\d+$/.test(currentRange);
+          data = isSingle
+            ? await fetchInterpretation(
+                currentSurahId,
+                parseInt(currentRange, 10),
+                currentInterpretationNo,
+                currentLanguage
+              )
+            : await fetchInterpretationRange(
+                currentSurahId,
+                currentRange,
+                currentInterpretationNo,
+                currentLanguage
+              );
+        }
 
         console.log(
           `✅ Received interpretation data for ${currentSurahId}:${currentRange}:${currentInterpretationNo}:`,

@@ -68,6 +68,7 @@ const Surah = () => {
   const [arabicVerses, setArabicVerses] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState(null);
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});

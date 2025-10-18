@@ -237,6 +237,34 @@ class HindiTranslationService {
     return text;
   }
 
+  // Get all explanations for an ayah (returns array of explanations)
+  async getAllExplanations(surahNo, ayahNo) {
+    const cacheKey = `${surahNo}:${ayahNo}:all`;
+    if (this.explanationCache.has(cacheKey)) return this.explanationCache.get(cacheKey);
+
+    const db = await this.initHindiDB();
+    const stmt = db.prepare(
+      `SELECT explanation, explanation_no_BN, explanation_no_EN FROM hindi_explanation WHERE surah_no = ? AND ayah_no = ? ORDER BY explanation_no_BN ASC, explanation_no_EN ASC`
+    );
+    stmt.bind([surahNo, ayahNo]);
+    
+    const explanations = [];
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      if (row.explanation && row.explanation.trim() !== '') {
+        explanations.push({
+          explanation: row.explanation,
+          explanation_no_BN: row.explanation_no_BN,
+          explanation_no_EN: row.explanation_no_EN
+        });
+      }
+    }
+    stmt.free();
+    
+    this.explanationCache.set(cacheKey, explanations);
+    return explanations;
+  }
+
   async fetchBlockwiseHindi(surahNo, startAyah, endAyah) {
     const db = await this.initHindiDB();
 

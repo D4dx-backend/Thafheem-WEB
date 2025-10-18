@@ -14,6 +14,8 @@ import {
   fetchThafheemWordMeanings,
   fetchSurahs,
 } from "../api/apifunction";
+import tamilWordByWordService from "../services/tamilWordByWordService";
+import hindiWordByWordService from "../services/hindiWordByWordService";
 import WordNavbar from "../components/WordNavbar";
 import AyahModal from "../components/AyahModal";
 import { useTheme } from "../context/ThemeContext";
@@ -36,14 +38,13 @@ const WordByWord = ({
   const currentVerseId = params.verseId
     ? parseInt(params.verseId)
     : selectedVerse;
-  const { quranFont, fontSize, translationFontSize } = useTheme();
+  const { quranFont, fontSize, translationFontSize, translationLanguage } = useTheme();
 
   const [wordData, setWordData] = useState(null);
   const [thafheemWords, setThafheemWords] = useState([]);
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [totalVerses, setTotalVerses] = useState(0);
   const [showAyahModal, setShowAyahModal] = useState(false);
   const { toasts, removeToast, showSuccess, showError } = useToast();
@@ -56,17 +57,35 @@ const WordByWord = ({
         setLoading(true);
         setError(null);
 
-        const [quranComData, thafheemData, surahsData] = await Promise.all([
-          fetchWordByWordMeaning(currentSurahId, currentVerseId),
-          fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(
-            () => []
-          ),
+        // For Malayalam, we only need Thafheem data, not the regular word-by-word API
+        // For Tamil and Hindi, we use our local databases instead of quran.com API
+        const promises = [
+          translationLanguage === 'ta' 
+            ? tamilWordByWordService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
+                .catch(async (error) => {
+                  console.warn('Tamil word-by-word service failed, falling back to English:', error);
+                  // Fallback to English if Tamil service fails
+                  return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
+                })
+            : translationLanguage === 'hi'
+              ? hindiWordByWordService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
+                  .catch(async (error) => {
+                    console.warn('Hindi word-by-word service failed, falling back to English:', error);
+                    // Fallback to English if Hindi service fails
+                    return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
+                  })
+            : translationLanguage !== 'mal' 
+              ? fetchWordByWordMeaning(currentSurahId, currentVerseId, translationLanguage) 
+              : Promise.resolve(null),
+          fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(() => []),
           fetchSurahs()
             .then((surahs) =>
               surahs.find((s) => s.number === parseInt(currentSurahId))
             )
             .catch(() => null),
-        ]);
+        ];
+
+        const [quranComData, thafheemData, surahsData] = await Promise.all(promises);
 
         setWordData(quranComData);
         setThafheemWords(thafheemData || []);
@@ -81,14 +100,16 @@ const WordByWord = ({
     };
 
     loadWordData();
-  }, [currentVerseId, currentSurahId]);
+  }, [currentVerseId, currentSurahId, translationLanguage]);
 
   const handlePrevious = () => {
     if (currentVerseId > 1) {
       if (onNavigate) {
         onNavigate(currentVerseId - 1);
       } else {
-        navigate(`/word-by-word/${currentSurahId}/${currentVerseId - 1}`);
+        navigate(`/word-by-word/${currentSurahId}/${currentVerseId - 1}`, {
+          state: location.state
+        });
       }
     }
   };
@@ -97,7 +118,9 @@ const WordByWord = ({
     if (onNavigate) {
       onNavigate(currentVerseId + 1);
     } else {
-      navigate(`/word-by-word/${currentSurahId}/${currentVerseId + 1}`);
+      navigate(`/word-by-word/${currentSurahId}/${currentVerseId + 1}`, {
+        state: location.state
+      });
     }
   };
 
@@ -105,12 +128,14 @@ const WordByWord = ({
     if (onClose) {
       onClose();
     } else {
-      // Navigate back to the previous page or home
+      // Navigate back to the surah page or previous page
       const from = location.state?.from;
       if (from) {
         navigate(from);
       } else {
-        navigate(-1);
+        // If no specific 'from' location, navigate to the current surah page
+        // This ensures we go back to the surah page instead of browser history
+        navigate(`/surah/${currentSurahId}`);
       }
     }
   };
@@ -128,7 +153,9 @@ const WordByWord = ({
       onClose();
       navigate(`/surah/${newSurahId}?wordByWord=1`);
     } else {
-      navigate(`/word-by-word/${newSurahId}/1`);
+      navigate(`/word-by-word/${newSurahId}/1`, {
+        state: location.state
+      });
     }
   };
 
@@ -136,18 +163,31 @@ const WordByWord = ({
     if (onNavigate) {
       onNavigate(newVerseId);
     } else {
-      navigate(`/word-by-word/${currentSurahId}/${newVerseId}`);
+      navigate(`/word-by-word/${currentSurahId}/${newVerseId}`, {
+        state: location.state
+      });
     }
   };
 
-  const handleLanguageChange = (newLanguage) => {
-    setSelectedLanguage(newLanguage);
-    // You can add language-specific logic here if needed
-  };
 
   const handleCloseAyahModal = () => {
     setShowAyahModal(false);
   };
+
+  // Map translation language codes to display names
+  const getDisplayLanguage = (langCode) => {
+    switch (langCode) {
+      case 'mal': return 'Malayalam';
+      case 'E': return 'English';
+      case 'ta': return 'Tamil';
+      case 'hi': return 'Hindi';
+      case 'ur': return 'Urdu';
+      case 'ar': return 'Arabic';
+      default: return 'English';
+    }
+  };
+
+  const currentDisplayLanguage = getDisplayLanguage(translationLanguage);
 
   if (loading) {
     return (
@@ -160,7 +200,6 @@ const WordByWord = ({
           onClose={handleClose}
           onSurahChange={handleSurahChange}
           onVerseChange={handleVerseChange}
-          onLanguageChange={handleLanguageChange}
           wordData={wordData}
           showSuccess={showSuccess}
           showError={showError}
@@ -202,7 +241,6 @@ const WordByWord = ({
           onClose={handleClose}
           onSurahChange={handleSurahChange}
           onVerseChange={handleVerseChange}
-          onLanguageChange={handleLanguageChange}
           wordData={wordData}
           showSuccess={showSuccess}
           showError={showError}
@@ -250,7 +288,6 @@ const WordByWord = ({
         onShowAyahModal={handleShowAyahModal}
         onSurahChange={handleSurahChange}
         onVerseChange={handleVerseChange}
-        onLanguageChange={handleLanguageChange}
         wordData={wordData}
         showSuccess={showSuccess}
         showError={showError}
@@ -313,11 +350,11 @@ const WordByWord = ({
             </div>
           )}
 
-        {/* Word by Word Breakdown */}
-        {wordData && wordData.words && wordData.words.length > 0 && (
+        {/* Word by Word Breakdown - Hide for Malayalam since we have Thafheem section */}
+        {translationLanguage !== 'mal' && wordData && wordData.words && wordData.words.length > 0 && (
           <div className="mb-6 sm:mb-8">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Word Breakdown:
+              Word Breakdown ({currentDisplayLanguage}):
             </h4>
             <div className="space-y-3">
               {wordData.words.map((word, index) => (
@@ -345,7 +382,7 @@ const WordByWord = ({
                         )}
                     </div>
 
-                    {/* Translation/Meaning */}
+                    {/* Translation/Meaning - For non-Malayalam languages */}
                     <div className="text-left max-w-[60%]">
                       {word.translation && word.translation.text ? (
                         <p
@@ -389,41 +426,54 @@ const WordByWord = ({
           </div>
         )}
 
-        {/* Thafheem Word Meanings */}
-        {thafheemWords.length > 0 && (
+        {/* Thafheem Word Meanings - Only show for Malayalam */}
+        {translationLanguage === 'mal' && thafheemWords.length > 0 && (
           <div className="mb-6 sm:mb-8">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Thafheem Word Meanings:
+              Word Breakdown (Malayalam):
             </h4>
             <div className="space-y-3">
-              {thafheemWords.map((word, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4"
-                >
-                  <div className="flex flex-row-reverse justify-between items-center">
-                    <div className="text-right">
-                      <span
-                        className="text-lg font-arabic dark:text-white"
-                        style={{
-                          fontFamily: quranFont,
-                          fontSize: `${fontSize}px`,
-                        }}
-                      >
-                        {word.WordPhrase}
-                      </span>
-                    </div>
-                    <div className="text-left max-w-[60%]">
-                      <span
-                        className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white font-malayalam"
-                        style={{ fontSize: `${translationFontSize}px` }}
-                      >
-                        {word.Meaning}
-                      </span>
+              {(() => {
+                // Deduplicate words based on WordPhrase to avoid showing the same word twice
+                const uniqueWords = thafheemWords.reduce((acc, word, index) => {
+                  const existingIndex = acc.findIndex(existing => 
+                    existing.WordPhrase === word.WordPhrase
+                  );
+                  if (existingIndex === -1) {
+                    acc.push({ ...word, originalIndex: index });
+                  }
+                  return acc;
+                }, []);
+                
+                return uniqueWords.map((word, index) => (
+                  <div
+                    key={`${word.WordPhrase}-${index}`}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4"
+                  >
+                    <div className="flex flex-row-reverse justify-between items-center">
+                      <div className="text-right">
+                        <span
+                          className="text-lg font-arabic dark:text-white"
+                          style={{
+                            fontFamily: quranFont,
+                            fontSize: `${fontSize}px`,
+                          }}
+                        >
+                          {word.WordPhrase}
+                        </span>
+                      </div>
+                      <div className="text-left max-w-[60%]">
+                        <span
+                          className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white font-malayalam"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                        >
+                          {word.Meaning}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </div>
         )}

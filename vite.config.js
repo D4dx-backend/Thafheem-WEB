@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/new_thafheem_web/',  // ← ADD THIS LINE
   plugins: [
     react(),
     tailwindcss(),

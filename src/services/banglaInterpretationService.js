@@ -1,5 +1,3 @@
-import initSqlJs from 'sql.js';
-
 class BanglaInterpretationService {
   constructor() {
     this.db = null;
@@ -25,9 +23,21 @@ class BanglaInterpretationService {
     try {
       console.log('🔄 Initializing Bangla interpretation database...');
       
+      // Wait for SQL.js to be available from CDN
+      await new Promise((resolve) => {
+        const checkSQL = () => {
+          if (window.initSqlJs) {
+            resolve();
+          } else {
+            setTimeout(checkSQL, 100);
+          }
+        };
+        checkSQL();
+      });
+      
       // Load SQL.js
-      const SQL = await initSqlJs({
-        locateFile: file => `https://sql.js.org/dist/${file}`
+      const SQL = await window.initSqlJs({
+        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
       });
 
       // Fetch the database file

@@ -1787,7 +1787,7 @@ const Surah = () => {
                     <div className="mb-2 sm:mb-3">
                       {translationLanguage === 'hi' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-hindi font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-hindi-translation={verse.RawTranslation || verse.Translation}
@@ -1797,7 +1797,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ur' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-urdu font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-urdu-translation={verse.RawTranslation || verse.Translation}
@@ -1807,10 +1807,20 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'bn' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-bengali font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-bangla-translation={verse.RawTranslation || verse.Translation}
+                          data-surah={surahId}
+                          data-ayah={verse.number}
+                          data-parsed={verse.Translation}
+                        />
+                      ) : translationLanguage === 'ta' ? (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-tamil font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                          dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                          data-tamil-translation={verse.RawTranslation || verse.Translation}
                           data-surah={surahId}
                           data-ayah={verse.number}
                           data-parsed={verse.Translation}

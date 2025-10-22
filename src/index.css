@@ -219,6 +219,75 @@ input[type="radio"]:checked::after {
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'JameelNoori';
+  src: url('/fonts/JameelNooriNastaleeq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SutonnyMJ';
+  src: url('/fonts/SutonnyMJ Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Bamini';
+  src: url('/fonts/Bamini.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NotoSansDevanagari';
+  src: url('/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'UthmaniHAFS';
+  src: url('/fonts/KFGQPC Uthmanic Script HAFS Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NotoSans';
+  src: url('/fonts/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Language-specific font classes */
 .font-malayalam {
   font-family: 'NotoSansMalayalam', serif;
+}
+
+.font-urdu {
+  font-family: 'JameelNoori', serif;
+  direction: rtl;
+}
+
+.font-bengali {
+  font-family: 'SutonnyMJ', serif;
+}
+
+.font-tamil {
+  font-family: 'Bamini', serif;
+}
+
+.font-hindi {
+  font-family: 'NotoSansDevanagari', serif;
+}
+
+.font-uthmani-hafs {
+  font-family: 'UthmaniHAFS', serif;
+  direction: rtl;
+}
+
+.font-noto-sans {
+  font-family: 'NotoSans', sans-serif;
 }

@@ -987,7 +987,14 @@ const BlockWise = () => {
                     {/* Translation Text for this block */}
                     <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
                       {translationData ? (
-                        <div className="text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base font-poppins">
+                        <div className={`text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base ${
+                          translationLanguage === 'hi' ? 'font-hindi' :
+                          translationLanguage === 'ur' ? 'font-urdu' :
+                          translationLanguage === 'bn' ? 'font-bengali' :
+                          translationLanguage === 'ta' ? 'font-tamil' :
+                          translationLanguage === 'mal' ? 'font-malayalam' :
+                          'font-poppins'
+                        }`}>
                           {/* Render translation text with HTML and clickable interpretation numbers */}
                           {Array.isArray(translationData) && translationData.length > 0 ? (
                             translationData.map((item, idx) => {

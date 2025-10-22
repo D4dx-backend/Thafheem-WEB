@@ -1735,7 +1735,12 @@ const InterpretationBlockwise = (props) => {
                   pointerEvents: "auto",
                   position: "relative",
                   zIndex: 1,
-                  fontFamily: "NotoSansMalayalam, sans-serif",
+                  fontFamily: translationLanguage === 'hi' ? 'NotoSansDevanagari, sans-serif' :
+                             translationLanguage === 'ur' ? 'JameelNoori, sans-serif' :
+                             translationLanguage === 'bn' ? 'SutonnyMJ, sans-serif' :
+                             translationLanguage === 'ta' ? 'Bamini, sans-serif' :
+                             translationLanguage === 'mal' ? 'NotoSansMalayalam, sans-serif' :
+                             'Poppins, sans-serif',
                 }}
                 dangerouslySetInnerHTML={{ __html: extractText(item) }}
               />

@@ -181,6 +181,18 @@ const Settings = ({ onClose }) => {
               >
                 Amiri Quran
               </button>
+
+              {/* Uthmani HAFS Button */}
+              <button
+                onClick={() => setQuranFont("UthmaniHAFS")}
+                className={`flex-1 px-4 py-2 rounded-full transition-all ${
+                  quranFont === "UthmaniHAFS"
+                    ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
+                    : "text-gray-600 hover:text-gray-800 dark:text-white"
+                }`}
+              >
+                Uthmani HAFS
+              </button>
             </div>
           </div>
 
@@ -213,7 +225,7 @@ const Settings = ({ onClose }) => {
               className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-gray-950 mx-auto"
               style={{
                 fontSize: `${fontSize}px`,
-                fontFamily: quranFont,
+                fontFamily: quranFont === "UthmaniHAFS" ? "UthmaniHAFS" : quranFont,
                 direction: "rtl",
               }}
             >

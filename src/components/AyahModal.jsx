@@ -549,7 +549,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               </h4>
               {translationLanguage === 'bn' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.6] font-bengali sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
                   style={{ fontSize: `${translationFontSize}px` }}
                   dangerouslySetInnerHTML={{ 
                     __html: banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
@@ -558,6 +558,24 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                       currentVerseId
                     )
                   }}
+                />
+              ) : translationLanguage === 'hi' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-hindi sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
+                />
+              ) : translationLanguage === 'ur' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-urdu sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
+                />
+              ) : translationLanguage === 'ta' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-tamil sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
                 />
               ) : (
                 <p

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
-import hindiTranslationService from "../services/hindiTranslationService";
+import hindiTranslationService from "../services/HindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
-import banglaInterpretationService from "../services/banglaInterpretationService";
+import banglaTranslationService from "../services/banglaTranslationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
@@ -96,7 +96,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           }
         } else if (effectiveLang === 'bn') {
           try {
-            const banglaExplanation = await banglaInterpretationService.getExplanation(parseInt(surahId), parseInt(verseId));
+            const banglaExplanation = await banglaTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
             if (banglaExplanation && banglaExplanation !== 'N/A') {
               interpretationResponse = [{
                 interpretation: banglaExplanation,
@@ -156,7 +156,6 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
 
         if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) throw new Error('No interpretation content available');
 
-        console.log(`✅ Received interpretation data:`, interpretationResponse);
 
         // Handle different response structures
         if (Array.isArray(interpretationResponse)) {

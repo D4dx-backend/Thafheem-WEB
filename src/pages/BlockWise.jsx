@@ -1097,16 +1097,19 @@ const BlockWise = () => {
                         </button>
 
                         {/* Book - Ayah Detail */}
-                        <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                          onClick={() => {
-                            const targetUrl = `/surah/${surahId}#verse-${start}`;
-                            navigate(targetUrl);
-                          }}
-                          title="View ayah details"
-                        >
-                          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
+                        {/* BookOpen - Interpretation (hidden for Tamil) */}
+                        {translationLanguage !== 'ta' && (
+                          <button
+                            className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                            onClick={() => {
+                              const targetUrl = `/surah/${surahId}#verse-${start}`;
+                              navigate(targetUrl);
+                            }}
+                            title="View ayah details"
+                          >
+                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </button>
+                        )}
 
                         {/* Note/Page - Word by Word */}
                         <button

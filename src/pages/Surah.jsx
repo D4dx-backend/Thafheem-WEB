@@ -40,9 +40,10 @@ import {
   fetchAyaRanges,
 } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
-import hindiTranslationService from "../services/hindiTranslationService";
+import hindiTranslationService from "../services/HindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import banglaTranslationService from "../services/banglaTranslationService";
+import englishTranslationService from "../services/englishTranslationService";
 import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 
@@ -89,6 +90,11 @@ const Surah = () => {
   const [showUrduFootnoteModal, setShowUrduFootnoteModal] = useState(false);
   const [urduFootnoteContent, setUrduFootnoteContent] = useState('');
   const [urduFootnoteLoading, setUrduFootnoteLoading] = useState(false);
+
+  // English footnote modal state
+  const [showEnglishFootnoteModal, setShowEnglishFootnoteModal] = useState(false);
+  const [englishFootnoteContent, setEnglishFootnoteContent] = useState('');
+  const [englishFootnoteLoading, setEnglishFootnoteLoading] = useState(false);
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
@@ -155,7 +161,7 @@ const Surah = () => {
             
             if ((hasRawHTML || hasRawHTMLInCurrent) && hasNoClickableFootnotes) {
               
-              const parsed = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
+              const parsed = hindiTranslationService.parseHindiTranslationWithClickableExplanations(
                 rawText || currentHTML, 
                 parseInt(surahNo), 
                 parseInt(ayahNo)
@@ -245,10 +251,8 @@ const Surah = () => {
 
         // Translation source depends on selected language
         if (translationLanguage === 'ta') {
-          // Tamil translations from SQLite database (auto-load, no prompt)
+          // Tamil translations using hybrid service (API-first with SQL.js fallback)
           try {
-            // Ensure DB is initialized; this will mark it as downloaded internally
-            await tamilTranslationService.initDB();
             const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
             if (tamilTranslations && tamilTranslations.length > 0) {
               setAyahData(tamilTranslations);
@@ -270,33 +274,15 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'hi') {
-          // Hindi translations from local SQLite database
+          // Hindi translations using hybrid service (API-first with SQL.js fallback)
           try {
-            await hindiTranslationService.initHindiDB();
-            // Build list of translations per ayah
-            const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
-            const items = await Promise.all(
-              verseNumbers.map(async (v) => {
-                const rawTranslation = await hindiTranslationService.getAyahTranslation(parseInt(surahId), v) || '';
-                
-                // Store both raw and parsed versions
-                const parsedTranslation = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
-                  rawTranslation, 
-                  parseInt(surahId), 
-                  v
-                );
-                
-                
-                return {
-                  number: v,
-                  ArabicText: '',
-                  Translation: parsedTranslation,
-                  RawTranslation: rawTranslation // Store raw version for re-parsing if needed
-                };
-              })
-            );
-            setAyahData(items);
-            
+            const hindiTranslations = await hindiTranslationService.getSurahTranslations(parseInt(surahId));
+            if (hindiTranslations && hindiTranslations.length > 0) {
+              setAyahData(hindiTranslations);
+            } else {
+              console.warn('No Hindi translations found');
+              setAyahData([]);
+            }
           } catch (error) {
             console.error('Error fetching Hindi translations:', error);
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
@@ -307,10 +293,9 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'ur') {
-          // Urdu translations from local SQLite database
+          // Urdu translations using hybrid service (API-first with SQL.js fallback)
           try {
-            await urduTranslationService.initUrduDB();
-            // Build list of translations per ayah
+            // Build list of translations per ayah using hybrid service
             const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
             const items = await Promise.all(
               verseNumbers.map(async (v) => {
@@ -377,178 +362,38 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'E') {
-          // Use cache if available
-          const cacheKey = `${surahId}-E`;
-          const cachedMap = englishAyahCacheRef.current.get(cacheKey);
-          if (cachedMap) {
-            const formatted = Array.from({ length: verseCount }, (_, i) => ({
-              number: i + 1,
-              ArabicText: '',
-              Translation: cachedMap.get(i + 1) || '',
-            }));
-            setAyahData(formatted);
-          } else {
-            // Fetch ranges
-            const ranges = await fetchAyaRanges(parseInt(surahId), 'E').catch(() => []);
-            const htmlToPlain = (html) => {
-              const div = document.createElement('div');
-              div.innerHTML = html || '';
-              div.querySelectorAll('sup').forEach(s => s.remove());
-              return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
-            };
-
-            const surahNum = parseInt(surahId);
-            const perAyah = new Map();
-
-
-            // Cache and set state
-            englishAyahCacheRef.current.set(cacheKey, perAyah);
-            
-            // Progressive loading: Update state as we process translations
-            const updateAyahData = (currentPerAyah) => {
-              const formattedAyahData = Array.from({ length: verseCount }, (_, k) => ({
-                number: k + 1,
-                ArabicText: '',
-                Translation: currentPerAyah.get(k + 1) || '',
+          // English translations using database-only service
+          try {
+            const englishTranslations = await englishTranslationService.getSurahTranslations(parseInt(surahId));
+            if (englishTranslations && englishTranslations.length > 0) {
+              // Parse English translations to make footnotes clickable
+              // Note: Interpretation counts will be fetched on-demand when user clicks interpretation button
+              const parsedTranslations = englishTranslations.map(verse => ({
+                ...verse,
+                Translation: englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                  verse.Translation, 
+                  parseInt(surahId), 
+                  verse.number
+                ),
+                interpretationCount: 0 // Will be fetched on-demand
               }));
-              setAyahData(formattedAyahData);
-            };
-            
-            // Set initial state with empty translations
-            updateAyahData(new Map());
-            
-            // TRUE LAZY LOADING: Load each translation individually and update UI immediately
-            const processTranslationRange = async (r, rangeIndex) => {
-              const from = r.AyaFrom || r.ayafrom || r.from;
-              const to = r.AyaTo || r.ayato || r.to || from;
-              if (!from || !to) return;
-              
-              const rangeStr = `${from}-${to}`;
-              try {
-                // Check cache first
-                let tData = await translationCache.getCachedTranslation(parseInt(surahId), rangeStr, 'E');
-                
-                if (!tData) {
-                  // Cache miss - fetch from API
-                  tData = await fetchAyaTranslation(parseInt(surahId), rangeStr, 'E');
-                  // Cache the result for future use
-                  await translationCache.setCachedTranslation(parseInt(surahId), rangeStr, tData, 'E');
-                }
-                
-                const raw = Array.isArray(tData) && tData.length > 0
-                  ? (tData[0].TranslationText || tData[0].translationText || tData[0].text || '')
-                  : (tData?.TranslationText || tData?.translationText || tData?.text || '');
-                const content = htmlToPlain(raw);
-                const re = new RegExp(`\\(\\s*${surahNum}\\s*:\\s*(\\d+)\\s*\\)`, 'g');
-                let m;
-                const idxs = [];
-                while ((m = re.exec(content)) !== null) {
-                  idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
-                }
-                if (idxs.length === 0) {
-                  const reAlt = /\((\d+)\)/g;
-                  while ((m = reAlt.exec(content)) !== null) {
-                    idxs.push({ ayah: parseInt(m[1], 10), index: m.index });
-                  }
-                }
-                if (idxs.length > 0) {
-                  for (let j = 0; j < idxs.length; j++) {
-                    const start = idxs[j].index;
-                    const end = j + 1 < idxs.length ? idxs[j + 1].index : content.length;
-                    const ay = idxs[j].ayah;
-                    const seg = content.slice(start, end).replace(re, '').replace(/\((\d+)\)/g, '').trim();
-                    if (ay >= from && ay <= to) perAyah.set(ay, seg);
-                  }
-                }
-                if (idxs.length === 0) {
-                  perAyah.set(from, content);
-                }
-                
-                // IMMEDIATE UI UPDATE: Update UI as soon as this range completes
-                updateAyahData(perAyah);
-                
-                // Update progress
-                const progress = Math.round(((rangeIndex + 1) / ranges.length) * 100);
-                setLoadingProgress(progress);
-                
-                
-              } catch (error) {
-                console.error('Error processing translation range:', error);
-              }
-            };
-            
-            // VIEWPORT-BASED LOADING: Load visible content first, then background
-            const prioritizeRanges = (ranges) => {
-              // First 3 ranges are likely visible (above the fold)
-              const visibleRanges = ranges.slice(0, 3);
-              const backgroundRanges = ranges.slice(3);
-              
-              return { visibleRanges, backgroundRanges };
-            };
-            
-            const { visibleRanges, backgroundRanges } = prioritizeRanges(ranges);
-            
-            // Load visible ranges first (high priority)
-            const visiblePromises = visibleRanges.map((r, index) => processTranslationRange(r, index));
-            
-            // Load background ranges after a short delay (low priority)
-            setTimeout(() => {
-              const backgroundPromises = backgroundRanges.map((r, index) => 
-                processTranslationRange(r, index + visibleRanges.length)
-              );
-              
-              Promise.allSettled(backgroundPromises).then((results) => {
-                const successful = results.filter(r => r.status === 'fulfilled').length;
-              });
-            }, 100); // 100ms delay for background loading
-            
-            // Monitor all loading completion
-            Promise.allSettled(visiblePromises).then((results) => {
-              const successful = results.filter(r => r.status === 'fulfilled').length;
-            });
-            
-            // Preload strategy: Preload popular surahs in background
-            const popularSurahs = [1, 2, 18, 36, 67]; // Al-Fatiha, Al-Baqarah, Al-Kahf, Ya-Sin, Al-Mulk
-            const currentSurahNum = parseInt(surahId);
-            
-            // Preload next/previous surah if they're popular
-            const preloadCandidates = [
-              currentSurahNum - 1,
-              currentSurahNum + 1
-            ].filter(num => num >= 1 && num <= 114 && popularSurahs.includes(num));
-            
-            // Background preload (don't await)
-            if (preloadCandidates.length > 0) {
-              preloadCandidates.forEach(surahToPreload => {
-                // Preload in background without blocking UI
-                setTimeout(async () => {
-                  try {
-                    const preloadRanges = await fetchAyaRanges(surahToPreload, 'E').catch(() => []);
-                    if (preloadRanges && preloadRanges.length > 0) {
-                      // Preload first few ranges only to avoid overwhelming
-                      const firstFewRanges = preloadRanges.slice(0, 3);
-                      await Promise.all(firstFewRanges.map(async (r) => {
-                        const from = r.AyaFrom || r.ayafrom || r.from;
-                        const to = r.AyaTo || r.ayato || r.to || from;
-                        if (!from || !to) return;
-                        const rangeStr = `${from}-${to}`;
-                        
-                        // Check if already cached
-                        const cached = await translationCache.getCachedTranslation(surahToPreload, rangeStr, 'E');
-                        if (!cached) {
-                          try {
-                            const data = await fetchAyaTranslation(surahToPreload, rangeStr, 'E');
-                            await translationCache.setCachedTranslation(surahToPreload, rangeStr, data, 'E');
-                          } catch (preloadError) { 
-                  }
-                        }
-                      }));
-                    }
-                  } catch (error) {
-                  }
-                }, 1000); // Delay preload to not interfere with current loading
-              });
+              setAyahData(parsedTranslations);
+            } else {
+              const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+                number: index + 1,
+                ArabicText: '',
+                Translation: `English translation not available for verse ${index + 1}`,
+              }));
+              setAyahData(fallbackAyahData);
             }
+          } catch (error) {
+            console.error('Error fetching English translations:', error);
+            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
+              number: index + 1,
+              ArabicText: '',
+              Translation: `English translation service unavailable. Please try again later.`,
+            }));
+            setAyahData(fallbackAyahData);
           }
         } else {
           const ayahResponse = await fetchAyahAudioTranslations(parseInt(surahId));
@@ -687,13 +532,20 @@ const Surah = () => {
 
   const handleInterpretationClick = async (verseNumber) => {
     try {
+      console.log(`🔄 Opening interpretation for verse ${verseNumber} in Surah ${surahId}`);
 
       // Special handling for Surah 114
       if (parseInt(surahId) === 114) {
         // Add any special logic for Surah 114 if needed
       }
 
-      // Open the AyahModal instead of navigating
+      // For English language, we don't need to fetch interpretation count
+      // The AyahModal will handle fetching the specific footnotes directly
+      if (translationLanguage === 'E') {
+        console.log(`📚 [Surah] Opening English interpretation modal for verse ${verseNumber}`);
+      }
+
+      // Open the AyahModal
       setSelectedVerseForInterpretation(verseNumber);
       setShowAyahModal(true);
     } catch (error) {
@@ -706,6 +558,9 @@ const Surah = () => {
     setShowAyahModal(false);
     setSelectedVerseForInterpretation(null);
   };
+
+  // Note: Interpretation count fetching removed for English language
+  // English interpretations are now fetched directly in AyahModal using specific footnote endpoints
 
   const handleBookmarkClick = async (
     e,
@@ -811,10 +666,10 @@ const Surah = () => {
           setHindiFootnoteContent('Loading...');
           
           try {
-            const explanation = await hindiTranslationService.getExplanationByFootnote(
+            const explanation = await hindiTranslationService.getExplanationByNumber(
               parseInt(surahNo), 
               parseInt(ayahNo), 
-              parseInt(footnoteNumber)
+              footnoteNumber
             );
             setHindiFootnoteContent(explanation);
           } catch (error) {
@@ -851,7 +706,7 @@ const Surah = () => {
           
           if ((hasRawHTML || hasRawHTMLInCurrent) && hasNoClickableFootnotes) {
             
-            const parsed = hindiTranslationService.parseHindiTranslationWithClickableFootnotes(
+            const parsed = hindiTranslationService.parseHindiTranslationWithClickableExplanations(
               rawText || currentHTML, 
               parseInt(surahNo), 
               parseInt(ayahNo)
@@ -1007,6 +862,42 @@ const Surah = () => {
     document.addEventListener("click", handleBanglaExplanationClick);
     return () => {
       document.removeEventListener("click", handleBanglaExplanationClick);
+    };
+  }, [translationLanguage, ayahData]);
+
+  // Handle clicks on English footnotes
+  useEffect(() => {
+    const handleEnglishFootnoteClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.target.closest(".english-footnote-link");
+      if (target) {
+        const footnoteId = target.getAttribute("data-footnote-id");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+        
+        if (footnoteId && surahNo && ayahNo) {
+          setEnglishFootnoteLoading(true);
+          setShowEnglishFootnoteModal(true);
+          setEnglishFootnoteContent('Loading...');
+          
+          try {
+            const explanation = await englishTranslationService.getExplanation(parseInt(footnoteId));
+            setEnglishFootnoteContent(explanation);
+          } catch (error) {
+            console.error('Error fetching English footnote explanation:', error);
+            setEnglishFootnoteContent(`Error loading explanation: ${error.message}`);
+          } finally {
+            setEnglishFootnoteLoading(false);
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleEnglishFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleEnglishFootnoteClick);
     };
   }, [translationLanguage, ayahData]);
 
@@ -1825,6 +1716,16 @@ const Surah = () => {
                           data-ayah={verse.number}
                           data-parsed={verse.Translation}
                         />
+                      ) : translationLanguage === 'E' ? (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                          dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                          data-english-translation={verse.RawTranslation || verse.Translation}
+                          data-surah={surahId}
+                          data-ayah={verse.number}
+                          data-parsed={verse.Translation}
+                        />
                       ) : (
                         <p
                           className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
@@ -1903,17 +1804,19 @@ const Surah = () => {
                         </span>
                       )}
 
-                      {/* BookOpen - Interpretation */}
-                      <button
-                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInterpretationClick(index + 1);
-                        }}
-                        title="View interpretation"
-                      >
-                        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
+                      {/* BookOpen - Interpretation (hidden for Tamil) */}
+                      {translationLanguage !== 'ta' && (
+                        <button
+                          className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleInterpretationClick(index + 1);
+                          }}
+                          title="View interpretation"
+                        >
+                          <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
 
                       {/* List */}
                       <button
@@ -2228,6 +2131,51 @@ const Surah = () => {
                       style={{ fontSize: `${translationFontSize}px` }}
                     >
                       {urduFootnoteContent}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* English Footnote Modal */}
+        {showEnglishFootnoteModal && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+            <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  English Explanation
+                </h2>
+                <button
+                  onClick={() => setShowEnglishFootnoteModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+                {englishFootnoteLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Loading explanation...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                    <div
+                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
+                      style={{ fontSize: `${translationFontSize}px` }}
+                    >
+                      {englishFootnoteContent}
                     </div>
                   </div>
                 )}

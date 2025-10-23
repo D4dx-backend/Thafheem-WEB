@@ -11,7 +11,7 @@ import NotePopup from "./NotePopup";
 import AyahModal from "./AyahModal";
 import InterpretationNavbar from "./InterpretationNavbar";
 import BookmarkService from "../services/bookmarkService";
-import hindiTranslationService from "../services/hindiTranslationService";
+import hindiTranslationService from "../services/HindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import { useAuth } from "../context/AuthContext";
 
@@ -544,7 +544,6 @@ const BlockInterpretationModal = ({
       }
       
       const nextVerse = v + 1;
-      console.log('▶️ Moving to verse:', nextVerse);
       setCurrentRange(String(nextVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
       // Range: move to next block of same size

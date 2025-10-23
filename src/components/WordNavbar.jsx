@@ -25,6 +25,7 @@ const WordNavbar = ({
   wordData = null,
   showSuccess = null,
   showError = null,
+  translationLanguage = null,
 }) => {
   const [visible, setVisible] = useState(true);
   const [surahs, setSurahs] = useState([]);
@@ -291,13 +292,16 @@ const WordNavbar = ({
 
         {/* Right side - Action buttons (Desktop only close button) */}
         <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-auto">
-          <button
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title="View Ayah Details"
-            onClick={() => onShowAyahModal && onShowAyahModal(selectedVerse)}
-          >
-            <BookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
-          </button>
+          {/* BookOpen - Interpretation (hidden for Tamil) */}
+          {translationLanguage !== 'ta' && (
+            <button
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="View Ayah Details"
+              onClick={() => onShowAyahModal && onShowAyahModal(selectedVerse)}
+            >
+              <BookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 dark:text-gray-300" />
+            </button>
+          )}
 
           <button
             onClick={handleBookmark}

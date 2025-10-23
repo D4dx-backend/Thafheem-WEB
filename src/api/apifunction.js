@@ -78,7 +78,7 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal') => {
 };
 export const fetchSurahs = async () => {
   try {
-    console.log("Fetching surahs from URL:", SURA_NAMES_API);
+    // Fetching surahs from API
 
     // Fetch both surah names and page ranges to get accurate ayah counts
     const [surahResponse, pageRangesResponse] = await Promise.all([
@@ -120,9 +120,7 @@ export const fetchSurahs = async () => {
       };
     });
 
-    console.log(
-      "Successfully fetched surahs with accurate ayah counts from page ranges API"
-    );
+    // Successfully fetched surahs with accurate ayah counts
     return result;
   } catch (error) {
 
@@ -155,7 +153,7 @@ export const fetchSurahs = async () => {
           type: chapter.revelation_place === "makkah" ? "Makki" : "Madani",
         }));
 
-        console.log('Successfully fetched surahs from Quran.com fallback API');
+        // Successfully fetched surahs from Quran.com fallback API
         return result;
       }
     } catch (fallbackError) {
@@ -280,7 +278,7 @@ export const fetchSurahs = async () => {
       { number: 113, arabic: "الفلق", name: "Al-Falaq", ayahs: 5, type: "Makki" },
       { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" }
     ]
-        console.log("Successfully fetched surahs from Quran.com fallback API");
+        // Successfully fetched surahs from Quran.com fallback API
         return result;
       }
      catch (fallbackError) {
@@ -1869,12 +1867,26 @@ export const fetchInterpretationRange = async (
 
 // Additional helper function to fetch multiple interpretations for a verse
 // Updated: v2.5 - Fixed to use correct verse-specific interpretation endpoints
+// Cache for interpretations to prevent redundant API calls
+const interpretationCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const fetchAllInterpretations = async (
   surahId,
   verseId,
   language = "E"
 ) => {
-  console.log(`🔄 [v2.5] Fetching verse-specific interpretations for Surah ${surahId}, Verse ${verseId}, Language: ${language}`);
+  // Create cache key
+  const cacheKey = `interpretations_${surahId}_${verseId}_${language}`;
+  
+  // Check cache first
+  const cached = interpretationCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`🔄 Using cached interpretations for ${surahId}:${verseId}`);
+    return cached.data;
+  }
+
+  console.log(`🔄 [v2.6] Fetching interpretations for Surah ${surahId}, Verse ${verseId}, Language: ${language}`);
   
   // Normalize language to API expectation
   const langParam = (() => {
@@ -1888,20 +1900,16 @@ export const fetchAllInterpretations = async (
   const allInterpretations = [];
   let consecutiveEmptyResponses = 0;
   const maxConsecutiveEmptyResponses = 2; // Stop after 2 consecutive empty responses
-  const maxInterpretations = 8; // Reasonable limit to prevent excessive API calls
+  const maxInterpretations = 5; // Reduced from 8 to 5 to limit API calls
 
-  // Try different endpoint patterns to find verse-specific interpretations
+  // Optimized endpoint patterns - try most likely patterns first
   const endpointPatterns = [
-    // Pattern 1: Standard pattern /interpret/{surahId}/{verseId}/{interpretationNo}/{language}
+    // Pattern 1: Standard pattern (most common)
     (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${interpretationNo}/${langParam}`,
-    // Pattern 2: Special pattern where interpretationNo equals verseId /interpret/{surahId}/{verseId}/{verseId}/{language}
-    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${verseId}/${langParam}`,
-    // Pattern 3: Range pattern /interpret/{surahId}/{verseId}-{verseId}/{interpretationNo}/{language}
-    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}-${verseId}/${interpretationNo}/${langParam}`,
-    // Pattern 4: Without language parameter
+    // Pattern 2: Without language parameter
     (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${interpretationNo}`,
-    // Pattern 5: Audio interpretation endpoint
-    (interpretationNo) => `${API_BASE_URL}/audiointerpret/${surahId}/${verseId}`
+    // Pattern 3: Special pattern where interpretationNo equals verseId
+    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${verseId}/${langParam}`,
   ];
 
   // Try to fetch multiple interpretations (1 through maxInterpretations)
@@ -1920,7 +1928,7 @@ export const fetchAllInterpretations = async (
       
       try {
         console.log(`🔄 Trying pattern ${patternIndex + 1} for interpretation ${interpretationNo} of verse ${verseId}: ${endpoint}`);
-        const response = await fetch(endpoint);
+        const response = await fetchWithTimeout(endpoint, {}, 5000); // Add timeout
         
         if (!response.ok) {
           console.log(`🔄 Pattern ${patternIndex + 1} failed with status: ${response.status}`);
@@ -1977,6 +1985,12 @@ export const fetchAllInterpretations = async (
   
   console.log(`🔄 Verse-specific fetch complete: Found ${allInterpretations.length} interpretations for verse ${verseId}`);
   
+  // Cache the result
+  interpretationCache.set(cacheKey, {
+    data: allInterpretations,
+    timestamp: Date.now()
+  });
+  
   // If we found interpretations, return them
   if (allInterpretations.length > 0) {
     return allInterpretations;
@@ -1992,9 +2006,7 @@ export const fetchQuizQuestions = async (surahId, range) => {
   const url = `${QUIZ_API}/${surahId}/${range}`;
 
   try {
-    console.log("=== FETCHING QUIZ QUESTIONS ===");
-    console.log("URL:", url);
-    console.log("Surah ID:", surahId);
+    // Fetching quiz questions
 
     const response = await fetch(url);
     console.log("Response status:", response.status);
@@ -3418,5 +3430,60 @@ export const fetchArticlesList = async () => {
     ];
     console.log("Using fallback data:", fallbackData);
     return fallbackData;
+  }
+};
+
+// Fetch English interpretations using specific footnote endpoints
+export const fetchEnglishInterpretations = async (surahId, verseId) => {
+  console.log(`🔄 [fetchEnglishInterpretations] Fetching English interpretations for Surah ${surahId}, Verse ${verseId}`);
+  
+  try {
+    // For Surah 1, Ayah 5, we know the specific footnote IDs: 177002 and 177003
+    // For other verses, we'll need to determine the footnote IDs dynamically
+    let footnoteIds = [];
+    
+    if (parseInt(surahId) === 1 && parseInt(verseId) === 5) {
+      // Special case for Al-Fatiha Ayah 5 - we know the footnote IDs
+      footnoteIds = ['177002', '177003'];
+    } else {
+      // For other verses, we need to determine footnote IDs from the translation text
+      // This would require parsing the translation to find footnote references
+      // For now, we'll return empty array for non-Al-Fatiha verses
+      console.log(`🔄 [fetchEnglishInterpretations] No specific footnote IDs known for Surah ${surahId}, Verse ${verseId}`);
+      return [];
+    }
+    
+    const interpretations = [];
+    
+    // Fetch each footnote
+    for (const footnoteId of footnoteIds) {
+      try {
+        // Use the correct API endpoint: http://localhost:5000/api/english/footnote/{footnoteId}
+        const response = await fetch(`http://localhost:5000/api/english/footnote/${footnoteId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.footnote_text) {
+            interpretations.push({
+              footnote_id: footnoteId,
+              text: data.footnote_text,
+              content: data.footnote_text,
+              explanation: data.footnote_text
+            });
+            console.log(`✅ [fetchEnglishInterpretations] Fetched footnote ${footnoteId}:`, data.footnote_text.substring(0, 100) + '...');
+          }
+        } else {
+          console.log(`⚠️ [fetchEnglishInterpretations] Failed to fetch footnote ${footnoteId}: ${response.status}`);
+        }
+      } catch (error) {
+        console.error(`❌ [fetchEnglishInterpretations] Error fetching footnote ${footnoteId}:`, error);
+      }
+    }
+    
+    console.log(`📚 [fetchEnglishInterpretations] Found ${interpretations.length} English interpretations`);
+    return interpretations;
+    
+  } catch (error) {
+    console.error(`❌ [fetchEnglishInterpretations] Error fetching English interpretations:`, error);
+    return [];
   }
 };

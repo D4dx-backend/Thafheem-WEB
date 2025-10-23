@@ -30,6 +30,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  VITE_DEV_MODE = "false"
+  NODE_ENV = "production"
 
 # Opt out of Google's FLoC tracking
 [[headers]]

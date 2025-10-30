@@ -45,7 +45,10 @@ import {
   Send,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import logoBlack from "../assets/logo-black.png";
+import logoWhite from "../assets/logo-white.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import Transition from "./Transition";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
 import { useEffect } from "react";
@@ -285,7 +288,7 @@ const HomepageNavbar = () => {
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] border-b border-gray-100 dark:border-gray-700 w-full relative z-50 ">
+      <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] ">
         <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
@@ -301,6 +304,15 @@ const HomepageNavbar = () => {
             >
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
+
+            {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
+              <img
+                src={theme === 'dark' ? logoWhite : logoBlack}
+                alt="Thafheem ul Quran"
+                className="h-7 sm:h-8 w-auto select-none"
+                draggable="false"
+              />
+            )}
           </div>
 
           {/* Right side */}
@@ -372,6 +384,12 @@ const HomepageNavbar = () => {
             )}
           </div>
         </div>
+        {/* Route-scoped dropdown bar under the navbar (only on reading) */}
+        {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
+          <div className="pb-2 relative z-[60]">
+            <Transition showPageInfo={false} />
+          </div>
+        )}
       </nav>
 
       {/* Sidebar */}

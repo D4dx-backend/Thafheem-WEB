@@ -20,13 +20,14 @@ import {
   Notebook,
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
-import Transition from "../components/Transition";
+// Transition rendered globally in navbar
 import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import InterpretationBlockwise from "./InterpretationBlockwise";
-import Bismi from "../assets/bismi.jpg";
+import Bismi from "../assets/bismi.png";
+import DarkModeBismi from "../assets/darkmode-bismi.png";
 import { useTheme } from "../context/ThemeContext";
 import {
   fetchBlockWiseData,
@@ -71,7 +72,7 @@ const BlockWise = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  const { quranFont, translationLanguage } = useTheme();
+  const { quranFont, translationLanguage, theme } = useTheme();
   const { surahId } = useParams();
   
   // Use cached surah data
@@ -723,7 +724,7 @@ const BlockWise = () => {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <Transition />
+        
         <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
@@ -752,7 +753,7 @@ const BlockWise = () => {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <Transition />
+        
         <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-500 dark:text-red-400 text-lg mb-2">
@@ -776,12 +777,13 @@ const BlockWise = () => {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <Transition />
       <div className="mx-auto min-h-screen bg-white dark:bg-gray-900">
-        <div className="mx-auto px-3 sm:px-6 lg:px-8">
-          {/* Header with Tabs */}
-          <div className="bg-white dark:bg-gray-900 py-4 sm:py-6">
-            {/* Translation/Reading Tabs */}
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+          <div className="mx-auto px-3 sm:px-6 lg:px-8">
+            {/* Header with Tabs */}
+            <div className="py-4 sm:py-6">
+              {/* Translation/Reading Tabs */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
@@ -825,9 +827,9 @@ const BlockWise = () => {
             <div className="mb-6 sm:mb-8 relative">
               <div className="flex flex-col items-center px-2 sm:px-4">
                 <img
-                  src={Bismi}
+                  src={theme === "dark" ? DarkModeBismi : Bismi}
                   alt="Bismi"
-                  className="w-[236px] h-[52.9px] mb-4 dark:invert"
+                  className="w-[236px] h-[52.9px] mb-4"
                 />
               </div>
 
@@ -850,91 +852,69 @@ const BlockWise = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between max-w-full sm:max-w-[1290px] mx-auto space-y-2 sm:space-y-0">
-              <div className="flex items-center justify-start space-x-2">
-                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
-                <Link to={`/surahinfo/${surahId}`}>
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
-                    Surah info
-                  </span>
-                </Link>
-              </div>
+            {/* Surah Info */}
+            <div className="flex items-center justify-start space-x-2 ml-5">
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
+              <Link to={`/surahinfo/${surahId}`}>
+                <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
+                  Surah info
+                </span>
+              </Link>
+            </div>
 
-              {/* Play Audio */}
-              <div className="flex justify-between">
-                <div className="flex items-center space-x-2">
-                  {/* Audio Controls */}
-                  <div className="flex items-center space-x-2">
-                    {/* Play/Pause Audio Button (same as Reading.jsx) */}
-                    <button 
-                      className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
-                        isContinuousPlay 
-                          ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500" 
-                          : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
-                      }`}
-                      onClick={handlePlayAudio}
-                    >
-                      {isContinuousPlay ? (
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                      )}
+            {/* Play Audio */}
+            <div className="flex justify-between">
+              <div></div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handlePlayAudio}
+                  className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
+                    isContinuousPlay
+                      ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500"
+                      : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
+                  }`}
+                >
+                  {isContinuousPlay ? (
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                  ) : (
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                  )}
                   <span className="text-xs sm:text-sm font-medium">
-                        {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
+                    {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
                   </span>
                 </button>
-
-                    {/* Stop/Reset Button (same as Reading.jsx) */}
-                    {playingBlock && (
-                      <button 
-                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors min-h-[44px] px-2"
-                        onClick={stopPlayback}
-                        title="Stop and reset to beginning"
-                      >
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 6h12v12H6z"/>
-                        </svg>
-                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-                          Stop
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* Qirath Dropdown */}
-                  <select
-                    value={selectedQirath}
-                    onChange={(e) => setSelectedQirath(e.target.value)}
-                    className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
-                    aria-label="Select Qirath"
+                {playingBlock && (
+                  <button
+                    onClick={stopPlayback}
+                    className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                    title="Stop and reset to beginning"
                   >
-                    <option value="al-hudaify">Al-Hudaify</option>
-                    <option value="al-afasy">Al-Afasy</option>
-                    <option value="al-ghamidi">Al-Ghamidi</option>
-                  </select>
-                </div>
-                <div className="flex justify-end sm:hidden">
-                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
-                    <button
-                      onClick={() => navigate(`/surah/${surahId}`)}
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-xs font-medium hover:text-gray-700 transition-colors"
-                    >
-                      Ayah
-                    </button>
-                    {/* Hide blockwise for Tamil, Hindi, and Bangla */}
-                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'bn' && (
-                      <button className="px-2 sm:px-3 py-1.5 w-[55px] dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                        Block
-                      </button>
-                    )}
-                  </div>
-                </div>
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Stop</span>
+                  </button>
+                )}
+                
+                {/* Qirath Dropdown */}
+                <select
+                  value={selectedQirath}
+                  onChange={(e) => setSelectedQirath(e.target.value)}
+                  className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
+                  aria-label="Select Qirath"
+                >
+                  <option value="al-hudaify">Al-Hudaify</option>
+                  <option value="al-afasy">Al-Afasy</option>
+                  <option value="al-ghamidi">Al-Ghamidi</option>
+                </select>
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="mx-auto px-3 sm:px-6 lg:px-8">
           {/* Main Content */}
           <div className="max-w-full sm:max-w-[1290px] mx-auto pb-6 sm:pb-8">
             
@@ -971,7 +951,7 @@ const BlockWise = () => {
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                       <p
                         className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
-                        style={{ fontFamily: `'${quranFont}', serif` }}
+                        style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -1338,6 +1318,7 @@ const BlockWise = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
     </>
   );

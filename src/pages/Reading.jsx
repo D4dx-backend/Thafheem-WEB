@@ -13,7 +13,8 @@ import { useState, useEffect, useRef } from "react";
 import HomepageNavbar from "../components/HomeNavbar";
 import Transition from "../components/Transition";
 import { ChevronLeft, ChevronRight, ArrowUp } from "lucide-react";
-import Bismi from "../assets/bismi.jpg";
+import Bismi from "../assets/bismi.png";
+import DarkModeBismi from "../assets/darkmode-bismi.png";
 import { useTheme } from "../context/ThemeContext";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import {
@@ -408,18 +409,16 @@ const Reading = () => {
     return numberString.replace(/\d/g, (digit) => arabicDigits[digit]);
   };
 
-  const { quranFont } = useTheme();
+  const { quranFont, theme } = useTheme();
 
   const versesGroupedByPage = getVersesGroupedByPage();
 
   return (
-    <>
-      <Transition showPageInfo={true} />
-
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header - same as before */}
-        <div className="bg-gray-50 px-3 sm:px-4 lg:px-6 py-6 sm:py-8 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Page Header (single) */}
+        <div className="px-3 sm:px-4 lg:px-6 pt-2 dark:bg-gray-900">
           <div className="max-w-4xl mx-auto text-center">
+            {/* Transition moved into global header for single-header layout */}
             {/* Toggle Buttons */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
@@ -438,6 +437,7 @@ const Reading = () => {
                   </button>
                 </div>
               </div>
+              {/* Chapter selector and page info bar is provided by <Transition /> above */}
             </div>
 
             {/* Surah Title */}
@@ -456,6 +456,8 @@ const Reading = () => {
                   : surahInfo?.arabic || "البقرة"}
               </h1>
 
+              {/* Removed extra header row below surah title for Reading view */}
+
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
                 <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -472,9 +474,9 @@ const Reading = () => {
                 <div className="mb-6 sm:mb-8">
                   <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-arabic dark:text-white text-gray-800 leading-relaxed px-2">
                     <img
-                      src={Bismi}
+                      src={theme === "dark" ? DarkModeBismi : Bismi}
                       alt="Bismillah"
-                      className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto dark:invert"
+                      className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto"
                     />
                   </p>
                 </div>
@@ -512,13 +514,13 @@ const Reading = () => {
 
           {/* Content */}
           {!loading && !error && verses.length > 0 && (
-            <>
+            <div>
               <div className="flex flex-row sm:flex-row items-center justify-between mb-4">
                 {/* Left side */}
-                <div className="flex items-center space-x-2">
-                  <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
+                <div className="flex items-center space-x-2 ml-5">
+                  <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
                   <Link to={`/surahinfo/${surahId || 2}`}>
-                    <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
+                    <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
                       Surah info
                     </span>
                   </Link>
@@ -668,7 +670,7 @@ const Reading = () => {
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
 
@@ -746,9 +748,8 @@ const Reading = () => {
               <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 

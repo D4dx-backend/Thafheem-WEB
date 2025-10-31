@@ -194,6 +194,16 @@ const BookVerse = () => {
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="mx-auto p-3 sm:p-4 lg:p-6 min-h-screen bg-white dark:bg-gray-900 font-poppins">
         <div className="w-full max-w-[1290px] mx-auto">
+          {/* Top bar with Back button */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {bookmarkedVerses.map((verse) => {

@@ -254,7 +254,12 @@
 
 // export default BookmarkService;
 
-const THAFHEEM_API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://thafheem.net/thafheem-api';
+import { USE_API } from '../config/apiConfig.js'
+
+// Use Vite proxy during development to avoid CORS; fall back to env/production URL otherwise
+const THAFHEEM_API_BASE = import.meta.env.DEV
+  ? '/api/thafheem'
+  : (import.meta.env.VITE_API_BASE_URL || 'https://thafheem.net/thafheem-api');
 
 class BookmarkService {
   // Provide a persistent guest id for unauthenticated users
@@ -300,6 +305,13 @@ class BookmarkService {
 
   // Get user bookmarks
   static async getBookmarks(userId, bookmarkType = 'translation') {
+    // Dev: optionally disable remote API entirely
+    if (!USE_API) {
+      const all = this.getLocalBookmarks(userId);
+      return Array.isArray(all)
+        ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
+        : [];
+    }
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/bookmarks?userId=${userId}&bkType=${bookmarkType}`, {
         method: 'GET',
@@ -531,6 +543,133 @@ class BookmarkService {
       console.error('Error checking bookmark status:', error);
       return false;
     }
+  }
+
+  // Get favorite surahs/chapters
+  static async getFavoriteSurahs(userId) {
+    // Dev: optionally disable remote API entirely
+    if (!USE_API) {
+      return this.getLocalFavoriteSurahs(userId);
+    }
+    try {
+      const response = await fetch(`${THAFHEEM_API_BASE}/favorites?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.log('API failed, using localStorage fallback for favorites');
+        return this.getLocalFavoriteSurahs(userId);
+      }
+
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Error fetching favorites, using localStorage fallback:', error);
+      return this.getLocalFavoriteSurahs(userId);
+    }
+  }
+
+  // Add favorite surah
+  static async addFavoriteSurah(userId, surahId, surahName = '') {
+    const favoriteData = {
+      id: `${userId}_surah_${surahId}_${Date.now()}`,
+      userId: userId,
+      surahId: parseInt(surahId),
+      surahName: surahName,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch(`${THAFHEEM_API_BASE}/favorites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(favoriteData),
+      });
+
+      if (!response.ok) {
+        console.log('API failed, using localStorage fallback for adding favorite');
+        this.addLocalFavoriteSurah(userId, favoriteData);
+        return favoriteData;
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error adding favorite, using localStorage fallback:', error);
+      this.addLocalFavoriteSurah(userId, favoriteData);
+      return favoriteData;
+    }
+  }
+
+  // Delete favorite surah
+  static async deleteFavoriteSurah(userId, surahId) {
+    try {
+      const response = await fetch(`${THAFHEEM_API_BASE}/favorites/${userId}/${surahId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.log('API failed, using localStorage fallback for deleting favorite');
+        this.removeLocalFavoriteSurah(userId, surahId);
+        return { success: true };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting favorite, using localStorage fallback:', error);
+      this.removeLocalFavoriteSurah(userId, surahId);
+      return { success: true };
+    }
+  }
+
+  // Check if surah is favorited
+  static async isFavorited(userId, surahId) {
+    try {
+      const favorites = await this.getFavoriteSurahs(userId);
+      return favorites.some(fav => fav.surahId === parseInt(surahId));
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+      return false;
+    }
+  }
+
+  // Local storage methods for favorites
+  static getLocalFavoriteSurahs(userId) {
+    try {
+      const stored = localStorage.getItem(`favorites_${userId}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Error reading local favorites:', error);
+      return [];
+    }
+  }
+
+  static saveLocalFavoriteSurahs(userId, favorites) {
+    try {
+      localStorage.setItem(`favorites_${userId}`, JSON.stringify(favorites));
+    } catch (error) {
+      console.error('Error saving local favorites:', error);
+    }
+  }
+
+  static addLocalFavoriteSurah(userId, favoriteData) {
+    const favorites = this.getLocalFavoriteSurahs(userId);
+    favorites.push(favoriteData);
+    this.saveLocalFavoriteSurahs(userId, favorites);
+  }
+
+  static removeLocalFavoriteSurah(userId, surahId) {
+    const favorites = this.getLocalFavoriteSurahs(userId);
+    const filtered = favorites.filter(fav => fav.surahId !== parseInt(surahId));
+    this.saveLocalFavoriteSurahs(userId, filtered);
   }
 }
 

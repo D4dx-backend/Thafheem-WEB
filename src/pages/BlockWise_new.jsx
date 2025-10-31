@@ -67,6 +67,7 @@ const BlockWise = () => {
   const [selectedInterpretation, setSelectedInterpretation] = useState(null);
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -701,6 +702,20 @@ const BlockWise = () => {
     }
   };
 
+  // Handle scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const kabahIcon = (
     <svg
       width="14"
@@ -853,7 +868,7 @@ const BlockWise = () => {
             </div>
 
             {/* Surah Info */}
-            <div className="flex items-center justify-start space-x-2 ml-5">
+            <div className="flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
               <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
               <Link to={`/surahinfo/${surahId}`}>
                 <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
@@ -950,7 +965,7 @@ const BlockWise = () => {
 
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
                         style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
                       >
                         {arabicSlice.length > 0
@@ -1316,6 +1331,18 @@ const BlockWise = () => {
                 />
               </div>
             </div>
+          )}
+
+          {/* Floating Back to Top Button */}
+          {showScrollButton && (
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+              title="Beginning of Surah"
+              aria-label="Beginning of Surah"
+            >
+              <ArrowUp className="w-6 h-6" />
+            </button>
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import logoWhite from "../assets/logo-white.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
 import ForwardIcon from "../assets/forward.png";
@@ -49,7 +50,10 @@ const ListIcon = ({ className }) => (
   </svg>
 );
 
+import { useTheme } from "../context/ThemeContext";
+
 const HomepageSearch = () => {
+  const { theme } = useTheme();
   const [showPopular, setShowPopular] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -255,9 +259,9 @@ const HomepageSearch = () => {
       <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mb-8 sm:mb-10 mx-auto">
         <div className="w-full h-20 sm:h-24 md:h-28 lg:h-32 rounded-lg flex items-center justify-center">
           <img
-            src={logo}
+            src={theme === 'dark' ? logoWhite : logo}
             alt="Logo"
-            className="w-auto h-full object-contain p-2"
+            className="w-auto object-contain p-2 transition-transform h-16 sm:h-20 md:h-24 lg:h-28"
           />
         </div>
       </div>

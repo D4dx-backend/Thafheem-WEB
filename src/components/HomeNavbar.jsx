@@ -112,6 +112,21 @@ const HomepageNavbar = () => {
     }
   };
 
+  // Redirect away from Blockwise when language doesn't support it
+  useEffect(() => {
+    // Languages without Blockwise support
+    const noBlockwise = new Set(["ta", "hi", "bn", "ur"]);
+    if (location.pathname.startsWith("/blockwise/") && noBlockwise.has(translationLanguage)) {
+      const match = location.pathname.match(/\/blockwise\/(\d+)/);
+      const currentSurahId = match ? match[1] : undefined;
+      if (currentSurahId) {
+        navigate(`/surah/${currentSurahId}`, { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [translationLanguage, location.pathname, navigate]);
+
   const handleAuthButtonClick = () => {
     if (user) {
       handleSignOut();
@@ -169,6 +184,7 @@ const HomepageNavbar = () => {
   // Helper function to determine if a menu item is active
   const isActive = (path) => location.pathname === path;
   const handleBookmarkClick = () => {
+    // Navigate to bookmarks page - users can then click on their preferred tab
     navigate("/bookmarkedverses");
   };
   return (
@@ -237,7 +253,7 @@ const HomepageNavbar = () => {
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-opacity-50"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70"
             onClick={() => setIsSearchOpen(false)}
           ></div>
           <div className="bg-white dark:bg-[#2A2C38] w-full max-w-lg rounded-lg relative z-10 max-h-[90vh] overflow-auto mx-4">
@@ -248,9 +264,9 @@ const HomepageNavbar = () => {
 
       {/* Language Console Popup */}
       {isLanguageOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="fixed inset-0"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70"
             onClick={() => setIsLanguageOpen(false)}
           ></div>
           <div className="relative z-10 max-h-[90vh] overflow-auto">
@@ -305,7 +321,7 @@ const HomepageNavbar = () => {
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
 
-            {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
+            {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
               <img
                 src={theme === 'dark' ? logoWhite : logoBlack}
                 alt="Thafheem ul Quran"
@@ -351,7 +367,12 @@ const HomepageNavbar = () => {
               <Settings size={18} />
             </button>
             {isSettingsOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 z-[90]">
+                <div
+                  className="absolute inset-0 bg-black/50 dark:bg-black/70"
+                  onClick={() => setIsSettingsOpen(false)}
+                ></div>
+                {/* Drawer sits above the backdrop */}
                 <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
               </div>
             )}
@@ -394,16 +415,16 @@ const HomepageNavbar = () => {
 
       {/* Sidebar */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-40">
+        <div className="fixed inset-0 z-[80]">
           <div
-            className="absolute inset-0 bg-opacity-50"
+            className="absolute inset-0 bg-black/50 dark:bg-black/70"
             onClick={toggleMenu}
           ></div>
           <div className="absolute left-0 top-0 h-full w-full max-w-xs sm:max-w-sm md:w-80 bg-white dark:bg-[#2A2C38] shadow-lg overflow-y-auto">
             <div className="flex flex-col items-start p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between w-full mb-4 mt-15 border-b border-gray-200 dark:border-gray-700 pb-2">
                 <img
-                  src={logo}
+                  src={theme === 'dark' ? logoWhite : logoBlack}
                   alt="Thafheemul Quran"
                   className="h-10 sm:h-12 w-auto"
                 />

@@ -34,6 +34,7 @@ import { playAyahAudio } from "../utils/audio";
 import {
   fetchAyahAudioTranslations,
   listSurahNames,
+  fetchSurahs,
   fetchArabicVerses,
   fetchPageRanges,
   fetchAyaTranslation,
@@ -46,6 +47,41 @@ import banglaTranslationService from "../services/banglaTranslationService";
 import englishTranslationService from "../services/englishTranslationService";
 import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
+
+// Custom Kaaba Icon Component (Makkah)
+const KaabaIcon = ({ className }) => (
+  <svg
+    viewBox="0 0 11 13"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M1 4.05096L5.50813 6.87531M1 4.05096L5.50813 1.22656L10.0017 4.05096M1 4.05096V5.72135M5.50813 12.2306L1 9.44877V5.72135M5.50813 12.2306L10.0017 9.44877V5.72135M5.50813 12.2306V8.52443M5.50813 6.87531L10.0017 4.05096M5.50813 6.87531V8.52443M10.0017 4.05096V5.72135M10.0017 5.72135L5.50813 8.52443M5.50813 8.52443L1 5.72135"
+      stroke="currentColor"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Madina Icon Component
+const MadinaIcon = ({ className }) => (
+  <svg
+    width="11"
+    height="15"
+    viewBox="0 0 11 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M5.625 1.0498C5.96379 1.0415 6.15318 1.43447 5.9375 1.69434L5.93848 1.69531C5.8059 1.85727 5.73354 2.06001 5.7334 2.26953C5.73364 2.7733 6.13675 3.17749 6.63965 3.17773C6.8485 3.17752 7.05247 3.1038 7.21484 2.9707C7.35907 2.84911 7.5516 2.85714 7.68555 2.94922C7.82703 3.0465 7.89339 3.22605 7.83203 3.42188C7.62359 4.1963 6.95559 4.74982 6.16699 4.82324V4.96973C6.38842 5.29376 6.73956 5.57803 7.17188 5.86035C7.39553 6.00639 7.63673 6.14949 7.88672 6.29688C8.13549 6.44354 8.39372 6.59442 8.64746 6.75391C9.69542 7.41265 10.702 8.26832 10.7217 9.86133C10.7302 10.5552 10.5894 11.4633 9.97949 12.293C10.3948 12.3364 10.7226 12.6925 10.7227 13.1182V13.9834C10.7235 14.202 10.5466 14.3792 10.3281 14.3789V14.3799H1.21582C0.998036 14.379 0.822454 14.2011 0.823242 13.9834V13.1182C0.823351 12.6643 1.19496 12.2891 1.65039 12.2891H8.89941C9.63381 11.6946 9.91674 10.8407 9.93359 9.86035C9.95344 8.7001 9.20568 8.05633 8.22656 7.4209C7.99002 7.26739 7.75176 7.12838 7.51562 6.99219C7.28064 6.85666 7.04583 6.72296 6.82227 6.58398C6.43649 6.34416 6.0728 6.08117 5.77148 5.74121C5.46708 6.08406 5.09223 6.35958 4.7002 6.60547C4.47252 6.74826 4.23591 6.88329 4.00293 7.0166C3.76878 7.15058 3.53754 7.28322 3.31543 7.42285C2.42056 7.98548 1.62622 8.63485 1.61133 9.86523C1.6014 10.6849 1.83171 11.2575 2.07324 11.6484H2.07227C2.13777 11.7504 2.15412 11.8634 2.12402 11.9678C2.0949 12.0686 2.02647 12.1474 1.94727 12.1963C1.86807 12.2451 1.76716 12.2711 1.66406 12.252C1.55623 12.2319 1.46123 12.1657 1.39941 12.0596V12.0586C1.0886 11.5539 0.816533 10.8308 0.823242 9.8623C0.83371 8.36129 1.75222 7.45412 2.89844 6.75293C3.41821 6.43497 3.92281 6.1624 4.37598 5.86426C4.80764 5.58025 5.15748 5.29245 5.37891 4.9668V4.72949C4.62425 4.47414 4.07622 3.76183 4.07617 2.9209C4.07617 2.19418 4.55355 1.26045 5.59473 1.05273L5.61035 1.0498H5.625ZM1.62207 13.0869C1.61745 13.0916 1.61137 13.1013 1.61133 13.1182V13.5908H9.93457V13.1182C9.93452 13.1022 9.92888 13.093 9.92383 13.0879C9.91879 13.0828 9.90931 13.0771 9.89355 13.0771H1.65039C1.63521 13.0771 1.6266 13.0825 1.62207 13.0869ZM4.95801 2.47852C4.89845 2.61488 4.86542 2.76443 4.86523 2.9209L4.87109 3.03613C4.92841 3.60447 5.40474 4.04371 5.98926 4.04395C6.14409 4.04376 6.29155 4.00941 6.42676 3.95117C5.66139 3.85413 5.05306 3.24442 4.95801 2.47852Z"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="0.35469"
+    />
+  </svg>
+);
 
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize, translationLanguage, theme } = useTheme();
@@ -75,6 +111,11 @@ const Surah = () => {
   const [bookmarkedVerses, setBookmarkedVerses] = useState(new Set());
   const [bookmarkLoading, setBookmarkLoading] = useState({});
   const [tamilDownloading, setTamilDownloading] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  // Favorite surah state
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   
   // Hindi footnote modal state
   const [showHindiFootnoteModal, setShowHindiFootnoteModal] = useState(false);
@@ -210,10 +251,12 @@ const Surah = () => {
 
         const [
           surahNamesResponse,
+          surahsResponse,
           arabicResponse,
           pageRangesResponse,
         ] = await Promise.all([
           listSurahNames(),
+          fetchSurahs(),
           fetchArabicVerses(parseInt(surahId)),
           fetchPageRanges(),
         ]);
@@ -422,10 +465,22 @@ const Surah = () => {
         const currentSurah = surahNamesResponse.find(
           (s) => s.id === parseInt(surahId)
         );
+        // Get type from surahsResponse which includes Makki/Madani information
+        const currentSurahWithType = surahsResponse.find(
+          (s) => s.number === parseInt(surahId)
+        );
         setSurahInfo(
           currentSurah
-            ? { arabic: currentSurah.arabic, number: currentSurah.id }
-            : { arabic: "Unknown Surah", number: parseInt(surahId) }
+            ? { 
+                arabic: currentSurah.arabic, 
+                number: currentSurah.id,
+                type: currentSurahWithType?.type || 'Makki' 
+              }
+            : { 
+                arabic: "Unknown Surah", 
+                number: parseInt(surahId),
+                type: 'Makki' 
+              }
         );
       } catch (err) {
         setError(err.message);
@@ -460,6 +515,25 @@ const Surah = () => {
     };
 
     loadBookmarks();
+  }, [user, surahId]);
+
+  // Load favorite status for the current surah
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!user || !surahId) {
+        setIsFavorited(false);
+        return;
+      }
+
+      try {
+        const favorited = await BookmarkService.isFavorited(user.uid, surahId);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Error loading favorite status:", error);
+      }
+    };
+
+    loadFavoriteStatus();
   }, [user, surahId]);
 
   // Handle scroll to specific verse when navigating with anchor
@@ -624,6 +698,43 @@ const Surah = () => {
       showError("Failed to manage bookmark. Please try again.");
     } finally {
       setBookmarkLoading((prev) => ({ ...prev, [verseKey]: false }));
+    }
+  };
+
+  // Handle favorite surah toggle
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+
+    // Check if user is signed in
+    if (!user) {
+      showError("Please sign in to favorite surahs");
+      navigate("/sign");
+      return;
+    }
+
+    try {
+      setFavoriteLoading(true);
+
+      if (isFavorited) {
+        // Remove from favorites
+        await BookmarkService.deleteFavoriteSurah(user.uid, surahId);
+        setIsFavorited(false);
+        showSuccess("Surah removed from favorites");
+      } else {
+        // Add to favorites
+        await BookmarkService.addFavoriteSurah(
+          user.uid,
+          surahId,
+          surahInfo?.arabic || `Surah ${surahId}`
+        );
+        setIsFavorited(true);
+        showSuccess("Surah added to favorites");
+      }
+    } catch (error) {
+      console.error("Error managing favorite:", error);
+      showError("Failed to manage favorite. Please try again.");
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -923,22 +1034,25 @@ const Surah = () => {
     }
   };
 
-  const kabahIcon = (
-    <svg
-      width="14"
-      height="20"
-      viewBox="0 0 14 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-black dark:text-white"
-    >
-      <path
-        d="M7.04102 0.876953C7.21988 0.872433 7.35595 0.982913 7.41797 1.12012C7.47966 1.25677 7.47269 1.43054 7.36328 1.56934L7.36426 1.57031C7.17444 1.81689 7.07051 2.12551 7.07031 2.44629C7.07036 3.2205 7.65293 3.83008 8.36328 3.83008C8.62217 3.82971 8.87562 3.74502 9.08984 3.58887L9.17871 3.51758C9.32708 3.38317 9.52955 3.38964 9.66992 3.49219C9.81323 3.59692 9.88171 3.79048 9.81445 4.01172L9.81543 4.0127C9.54829 5.06733 8.66874 5.81651 7.63672 5.87305V6.23242C7.93786 6.71662 8.42031 7.12993 9 7.53223C9.29438 7.7365 9.61115 7.93618 9.9375 8.14062C10.2631 8.34461 10.5987 8.55402 10.9287 8.77441C12.2911 9.68443 13.5581 10.839 13.583 12.9795C13.5946 13.9776 13.3942 15.2962 12.499 16.4688H12.6113C13.1516 16.469 13.5839 16.9408 13.584 17.4961V18.6973C13.5847 18.8969 13.4503 19.0739 13.2607 19.1143L13.1768 19.123H1.28125C1.05037 19.1218 0.876181 18.9239 0.876953 18.6973V17.4961C0.877067 16.9411 1.3077 16.4688 1.84863 16.4688H11.3506C12.3649 15.6135 12.7489 14.3763 12.7715 12.9785C12.7985 11.2944 11.769 10.3685 10.4912 9.4873C10.1797 9.27251 9.86617 9.07874 9.55762 8.88965C9.24992 8.70108 8.94523 8.51673 8.65527 8.3252C8.11964 7.97136 7.62651 7.58501 7.22949 7.07812C6.8299 7.58748 6.31991 7.99159 5.77539 8.35449C5.48029 8.55117 5.17372 8.73767 4.86914 8.92285C4.56391 9.10843 4.26079 9.29321 3.96875 9.48828C2.79826 10.2702 1.70969 11.2034 1.68945 12.9824C1.67627 14.1447 1.98255 14.9624 2.30762 15.5225C2.45386 15.7601 2.35174 15.9993 2.18262 16.1104C2.09875 16.1654 1.99273 16.1939 1.88574 16.1729C1.77539 16.1511 1.67857 16.0793 1.61426 15.9619V15.9609C1.2185 15.279 0.868253 14.2984 0.876953 12.9795C0.890309 10.9645 2.04737 9.73924 3.5332 8.77344C4.2039 8.33749 4.87254 7.95218 5.46484 7.53809C6.04306 7.13381 6.52411 6.7165 6.8252 6.23145V5.76562C5.84108 5.45019 5.12515 4.48656 5.125 3.35059C5.125 2.39207 5.71839 1.15535 7.01855 0.879883L7.0293 0.87793L7.04102 0.876953ZM1.84863 17.3164C1.76319 17.3164 1.68955 17.3833 1.68945 17.4961V18.2754H12.7725V17.4961C12.7724 17.3848 12.6978 17.3166 12.6113 17.3164H1.84863ZM6.26367 2.33301C6.05854 2.61668 5.93789 2.96975 5.9375 3.35059C5.93768 4.29033 6.6467 5.03107 7.51367 5.03125C7.87411 5.0308 8.20953 4.89868 8.47852 4.67285C8.44029 4.6753 8.4019 4.67769 8.36328 4.67773C7.19699 4.67773 6.25786 3.66674 6.25781 2.44629C6.25784 2.40838 6.26172 2.37059 6.26367 2.33301Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="0.245554"
-      />
-    </svg>
+  // Handle scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Get the appropriate icon based on surah type
+  const surahIcon = surahInfo?.type === 'Makki' ? (
+    <KaabaIcon className="h-4 w-4 text-[#3FA5C0]" />
+  ) : (
+    <MadinaIcon className="h-4 w-4 text-[#3FA5C0]" />
   );
 
   const handleCopyVerse = async (arabicText, translation, verseNumber) => {
@@ -1167,8 +1281,9 @@ const Surah = () => {
           setLoading(true);
           setError(null);
           
-          const [surahNamesResponse, arabicResponse, pageRangesResponse] = await Promise.all([
+          const [surahNamesResponse, surahsResponse, arabicResponse, pageRangesResponse] = await Promise.all([
             listSurahNames(),
+            fetchSurahs(),
             fetchArabicVerses(parseInt(surahId)),
             fetchPageRanges(),
           ]);
@@ -1211,10 +1326,22 @@ const Surah = () => {
           const currentSurah = surahNamesResponse.find(
             (s) => s.id === parseInt(surahId)
           );
+          // Get type from surahsResponse which includes Makki/Madani information
+          const currentSurahWithType = surahsResponse.find(
+            (s) => s.number === parseInt(surahId)
+          );
           setSurahInfo(
             currentSurah
-              ? { arabic: currentSurah.arabic, number: currentSurah.id }
-              : { arabic: "Unknown Surah", number: parseInt(surahId) }
+              ? { 
+                  arabic: currentSurah.arabic, 
+                  number: currentSurah.id,
+                  type: currentSurahWithType?.type || 'Makki' 
+                }
+              : { 
+                  arabic: "Unknown Surah", 
+                  number: parseInt(surahId),
+                  type: 'Makki' 
+                }
           );
         } catch (err) {
           setError(err.message);
@@ -1286,19 +1413,16 @@ const Surah = () => {
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
-                      Translation
-                    </span>
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
                   </button>
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <Link to={`/reading/${surahId}`}>
-                      <span className="text-xs sm:text-sm text-black font-poppins dark:text-white cursor-pointer hover:underline">
-                        Reading
-                      </span>
-                    </Link>
+                  <button
+                    onClick={() => navigate(`/reading/${surahId}`)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800 min-h-[40px] sm:min-h-[44px]"
+                  >
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
                   </button>
                 </div>
               </div>
@@ -1416,10 +1540,19 @@ const Surah = () => {
               {/* Action Icons */}
               <div className="flex items-center justify-center space-x-3 sm:space-x-4">
                 <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  {kabahIcon}
+                  {surahIcon}
                 </button>
-                <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                <button 
+                  onClick={handleFavoriteClick}
+                  disabled={favoriteLoading}
+                  className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    favoriteLoading 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:text-gray-600 dark:hover:text-gray-300'
+                  } ${isFavorited ? 'text-red-500' : 'text-gray-400 dark:text-white'}`}
+                  title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
                 </button>
               </div>
 
@@ -1433,7 +1566,7 @@ const Surah = () => {
               </p>
 
               {/* Surah Info */}
-              <div className="flex items-center justify-start space-x-2 ml-5">
+              <div className="flex items-center justify-start space-x-0 ml-[10px]">
                 <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
                 <Link to={`/surahinfo/${surahId}`}>
                   <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
@@ -1549,10 +1682,19 @@ const Surah = () => {
                 {/* Action Icons */}
                 <div className="flex items-center justify-center space-x-3 sm:space-x-4">
                   <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                    {kabahIcon}
+                    {surahIcon}
                   </button>
-                  <button className="p-2 text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                    <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <button 
+                    onClick={handleFavoriteClick}
+                    disabled={favoriteLoading}
+                    className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                      favoriteLoading 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:text-gray-600 dark:hover:text-gray-300'
+                    } ${isFavorited ? 'text-red-500' : 'text-black dark:text-white'}`}
+                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
                   </button>
                 </div>
 
@@ -1564,28 +1706,27 @@ const Surah = () => {
                     className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto"
                   />
 
-                  {/* Desktop Ayah wise / Block wise buttons */}
-                  <div className="absolute top-0 right-0">
-                    <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                      <button className="px-3 sm:px-4 py-1.5 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
-                        Ayah wise
-                      </button>
-                      {/* Hide blockwise for Tamil, Hindi, Urdu, and Bangla */}
-                      {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && translationLanguage !== 'bn' && (
+                  {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
+                  {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                    <div className="absolute top-0 right-0">
+                      <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                        <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                          Ayah wise
+                        </button>
                         <button
-                          className="px-3 sm:px-4 py-1.5 text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs sm:text-sm font-medium hover:text-gray-700 dark:hover:text-white transition-colors"
+                          className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
                           onClick={() => navigate(`/blockwise/${surahId}`)}
                         >
                           Block wise
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Desktop Bottom Section */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center justify-start space-x-2 ml-5">
+                  <div className="flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
                     <Info className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
                     <Link to={`/surahinfo/${surahId}`}>
                       <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
@@ -1705,14 +1846,14 @@ const Surah = () => {
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
-                    className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 rounded-md transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6]"
+                    className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
                     style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}
                     {/* Arabic Text */}
                     <div className="text-right mb-2 sm:mb-3 lg:mb-4">
                       <p
-                        className="leading-loose dark:text-white text-gray-900 px-2 sm:px-0"
+                        className="leading-loose dark:text-white text-gray-900 px-4 sm:px-6 md:px-8"
                         style={{
                           fontFamily: quranFont,
                           fontSize: `${fontSize}px`,
@@ -1734,7 +1875,7 @@ const Surah = () => {
                     <div className="mb-2 sm:mb-3">
                       {translationLanguage === 'hi' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-hindi font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-hindi font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-hindi-translation={verse.RawTranslation || verse.Translation}
@@ -1744,7 +1885,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ur' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-urdu font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-urdu font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-urdu-translation={verse.RawTranslation || verse.Translation}
@@ -1754,7 +1895,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'bn' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-bengali font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-bengali font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-bangla-translation={verse.RawTranslation || verse.Translation}
@@ -1764,7 +1905,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ta' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-tamil font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-tamil font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-tamil-translation={verse.RawTranslation || verse.Translation}
@@ -1774,7 +1915,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'E' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-english-translation={verse.RawTranslation || verse.Translation}
@@ -1784,7 +1925,7 @@ const Surah = () => {
                         />
                       ) : (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-2 sm:px-0 font-poppins font-normal"
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
                           style={{ fontSize: `${translationFontSize}px` }}
                         >
                           {verse.Translation}
@@ -1793,7 +1934,7 @@ const Surah = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-4 md:px-6">
                       {/* Verse Number */}
                       <span className="text-xs sm:text-sm font-medium">
                         {surahId}.{index + 1}
@@ -2239,9 +2380,21 @@ const Surah = () => {
             </div>
           </div>
         )}
+
+        {/* Floating Back to Top Button */}
+        {showScrollButton && (
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+            title="Beginning of Surah"
+            aria-label="Beginning of Surah"
+          >
+            <ArrowUp className="w-6 h-6" />
+          </button>
+        )}
       </div>
     </div>
-    </div>
+        </div>
   );
 };
 

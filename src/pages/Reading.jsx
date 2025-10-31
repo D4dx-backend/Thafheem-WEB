@@ -45,6 +45,7 @@ const Reading = () => {
   const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
   const currentAudioRef = useRef(null);
   const audioRefForCleanup = useRef(null); // Track audio for cleanup
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Generate audio URL for the selected Qirath, surah, and ayah
   const generateAudioUrl = (surahId, ayahId, qirathName, qirathCode) => {
@@ -386,6 +387,20 @@ const Reading = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Handle scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const kabahIcon = (
     <svg
       width="14"
@@ -423,17 +438,16 @@ const Reading = () => {
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <Link to={`/surah/${surahId || 2}`}>
-                      <span className="text-xs sm:text-sm text-black dark:text-white cursor-pointer hover:underline">
-                        Translation
-                      </span>
-                    </Link>
+                  <button
+                    onClick={() => navigate(`/surah/${surahId || 2}`)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="">Translation</span>
                   </button>
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm">
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <span className="text-black dark:text-white">Reading</span>
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm">
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span>Reading</span>
                   </button>
                 </div>
               </div>
@@ -749,6 +763,18 @@ const Reading = () => {
             </button>
           </div>
       </div>
+
+      {/* Floating Back to Top Button */}
+      {showScrollButton && (
+        <button
+          onClick={handleScrollToTop}
+          className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          title="Beginning of Surah"
+          aria-label="Beginning of Surah"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };

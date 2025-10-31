@@ -87,7 +87,7 @@ const Settings = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
+    <div className="fixed inset-y-0 right-0 z-[100] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
       {/* Header */}
       {/* <div className="flex items-center justify-between p-6 border-b border-gray-200 "> */}
       <div className="flex items-center justify-between p-6 shadow-md">

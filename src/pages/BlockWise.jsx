@@ -67,6 +67,7 @@ const BlockWise = () => {
   const [selectedInterpretation, setSelectedInterpretation] = useState(null);
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -701,6 +702,20 @@ const BlockWise = () => {
     }
   };
 
+  // Handle scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const kabahIcon = (
     <svg
       width="14"
@@ -787,19 +802,16 @@ const BlockWise = () => {
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
-                      Translation
-                    </span>
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
                   </button>
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <Link to={`/reading/${surahId}`}>
-                      <span className="text-xs sm:text-sm font-poppins text-black dark:text-white cursor-pointer hover:underline">
-                        Reading
-                      </span>
-                    </Link>
+                  <button
+                    onClick={() => navigate(`/reading/${surahId}`)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800 min-h-[40px] sm:min-h-[44px]"
+                  >
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
                   </button>
                 </div>
               </div>
@@ -809,7 +821,7 @@ const BlockWise = () => {
             <div className="text-center mb-4 sm:mb-6">
               <h1
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4"
-                style={{ fontFamily: "Arial" }}
+                style={{ fontFamily: quranFont }}
               >
                 {blockData?.surahInfo?.arabic || "القرآن"}
               </h1>
@@ -833,27 +845,26 @@ const BlockWise = () => {
                 />
               </div>
 
-              {/* Desktop Ayah wise / Block wise buttons */}
-              <div className="absolute top-0 right-0 hidden sm:block">
-                <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                  <button
-                    className="px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-xs sm:text-sm font-medium hover:text-gray-700 transition-colors"
-                    onClick={() => navigate(`/surah/${surahId}`)}
-                  >
-                    Ayah wise
-                  </button>
-                  {/* Hide blockwise for Tamil, Hindi, and Bangla */}
-                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'bn' && (
-                    <button className="px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
+              {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
+              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                <div className="absolute top-0 right-0 hidden sm:block">
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <button
+                      className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
+                      onClick={() => navigate(`/surah/${surahId}`)}
+                    >
+                      Ayah wise
+                    </button>
+                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                       Block wise
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Surah Info */}
-            <div className="flex items-center justify-start space-x-2 ml-5">
+            <div className="flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
               <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
               <Link to={`/surahinfo/${surahId}`}>
                 <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
@@ -950,7 +961,7 @@ const BlockWise = () => {
 
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
                         style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
                       >
                         {arabicSlice.length > 0
@@ -1316,6 +1327,18 @@ const BlockWise = () => {
                 />
               </div>
             </div>
+          )}
+
+          {/* Floating Back to Top Button */}
+          {showScrollButton && (
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+              title="Beginning of Surah"
+              aria-label="Beginning of Surah"
+            >
+              <ArrowUp className="w-6 h-6" />
+            </button>
           )}
         </div>
       </div>

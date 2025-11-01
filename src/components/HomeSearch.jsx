@@ -261,7 +261,7 @@ const HomepageSearch = () => {
           <img
             src={theme === 'dark' ? logoWhite : logo}
             alt="Logo"
-            className="w-auto object-contain p-2 transition-transform h-16 sm:h-20 md:h-24 lg:h-28"
+            className="object-contain transition-transform h-16 sm:h-20 md:h-24 lg:h-28 max-w-[260px] sm:max-w-[300px] md:max-w-[360px] lg:max-w-[400px] w-auto"
           />
         </div>
       </div>

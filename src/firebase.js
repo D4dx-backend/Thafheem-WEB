@@ -19,7 +19,20 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+// Initialize Analytics only if available and in browser environment
+let analytics = null;
+try {
+  // Only initialize analytics in browser environment
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+} catch (error) {
+  // Silently fail if analytics cannot be initialized (e.g., network issues, ad blockers, DNS failures)
+  // This prevents the app from breaking when analytics cannot connect
+  console.warn('Firebase Analytics initialization failed:', error.message);
+}
+
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');

@@ -38,7 +38,6 @@ import InterpretationBlockwise from "./pages/InterpretationBlockwise";
 import Note from "./pages/Note";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
-import ApiStatusBanner from "./components/ApiStatusBanner";
 
 function App() {
   // Use basename only in production, not in development
@@ -49,7 +48,6 @@ function App() {
       <AuthProvider>
         <Router basename={basename}>
           <HomepageNavbar />
-          <ApiStatusBanner />
           <Routes>
             <Route path="/" element={<Home />} /> {/* Surah/Home */}
             <Route path="/juz" element={<Juz />} />

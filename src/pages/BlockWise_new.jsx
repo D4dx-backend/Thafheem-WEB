@@ -1096,9 +1096,16 @@ const BlockWise = () => {
                         {translationLanguage !== 'ta' && translationLanguage !== 'E' && translationLanguage !== 'mal' && (
                           <button
                             className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                            onClick={() => {
+                            onClick={(e) => {
                               const targetUrl = `/surah/${surahId}#verse-${start}`;
-                              navigate(targetUrl);
+                              const isModifierPressed = e?.ctrlKey || e?.metaKey;
+                              
+                              if (isModifierPressed) {
+                                e.preventDefault();
+                                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                              } else {
+                                navigate(targetUrl);
+                              }
                             }}
                             title="View ayah details"
                           >
@@ -1109,10 +1116,18 @@ const BlockWise = () => {
                         {/* Note/Page - Word by Word */}
                         <button
                           className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                          onClick={() => {
-                            navigate(`/word-by-word/${surahId}/${start}`, {
-                              state: { from: location.pathname },
-                            });
+                          onClick={(e) => {
+                            const url = `/word-by-word/${surahId}/${start}`;
+                            const isModifierPressed = e?.ctrlKey || e?.metaKey;
+                            
+                            if (isModifierPressed) {
+                              e.preventDefault();
+                              window.open(url, '_blank', 'noopener,noreferrer');
+                            } else {
+                              navigate(url, {
+                                state: { from: location.pathname },
+                              });
+                            }
                           }}
                           title="Word by word"
                         >
@@ -1296,7 +1311,7 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Ayah Interpretation (from clicking ayah numbers) */}
           {showInterpretation && selectedNumber && (
-            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full">
                 <InterpretationBlockwise
                   key={`interpretation-${surahId}-${selectedNumber}`}
@@ -1317,7 +1332,7 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (
-            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full shadow-2xl">
                 <InterpretationBlockwise
                   key={`block-interpretation-${surahId}-${selectedInterpretation.range}-${selectedInterpretation.interpretationNumber}`}
@@ -1337,7 +1352,9 @@ const BlockWise = () => {
           {showScrollButton && (
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+              className={`fixed right-6 z-[60] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+                currentAyahInBlock ? 'bottom-32 sm:bottom-36' : 'bottom-6'
+              }`}
               title="Beginning of Surah"
               aria-label="Beginning of Surah"
             >

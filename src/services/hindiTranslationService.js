@@ -11,7 +11,9 @@ class HindiTranslationService {
     this.cache = new Map();
     this.pendingRequests = new Map();
     // SQL.js fallback properties
-    this.dbPath = '/quran_hindi.db';
+    // Use BASE_URL from Vite config to handle base path correctly
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    this.dbPath = `${baseUrl}quran_hindi.db`.replace(/\/+/g, '/'); // Normalize slashes
     this.dbPromise = null;
   }
   /**
@@ -71,8 +73,20 @@ class HindiTranslationService {
    */
   async makeApiRequest(endpoint) {
     try {
-      const response = await apiService.get(`${API_BASE_URL}/api/v1${endpoint}`);
-      return response;
+      // Use fetch directly like Bangla service, or use apiService.makeRequest
+      const url = new URL(`${API_BASE_URL}/api${endpoint}`);
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error(`❌ API request failed for ${endpoint}:`, error);
       throw error;
@@ -96,11 +110,31 @@ class HindiTranslationService {
       const SQL = await window.initSqlJs({
         locateFile: (file) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
       });
-      const response = await fetch(this.dbPath);
+      // Try fetching with base path first, then fallback to root path
+      let response;
+      let dbPath = this.dbPath;
+      console.log(`📥 Fetching Hindi database from: ${dbPath}`);
+      response = await fetch(dbPath);
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch Hindi DB: ${response.status} ${response.statusText}`);
+        // Fallback to root path if base path fails (common in development)
+        const rootPath = '/quran_hindi.db';
+        if (dbPath !== rootPath) {
+          console.warn(`⚠️ Failed to fetch from ${dbPath} (${response.status}), trying root path: ${rootPath}`);
+          dbPath = rootPath;
+          response = await fetch(rootPath);
+          if (!response.ok) {
+            console.error(`❌ Failed to fetch Hindi DB from ${rootPath}: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch Hindi DB: ${response.status} ${response.statusText}`);
+          }
+        } else {
+          console.error(`❌ Failed to fetch Hindi DB from ${dbPath}: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch Hindi DB: ${response.status} ${response.statusText}`);
+        }
       }
+      
       const buffer = await response.arrayBuffer();
+      console.log(`✅ Successfully loaded Hindi database from: ${dbPath}`);
       return new SQL.Database(new Uint8Array(buffer));
     })();
     return this.dbPromise;
@@ -280,10 +314,10 @@ class HindiTranslationService {
     if (this.useApi) {
       try {
         const apiResponse = await this.makeApiRequest(`/${this.language}/translation/${surahNo}/${ayahNo}`);
-        if (apiResponse && apiResponse.translation) {
+        if (apiResponse && apiResponse.translation_text) {
           // Cache the result
-          this.setCachedData(cacheKey, apiResponse.translation);
-          return apiResponse.translation;
+          this.setCachedData(cacheKey, apiResponse.translation_text);
+          return apiResponse.translation_text;
         }
       } catch (apiError) {
         console.warn(`⚠️ API failed for translation ${surahNo}:${ayahNo}, falling back to SQL.js:`, apiError.message);
@@ -323,7 +357,7 @@ class HindiTranslationService {
     // Try API first if enabled
     if (this.useApi) {
       try {
-        const apiResponse = await this.makeApiRequest(`/${this.language}/translation/${surahNo}`);
+        const apiResponse = await this.makeApiRequest(`/${this.language}/surah/${surahNo}`);
         if (apiResponse && apiResponse.translations && apiResponse.translations.length > 0) {
           // Map API response to expected format
           const mappedTranslations = apiResponse.translations.map(translation => ({

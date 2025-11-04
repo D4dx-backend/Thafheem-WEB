@@ -41,10 +41,13 @@ import { AuthProvider } from "./context/AuthContext";
 import ApiStatusBanner from "./components/ApiStatusBanner";
 
 function App() {
+  // Use basename only in production, not in development
+  const basename = import.meta.env.PROD ? '/new_thafheem_web' : '/';
+  
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router basename="/new_thafheem_web">
+        <Router basename={basename}>
           <HomepageNavbar />
           <ApiStatusBanner />
           <Routes>

@@ -17,7 +17,9 @@ class BanglaTranslationService {
     this.apiBaseUrl = API_BASE_URL;
     this.language = 'bangla';
     // SQL.js configuration
-    this.dbPath = '/quran_bangla.db';
+    // Use BASE_URL from Vite config to handle base path correctly
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    this.dbPath = `${baseUrl}quran_bangla.db`.replace(/\/+/g, '/'); // Normalize slashes
     this.db = null;
     this.dbPromise = null;
     this.isDownloaded = false;
@@ -85,7 +87,7 @@ class BanglaTranslationService {
    * @returns {Promise<Object>} API response
    */
   async makeApiRequest(endpoint, params = {}) {
-    const url = new URL(`${this.apiBaseUrl}/api/v1${endpoint}`);
+    const url = new URL(`${this.apiBaseUrl}/api${endpoint}`);
     // Add query parameters
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
@@ -131,11 +133,67 @@ class BanglaTranslationService {
         const SQL = await window.initSqlJs({
           locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
         });
-        // Load the database file
-        const response = await fetch(this.dbPath);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch database: ${response.status} ${response.statusText}`);
+        // Try fetching with multiple path options
+        // Vite serves public folder files from root in dev, but respects base path in production
+        let response;
+        let dbPath;
+        
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const rootPath = '/quran_bangla.db';
+        const basePath = `${baseUrl}quran_bangla.db`.replace(/\/+/g, '/');
+        
+        // When base path is set, we need to try paths with the base path
+        // Vite serves public files but the URL path may need to include base path
+        const hasBasePath = baseUrl !== '/';
+        
+        // Construct paths to try - prioritize base path if it exists
+        const pathsToTry = [];
+        if (hasBasePath) {
+          // If base path exists, try base path first, then root
+          pathsToTry.push(basePath, rootPath);
+          // Also try without leading slash on base path
+          const basePathNoSlash = baseUrl.replace(/\/$/, '') + '/quran_bangla.db';
+          if (basePathNoSlash !== basePath) {
+            pathsToTry.push(basePathNoSlash);
+          }
+        } else {
+          // No base path, try root first
+          pathsToTry.push(rootPath, basePath);
         }
+        
+        // Remove duplicates
+        const uniquePaths = [...new Set(pathsToTry)];
+        
+        let lastError = null;
+        for (const path of uniquePaths) {
+          try {
+            const fullUrl = path.startsWith('http') ? path : new URL(path, window.location.origin).href;
+            console.log(`📥 Trying to fetch Bangla database from: ${path} (full URL: ${fullUrl})`);
+            response = await fetch(path);
+            if (response.ok) {
+              dbPath = path;
+              console.log(`✅ Successfully loaded Bangla database from: ${dbPath}`);
+              break;
+            } else {
+              console.warn(`⚠️ Failed to fetch from ${path}: ${response.status} ${response.statusText}`);
+              lastError = new Error(`Failed to fetch database from ${path}: ${response.status} ${response.statusText}`);
+            }
+          } catch (error) {
+            console.warn(`⚠️ Error fetching from ${path}:`, error.message);
+            lastError = error;
+          }
+        }
+        
+        if (!response || !response.ok) {
+          console.error(`❌ Failed to fetch Bangla DB from all attempted paths:`, uniquePaths);
+          console.error(`❌ Current location: ${window.location.href}`);
+          console.error(`❌ BASE_URL: ${import.meta.env.BASE_URL}`);
+          console.error(`❌ DEV mode: ${import.meta.env.DEV}`);
+          console.error(`❌ Please verify the database file exists at: Thafheem-WEB/public/quran_bangla.db`);
+          console.error(`❌ Try accessing directly in browser: ${window.location.origin}${basePath}`);
+          throw lastError || new Error(`Failed to fetch database: All paths failed`);
+        }
+        
         const buffer = await response.arrayBuffer();
         const db = new SQL.Database(new Uint8Array(buffer));
         // Verify database structure

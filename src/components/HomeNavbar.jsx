@@ -420,7 +420,7 @@ const HomepageNavbar = () => {
             className="absolute inset-0 bg-black/50 dark:bg-black/70"
             onClick={toggleMenu}
           ></div>
-          <div className="absolute left-0 top-0 h-full w-full max-w-xs sm:max-w-sm md:w-80 bg-white dark:bg-[#2A2C38] shadow-lg overflow-y-auto">
+          <div className="absolute left-0 top-0 h-full max-w-[280px] sm:max-w-[300px] md:w-72 bg-white dark:bg-[#2A2C38] shadow-lg overflow-y-auto">
             <div className="flex flex-col items-start p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between w-full mb-4 mt-15 border-b border-gray-200 dark:border-gray-700 pb-2">
                 <img

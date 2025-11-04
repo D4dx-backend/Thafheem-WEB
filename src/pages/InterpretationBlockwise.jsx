@@ -1251,15 +1251,26 @@ const InterpretationBlockwise = (props) => {
     }
   };
 
-  const handleWordByWord = () => {
+  const handleWordByWord = (event) => {
     // Extract the first verse from the range for word-by-word view
     const firstVerse = /^\d+/.exec(String(range))?.[0] || "1";
-
-    navigate(`/word-by-word/${surahId}/${firstVerse}`, {
-      state: {
-        from: location.pathname + location.search,
-      },
-    });
+    const url = `/word-by-word/${surahId}/${firstVerse}`;
+    
+    // Check if modifier key is pressed (Ctrl/Cmd)
+    const isModifierPressed = event?.ctrlKey || event?.metaKey;
+    
+    if (isModifierPressed) {
+      // Open in new tab
+      event?.preventDefault();
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      // Normal navigation
+      navigate(url, {
+        state: {
+          from: location.pathname + location.search,
+        },
+      });
+    }
   };
 
   // Fallback note content for when API fails

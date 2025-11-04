@@ -584,7 +584,20 @@ const Surah = () => {
     };
   }, [loading, ayahData, surahId]);
 
-  const handleWordByWordClick = (verseNumber) => {
+  const handleWordByWordClick = (verseNumber, event) => {
+    // Check if modifier key is pressed (Ctrl/Cmd)
+    const isModifierPressed = event?.ctrlKey || event?.metaKey;
+    
+    if (isModifierPressed) {
+      // Open word-by-word page in new tab
+      event?.preventDefault();
+      event?.stopPropagation();
+      const url = `/word-by-word/${surahId}/${verseNumber}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    
+    // Normal behavior: open modal
     setSelectedVerseForWordByWord(verseNumber);
     setShowWordByWord(true);
   };
@@ -2000,7 +2013,7 @@ const Surah = () => {
                         className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleWordByWordClick(index + 1);
+                          handleWordByWordClick(index + 1, e);
                         }}
                       >
                         <WordByWordIcon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -2157,7 +2170,7 @@ const Surah = () => {
 
         {/* Overlay Popup for Word by Word */}
         {showWordByWord && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-4 overflow-y-auto">
             <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               <div className="overflow-y-auto max-h-[90vh]">
                 <WordByWord
@@ -2183,7 +2196,7 @@ const Surah = () => {
 
         {/* Hindi Footnote Modal */}
         {showHindiFootnoteModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+          <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
             <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
@@ -2228,7 +2241,7 @@ const Surah = () => {
 
         {/* Bangla Explanation Modal */}
         {showBanglaExplanationModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+          <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
             <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
@@ -2273,7 +2286,7 @@ const Surah = () => {
 
         {/* Urdu Footnote Modal */}
         {showUrduFootnoteModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+          <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
             <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
@@ -2318,7 +2331,7 @@ const Surah = () => {
 
         {/* English Footnote Modal */}
         {showEnglishFootnoteModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+          <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
             <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
@@ -2365,7 +2378,9 @@ const Surah = () => {
         {showScrollButton && (
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+            className={`fixed right-6 z-[60] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+              playingAyah ? 'bottom-32 sm:bottom-36' : 'bottom-6'
+            }`}
             title="Beginning of Surah"
             aria-label="Beginning of Surah"
           >

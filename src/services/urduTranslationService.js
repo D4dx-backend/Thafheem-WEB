@@ -21,7 +21,9 @@ class UrduTranslationService {
     this.language = 'urdu';
     
     // SQL.js configuration
-    this.dbPath = '/quran_urdu.db';
+    // Use BASE_URL from Vite config to handle base path correctly
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    this.dbPath = `${baseUrl}quran_urdu.db`.replace(/\/+/g, '/'); // Normalize slashes
     this.db = null;
     this.dbPromise = null;
     this.isDownloaded = false;
@@ -110,10 +112,43 @@ class UrduTranslationService {
         locateFile: (file) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
       });
 
-      const response = await fetch(this.dbPath);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Urdu DB: ${response.status} ${response.statusText}`);
+      // Try fetching with root path first (Vite serves public files from root in dev)
+      // Then fallback to base path (for production)
+      let response;
+      let dbPath;
+      const rootPath = '/quran_urdu.db';
+      const basePath = this.dbPath;
+      
+      // In development, try root path first; in production, try base path first
+      const isDev = import.meta.env.DEV;
+      const pathsToTry = isDev 
+        ? [rootPath, basePath] // Dev: try root first, then base
+        : [basePath, rootPath]; // Prod: try base first, then root
+      
+      let lastError = null;
+      for (const path of pathsToTry) {
+        try {
+          console.log(`📥 Trying to fetch Urdu database from: ${path}`);
+          response = await fetch(path);
+          if (response.ok) {
+            dbPath = path;
+            console.log(`✅ Successfully loaded Urdu database from: ${dbPath}`);
+            break;
+          } else {
+            console.warn(`⚠️ Failed to fetch from ${path}: ${response.status} ${response.statusText}`);
+            lastError = new Error(`Failed to fetch database from ${path}: ${response.status} ${response.statusText}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Error fetching from ${path}:`, error.message);
+          lastError = error;
+        }
       }
+      
+      if (!response || !response.ok) {
+        console.error(`❌ Failed to fetch Urdu DB from all attempted paths`);
+        throw lastError || new Error(`Failed to fetch database: All paths failed`);
+      }
+      
       const buffer = await response.arrayBuffer();
       return new SQL.Database(new Uint8Array(buffer));
     })();
@@ -184,7 +219,7 @@ class UrduTranslationService {
       { surahNo, ayahNo },
       // API call
       async () => {
-        const response = await apiService.get(`/api/urdu/translation/${surahNo}/${ayahNo}`);
+        const response = await apiService.makeRequest(`/urdu/translation/${surahNo}/${ayahNo}`);
         return response.translation_text || '';
       },
       // SQL.js fallback
@@ -211,7 +246,7 @@ class UrduTranslationService {
       { surahNo },
       // API call
       async () => {
-        const response = await apiService.get(`/api/urdu/translation/${surahNo}`);
+        const response = await apiService.makeRequest(`/urdu/surah/${surahNo}`);
         return response.translations || [];
       },
       // SQL.js fallback
@@ -248,7 +283,7 @@ class UrduTranslationService {
       { surahNo, ayahNo },
       // API call
       async () => {
-        const response = await apiService.get(`/api/urdu/word-by-word/${surahNo}/${ayahNo}`);
+        const response = await apiService.makeRequest(`/urdu/word-by-word/${surahNo}/${ayahNo}`);
         return response.words || [];
       },
       // SQL.js fallback
@@ -281,7 +316,7 @@ class UrduTranslationService {
       { footnoteId },
       // API call
       async () => {
-        const response = await apiService.get(`/api/urdu/footnote/${footnoteId}`);
+        const response = await apiService.makeRequest(`/urdu/footnote/${footnoteId}`);
         return response.footnote_text || 'Explanation not available';
       },
       // SQL.js fallback
@@ -546,7 +581,7 @@ class UrduTranslationService {
     try {
       if (this.useApi) {
         // Test API endpoint
-        await apiService.get(`/api/urdu/translation/1/1`);
+        await apiService.makeRequest(`/urdu/translation/1/1`);
         return true;
       } else {
         // Test SQL.js database

@@ -4,7 +4,9 @@
 class HindiWordByWordService {
   constructor() {
     // Database file served from public directory
-    this.dbPath = '/quran_hindi.db';
+    // Use BASE_URL from Vite config to handle base path correctly
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    this.dbPath = `${baseUrl}quran_hindi.db`.replace(/\/+/g, '/'); // Normalize slashes
     this.cache = new Map();
     this.dbPromise = null;
     this.isDownloaded = false;
@@ -36,11 +38,30 @@ class HindiWordByWordService {
         });
         
         // Load the database file from public directory
-        const response = await fetch(this.dbPath);
+        // Try with base path first, then fallback to root path
+        let response;
+        let dbPath = this.dbPath;
+        console.log(`📥 Fetching Hindi word-by-word database from: ${dbPath}`);
+        response = await fetch(dbPath);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch database: ${response.status} ${response.statusText}`);
+          // Fallback to root path if base path fails (common in development)
+          const rootPath = '/quran_hindi.db';
+          if (dbPath !== rootPath) {
+            console.warn(`⚠️ Failed to fetch from ${dbPath} (${response.status}), trying root path: ${rootPath}`);
+            dbPath = rootPath;
+            response = await fetch(rootPath);
+            if (!response.ok) {
+              console.error(`❌ Failed to fetch Hindi word-by-word DB from ${rootPath}: ${response.status} ${response.statusText}`);
+              throw new Error(`Failed to fetch database: ${response.status} ${response.statusText}`);
+            }
+          } else {
+            console.error(`❌ Failed to fetch Hindi word-by-word DB from ${dbPath}: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch database: ${response.status} ${response.statusText}`);
+          }
         }
+        
+        console.log(`✅ Successfully loaded Hindi word-by-word database from: ${dbPath}`);
         
         const buffer = await response.arrayBuffer();
         const db = new SQL.Database(new Uint8Array(buffer));

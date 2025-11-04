@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/new_thafheem_web/',  // ← ADD THIS LINE
+  // Only use base path in production, not in development
+  base: process.env.NODE_ENV === 'production' ? '/new_thafheem_web/' : '/',
   plugins: [
     react(),
     tailwindcss(),

@@ -6,7 +6,9 @@ import apiService from './apiService.js';
 class BanglaWordByWordService {
   constructor() {
     // Database file served from public directory
-    this.dbPath = '/quran_bangla.db';
+    // Use BASE_URL from Vite config to handle base path correctly
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    this.dbPath = `${baseUrl}quran_bangla.db`.replace(/\/+/g, '/'); // Normalize slashes
     this.db = null;
     this.dbPromise = null;
     this.cache = new Map();
@@ -37,10 +39,43 @@ class BanglaWordByWordService {
           locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
         });
         // Load the database file from public directory
-        const response = await fetch(this.dbPath);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch Bangla database: ${response.status} ${response.statusText}`);
+        // Try fetching with root path first (Vite serves public files from root in dev)
+        // Then fallback to base path (for production)
+        let response;
+        let dbPath;
+        const rootPath = '/quran_bangla.db';
+        const basePath = this.dbPath;
+        
+        // In development, try root path first; in production, try base path first
+        const isDev = import.meta.env.DEV;
+        const pathsToTry = isDev 
+          ? [rootPath, basePath] // Dev: try root first, then base
+          : [basePath, rootPath]; // Prod: try base first, then root
+        
+        let lastError = null;
+        for (const path of pathsToTry) {
+          try {
+            console.log(`📥 Trying to fetch Bangla word-by-word database from: ${path}`);
+            response = await fetch(path);
+            if (response.ok) {
+              dbPath = path;
+              console.log(`✅ Successfully loaded Bangla word-by-word database from: ${dbPath}`);
+              break;
+            } else {
+              console.warn(`⚠️ Failed to fetch from ${path}: ${response.status} ${response.statusText}`);
+              lastError = new Error(`Failed to fetch database from ${path}: ${response.status} ${response.statusText}`);
+            }
+          } catch (error) {
+            console.warn(`⚠️ Error fetching from ${path}:`, error.message);
+            lastError = error;
+          }
         }
+        
+        if (!response || !response.ok) {
+          console.error(`❌ Failed to fetch Bangla word-by-word DB from all attempted paths`);
+          throw lastError || new Error(`Failed to fetch database: All paths failed`);
+        }
+        
         const buffer = await response.arrayBuffer();
         const db = new SQL.Database(new Uint8Array(buffer));
         // Verify database structure

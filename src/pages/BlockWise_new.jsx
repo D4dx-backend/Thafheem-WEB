@@ -1002,12 +1002,14 @@ const BlockWise = () => {
                               return (
                                 <div
                                   key={`translation-${blockId}-${idx}`}
+                                  className="text-justify leading-relaxed"
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
                             })
                           ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
                             <div
+                              className="text-justify leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: parseTranslationWithClickableSup(
                                   translationData.TranslationText || translationData.translationText || translationData.text,

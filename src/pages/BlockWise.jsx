@@ -1089,7 +1089,7 @@ const BlockWise = () => {
             </div>
 
             {/* Surah Info */}
-            <div className="hidden sm:flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
+            <div className="hidden sm:flex items-center justify-start space-x-2 px-3 sm:px-4">
               <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
               <Link to={`/surahinfo/${surahId}`}>
                 <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
@@ -1223,12 +1223,14 @@ const BlockWise = () => {
                               return (
                                 <div
                                   key={`translation-${blockId}-${idx}`}
+                                  className="text-justify leading-relaxed"
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
                             })
                           ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
                             <div
+                              className="text-justify leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: parseTranslationWithClickableSup(
                                   translationData.TranslationText || translationData.translationText || translationData.text,

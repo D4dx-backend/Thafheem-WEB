@@ -1829,7 +1829,7 @@ const Surah = () => {
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
-                    className="pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
+                    className="py-5 sm:py-7 pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
                     style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}

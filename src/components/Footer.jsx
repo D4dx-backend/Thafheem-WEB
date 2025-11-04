@@ -33,10 +33,12 @@ const Footer = () => {
           <div className="text-sm text-gray-600 dark:text-white">
             Powered by{' '}
             <a 
-              href="#" 
+              href="https://d4dx.co/" 
+              target="_blank" 
+              rel="noopener noreferrer"
               className="text-cyan-500 hover:text-cyan-600 font-medium transition-colors"
             >
-              Q4DX
+              D4DX
             </a>
           </div>
         </div>

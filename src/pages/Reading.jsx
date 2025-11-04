@@ -858,7 +858,9 @@ const Reading = () => {
       {showScrollButton && (
         <button
           onClick={handleScrollToTop}
-          className="fixed bottom-6 right-6 z-40 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          className={`fixed right-6 z-[60] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+            currentAyah ? 'bottom-32 sm:bottom-36' : 'bottom-6'
+          }`}
           title="Beginning of Surah"
           aria-label="Beginning of Surah"
         >

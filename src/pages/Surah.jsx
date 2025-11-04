@@ -1893,6 +1893,16 @@ const Surah = () => {
                           data-ayah={verse.number}
                           data-parsed={verse.Translation}
                         />
+                      ) : translationLanguage === 'mal' ? (
+                        <p
+                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-malayalam font-normal"
+                          style={{ fontSize: `${translationFontSize}px` }}
+                          dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                          data-malayalam-translation={verse.RawTranslation || verse.Translation}
+                          data-surah={surahId}
+                          data-ayah={verse.number}
+                          data-parsed={verse.Translation}
+                        />
                       ) : (
                         <p
                           className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"

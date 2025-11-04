@@ -263,7 +263,7 @@ input[type="radio"]:checked::after {
 
 /* Language-specific font classes */
 .font-malayalam {
-  font-family: 'NotoSansMalayalam', serif;
+  font-family: 'NotoSansMalayalam', sans-serif;
 }
 
 .font-urdu {

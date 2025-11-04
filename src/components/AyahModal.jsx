@@ -638,6 +638,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   style={{ fontSize: `${translationFontSize}px` }}
                   dangerouslySetInnerHTML={{ __html: verseData.translation }}
                 />
+              ) : translationLanguage === 'mal' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-malayalam sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
+                />
               ) : (
                 <p
                   className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"

@@ -44,7 +44,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
+        <Router basename="/new_thafheem_web">
           <HomepageNavbar />
           <ApiStatusBanner />
           <Routes>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
-import hindiTranslationService from "../services/HindiTranslationService";
+import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import banglaTranslationService from "../services/banglaTranslationService";
 import { useTheme } from "../context/ThemeContext";

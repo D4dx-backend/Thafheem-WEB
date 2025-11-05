@@ -11,7 +11,7 @@ import NotePopup from "./NotePopup";
 import AyahModal from "./AyahModal";
 import InterpretationNavbar from "./InterpretationNavbar";
 import BookmarkService from "../services/bookmarkService";
-import hindiTranslationService from "../services/HindiTranslationService";
+import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import { useAuth } from "../context/AuthContext";
 

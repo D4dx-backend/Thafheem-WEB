@@ -41,7 +41,7 @@ import {
   fetchAyaRanges,
 } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
-import hindiTranslationService from "../services/HindiTranslationService";
+import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import banglaTranslationService from "../services/banglaTranslationService";
 import englishTranslationService from "../services/englishTranslationService";

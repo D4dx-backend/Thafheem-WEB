@@ -17,6 +17,7 @@ import {
   ENGARTICLES_API,
   ARTICLES_API,
   AYA_TRANSLATION_API,
+  LEGACY_TFH_BASE,
 } from "./apis";
 
 
@@ -60,9 +61,11 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 
 // (duplicate import block removed)
 export const fetchAyaTranslation = async (surahId, range, language = 'mal') => {
-  // language: 'mal' (default Malayalam), 'E' for English
-  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
-  const url = `${AYA_TRANSLATION_API}/${surahId}/${range}${langSuffix}`;
+  // Malayalam uses legacy base; others use new backend
+  const isMalayalam = !language || language === 'mal';
+  const base = isMalayalam ? LEGACY_TFH_BASE : API_BASE_URL;
+  const langSuffix = isMalayalam ? '' : `/${language}`;
+  const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
   
   try {
     const response = await fetchWithTimeout(url, {}, 8000);
@@ -1574,9 +1577,11 @@ export const fetchThafheemPreface = async (suraId) => {
 
 // Fetch ayah ranges for block-based reading structure
 export const fetchAyaRanges = async (surahId, language = 'mal') => {
-  // Append /E for English; Malayalam (default) has no language suffix
-  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
-  const response = await fetch(`${AYA_RANGES_API}/${surahId}${langSuffix}`);
+  // Malayalam uses legacy base; others use new backend
+  const isMalayalam = !language || language === 'mal';
+  const base = isMalayalam ? LEGACY_TFH_BASE : API_BASE_URL;
+  const langSuffix = isMalayalam ? '' : `/${language}`;
+  const response = await fetch(`${base}/ayaranges/${surahId}${langSuffix}`);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }

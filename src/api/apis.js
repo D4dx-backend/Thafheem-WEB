@@ -1,7 +1,11 @@
 // Environment-based API configuration
 const isDevelopment = import.meta.env.DEV;
-// Use proxy URLs in development, direct URLs in production
-export const API_BASE_URL = isDevelopment ? '/api/thafheem' : 'https://thafheem.net/thafheem-api';
+// Prefer explicit env base; fallback to proxy in dev and hosted API in prod
+const ENV_BASE = import.meta.env.VITE_API_BASE_URL;
+// Our backend serves under /api (see Thafheem-API server)
+export const API_BASE_URL = ENV_BASE
+  ? `${ENV_BASE}/api`
+  : (isDevelopment ? '/api/thafheem' : 'https://thafheemapi.thafheem.net/api');
 export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.com/api/v4';
 export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
 // Debug logging (only in development)

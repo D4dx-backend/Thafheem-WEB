@@ -8,6 +8,8 @@ export const API_BASE_URL = ENV_BASE
   : (isDevelopment ? '/api/thafheem' : 'https://thafheemapi.thafheem.net/api');
 export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.com/api/v4';
 export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
+// Legacy Thafheem public API (Malayalam + blockwise + pageranges)
+export const LEGACY_TFH_BASE = isDevelopment ? '/api/thafheem' : 'https://thafheem.net/thafheem-api';
 // Debug logging (only in development)
 if (isDevelopment) {
 }
@@ -36,9 +38,7 @@ if (isDevelopment) {
 export const AYA_TRANSLATION_API = `${API_BASE_URL}/ayatransl`;
 export const SURA_NAMES_API = `${API_BASE_URL}/suranames/all`;
 // Use legacy public endpoint for page ranges (supports /pageranges/:pageId)
-export const PAGE_RANGES_API = isDevelopment
-  ? '/api/thafheem/pageranges'
-  : 'https://thafheem.net/thafheem-api/pageranges';
+export const PAGE_RANGES_API = `${LEGACY_TFH_BASE}/pageranges`;
 export const AYAH_AUDIO_TRANSLATION_API = `${API_BASE_URL}/ayaaudiotransl`;
 export const AYA_RANGES_API = `${API_BASE_URL}/ayaranges`;
 export const QURAN_TEXT_API = `${API_BASE_URL}/qurantext`;

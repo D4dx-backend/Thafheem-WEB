@@ -216,7 +216,6 @@ const StickyAudioPlayer = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('🔧 [Settings Button] Clicked - opening modal');
                   setShowSettingsModal(!showSettingsModal);
                 }}
                 className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30 settings-button"
@@ -298,15 +297,7 @@ const StickyAudioPlayer = ({
       </div>
 
       {/* Settings Modal */}
-      {showSettingsModal && (() => {
-        console.log('⚙️ [Settings Modal] Opening with:');
-        console.log('  - audioTypes:', audioTypes);
-        console.log('  - availableAudioTypes:', availableAudioTypes);
-        console.log('  - translationLanguage:', translationLanguage);
-        console.log('  - selectedQari:', selectedQari);
-        console.log('  - playbackSpeed:', playbackSpeed);
-        return true;
-      })() && (
+      {showSettingsModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/50 dark:bg-black/70"
@@ -341,9 +332,6 @@ const StickyAudioPlayer = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('🎵 Audio Type Clicked:', type.value);
-                          console.log('📋 Current audioTypes:', audioTypes);
-                          console.log('✅ Is currently selected?', isSelected);
                           
                           if (onAudioTypesChange) {
                             // Toggle selection: if already selected, remove it; otherwise add it
@@ -351,14 +339,9 @@ const StickyAudioPlayer = ({
                               ? audioTypes.filter(t => t !== type.value)
                               : [...audioTypes, type.value];
                             
-                            console.log('🔄 New audioTypes:', newAudioTypes);
-                            
                             // Ensure at least one is selected (prevent empty array)
                             if (newAudioTypes.length > 0) {
-                              console.log('✨ Applying new audioTypes:', newAudioTypes);
                               onAudioTypesChange(newAudioTypes);
-                            } else {
-                              console.log('⚠️ Cannot deselect - at least one must be selected');
                             }
                           }
                         }}

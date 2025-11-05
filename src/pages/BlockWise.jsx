@@ -253,16 +253,12 @@ const BlockWise = () => {
 
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
-      console.log(`➡️ [BlockWise] Moving to next ayah after ${ayahNumber}`);
       moveToNextAyahOrBlock();
       return;
     }
 
     // Stop any currently playing audio before starting new audio
     audioRef.current.pause();
-
-    console.log(`▶️ [BlockWise] Playing ayah ${ayahNumber}, audio type: ${activeAudioTypes[audioTypeIndex]} (${audioTypeIndex + 1}/${activeAudioTypes.length})`);
-    console.log('📋 [BlockWise] Active audioTypes:', activeAudioTypes);
     
     const currentAudioType = activeAudioTypes[audioTypeIndex];
     const audioUrl = generateAudioUrl(surahId, ayahNumber, currentAudioType);
@@ -1583,13 +1579,11 @@ const BlockWise = () => {
               translationLanguage={translationLanguage}
               audioTypes={audioTypes}
               onAudioTypesChange={(newTypes) => {
-                console.log('📦 [BlockWise Page] Audio types changed:', newTypes);
                 const currentBlock = playingBlock;
                 const currentAyah = currentAyahInBlock;
                 setAudioTypes(newTypes);
                 // If audio is currently playing, restart with new audio types
                 if (currentBlock && currentAyah) {
-                  console.log('🔄 [BlockWise Page] Restarting audio with new types');
                   stopPlayback();
                   // Pass newTypes directly to avoid closure issue
                   setTimeout(() => {

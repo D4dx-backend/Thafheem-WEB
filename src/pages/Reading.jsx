@@ -130,7 +130,6 @@ const Reading = () => {
     
     if (index >= verses.length) {
       // All ayahs played, stop playback
-      console.log('✅ [Reading] All ayahs completed');
       setIsPlaying(false);
       setCurrentAyah(null);
       setCurrentAyahIndex(0);
@@ -143,13 +142,9 @@ const Reading = () => {
 
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
-      console.log(`➡️ [Reading] Moving to next ayah (${index + 2})`);
       playAyahAtIndexWithTypes(index + 1, 0, typesToPlay);
       return;
     }
-
-    console.log(`▶️ [Reading] Playing ayah ${index + 1}, audio type: ${activeAudioTypes[audioTypeIndex]} (${audioTypeIndex + 1}/${activeAudioTypes.length})`);
-    console.log('📋 [Reading] Active audioTypes:', activeAudioTypes);
 
     // Stop any existing audio first
     if (audioElement) {
@@ -888,12 +883,10 @@ const Reading = () => {
           translationLanguage={translationLanguage}
           audioTypes={audioTypes}
           onAudioTypesChange={(newTypes) => {
-            console.log('📖 [Reading Page] Audio types changed:', newTypes);
             const currentIdx = currentAyahIndex; // Capture current index
             setAudioTypes(newTypes);
             // If audio is currently playing, restart with new audio types
             if (currentAyah && currentIdx >= 0) {
-              console.log('🔄 [Reading Page] Restarting audio with new types');
               stopAudio();
               // Pass newTypes directly to avoid closure issue
               setTimeout(() => {

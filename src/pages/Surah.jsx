@@ -1213,10 +1213,8 @@ const Surah = () => {
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
       if (ayahNumber < totalAyahs) {
-        console.log(`➡️ [Surah] Moving to next ayah (${ayahNumber + 1})`);
         playAyahSequenceWithTypes(ayahNumber + 1, 0, typesToPlay);
       } else {
-        console.log('✅ [Surah] All ayahs completed');
         setIsSequencePlaying(false);
         setPlayingAyah(null);
         setCurrentAudioTypeIndex(0);
@@ -1225,9 +1223,6 @@ const Surah = () => {
       }
       return;
     }
-
-    console.log(`▶️ [Surah] Playing ayah ${ayahNumber}, audio type: ${activeAudioTypes[audioTypeIndex]} (${audioTypeIndex + 1}/${activeAudioTypes.length})`);
-    console.log('📋 [Surah] Active audioTypes:', activeAudioTypes);
 
     setIsSequencePlaying(true);
 
@@ -2343,12 +2338,10 @@ const Surah = () => {
             translationLanguage={translationLanguage}
             audioTypes={audioTypes}
             onAudioTypesChange={(newTypes) => {
-              console.log('📚 [Surah Page] Audio types changed:', newTypes);
               const currentPlayingAyah = playingAyah; // Capture current ayah
               setAudioTypes(newTypes);
               // If audio is currently playing, restart with new audio types
               if (currentPlayingAyah) {
-                console.log('🔄 [Surah Page] Restarting audio with new types');
                 handleTopStopReset();
                 // Use newTypes directly instead of relying on state
                 setTimeout(() => {

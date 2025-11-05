@@ -1,22 +1,61 @@
 
-import { ChevronDown, BookOpen, Notebook } from "lucide-react"; // swapped icons
+import { ChevronDown, BookOpen, Notebook, Info, Play, Pause } from "lucide-react"; // swapped icons
 import { useState, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import NavigateSurah from "../pages/NavigateSurah";
-import { listSurahNames } from "../api/apifunction";
+import { fetchPageRanges } from "../api/apifunction";
 import { PAGE_RANGES_API } from "../api/apis";
+import { useSurahData } from "../hooks/useSurahData";
+
+// Custom Kaaba Icon Component (Makkah)
+const KaabaIcon = ({ className }) => (
+  <svg
+    viewBox="0 0 11 13"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M1 4.05096L5.50813 6.87531M1 4.05096L5.50813 1.22656L10.0017 4.05096M1 4.05096V5.72135M5.50813 12.2306L1 9.44877V5.72135M5.50813 12.2306L10.0017 9.44877V5.72135M5.50813 12.2306V8.52443M5.50813 6.87531L10.0017 4.05096M5.50813 6.87531V8.52443M10.0017 4.05096V5.72135M10.0017 5.72135L5.50813 8.52443M5.50813 8.52443L1 5.72135"
+      stroke="currentColor"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Madina Icon Component
+const MadinaIcon = ({ className }) => (
+  <svg
+    width="11"
+    height="15"
+    viewBox="0 0 11 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M5.625 1.0498C5.96379 1.0415 6.15318 1.43447 5.9375 1.69434L5.93848 1.69531C5.8059 1.85727 5.73354 2.06001 5.7334 2.26953C5.73364 2.7733 6.13675 3.17749 6.63965 3.17773C6.8485 3.17752 7.05247 3.1038 7.21484 2.9707C7.35907 2.84911 7.5516 2.85714 7.68555 2.94922C7.82703 3.0465 7.89339 3.22605 7.83203 3.42188C7.62359 4.1963 6.95559 4.74982 6.16699 4.82324V4.96973C6.38842 5.29376 6.73956 5.57803 7.17188 5.86035C7.39553 6.00639 7.63673 6.14949 7.88672 6.29688C8.13549 6.44354 8.39372 6.59442 8.64746 6.75391C9.69542 7.41265 10.702 8.26832 10.7217 9.86133C10.7302 10.5552 10.5894 11.4633 9.97949 12.293C10.3948 12.3364 10.7226 12.6925 10.7227 13.1182V13.9834C10.7235 14.202 10.5466 14.3792 10.3281 14.3789V14.3799H1.21582C0.998036 14.379 0.822454 14.2011 0.823242 13.9834V13.1182C0.823351 12.6643 1.19496 12.2891 1.65039 12.2891H8.89941C9.63381 11.6946 9.91674 10.8407 9.93359 9.86035C9.95344 8.7001 9.20568 8.05633 8.22656 7.4209C7.99002 7.26739 7.75176 7.12838 7.51562 6.99219C7.28064 6.85666 7.04583 6.72296 6.82227 6.58398C6.43649 6.34416 6.0728 6.08117 5.77148 5.74121C5.46708 6.08406 5.09223 6.35958 4.7002 6.60547C4.47252 6.74826 4.23591 6.88329 4.00293 7.0166C3.76878 7.15058 3.53754 7.28322 3.31543 7.42285C2.42056 7.98548 1.62622 8.63485 1.61133 9.86523C1.6014 10.6849 1.83171 11.2575 2.07324 11.6484H2.07227C2.13777 11.7504 2.15412 11.8634 2.12402 11.9678C2.0949 12.0686 2.02647 12.1474 1.94727 12.1963C1.86807 12.2451 1.76716 12.2711 1.66406 12.252C1.55623 12.2319 1.46123 12.1657 1.39941 12.0596V12.0586C1.0886 11.5539 0.816533 10.8308 0.823242 9.8623C0.83371 8.36129 1.75222 7.45412 2.89844 6.75293C3.41821 6.43497 3.92281 6.1624 4.37598 5.86426C4.80764 5.58025 5.15748 5.29245 5.37891 4.9668V4.72949C4.62425 4.47414 4.07622 3.76183 4.07617 2.9209C4.07617 2.19418 4.55355 1.26045 5.59473 1.05273L5.61035 1.0498H5.625ZM1.62207 13.0869C1.61745 13.0916 1.61137 13.1013 1.61133 13.1182V13.5908H9.93457V13.1182C9.93452 13.1022 9.92888 13.093 9.92383 13.0879C9.91879 13.0828 9.90931 13.0771 9.89355 13.0771H1.65039C1.63521 13.0771 1.6266 13.0825 1.62207 13.0869ZM4.95801 2.47852C4.89845 2.61488 4.86542 2.76443 4.86523 2.9209L4.87109 3.03613C4.92841 3.60447 5.40474 4.04371 5.98926 4.04395C6.14409 4.04376 6.29155 4.00941 6.42676 3.95117C5.66139 3.85413 5.05306 3.24442 4.95801 2.47852Z"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="0.35469"
+    />
+  </svg>
+);
 
 const Transition = ({ showPageInfo = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedSurah, setSelectedSurah] = useState({
     id: 2,
     name: "Al-Baqarah",
+    type: "Madani",
   });
-  const [surahNames, setSurahNames] = useState([]);
   const [currentPage, setCurrentPage] = useState(2);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [verseCount, setVerseCount] = useState(null);
 
   const { surahId } = useParams();
   const location = useLocation();
+  const { surahs: surahNames } = useSurahData();
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
@@ -25,45 +64,36 @@ const Transition = ({ showPageInfo = false }) => {
 
   const [activeView, setActiveView] = useState("book"); // "book" or "notebook"
 
-  // Fetch surah names and update selected surah based on URL
+  // Update selected surah based on URL when surahNames are loaded
   useEffect(() => {
-    const loadSurahNames = async () => {
-      try {
-        const surahs = await listSurahNames();
-        setSurahNames(surahs);
-        
-        // Update selected surah based on current URL (supports navbar scope)
-        const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
-        if (effectiveId) {
-          const currentSurah = surahs.find(s => s.id === effectiveId);
-          if (currentSurah) {
-            setSelectedSurah({
-              id: currentSurah.id,
-              name: currentSurah.english
-            });
-          }
+    if (surahNames.length > 0) {
+      // Update selected surah based on current URL (supports navbar scope)
+      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+      if (effectiveId) {
+        const currentSurah = surahNames.find(s => s.number === effectiveId);
+        if (currentSurah) {
+          setSelectedSurah({
+            id: currentSurah.number,
+            name: currentSurah.name,
+            type: currentSurah.type
+          });
         }
-      } catch (error) {
-        console.error("Error loading surah names:", error);
       }
-    };
+    }
+  }, [surahId, location.pathname, surahNames]);
 
-    loadSurahNames();
-  }, [surahId, location.pathname]);
-
-  // Calculate page number based on surah using page ranges API
+  // Calculate page number and verse count based on surah using page ranges API
   useEffect(() => {
-    const calculatePageNumber = async () => {
+    const calculatePageNumberAndVerseCount = async () => {
       const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
       if (effectiveId && surahNames.length > 0) {
         try {
           const surahIdNum = effectiveId;
           
           // Fetch page ranges to get accurate page information
-          const response = await fetch(PAGE_RANGES_API);
-          if (response.ok) {
-            const pageRanges = await response.json();
-            
+          const pageRanges = await fetchPageRanges();
+          
+          if (pageRanges && pageRanges.length > 0) {
             // Find the first page range for this surah
             const surahPageRange = pageRanges.find(range => 
               range.SuraId === surahIdNum
@@ -76,10 +106,38 @@ const Transition = ({ showPageInfo = false }) => {
               const pageNumber = Math.max(1, Math.min(604, surahIdNum + 1));
               setCurrentPage(pageNumber);
             }
+
+            // Calculate verse count for reading page
+            if (location.pathname.startsWith('/reading')) {
+              const surahRanges = pageRanges.filter(
+                (range) => range.SuraId === surahIdNum
+              );
+              if (surahRanges.length > 0) {
+                // Find the maximum ayato value for this surah
+                const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
+                setVerseCount(maxAyah);
+            } else {
+              // Fallback to surah names data
+                const currentSurah = surahNames.find(s => s.number === surahIdNum);
+                if (currentSurah && currentSurah.ayahs) {
+                  setVerseCount(currentSurah.ayahs);
+                }
+              }
+            } else {
+              setVerseCount(null);
+            }
           } else {
             // Fallback calculation if API fails
             const pageNumber = Math.max(1, Math.min(604, surahIdNum + 1));
             setCurrentPage(pageNumber);
+            
+            // Fallback verse count
+            if (location.pathname.startsWith('/reading')) {
+              const currentSurah = surahNames.find(s => s.number === surahIdNum);
+              if (currentSurah && currentSurah.ayahs) {
+                setVerseCount(currentSurah.ayahs);
+              }
+            }
           }
         } catch (error) {
           console.error("Error calculating page number:", error);
@@ -91,13 +149,38 @@ const Transition = ({ showPageInfo = false }) => {
       }
     };
 
-    calculatePageNumber();
+    calculatePageNumberAndVerseCount();
   }, [surahId, surahNames, location.pathname]);
 
   const handleSurahSelect = (surah) => {
-    setSelectedSurah(surah);
+    // Find the full surah data to get the type
+    const fullSurahData = surahNames.find(s => s.number === surah.id || s.id === surah.id);
+    setSelectedSurah({
+      id: surah.id,
+      name: surah.english || surah.name,
+      type: fullSurahData?.type || "Makki"
+    });
     setIsDropdownOpen(false);
   };
+
+  // Get the appropriate icon based on surah type
+  const surahIcon = selectedSurah?.type === 'Makki' ? (
+    <KaabaIcon className="w-4 h-4 text-[#3FA5C0]" />
+  ) : (
+    <MadinaIcon className="w-4 h-4 text-[#3FA5C0]" />
+  );
+
+  // Listen for audio state changes to update button icon
+  useEffect(() => {
+    const handleAudioStateChange = (event) => {
+      setIsAudioPlaying(event.detail.isPlaying);
+    };
+
+    window.addEventListener('audioStateChange', handleAudioStateChange);
+    return () => {
+      window.removeEventListener('audioStateChange', handleAudioStateChange);
+    };
+  }, []);
 
   return (
     <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-3 sm:px-4 sticky top-[56px] z-[60]">
@@ -111,11 +194,12 @@ const Transition = ({ showPageInfo = false }) => {
               className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-white  rounded-lg transition-colors"
             >
               <span className="font-medium">{selectedSurah.name}</span>
+              {surahIcon}
               <ChevronDown className="w-4 h-4" />
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute top-full left-6 mt-1 z-10">
+              <div className="absolute top-full left-0 mt-1 z-10">
                 <NavigateSurah 
                   onSurahSelect={handleSurahSelect} 
                   onClose={() => setIsDropdownOpen(false)}
@@ -127,16 +211,57 @@ const Transition = ({ showPageInfo = false }) => {
         </div>
 
 
-        {/* Right Section - Page Indicator */}
-        <div className="flex items-center">
+        {/* Right Section - Surah info on the right, optional Juz/Hizb */}
+        <div className="flex items-center justify-end space-x-3">
           {showPageInfo ? (
-            <div className="flex items-center text-sm text-gray-500">
-              <span>Juz 1 | Hizb 1 | </span>
-              <span className="font-medium text-gray-700 ml-1 dark:text-white">Page {currentPage}</span>
+            <div className="hidden sm:flex items-center text-sm text-gray-500">
+              <span>Juz 1 | Hizb 1</span>
             </div>
-          ) : (
-            <span className="text-sm font-medium text-gray-700 dark:text-white">Page {currentPage}</span>
+          ) : null}
+          {/* Verse count for Reading page */}
+          {location.pathname.startsWith('/reading') && verseCount && (
+            <div className="hidden sm:flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <span>{verseCount} verses</span>
+            </div>
           )}
+          <div className="hidden sm:flex items-center ml-2 sm:ml-3 space-x-2">
+            {/* Play Audio Button - Only show on surah, reading, and blockwise pages */}
+            {(location.pathname.startsWith('/surah') || location.pathname.startsWith('/reading') || location.pathname.startsWith('/blockwise')) && (
+              <button
+                onClick={() => {
+                  // Dispatch custom event to trigger audio play in Surah/Reading pages
+                  window.dispatchEvent(new CustomEvent('playAudio'));
+                }}
+                className="flex items-center transition-colors text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 min-h-[44px] px-2 relative"
+                aria-label={isAudioPlaying ? "Pause Audio" : "Play Audio"}
+              >
+                <div className="relative w-4 h-4 sm:w-5 sm:h-5">
+                  <Play 
+                    className={`absolute inset-0 w-full h-full transition-all duration-300 ${
+                      isAudioPlaying 
+                        ? 'opacity-0 scale-0 rotate-90' 
+                        : 'opacity-100 scale-100 rotate-0'
+                    }`}
+                  />
+                  <Pause 
+                    className={`absolute inset-0 w-full h-full transition-all duration-300 ${
+                      isAudioPlaying 
+                        ? 'opacity-100 scale-100 rotate-0' 
+                        : 'opacity-0 scale-0 -rotate-90'
+                    }`}
+                  />
+                </div>
+              </button>
+            )}
+
+            <Link
+              to={`/surahinfo/${surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id}`}
+              className="inline-flex"
+              aria-label="Surah info"
+            >
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF] hover:opacity-90" />
+            </Link>
+          </div>
         </div>
       </div>
         </div>

@@ -867,15 +867,7 @@ const BlockWise = () => {
               </div>
             </div>
 
-            {/* Surah Info */}
-            <div className="flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
-              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
-              <Link to={`/surahinfo/${surahId}`}>
-                <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
-                  Surah info
-                </span>
-              </Link>
-            </div>
+            {/* Surah Info moved to global header */}
 
             {/* Play Audio */}
             <div className="flex justify-between">

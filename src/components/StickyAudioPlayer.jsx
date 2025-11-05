@@ -6,8 +6,12 @@ import {
   SkipForward, 
   Volume2, 
   VolumeX, 
-  MoreHorizontal, 
-  X 
+  Settings,
+  X,
+  ChevronDown,
+  Check,
+  Minus,
+  Plus
 } from 'lucide-react';
 
 const StickyAudioPlayer = ({ 
@@ -20,14 +24,22 @@ const StickyAudioPlayer = ({
   onStop, 
   onSkipBack, 
   onSkipForward,
-  onClose 
+  onClose,
+  selectedQari = 'al-afasy',
+  onQariChange,
+  translationLanguage = 'mal',
+  audioTypes = ['quran'], // Array of selected audio types
+  onAudioTypesChange,
+  playbackSpeed = 1.0,
+  onPlaybackSpeedChange
 }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showReciterDropdown, setShowReciterDropdown] = useState(false);
 
   // Update current time from audio element
   useEffect(() => {
@@ -102,12 +114,65 @@ const StickyAudioPlayer = ({
     setIsMuted(newVolume === 0);
   };
 
-  const menuOptions = [
-    { label: 'Download', action: () => console.log('Download') },
-    { label: 'Share', action: () => console.log('Share') },
-    { label: 'Add to Playlist', action: () => console.log('Add to Playlist') },
-    { label: 'Repeat', action: () => console.log('Toggle Repeat') },
+  // Apply playback speed to audio element
+  useEffect(() => {
+    if (audioElement) {
+      audioElement.playbackRate = playbackSpeed;
+    }
+  }, [audioElement, playbackSpeed]);
+
+  const reciters = [
+    { value: 'al-afasy', label: 'Mishari Rashid al-`Afasy' },
+    { value: 'al-ghamidi', label: 'Saad Al Ghamidi' },
+    { value: 'al-hudaify', label: 'Al-Hudaify' }
   ];
+
+  const audioTypeOptions = [
+    { value: 'quran', label: 'Quran', description: 'Play Quran audio' },
+    { value: 'translation', label: 'Translation', description: 'Play Translation audio' },
+    { value: 'interpretation', label: 'Interpretation', description: 'Play Interpretation audio' }
+  ];
+
+  // Filter audio types based on language - only show Translation and Interpretation for Malayalam
+  const availableAudioTypes = translationLanguage === 'mal' 
+    ? audioTypeOptions 
+    : audioTypeOptions.filter(type => type.value === 'quran');
+
+  const handlePlaybackSpeedDecrease = () => {
+    const newSpeed = Math.max(0.5, playbackSpeed - 0.1);
+    if (onPlaybackSpeedChange) {
+      onPlaybackSpeedChange(Math.round(newSpeed * 10) / 10);
+    }
+  };
+
+  const handlePlaybackSpeedIncrease = () => {
+    const newSpeed = Math.min(2.0, playbackSpeed + 0.1);
+    if (onPlaybackSpeedChange) {
+      onPlaybackSpeedChange(Math.round(newSpeed * 10) / 10);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Don't close if clicking on settings button or its children
+      if (event.target.closest('.settings-menu') || event.target.closest('.settings-button')) {
+        return;
+      }
+      
+      if (showReciterDropdown && !event.target.closest('.reciter-dropdown')) {
+        setShowReciterDropdown(false);
+      }
+      if (showSettingsModal && !event.target.closest('.settings-modal')) {
+        setShowSettingsModal(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showReciterDropdown, showSettingsModal]);
+
+  const selectedReciter = reciters.find(r => r.value === selectedQari) || reciters[0];
 
   if (!currentAyah) return null;
 
@@ -146,32 +211,19 @@ const StickyAudioPlayer = ({
 
           {/* Center - Controls */}
           <div className="flex items-center space-x-2">
-            {/* Menu Button */}
-            <div className="relative hidden sm:block">
+            {/* Settings Button */}
+            <div className="relative settings-menu">
               <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('🔧 [Settings Button] Clicked - opening modal');
+                  setShowSettingsModal(!showSettingsModal);
+                }}
+                className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30 settings-button"
+                aria-label="Settings"
               >
-                <MoreHorizontal size={16} />
+                <Settings size={16} />
               </button>
-              
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 min-w-40 z-10">
-                  {menuOptions.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        option.action();
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-white hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition-colors"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Volume Button */}
@@ -199,7 +251,7 @@ const StickyAudioPlayer = ({
                     step="0.1"
                     value={isMuted ? 0 : volume}
                     onChange={handleVolumeChange}
-                    className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer volume-slider"
+                    className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-cyan-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
                   />
                 </div>
               )}
@@ -245,24 +297,201 @@ const StickyAudioPlayer = ({
         </div>
       </div>
 
-      <style jsx>{`
-        .volume-slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 12px;
-          width: 12px;
-          border-radius: 50%;
-          background: rgb(6 182 212);
-          cursor: pointer;
-        }
-        .volume-slider::-moz-range-thumb {
-          height: 12px;
-          width: 12px;
-          border-radius: 50%;
-          background: rgb(6 182 212);
-          cursor: pointer;
-          border: none;
-        }
-      `}</style>
+      {/* Settings Modal */}
+      {showSettingsModal && (() => {
+        console.log('⚙️ [Settings Modal] Opening with:');
+        console.log('  - audioTypes:', audioTypes);
+        console.log('  - availableAudioTypes:', availableAudioTypes);
+        console.log('  - translationLanguage:', translationLanguage);
+        console.log('  - selectedQari:', selectedQari);
+        console.log('  - playbackSpeed:', playbackSpeed);
+        return true;
+      })() && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50 dark:bg-black/70"
+            onClick={() => setShowSettingsModal(false)}
+          ></div>
+          <div className="relative z-10 bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-md settings-modal">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Audio Settings</h2>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 space-y-6 overflow-y-auto max-h-[70vh]">
+              {/* Select Audio Options */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Select Audio Options
+                </h3>
+                <div className="space-y-2">
+                  {availableAudioTypes.map((type) => {
+                    const isSelected = audioTypes.includes(type.value);
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🎵 Audio Type Clicked:', type.value);
+                          console.log('📋 Current audioTypes:', audioTypes);
+                          console.log('✅ Is currently selected?', isSelected);
+                          
+                          if (onAudioTypesChange) {
+                            // Toggle selection: if already selected, remove it; otherwise add it
+                            const newAudioTypes = isSelected
+                              ? audioTypes.filter(t => t !== type.value)
+                              : [...audioTypes, type.value];
+                            
+                            console.log('🔄 New audioTypes:', newAudioTypes);
+                            
+                            // Ensure at least one is selected (prevent empty array)
+                            if (newAudioTypes.length > 0) {
+                              console.log('✨ Applying new audioTypes:', newAudioTypes);
+                              onAudioTypesChange(newAudioTypes);
+                            } else {
+                              console.log('⚠️ Cannot deselect - at least one must be selected');
+                            }
+                          }
+                        }}
+                        className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                          isSelected
+                            ? 'border-cyan-500 dark:border-cyan-400 bg-cyan-50 dark:bg-cyan-900/30'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mr-3 ${
+                            isSelected
+                              ? 'border-cyan-500 dark:border-cyan-400 bg-cyan-500 dark:bg-cyan-400'
+                              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
+                          }`}>
+                            {isSelected && (
+                              <Check size={12} className="text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {type.label}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {type.description}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Audio Settings */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Audio Settings
+                </h3>
+                
+                {/* Reciter Dropdown */}
+                {audioTypes.includes('quran') && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Reciter
+                    </label>
+                    <div className="relative reciter-dropdown">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowReciterDropdown(!showReciterDropdown);
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-left"
+                      >
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {selectedReciter.label}
+                        </span>
+                        <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
+                      </button>
+                      
+                      {showReciterDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {reciters.map((reciter) => (
+                            <button
+                              key={reciter.value}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (onQariChange) {
+                                  onQariChange(reciter.value);
+                                }
+                                setShowReciterDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                                selectedQari === reciter.value
+                                  ? 'bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400'
+                                  : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              {reciter.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Playback Speed */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Playback Speed
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePlaybackSpeedDecrease();
+                      }}
+                      className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      disabled={playbackSpeed <= 0.5}
+                    >
+                      <Minus size={16} className="text-gray-600 dark:text-gray-300" />
+                    </button>
+                    <div className="flex-1 text-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {playbackSpeed.toFixed(1)}x
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePlaybackSpeedIncrease();
+                      }}
+                      className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      disabled={playbackSpeed >= 2.0}
+                    >
+                      <Plus size={16} className="text-gray-600 dark:text-gray-300" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

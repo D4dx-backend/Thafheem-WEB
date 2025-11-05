@@ -17,6 +17,11 @@ export function buildAyahAudioUrl({ ayahNumber, surahNumber, audioType = "qirath
 		return `https://old.thafheem.net/audio/translation/T${surahPadded}_${ayahPadded}.ogg`;
 	}
 
+	if (audioType === "interpretation") {
+		return `https://old.thafheem.net/audio/interpretation/I${surahPadded}_${ayahPadded}.ogg`;
+	}
+
+	// Default to qirath/quran
 	const qariInitial = QARI_INITIALS[qariName] || "A"; // default Afasy
 	const prefix = `Q${qariInitial}`;
 	if (import.meta?.env?.DEV) {
@@ -26,10 +31,11 @@ export function buildAyahAudioUrl({ ayahNumber, surahNumber, audioType = "qirath
 }
 
 // Plays given ayah and updates callbacks for state
-export function playAyahAudio({ ayahNumber, surahNumber, audioType = "qirath", qariName = "al-afasy", onStart, onEnd, onError }) {
+export function playAyahAudio({ ayahNumber, surahNumber, audioType = "qirath", qariName = "al-afasy", playbackSpeed = 1.0, onStart, onEnd, onError }) {
 	const url = buildAyahAudioUrl({ ayahNumber, surahNumber, audioType, qariName });
 	const audio = new Audio(url);
 	audio.preload = "none";
+	audio.playbackRate = playbackSpeed;
 
 	audio.onplay = () => {
 		if (typeof onStart === "function") onStart();

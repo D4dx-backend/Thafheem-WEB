@@ -83,6 +83,8 @@ const BlockWise = () => {
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState(null);
   const [selectedQirath, setSelectedQirath] = useState("al-hudaify");
+  const [audioTypes, setAudioTypes] = useState(['quran']); // Selected audio types in order
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [playingBlock, setPlayingBlock] = useState(null); // Track which block is currently playing
   const [currentAudioType, setCurrentAudioType] = useState(null); // Track which audio type is playing
   const [currentAyahInBlock, setCurrentAyahInBlock] = useState(null); // Track which ayah within the block is playing
@@ -174,12 +176,28 @@ const BlockWise = () => {
   const playBlockAudio = (blockId, fromContinuous = false) => {
     if (!audioRef.current) return;
 
-    // Check if translation/interpretation audio is available (only for Malayalam)
+    // Check if translation/interpretation audio is selected but language is not Malayalam
     // Only check if not already in continuous mode (to allow resume)
     if (!fromContinuous && translationLanguage !== 'mal') {
-      const languageName = getLanguageName(translationLanguage);
-      showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available.`);
-      return;
+      const hasTranslationOrInterpretation = audioTypes.some(type => 
+        type === 'translation' || type === 'interpretation'
+      );
+      if (hasTranslationOrInterpretation) {
+        const languageName = getLanguageName(translationLanguage);
+        showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available.`);
+        // Filter out translation and interpretation from audioTypes
+        const filteredTypes = audioTypes.filter(type => 
+          type !== 'translation' && type !== 'interpretation'
+        );
+        if (filteredTypes.length > 0) {
+          setAudioTypes(filteredTypes);
+          // Continue with only Quran audio
+        } else {
+          // If no valid types left, default to Quran
+          setAudioTypes(['quran']);
+        }
+        return;
+      }
     }
 
     // Stop any currently playing audio
@@ -203,135 +221,97 @@ const BlockWise = () => {
     setCurrentInterpretationNumber(1); // Reset interpretation number for new block
     setIsPaused(false);
     
-    // Play the first ayah's qirath
-    playAyahAudio(blockId, startingAyah);
+    // Dispatch event to update header button
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+    
+    // Play the first ayah's audio (will play all selected types in sequence)
+    playAyahAudio(blockId, startingAyah, 0);
   };
 
-  // Function to play audio for a specific ayah (qirath → translation → interpretation)
-  const playAyahAudio = (blockId, ayahNumber) => {
+  // Generate audio URL based on audio type
+  const generateAudioUrl = (surahId, ayahId, type) => {
+    const surahCode = String(surahId).padStart(3, "0");
+    const ayahCode = String(ayahId).padStart(3, "0");
+    
+    if (type === 'quran') {
+      return `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+    } else if (type === 'translation') {
+      return `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
+    } else if (type === 'interpretation') {
+      return `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
+    }
+    return null;
+  };
+
+  // Function to play audio types for a specific ayah in sequence
+  // This version accepts audioTypes as parameter to avoid closure issues
+  const playAyahAudioWithTypes = (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!audioRef.current) return;
 
-    // Stop any currently playing audio before starting new ayah
+    // Use provided types or fall back to state
+    const activeAudioTypes = typesToPlay || audioTypes;
+
+    // If all audio types for this ayah have been played, move to next ayah
+    if (audioTypeIndex >= activeAudioTypes.length) {
+      console.log(`➡️ [BlockWise] Moving to next ayah after ${ayahNumber}`);
+      moveToNextAyahOrBlock();
+      return;
+    }
+
+    // Stop any currently playing audio before starting new audio
     audioRef.current.pause();
 
-    const surahCode = String(surahId).padStart(3, "0");
-    const ayahCode = String(ayahNumber).padStart(3, "0");
+    console.log(`▶️ [BlockWise] Playing ayah ${ayahNumber}, audio type: ${activeAudioTypes[audioTypeIndex]} (${audioTypeIndex + 1}/${activeAudioTypes.length})`);
+    console.log('📋 [BlockWise] Active audioTypes:', activeAudioTypes);
     
-    const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+    const currentAudioType = activeAudioTypes[audioTypeIndex];
+    const audioUrl = generateAudioUrl(surahId, ayahNumber, currentAudioType);
+    if (!audioUrl) {
+      // If URL generation fails, skip to next audio type
+      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      return;
+    }
     
+    // Map audioType to currentAudioType format for display
+    const audioTypeMap = {
+      'quran': 'qirath',
+      'translation': 'translation',
+      'interpretation': 'interpretation'
+    };
+    const mappedAudioType = audioTypeMap[currentAudioType] || 'qirath';
     
-    setCurrentAudioType('qirath');
+    setCurrentAudioType(mappedAudioType);
     setCurrentAyahInBlock(ayahNumber);
     setCurrentInterpretationNumber(1); // Reset interpretation counter
     
-    audioRef.current.src = qirathUrl;
+    // Set up audio event handlers before setting src
+    audioRef.current.onended = () => {
+      // Play next audio type for this ayah, or move to next ayah if all types done
+      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+    };
+    
+    audioRef.current.onerror = () => {
+      console.error('Error playing audio:', audioUrl);
+      // Skip to next audio type or next ayah
+      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+    };
+    
+    audioRef.current.src = audioUrl;
+    audioRef.current.playbackRate = playbackSpeed;
     audioRef.current.load();
     audioRef.current.play().catch(err => {
-      console.error('Error playing qirath audio:', err.name, err.message, qirathUrl);
-      // If qirath fails to load, immediately try translation
-      playAyahTranslation(blockId, ayahNumber);
+      console.error('Error playing audio:', err.name, err.message, audioUrl);
+      // If audio fails, skip to next audio type or next ayah
+      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
     });
   };
 
-  // Function to play translation audio for a specific ayah
-  const playAyahTranslation = (blockId, ayahNumber) => {
-    if (!audioRef.current) return;
-    
-    // Check if translation audio is available (only for Malayalam)
-    if (translationLanguage !== 'mal') {
-      const languageName = getLanguageName(translationLanguage);
-      showWarning(`${languageName} translation audio is coming soon. Currently, only Malayalam translation audio is available.`);
-      // Stop playback after qirath
-      setPlayingBlock(null);
-      setCurrentAudioType(null);
-      setCurrentAyahInBlock(null);
-      setIsContinuousPlay(false);
-      setIsPaused(false);
-      return;
-    }
-    
-    const surahCode = String(surahId).padStart(3, "0");
-    const ayahCode = String(ayahNumber).padStart(3, "0");
-    
-    const translationUrl = `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
-    
-    
-    setCurrentAudioType('translation');
-    audioRef.current.src = translationUrl;
-    audioRef.current.load();
-    audioRef.current.play().catch(err => {
-      console.error('Error loading translation audio:', err.name, err.message);
-      // If translation fails, try interpretation anyway (only for Malayalam)
-      if (translationLanguage === 'mal') {
-        playAyahInterpretation(blockId, ayahNumber, 1);
-      } else {
-        // Stop playback if not Malayalam
-        setPlayingBlock(null);
-        setCurrentAudioType(null);
-        setCurrentAyahInBlock(null);
-        setIsContinuousPlay(false);
-        setIsPaused(false);
-      }
-    });
+  // Wrapper function that uses state audioTypes (for backwards compatibility)
+  const playAyahAudio = (blockId, ayahNumber, audioTypeIndex = 0) => {
+    playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex, null);
   };
 
-  // Function to play interpretation audio for a specific ayah (supports multiple interpretations)
-  const playAyahInterpretation = (blockId, ayahNumber, interpretationNum = 1) => {
-    if (!audioRef.current) return;
-    
-    // Check if interpretation audio is available (only for Malayalam)
-    if (translationLanguage !== 'mal') {
-      const languageName = getLanguageName(translationLanguage);
-      showWarning(`${languageName} explanation audio is coming soon. Currently, only Malayalam explanation audio is available.`);
-      // Stop playback
-      setPlayingBlock(null);
-      setCurrentAudioType(null);
-      setCurrentAyahInBlock(null);
-      setIsContinuousPlay(false);
-      setIsPaused(false);
-      return;
-    }
-    
-    const surahCode = String(surahId).padStart(3, "0");
-    const ayahCode = String(ayahNumber).padStart(3, "0");
-    
-    // First interpretation has no number suffix, subsequent ones have _02, _03, etc.
-    let interpretationUrl;
-    if (interpretationNum === 1) {
-      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
-    } else {
-      const interpretationCode = String(interpretationNum).padStart(2, "0");
-      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
-    }
-    
-    
-    setCurrentAudioType('interpretation');
-    setCurrentInterpretationNumber(interpretationNum);
-    
-    // Create a promise to load and play the audio
-    audioRef.current.src = interpretationUrl;
-    
-    // Try to load the audio
-    audioRef.current.load();
-    
-    audioRef.current.play().catch(err => {
-      
-      // If first interpretation doesn't exist, there are no interpretations for this ayah
-      // Move to next ayah immediately (no interpretations to play)
-      if (interpretationNum === 1) {
-        // Use setTimeout to avoid conflicts with other audio events
-        setTimeout(() => {
-          moveToNextAyahOrBlock();
-        }, 100);
-      } else {
-        // If interpretation 2, 3, etc. doesn't exist, we've reached the end of interpretations
-        // Move to next ayah
-        setTimeout(() => {
-          moveToNextAyahOrBlock();
-        }, 100);
-      }
-    });
-  };
+  // Old functions removed - now handled by playAyahAudio with audioTypes array
 
   // Function to move to the next ayah in the block or the next block
   const moveToNextAyahOrBlock = () => {
@@ -353,21 +333,23 @@ const BlockWise = () => {
     if (nextAyah <= ayaTo) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
-      // Play the next ayah in the same block
-      playAyahAudio(playingBlock, nextAyah);
-    } else {
-      // Block is finished, move to next block or stop
-      if (isContinuousPlay) {
-        setCurrentInterpretationNumber(1); // Reset for next block
-        playNextBlock();
+      // Play the next ayah in the same block (start with first audio type)
+      playAyahAudio(playingBlock, nextAyah, 0);
       } else {
-        setPlayingBlock(null);
-        setCurrentAudioType(null);
-        setCurrentAyahInBlock(null);
-        setCurrentInterpretationNumber(1);
-        setIsPaused(false);
+        // Block is finished, move to next block or stop
+        if (isContinuousPlay) {
+          setCurrentInterpretationNumber(1); // Reset for next block
+          playNextBlock();
+        } else {
+          setPlayingBlock(null);
+          setCurrentAudioType(null);
+          setCurrentAyahInBlock(null);
+          setCurrentInterpretationNumber(1);
+          setIsPaused(false);
+          // Dispatch event to update header button
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+        }
       }
-    }
   };
 
   // Function to move to previous ayah in the block or previous block
@@ -388,8 +370,8 @@ const BlockWise = () => {
     if (previousAyah >= ayaFrom) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
-      // Play the previous ayah in the same block
-      playAyahAudio(playingBlock, previousAyah);
+      // Play the previous ayah in the same block (start with first audio type)
+      playAyahAudio(playingBlock, previousAyah, 0);
     } else {
       // Need to go to previous block or stop
       if (isContinuousPlay) {
@@ -464,6 +446,8 @@ const BlockWise = () => {
       setCurrentInterpretationNumber(1);
       setIsContinuousPlay(false);
       setIsPaused(false);
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     }
   };
 
@@ -489,6 +473,8 @@ const BlockWise = () => {
         }
         setIsContinuousPlay(false);
         setIsPaused(true);
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
         // Don't clear playingBlock, currentAyahInBlock - keep them for resume
       } else {
         // Resume playback from current position or start from beginning
@@ -497,7 +483,10 @@ const BlockWise = () => {
           setIsContinuousPlay(true);
           setIsPaused(false);
           if (audioRef.current) {
-            audioRef.current.play().catch(err => {
+            audioRef.current.play().then(() => {
+              // Dispatch event to update header button
+              window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+            }).catch(err => {
               console.error('Error resuming audio:', err);
             });
           }
@@ -507,6 +496,7 @@ const BlockWise = () => {
           setIsPaused(false);
           const firstBlockId = blockRanges[0].ID || blockRanges[0].id;
           playBlockAudio(firstBlockId);
+          // Dispatch event to update header button (will be dispatched when audio actually starts)
         }
       }
     } catch (error) {
@@ -514,8 +504,34 @@ const BlockWise = () => {
       setIsContinuousPlay(false);
       setPlayingBlock(null);
       setCurrentAyahInBlock(null);
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     }
   };
+
+  // Ref to store handlePlayAudio for event listener
+  const handlePlayAudioRef = useRef(null);
+  handlePlayAudioRef.current = handlePlayAudio;
+
+  // Listen for play audio event from header
+  useEffect(() => {
+    const handlePlayAudioEvent = () => {
+      if (handlePlayAudioRef.current) {
+        handlePlayAudioRef.current();
+      }
+    };
+
+    window.addEventListener('playAudio', handlePlayAudioEvent);
+    return () => {
+      window.removeEventListener('playAudio', handlePlayAudioEvent);
+    };
+  }, []);
+
+  // Dispatch audio state changes when isContinuousPlay changes
+  useEffect(() => {
+    const isPlaying = isContinuousPlay && !isPaused && playingBlock !== null;
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying } }));
+  }, [isContinuousPlay, isPaused, playingBlock]);
 
   // Function to stop playback completely (same as Reading.jsx stopAudio)
   const stopPlayback = () => {
@@ -527,39 +543,13 @@ const BlockWise = () => {
     setPlayingBlock(null);
     setCurrentAudioType(null);
     setCurrentAyahInBlock(null);
+    // Dispatch event to update header button
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     setCurrentInterpretationNumber(1);
     setIsPaused(false);
   };
 
-  // Handle audio ended event to chain audio files
-  useEffect(() => {
-    const handleAudioEnded = () => {
-      if (!playingBlock || !currentAyahInBlock) return;
-
-
-      if (currentAudioType === 'qirath') {
-        // Play translation after qirath for the same ayah
-        playAyahTranslation(playingBlock, currentAyahInBlock);
-      } else if (currentAudioType === 'translation') {
-        // Play first interpretation after translation for the same ayah
-        playAyahInterpretation(playingBlock, currentAyahInBlock, 1);
-      } else if (currentAudioType === 'interpretation') {
-        // After interpretation, try the next interpretation number
-        const nextInterpretationNum = currentInterpretationNumber + 1;
-        playAyahInterpretation(playingBlock, currentAyahInBlock, nextInterpretationNum);
-      }
-    };
-
-    if (audioRef.current) {
-      audioRef.current.addEventListener('ended', handleAudioEnded);
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener('ended', handleAudioEnded);
-        }
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playingBlock, currentAudioType, currentAyahInBlock, currentInterpretationNumber, isContinuousPlay, blockRanges]);
+  // Audio chaining is now handled inside playAyahAudio function with audioTypes array
 
   // Cleanup audio when surahId changes
   useEffect(() => {
@@ -576,23 +566,21 @@ const BlockWise = () => {
     };
   }, [surahId]);
 
-  // Restart qirath audio when selectedQirath changes during playback
+  // Restart audio when selectedQirath or audioTypes changes during playback
   useEffect(() => {
-    if (playingBlock && currentAyahInBlock && currentAudioType === 'qirath' && audioRef.current) {
-      // Restart qirath with new reciter for the current ayah
-      const surahCode = String(surahId).padStart(3, "0");
-      const ayahCode = String(currentAyahInBlock).padStart(3, "0");
-      const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
-      
-      
-      audioRef.current.src = qirathUrl;
-      audioRef.current.play().catch(err => {
-        console.error('Error playing qirath audio:', err);
-        playAyahTranslation(playingBlock, currentAyahInBlock);
-      });
+    if (playingBlock && currentAyahInBlock && audioRef.current && isContinuousPlay) {
+      // Restart audio with new settings for the current ayah (start with first audio type)
+      playAyahAudio(playingBlock, currentAyahInBlock, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedQirath]);
+  }, [selectedQirath, audioTypes]);
+
+  // Apply playback speed when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
 
   // Fetch block-wise data
   useEffect(() => {
@@ -1088,65 +1076,9 @@ const BlockWise = () => {
               )}
             </div>
 
-            {/* Surah Info */}
-            <div className="hidden sm:flex items-center justify-start space-x-2 px-3 sm:px-4">
-              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
-              <Link to={`/surahinfo/${surahId}`}>
-                <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
-                  Surah info
-                </span>
-              </Link>
-            </div>
-
-            {/* Play Audio */}
-            <div className="hidden sm:flex justify-between">
-              <div></div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handlePlayAudio}
-                  className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
-                    isContinuousPlay
-                      ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500"
-                      : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
-                  }`}
-                >
-                  {isContinuousPlay ? (
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                    </svg>
-                  ) : (
-                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                  )}
-                  <span className="text-xs sm:text-sm font-medium">
-                    {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
-                  </span>
-                </button>
-                {playingBlock && (
-                  <button
-                    onClick={stopPlayback}
-                    className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                    title="Stop and reset to beginning"
-                  >
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 6h12v12H6z"/>
-                    </svg>
-                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Stop</span>
-                  </button>
-                )}
-                
-                {/* Qirath Dropdown */}
-                <select
-                  value={selectedQirath}
-                  onChange={(e) => setSelectedQirath(e.target.value)}
-                  className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
-                  aria-label="Select Qirath"
-                >
-                  <option value="al-hudaify">Al-Hudaify</option>
-                  <option value="al-afasy">Al-Afasy</option>
-                  <option value="al-ghamidi">Al-Ghamidi</option>
-                </select>
-              </div>
-            </div>
+            {/* Surah Info moved to global header */}
+            {/* Play Audio button moved to header */}
+            {/* Qirath selector moved to audio player settings */}
           </div>
         </div>
 
@@ -1293,14 +1225,43 @@ const BlockWise = () => {
                           <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
 
-                        {/* Play */}
+                        {/* Play/Pause */}
                         <button
                           className={`p-1.5 sm:p-2 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
                             playingBlock === blockId 
                               ? 'text-cyan-500 dark:text-cyan-400' 
                               : 'text-gray-500 dark:text-gray-400'
                           }`}
-                          onClick={() => playBlockAudio(blockId)}
+                          onClick={() => {
+                            // If this block is currently playing, pause/resume
+                            if (playingBlock === blockId) {
+                              if (isPaused) {
+                                // Resume playback
+                                setIsPaused(false);
+                                setIsContinuousPlay(true);
+                                if (audioRef.current) {
+                                  audioRef.current.play().then(() => {
+                                    // Dispatch event to update header button
+                                    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+                                  }).catch(err => {
+                                    console.error('Error resuming audio:', err);
+                                  });
+                                }
+                              } else {
+                                // Pause playback
+                                if (audioRef.current) {
+                                  audioRef.current.pause();
+                                }
+                                setIsPaused(true);
+                                setIsContinuousPlay(false);
+                                // Dispatch event to update header button
+                                window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+                              }
+                            } else {
+                              // Start playing this block
+                              playBlockAudio(blockId);
+                            }
+                          }}
                           title={
                             playingBlock === blockId 
                               ? (isPaused ? "Resume audio" : "Pause audio") 
@@ -1608,6 +1569,38 @@ const BlockWise = () => {
                 moveToNextAyahOrBlock();
               }}
               onClose={null}
+              selectedQari={selectedQirath}
+              onQariChange={(newQari) => {
+                setSelectedQirath(newQari);
+                // If audio is currently playing, restart with new reciter
+                if (playingBlock && currentAyahInBlock) {
+                  stopPlayback();
+                  setTimeout(() => {
+                    playBlockAudio(playingBlock);
+                  }, 100);
+                }
+              }}
+              translationLanguage={translationLanguage}
+              audioTypes={audioTypes}
+              onAudioTypesChange={(newTypes) => {
+                console.log('📦 [BlockWise Page] Audio types changed:', newTypes);
+                const currentBlock = playingBlock;
+                const currentAyah = currentAyahInBlock;
+                setAudioTypes(newTypes);
+                // If audio is currently playing, restart with new audio types
+                if (currentBlock && currentAyah) {
+                  console.log('🔄 [BlockWise Page] Restarting audio with new types');
+                  stopPlayback();
+                  // Pass newTypes directly to avoid closure issue
+                  setTimeout(() => {
+                    playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
+                  }, 100);
+                }
+              }}
+              playbackSpeed={playbackSpeed}
+              onPlaybackSpeedChange={(newSpeed) => {
+                setPlaybackSpeed(newSpeed);
+              }}
             />
           )}
         </div>

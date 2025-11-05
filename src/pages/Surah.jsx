@@ -15,7 +15,7 @@ import {
   LibraryBig,
   Notebook,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import HomepageNavbar from "../components/HomeNavbar";
 import { Link } from "react-router-dom";
@@ -141,7 +141,9 @@ const Surah = () => {
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
   const [selectedQari, setSelectedQari] = useState('al-afasy');
-  const [showQariDropdown, setShowQariDropdown] = useState(false);
+  const [audioTypes, setAudioTypes] = useState(['quran']); // Array of selected audio types
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [currentAudioTypeIndex, setCurrentAudioTypeIndex] = useState(0); // Track which audio type is currently playing
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
   const audioRefForCleanup = useRef(null); // Track audio for cleanup
@@ -157,6 +159,23 @@ const Surah = () => {
       .map((digit) => arabicDigits[digit] || digit)
       .join("");
   };
+
+  // Ref to store handleTopPlayPause for event listener (defined later)
+  const handleTopPlayPauseRef = useRef(null);
+
+  // Listen for play audio event from header
+  useEffect(() => {
+    const handlePlayAudioEvent = () => {
+      if (handleTopPlayPauseRef.current) {
+        handleTopPlayPauseRef.current();
+      }
+    };
+
+    window.addEventListener('playAudio', handlePlayAudioEvent);
+    return () => {
+      window.removeEventListener('playAudio', handlePlayAudioEvent);
+    };
+  }, []);
 
   // Check for wordByWord query parameter and auto-open modal
   useEffect(() => {
@@ -1182,90 +1201,74 @@ const Surah = () => {
     return languageMap[code] || code;
   };
 
-  // Play qirath then translation for the ayah, then advance automatically
-  const playAyahSequence = (ayahNumber) => {
+  // Play audio types for an ayah in sequence, then move to next ayah
+  // This version accepts audioTypes as parameter to avoid closure issues
+  const playAyahSequenceWithTypes = (ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!surahId) return;
     
-    // Check if translation audio is available (only for Malayalam)
-    if (translationLanguage !== 'mal') {
-      const languageName = getLanguageName(translationLanguage);
-      showWarning(`${languageName} translation audio is coming soon. Currently, only Malayalam translation audio is available.`);
+    // Use provided types or fall back to state
+    const activeAudioTypes = typesToPlay || audioTypes;
+    const totalAyahs = ayahData?.length || 0;
+
+    // If all audio types for this ayah have been played, move to next ayah
+    if (audioTypeIndex >= activeAudioTypes.length) {
+      if (ayahNumber < totalAyahs) {
+        console.log(`➡️ [Surah] Moving to next ayah (${ayahNumber + 1})`);
+        playAyahSequenceWithTypes(ayahNumber + 1, 0, typesToPlay);
+      } else {
+        console.log('✅ [Surah] All ayahs completed');
+        setIsSequencePlaying(false);
+        setPlayingAyah(null);
+        setCurrentAudioTypeIndex(0);
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+      }
       return;
     }
-    
-    const totalAyahs = ayahData?.length || 0;
+
+    console.log(`▶️ [Surah] Playing ayah ${ayahNumber}, audio type: ${activeAudioTypes[audioTypeIndex]} (${audioTypeIndex + 1}/${activeAudioTypes.length})`);
+    console.log('📋 [Surah] Active audioTypes:', activeAudioTypes);
+
     setIsSequencePlaying(true);
 
-    // Qirath first
+    // Map audioType to playAyahAudio format
+    const audioTypeMap = {
+      'quran': 'qirath',
+      'translation': 'translation',
+      'interpretation': 'interpretation'
+    };
+    const currentAudioType = activeAudioTypes[audioTypeIndex];
+    const mappedAudioType = audioTypeMap[currentAudioType] || 'qirath';
+
     stopCurrentAudio();
-    const qirathEl = playAyahAudio({
+    setCurrentAudioTypeIndex(audioTypeIndex);
+    
+    const audioElement = playAyahAudio({
       ayahNumber,
       surahNumber: parseInt(surahId),
-      audioType: 'qirath',
+      audioType: mappedAudioType,
       qariName: selectedQari,
-      onStart: () => setPlayingAyah(ayahNumber),
+      playbackSpeed: playbackSpeed,
+      onStart: () => {
+        setPlayingAyah(ayahNumber);
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+      },
       onEnd: () => {
-        // Then translation (only for Malayalam, already checked above)
-        const transEl = playAyahAudio({
-          ayahNumber,
-          surahNumber: parseInt(surahId),
-          audioType: 'translation',
-          qariName: selectedQari,
-          onEnd: () => {
-            // Advance to next ayah if available
-            if (ayahNumber < totalAyahs) {
-              playAyahSequence(ayahNumber + 1);
-            } else {
-              setIsSequencePlaying(false);
-              setPlayingAyah(null);
-            }
-          },
-          onError: () => {
-            // If translation fails, still advance
-            if (ayahNumber < totalAyahs) {
-              playAyahSequence(ayahNumber + 1);
-            } else {
-              setIsSequencePlaying(false);
-              setPlayingAyah(null);
-            }
-          }
-        });
-        setAudioEl(transEl);
+        // Play next audio type for this ayah, or move to next ayah if all types done
+        playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
       },
       onError: () => {
-        // If qirath fails, try translation then continue (only for Malayalam)
-        if (translationLanguage === 'mal') {
-          const transEl = playAyahAudio({
-            ayahNumber,
-            surahNumber: parseInt(surahId),
-            audioType: 'translation',
-            qariName: selectedQari,
-            onEnd: () => {
-              if (ayahNumber < totalAyahs) {
-                playAyahSequence(ayahNumber + 1);
-              } else {
-                setIsSequencePlaying(false);
-                setPlayingAyah(null);
-              }
-            },
-            onError: () => {
-              if (ayahNumber < totalAyahs) {
-                playAyahSequence(ayahNumber + 1);
-              } else {
-                setIsSequencePlaying(false);
-                setPlayingAyah(null);
-              }
-            }
-          });
-          setAudioEl(transEl);
-        } else {
-          // If not Malayalam, just stop after qirath fails
-          setIsSequencePlaying(false);
-          setPlayingAyah(null);
-        }
+        // If audio fails, skip to next audio type or next ayah
+        playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
       },
     });
-    setAudioEl(qirathEl);
+    setAudioEl(audioElement);
+  };
+
+  // Wrapper function that uses state audioTypes (for backwards compatibility)
+  const playAyahSequence = (ayahNumber, audioTypeIndex = 0) => {
+    playAyahSequenceWithTypes(ayahNumber, audioTypeIndex, null);
   };
 
 
@@ -1281,7 +1284,8 @@ const Surah = () => {
       return;
     }
     // Otherwise start sequence for this ayah
-    playAyahSequence(ayahNumber);
+    setCurrentAudioTypeIndex(0);
+    playAyahSequence(ayahNumber, 0);
   };
 
   // Top controls: Play/Pause/Resume and Stop (reset to beginning)
@@ -1290,22 +1294,54 @@ const Surah = () => {
       if (audioEl && !audioEl.paused) {
         audioEl.pause();
         setIsSequencePlaying(false);
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
       } else if (audioEl && audioEl.paused) {
-        audioEl.play().then(() => setIsSequencePlaying(true)).catch(() => {});
+        audioEl.play().then(() => {
+          setIsSequencePlaying(true);
+          // Dispatch event to update header button
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+        }).catch(() => {});
       } else {
         // Start from beginning (ayah 1) or current highlighted ayah
-        playAyahSequence(1);
+        setCurrentAudioTypeIndex(0);
+        playAyahSequence(1, 0);
+        // Dispatch event to update header button (will be dispatched when audio actually starts)
       }
     } catch (_) {}
   };
+
+  // Store the handler in ref for event listener (defined after playAyahSequence)
+  handleTopPlayPauseRef.current = handleTopPlayPause;
 
   const handleTopStopReset = () => {
     stopCurrentAudio();
     setIsSequencePlaying(false);
     setPlayingAyah(null);
+    setCurrentAudioTypeIndex(0);
     // clear current element so next Play starts a fresh sequence from ayah 1
     setAudioEl(null);
+    // Dispatch event to update header button
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
   };
+
+  // Stop audio when Qirath or audio types change
+  useEffect(() => {
+    if (isSequencePlaying && audioEl && playingAyah) {
+      stopCurrentAudio();
+      setIsSequencePlaying(false);
+      setTimeout(() => {
+        playAyahSequence(playingAyah, 0);
+      }, 100);
+    }
+  }, [selectedQari, audioTypes]);
+
+  // Apply playback speed when it changes
+  useEffect(() => {
+    if (audioEl) {
+      audioEl.playbackRate = playbackSpeed;
+    }
+  }, [audioEl, playbackSpeed]);
 
   // Handle Tamil database download
   const handleTamilDownload = async () => {
@@ -1548,58 +1584,24 @@ const Surah = () => {
                 />
               </p>
 
-              {/* Surah Info */}
-              <div className="flex items-center justify-start space-x-0 ml-[10px]">
-                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
-                <Link to={`/surahinfo/${surahId}`}>
-                  <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
-                    Surah info
-                  </span>
-                </Link>
-              </div>
+              {/* Surah Info moved to global header */}
+              {/* Play Audio button moved to header */}
 
-              {/* Play Audio */}
-              <div className="flex justify-between">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleTopPlayPause}
-                    className={`flex items-center space-x-2 transition-colors ${isSequencePlaying ? "text-red-500 hover:text-red-600" : "text-cyan-500 hover:text-cyan-600"} min-h-[44px] px-2`}
-                  >
-                    {audioEl && !audioEl.paused ? (
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
-                    ) : (
-                      <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                    )}
-                    <span className="text-xs sm:text-sm font-medium">
-                      {audioEl ? (audioEl.paused ? "Resume Audio" : "Pause Audio") : "Play Audio"}
-                    </span>
+              {/* Ayah/Block selector */}
+              <div className="flex justify-end mb-4">
+                <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
+                  <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                    Ayah
                   </button>
-                  {audioEl && (
+                  {/* Hide blockwise for Tamil, Hindi, Urdu, and Bangla */}
+                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && translationLanguage !== 'bn' && (
                     <button
-                      onClick={handleTopStopReset}
-                      className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                      title="Stop and reset to beginning"
+                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                      onClick={() => navigate(`/blockwise/${surahId}`)}
                     >
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Stop</span>
+                      Block
                     </button>
                   )}
-                </div>
-                <div className="flex justify-end">
-                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Ayah
-                    </button>
-                    {/* Hide blockwise for Tamil, Hindi, Urdu, and Bangla */}
-                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && translationLanguage !== 'bn' && (
-                      <button
-                        className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                        onClick={() => navigate(`/blockwise/${surahId}`)}
-                      >
-                        Block
-                      </button>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1708,94 +1710,7 @@ const Surah = () => {
                 </div>
 
                 {/* Desktop Bottom Section */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center justify-start space-x-2 ml-4 sm:ml-6 lg:ml-10">
-                    <Info className="w-5 h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
-                    <Link to={`/surahinfo/${surahId}`}>
-                      <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
-                        Surah info
-                      </span>
-                    </Link>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleTopPlayPause}
-                      className={`flex items-center space-x-2 transition-colors ${isSequencePlaying ? "text-red-500 hover:text-red-600" : "text-cyan-500 hover:text-cyan-600"} min-h-[44px] px-2`}
-                    >
-                      {audioEl && !audioEl.paused ? (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                      <span className="text-sm font-medium">{audioEl ? (audioEl.paused ? "Resume Audio" : "Pause Audio") : "Play Audio"}</span>
-                    </button>
-                    {audioEl && (
-                      <button 
-                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                        onClick={handleTopStopReset}
-                        title="Stop and reset to beginning"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-                        <span className="text-sm font-medium hidden sm:inline">Stop</span>
-                      </button>
-                    )}
-
-                    {/* Qari Selector - Right side of Play Audio */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowQariDropdown((prev) => !prev)}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                        title="Select Reciter"
-                      >
-                        <span>
-                          {selectedQari === 'al-ghamidi' && 'Al-Ghamidi'}
-                          {selectedQari === 'al-afasy' && 'Al-Afasy'}
-                          {selectedQari === 'al-hudaify' && 'Al-Hudaify'}
-                        </span>
-                        <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-                      </button>
-
-                      {showQariDropdown && (
-                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden w-40 z-50">
-                          <div
-                            className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                              selectedQari === 'al-ghamidi' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                            }`}
-                            onClick={() => {
-                              setSelectedQari('al-ghamidi');
-                              setShowQariDropdown(false);
-                            }}
-                          >
-                            Al-Ghamidi
-                          </div>
-                          <div
-                            className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                              selectedQari === 'al-afasy' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                            }`}
-                            onClick={() => {
-                              setSelectedQari('al-afasy');
-                              setShowQariDropdown(false);
-                            }}
-                          >
-                            Al-Afasy
-                          </div>
-                          <div
-                            className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm ${
-                              selectedQari === 'al-hudaify' ? 'bg-gray-100 dark:bg-gray-700' : ''
-                            }`}
-                            onClick={() => {
-                              setSelectedQari('al-hudaify');
-                              setShowQariDropdown(false);
-                            }}
-                          >
-                            Al-Hudaify
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Play Audio button moved to header */}
               </div>
             </div>
           </div>
@@ -2401,17 +2316,51 @@ const Surah = () => {
             onSkipBack={() => {
               // Go to previous ayah
               if (playingAyah && playingAyah > 1) {
-                playAyahSequence(playingAyah - 1);
+                setCurrentAudioTypeIndex(0);
+                playAyahSequence(playingAyah - 1, 0);
               }
             }}
             onSkipForward={() => {
               // Go to next ayah
               const totalAyahs = ayahData?.length || 0;
               if (playingAyah && playingAyah < totalAyahs) {
-                playAyahSequence(playingAyah + 1);
+                setCurrentAudioTypeIndex(0);
+                playAyahSequence(playingAyah + 1, 0);
               }
             }}
             onClose={null}
+            selectedQari={selectedQari}
+            onQariChange={(newQari) => {
+              setSelectedQari(newQari);
+              // If audio is currently playing, restart with new reciter
+              if (playingAyah) {
+                handleTopStopReset();
+                setTimeout(() => {
+                  playAyahSequence(playingAyah, 0);
+                }, 100);
+              }
+            }}
+            translationLanguage={translationLanguage}
+            audioTypes={audioTypes}
+            onAudioTypesChange={(newTypes) => {
+              console.log('📚 [Surah Page] Audio types changed:', newTypes);
+              const currentPlayingAyah = playingAyah; // Capture current ayah
+              setAudioTypes(newTypes);
+              // If audio is currently playing, restart with new audio types
+              if (currentPlayingAyah) {
+                console.log('🔄 [Surah Page] Restarting audio with new types');
+                handleTopStopReset();
+                // Use newTypes directly instead of relying on state
+                setTimeout(() => {
+                  // Temporarily update the function to use newTypes
+                  playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
+                }, 100);
+              }
+            }}
+            playbackSpeed={playbackSpeed}
+            onPlaybackSpeedChange={(newSpeed) => {
+              setPlaybackSpeed(newSpeed);
+            }}
           />
         )}
       </div>

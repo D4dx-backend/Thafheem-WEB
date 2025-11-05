@@ -20,13 +20,14 @@ import {
   Notebook,
 } from "lucide-react";
 import HomeNavbar from "../components/HomeNavbar";
-import Transition from "../components/Transition";
+// Transition rendered globally in navbar
 import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import InterpretationBlockwise from "./InterpretationBlockwise";
-import Bismi from "../assets/bismi.jpg";
+import Bismi from "../assets/bismi.png";
+import DarkModeBismi from "../assets/darkmode-bismi.png";
 import { useTheme } from "../context/ThemeContext";
 import {
   fetchBlockWiseData,
@@ -39,6 +40,42 @@ import { useSurahData } from "../hooks/useSurahData";
 import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import StickyAudioPlayer from "../components/StickyAudioPlayer";
+
+// Custom Kaaba Icon Component (Makkah)
+const KaabaIcon = ({ className }) => (
+  <svg
+    viewBox="0 0 11 13"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M1 4.05096L5.50813 6.87531M1 4.05096L5.50813 1.22656L10.0017 4.05096M1 4.05096V5.72135M5.50813 12.2306L1 9.44877V5.72135M5.50813 12.2306L10.0017 9.44877V5.72135M5.50813 12.2306V8.52443M5.50813 6.87531L10.0017 4.05096M5.50813 6.87531V8.52443M10.0017 4.05096V5.72135M10.0017 5.72135L5.50813 8.52443M5.50813 8.52443L1 5.72135"
+      stroke="currentColor"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Madina Icon Component
+const MadinaIcon = ({ className }) => (
+  <svg
+    width="11"
+    height="15"
+    viewBox="0 0 11 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M5.625 1.0498C5.96379 1.0415 6.15318 1.43447 5.9375 1.69434L5.93848 1.69531C5.8059 1.85727 5.73354 2.06001 5.7334 2.26953C5.73364 2.7733 6.13675 3.17749 6.63965 3.17773C6.8485 3.17752 7.05247 3.1038 7.21484 2.9707C7.35907 2.84911 7.5516 2.85714 7.68555 2.94922C7.82703 3.0465 7.89339 3.22605 7.83203 3.42188C7.62359 4.1963 6.95559 4.74982 6.16699 4.82324V4.96973C6.38842 5.29376 6.73956 5.57803 7.17188 5.86035C7.39553 6.00639 7.63673 6.14949 7.88672 6.29688C8.13549 6.44354 8.39372 6.59442 8.64746 6.75391C9.69542 7.41265 10.702 8.26832 10.7217 9.86133C10.7302 10.5552 10.5894 11.4633 9.97949 12.293C10.3948 12.3364 10.7226 12.6925 10.7227 13.1182V13.9834C10.7235 14.202 10.5466 14.3792 10.3281 14.3789V14.3799H1.21582C0.998036 14.379 0.822454 14.2011 0.823242 13.9834V13.1182C0.823351 12.6643 1.19496 12.2891 1.65039 12.2891H8.89941C9.63381 11.6946 9.91674 10.8407 9.93359 9.86035C9.95344 8.7001 9.20568 8.05633 8.22656 7.4209C7.99002 7.26739 7.75176 7.12838 7.51562 6.99219C7.28064 6.85666 7.04583 6.72296 6.82227 6.58398C6.43649 6.34416 6.0728 6.08117 5.77148 5.74121C5.46708 6.08406 5.09223 6.35958 4.7002 6.60547C4.47252 6.74826 4.23591 6.88329 4.00293 7.0166C3.76878 7.15058 3.53754 7.28322 3.31543 7.42285C2.42056 7.98548 1.62622 8.63485 1.61133 9.86523C1.6014 10.6849 1.83171 11.2575 2.07324 11.6484H2.07227C2.13777 11.7504 2.15412 11.8634 2.12402 11.9678C2.0949 12.0686 2.02647 12.1474 1.94727 12.1963C1.86807 12.2451 1.76716 12.2711 1.66406 12.252C1.55623 12.2319 1.46123 12.1657 1.39941 12.0596V12.0586C1.0886 11.5539 0.816533 10.8308 0.823242 9.8623C0.83371 8.36129 1.75222 7.45412 2.89844 6.75293C3.41821 6.43497 3.92281 6.1624 4.37598 5.86426C4.80764 5.58025 5.15748 5.29245 5.37891 4.9668V4.72949C4.62425 4.47414 4.07622 3.76183 4.07617 2.9209C4.07617 2.19418 4.55355 1.26045 5.59473 1.05273L5.61035 1.0498H5.625ZM1.62207 13.0869C1.61745 13.0916 1.61137 13.1013 1.61133 13.1182V13.5908H9.93457V13.1182C9.93452 13.1022 9.92888 13.093 9.92383 13.0879C9.91879 13.0828 9.90931 13.0771 9.89355 13.0771H1.65039C1.63521 13.0771 1.6266 13.0825 1.62207 13.0869ZM4.95801 2.47852C4.89845 2.61488 4.86542 2.76443 4.86523 2.9209L4.87109 3.03613C4.92841 3.60447 5.40474 4.04371 5.98926 4.04395C6.14409 4.04376 6.29155 4.00941 6.42676 3.95117C5.66139 3.85413 5.05306 3.24442 4.95801 2.47852Z"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="0.35469"
+    />
+  </svg>
+);
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -66,12 +103,16 @@ const BlockWise = () => {
   const [selectedInterpretation, setSelectedInterpretation] = useState(null);
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  // Favorite surah state
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { toasts, removeToast, showSuccess, showError } = useToast();
-  const { quranFont, translationLanguage } = useTheme();
+  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
+  const { quranFont, translationLanguage, theme } = useTheme();
   const { surahId } = useParams();
   
   // Use cached surah data
@@ -116,10 +157,30 @@ const BlockWise = () => {
     "al-ghamidi": "QG"
   };
 
+  // Helper function to get language name from code
+  const getLanguageName = (code) => {
+    const languageMap = {
+      'E': 'English',
+      'mal': 'Malayalam',
+      'ur': 'Urdu',
+      'bn': 'Bangla',
+      'ta': 'Tamil',
+      'hi': 'Hindi'
+    };
+    return languageMap[code] || code;
+  };
+
   // Function to play audio for a specific block - starts from the first ayah
   const playBlockAudio = (blockId, fromContinuous = false) => {
     if (!audioRef.current) return;
 
+    // Check if translation/interpretation audio is available (only for Malayalam)
+    // Only check if not already in continuous mode (to allow resume)
+    if (!fromContinuous && translationLanguage !== 'mal') {
+      const languageName = getLanguageName(translationLanguage);
+      showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available.`);
+      return;
+    }
 
     // Stop any currently playing audio
     if (audioRef.current) {
@@ -176,6 +237,19 @@ const BlockWise = () => {
   const playAyahTranslation = (blockId, ayahNumber) => {
     if (!audioRef.current) return;
     
+    // Check if translation audio is available (only for Malayalam)
+    if (translationLanguage !== 'mal') {
+      const languageName = getLanguageName(translationLanguage);
+      showWarning(`${languageName} translation audio is coming soon. Currently, only Malayalam translation audio is available.`);
+      // Stop playback after qirath
+      setPlayingBlock(null);
+      setCurrentAudioType(null);
+      setCurrentAyahInBlock(null);
+      setIsContinuousPlay(false);
+      setIsPaused(false);
+      return;
+    }
+    
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahNumber).padStart(3, "0");
     
@@ -187,14 +261,36 @@ const BlockWise = () => {
     audioRef.current.load();
     audioRef.current.play().catch(err => {
       console.error('Error loading translation audio:', err.name, err.message);
-      // If translation fails, try interpretation anyway
-      playAyahInterpretation(blockId, ayahNumber, 1);
+      // If translation fails, try interpretation anyway (only for Malayalam)
+      if (translationLanguage === 'mal') {
+        playAyahInterpretation(blockId, ayahNumber, 1);
+      } else {
+        // Stop playback if not Malayalam
+        setPlayingBlock(null);
+        setCurrentAudioType(null);
+        setCurrentAyahInBlock(null);
+        setIsContinuousPlay(false);
+        setIsPaused(false);
+      }
     });
   };
 
   // Function to play interpretation audio for a specific ayah (supports multiple interpretations)
   const playAyahInterpretation = (blockId, ayahNumber, interpretationNum = 1) => {
     if (!audioRef.current) return;
+    
+    // Check if interpretation audio is available (only for Malayalam)
+    if (translationLanguage !== 'mal') {
+      const languageName = getLanguageName(translationLanguage);
+      showWarning(`${languageName} explanation audio is coming soon. Currently, only Malayalam explanation audio is available.`);
+      // Stop playback
+      setPlayingBlock(null);
+      setCurrentAudioType(null);
+      setCurrentAyahInBlock(null);
+      setIsContinuousPlay(false);
+      setIsPaused(false);
+      return;
+    }
     
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahNumber).padStart(3, "0");
@@ -274,6 +370,78 @@ const BlockWise = () => {
     }
   };
 
+  // Function to move to previous ayah in the block or previous block
+  const moveToPreviousAyahOrBlock = () => {
+    if (!playingBlock || !currentAyahInBlock) {
+      return;
+    }
+
+    const blockInfo = blockRanges.find(b => (b.ID || b.id) === playingBlock);
+    if (!blockInfo) {
+      return;
+    }
+
+    const ayaFrom = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
+    const previousAyah = currentAyahInBlock - 1;
+
+    // Check if there's a previous ayah in this block
+    if (previousAyah >= ayaFrom) {
+      // Reset interpretation number for new ayah
+      setCurrentInterpretationNumber(1);
+      // Play the previous ayah in the same block
+      playAyahAudio(playingBlock, previousAyah);
+    } else {
+      // Need to go to previous block or stop
+      if (isContinuousPlay) {
+        setCurrentInterpretationNumber(1);
+        playPreviousBlock();
+      } else {
+        // Stop at beginning of current block
+        setPlayingBlock(null);
+        setCurrentAudioType(null);
+        setCurrentAyahInBlock(null);
+        setCurrentInterpretationNumber(1);
+        setIsPaused(false);
+      }
+    }
+  };
+
+  // Function to play previous block in continuous mode
+  const playPreviousBlock = () => {
+    if (!isContinuousPlay || !blockRanges || blockRanges.length === 0) return;
+
+    const currentIndex = blockRanges.findIndex(block => {
+      const blockId = block.ID || block.id;
+      return blockId === playingBlock;
+    });
+
+    // Check if there's a previous block
+    if (currentIndex > 0) {
+      const previousBlock = blockRanges[currentIndex - 1];
+      const previousBlockId = previousBlock.ID || previousBlock.id;
+      const lastAyah = previousBlock.AyaTo || previousBlock.ayato || previousBlock.to || 1;
+      
+      setIsContinuousPlay(true);
+      setPlayingBlock(previousBlockId);
+      setCurrentAyahInBlock(lastAyah);
+      setCurrentInterpretationNumber(1);
+      setIsPaused(false);
+      
+      // Play the last ayah of the previous block
+      playAyahAudio(previousBlockId, lastAyah);
+    } else {
+      // Already at first block, go to first ayah
+      const firstBlock = blockRanges[0];
+      const firstBlockId = firstBlock.ID || firstBlock.id;
+      const firstAyah = firstBlock.AyaFrom || firstBlock.ayafrom || firstBlock.from || 1;
+      
+      setPlayingBlock(firstBlockId);
+      setCurrentAyahInBlock(firstAyah);
+      setCurrentInterpretationNumber(1);
+      playAyahAudio(firstBlockId, firstAyah);
+    }
+  };
+
   // Function to play next block in continuous mode
   const playNextBlock = () => {
     if (!isContinuousPlay || !blockRanges || blockRanges.length === 0) return;
@@ -303,6 +471,13 @@ const BlockWise = () => {
   const handlePlayAudio = () => {
     if (!blockRanges || blockRanges.length === 0) {
       showError("No blocks available to play");
+      return;
+    }
+
+    // Check if translation/interpretation audio is available (only for Malayalam)
+    if (translationLanguage !== 'mal') {
+      const languageName = getLanguageName(translationLanguage);
+      showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available.`);
       return;
     }
 
@@ -447,6 +622,7 @@ const BlockWise = () => {
           surahInfo: surahInfo || {
             number: parseInt(surahId),
             arabic: "القرآن",
+            type: 'Makki', // Default fallback
           },
         });
 
@@ -588,6 +764,62 @@ const BlockWise = () => {
     hasFetchedRef.current = false;
   }, [translationLanguage]);
 
+  // Load favorite status for the current surah
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!user || !surahId) {
+        setIsFavorited(false);
+        return;
+      }
+
+      try {
+        const favorited = await BookmarkService.isFavorited(user.uid, surahId);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Error loading favorite status:", error);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [user, surahId]);
+
+  // Handle favorite surah toggle
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+
+    // Check if user is signed in
+    if (!user) {
+      showError("Please sign in to favorite surahs");
+      navigate("/sign");
+      return;
+    }
+
+    try {
+      setFavoriteLoading(true);
+
+      if (isFavorited) {
+        // Remove from favorites
+        await BookmarkService.deleteFavoriteSurah(user.uid, surahId);
+        setIsFavorited(false);
+        showSuccess("Surah removed from favorites");
+      } else {
+        // Add to favorites
+        await BookmarkService.addFavoriteSurah(
+          user.uid,
+          surahId,
+          blockData?.surahInfo?.arabic || `Surah ${surahId}`
+        );
+        setIsFavorited(true);
+        showSuccess("Surah added to favorites");
+      }
+    } catch (error) {
+      console.error("Error managing favorite:", error);
+      showError("Failed to manage favorite. Please try again.");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   const handleNumberClick = (number) => {
     setSelectedNumber(number);
     setShowInterpretation(true);
@@ -700,22 +932,25 @@ const BlockWise = () => {
     }
   };
 
-  const kabahIcon = (
-    <svg
-      width="14"
-      height="20"
-      viewBox="0 0 14 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-black dark:text-white"
-    >
-      <path
-        d="M7.04102 0.876953C7.21988 0.872433 7.35595 0.982913 7.41797 1.12012C7.47966 1.25677 7.47269 1.43054 7.36328 1.56934L7.36426 1.57031C7.17444 1.81689 7.07051 2.12551 7.07031 2.44629C7.07036 3.2205 7.65293 3.83008 8.36328 3.83008C8.62217 3.82971 8.87562 3.74502 9.08984 3.58887L9.17871 3.51758C9.32708 3.38317 9.52955 3.38964 9.66992 3.49219C9.81323 3.59692 9.88171 3.79048 9.81445 4.01172L9.81543 4.0127C9.54829 5.06733 8.66874 5.81651 7.63672 5.87305V6.23242C7.93786 6.71662 8.42031 7.12993 9 7.53223C9.29438 7.7365 9.61115 7.93618 9.9375 8.14062C10.2631 8.34461 10.5987 8.55402 10.9287 8.77441C12.2911 9.68443 13.5581 10.839 13.583 12.9795C13.5946 13.9776 13.3942 15.2962 12.499 16.4688H12.6113C13.1516 16.469 13.5839 16.9408 13.584 17.4961V18.6973C13.5847 18.8969 13.4503 19.0739 13.2607 19.1143L13.1768 19.123H1.28125C1.05037 19.1218 0.876181 18.9239 0.876953 18.6973V17.4961C0.877067 16.9411 1.3077 16.4688 1.84863 16.4688H11.3506C12.3649 15.6135 12.7489 14.3763 12.7715 12.9785C12.7985 11.2944 11.769 10.3685 10.4912 9.4873C10.1797 9.27251 9.86617 9.07874 9.55762 8.88965C9.24992 8.70108 8.94523 8.51673 8.65527 8.3252C8.11964 7.97136 7.62651 7.58501 7.22949 7.07812C6.8299 7.58748 6.31991 7.99159 5.77539 8.35449C5.48029 8.55117 5.17372 8.73767 4.86914 8.92285C4.56391 9.10843 4.26079 9.29321 3.96875 9.48828C2.79826 10.2702 1.70969 11.2034 1.68945 12.9824C1.67627 14.1447 1.98255 14.9624 2.30762 15.5225C2.45386 15.7601 2.35174 15.9993 2.18262 16.1104C2.09875 16.1654 1.99273 16.1939 1.88574 16.1729C1.77539 16.1511 1.67857 16.0793 1.61426 15.9619V15.9609C1.2185 15.279 0.868253 14.2984 0.876953 12.9795C0.890309 10.9645 2.04737 9.73924 3.5332 8.77344C4.2039 8.33749 4.87254 7.95218 5.46484 7.53809C6.04306 7.13381 6.52411 6.7165 6.8252 6.23145V5.76562C5.84108 5.45019 5.12515 4.48656 5.125 3.35059C5.125 2.39207 5.71839 1.15535 7.01855 0.879883L7.0293 0.87793L7.04102 0.876953ZM1.84863 17.3164C1.76319 17.3164 1.68955 17.3833 1.68945 17.4961V18.2754H12.7725V17.4961C12.7724 17.3848 12.6978 17.3166 12.6113 17.3164H1.84863ZM6.26367 2.33301C6.05854 2.61668 5.93789 2.96975 5.9375 3.35059C5.93768 4.29033 6.6467 5.03107 7.51367 5.03125C7.87411 5.0308 8.20953 4.89868 8.47852 4.67285C8.44029 4.6753 8.4019 4.67769 8.36328 4.67773C7.19699 4.67773 6.25786 3.66674 6.25781 2.44629C6.25784 2.40838 6.26172 2.37059 6.26367 2.33301Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="0.245554"
-      />
-    </svg>
+  // Handle scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Get the appropriate icon based on surah type
+  const surahIcon = blockData?.surahInfo?.type === 'Makki' ? (
+    <KaabaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
+  ) : (
+    <MadinaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
   );
 
   // Loading state - only show full loading screen for initial data fetch
@@ -723,7 +958,7 @@ const BlockWise = () => {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <Transition />
+        
         <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
@@ -752,7 +987,7 @@ const BlockWise = () => {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <Transition />
+        
         <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-500 dark:text-red-400 text-lg mb-2">
@@ -776,28 +1011,26 @@ const BlockWise = () => {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <Transition />
       <div className="mx-auto min-h-screen bg-white dark:bg-gray-900">
-        <div className="mx-auto px-3 sm:px-6 lg:px-8">
-          {/* Header with Tabs */}
-          <div className="bg-white dark:bg-gray-900 py-4 sm:py-6">
-            {/* Translation/Reading Tabs */}
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+          <div className="mx-auto px-3 sm:px-6 lg:px-8">
+            {/* Header with Tabs */}
+            <div className="py-4 sm:py-6">
+              {/* Translation/Reading Tabs */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
                 <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <span className="text-xs sm:text-sm font-poppins text-black dark:text-white">
-                      Translation
-                    </span>
+                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
                   </button>
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 text-gray-600 dark:hover:bg-gray-800 dark:text-white hover:bg-gray-50 rounded-full text-xs sm:text-sm font-medium min-h-[40px] sm:min-h-[44px]">
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-black dark:text-white" />
-                    <Link to={`/reading/${surahId}`}>
-                      <span className="text-xs sm:text-sm font-poppins text-black dark:text-white cursor-pointer hover:underline">
-                        Reading
-                      </span>
-                    </Link>
+                  <button
+                    onClick={() => navigate(`/reading/${surahId}`)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800 min-h-[40px] sm:min-h-[44px]"
+                  >
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
                   </button>
                 </div>
               </div>
@@ -805,18 +1038,24 @@ const BlockWise = () => {
 
             {/* Arabic Title */}
             <div className="text-center mb-4 sm:mb-6">
-              <h1
-                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4"
-                style={{ fontFamily: "Arial" }}
-              >
-                {blockData?.surahInfo?.arabic || "القرآن"}
+              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
+                {blockData?.surahInfo?.arabic || "Loading..."}
               </h1>
               <div className="flex justify-center space-x-3 sm:space-x-4 text-gray-600 mb-4 sm:mb-6">
                 <button className="p-2 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  {kabahIcon}
+                  {surahIcon}
                 </button>
-                <button className="p-2 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                <button 
+                  onClick={handleFavoriteClick}
+                  disabled={favoriteLoading}
+                  className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    favoriteLoading 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:text-gray-800 dark:hover:text-gray-300'
+                  } ${isFavorited ? 'text-red-500' : 'text-gray-400 dark:text-white'}`}
+                  title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
@@ -825,116 +1064,93 @@ const BlockWise = () => {
             <div className="mb-6 sm:mb-8 relative">
               <div className="flex flex-col items-center px-2 sm:px-4">
                 <img
-                  src={Bismi}
+                  src={theme === "dark" ? DarkModeBismi : Bismi}
                   alt="Bismi"
-                  className="w-[236px] h-[52.9px] mb-4 dark:invert"
+                  className="w-[236px] h-[52.9px] mb-4"
                 />
               </div>
 
-              {/* Desktop Ayah wise / Block wise buttons */}
-              <div className="absolute top-0 right-0 hidden sm:block">
-                <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                  <button
-                    className="px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-xs sm:text-sm font-medium hover:text-gray-700 transition-colors"
-                    onClick={() => navigate(`/surah/${surahId}`)}
-                  >
-                    Ayah wise
-                  </button>
-                  {/* Hide blockwise for Tamil, Hindi, and Bangla */}
-                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'bn' && (
-                    <button className="px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow transition-colors">
+              {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
+              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                <div className="absolute top-0 right-0 hidden sm:block">
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <button
+                      className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
+                      onClick={() => navigate(`/surah/${surahId}`)}
+                    >
+                      Ayah wise
+                    </button>
+                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                       Block wise
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between max-w-full sm:max-w-[1290px] mx-auto space-y-2 sm:space-y-0">
-              <div className="flex items-center justify-start space-x-2">
-                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
-                <Link to={`/surahinfo/${surahId}`}>
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-white cursor-pointer hover:underline">
-                    Surah info
-                  </span>
-                </Link>
-              </div>
+            {/* Surah Info */}
+            <div className="hidden sm:flex items-center justify-start space-x-2 px-3 sm:px-4">
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
+              <Link to={`/surahinfo/${surahId}`}>
+                <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
+                  Surah info
+                </span>
+              </Link>
+            </div>
 
-              {/* Play Audio */}
-              <div className="flex justify-between">
-                <div className="flex items-center space-x-2">
-                  {/* Audio Controls */}
-                  <div className="flex items-center space-x-2">
-                    {/* Play/Pause Audio Button (same as Reading.jsx) */}
-                    <button 
-                      className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
-                        isContinuousPlay 
-                          ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500" 
-                          : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
-                      }`}
-                      onClick={handlePlayAudio}
-                    >
-                      {isContinuousPlay ? (
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                      )}
+            {/* Play Audio */}
+            <div className="hidden sm:flex justify-between">
+              <div></div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handlePlayAudio}
+                  className={`flex items-center space-x-2 transition-colors min-h-[44px] px-2 ${
+                    isContinuousPlay
+                      ? "text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500"
+                      : "text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300"
+                  }`}
+                >
+                  {isContinuousPlay ? (
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                  ) : (
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                  )}
                   <span className="text-xs sm:text-sm font-medium">
-                        {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
+                    {isContinuousPlay ? "Pause Audio" : (playingBlock ? "Resume Audio" : "Play Audio")}
                   </span>
                 </button>
-
-                    {/* Stop/Reset Button (same as Reading.jsx) */}
-                    {playingBlock && (
-                      <button 
-                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors min-h-[44px] px-2"
-                        onClick={stopPlayback}
-                        title="Stop and reset to beginning"
-                      >
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 6h12v12H6z"/>
-                        </svg>
-                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-                          Stop
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* Qirath Dropdown */}
-                  <select
-                    value={selectedQirath}
-                    onChange={(e) => setSelectedQirath(e.target.value)}
-                    className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
-                    aria-label="Select Qirath"
+                {playingBlock && (
+                  <button
+                    onClick={stopPlayback}
+                    className="flex items-center space-x-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                    title="Stop and reset to beginning"
                   >
-                    <option value="al-hudaify">Al-Hudaify</option>
-                    <option value="al-afasy">Al-Afasy</option>
-                    <option value="al-ghamidi">Al-Ghamidi</option>
-                  </select>
-                </div>
-                <div className="flex justify-end sm:hidden">
-                  <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
-                    <button
-                      onClick={() => navigate(`/surah/${surahId}`)}
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:text-white dark:hover:text-white dark:hover:bg-gray-800 text-xs font-medium hover:text-gray-700 transition-colors"
-                    >
-                      Ayah
-                    </button>
-                    {/* Hide blockwise for Tamil, Hindi, and Bangla */}
-                    {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'bn' && (
-                      <button className="px-2 sm:px-3 py-1.5 w-[55px] dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                        Block
-                      </button>
-                    )}
-                  </div>
-                </div>
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Stop</span>
+                  </button>
+                )}
+                
+                {/* Qirath Dropdown */}
+                <select
+                  value={selectedQirath}
+                  onChange={(e) => setSelectedQirath(e.target.value)}
+                  className="px-3 py-2 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-colors min-h-[44px]"
+                  aria-label="Select Qirath"
+                >
+                  <option value="al-hudaify">Al-Hudaify</option>
+                  <option value="al-afasy">Al-Afasy</option>
+                  <option value="al-ghamidi">Al-Ghamidi</option>
+                </select>
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="mx-auto px-3 sm:px-6 lg:px-8">
           {/* Main Content */}
           <div className="max-w-full sm:max-w-[1290px] mx-auto pb-6 sm:pb-8">
             
@@ -970,8 +1186,8 @@ const BlockWise = () => {
 
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-2"
-                        style={{ fontFamily: `'${quranFont}', serif` }}
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
+                        style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -987,7 +1203,14 @@ const BlockWise = () => {
                     {/* Translation Text for this block */}
                     <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
                       {translationData ? (
-                        <div className="text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base font-poppins">
+                        <div className={`text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base ${
+                          translationLanguage === 'hi' ? 'font-hindi' :
+                          translationLanguage === 'ur' ? 'font-urdu' :
+                          translationLanguage === 'bn' ? 'font-bengali' :
+                          translationLanguage === 'ta' ? 'font-tamil' :
+                          translationLanguage === 'mal' ? 'font-malayalam' :
+                          'font-poppins'
+                        }`}>
                           {/* Render translation text with HTML and clickable interpretation numbers */}
                           {Array.isArray(translationData) && translationData.length > 0 ? (
                             translationData.map((item, idx) => {
@@ -1000,12 +1223,14 @@ const BlockWise = () => {
                               return (
                                 <div
                                   key={`translation-${blockId}-${idx}`}
+                                  className="text-justify leading-relaxed"
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
                             })
                           ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
                             <div
+                              className="text-justify leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: parseTranslationWithClickableSup(
                                   translationData.TranslationText || translationData.translationText || translationData.text,
@@ -1090,24 +1315,42 @@ const BlockWise = () => {
                         </button>
 
                         {/* Book - Ayah Detail */}
-                        <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                          onClick={() => {
-                            const targetUrl = `/surah/${surahId}#verse-${start}`;
-                            navigate(targetUrl);
-                          }}
-                          title="View ayah details"
-                        >
-                          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
+                        {/* BookOpen - Interpretation (hidden for Tamil, English, and Malayalam) */}
+                        {translationLanguage !== 'ta' && translationLanguage !== 'E' && translationLanguage !== 'mal' && (
+                          <button
+                            className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                            onClick={(e) => {
+                              const targetUrl = `/surah/${surahId}#verse-${start}`;
+                              const isModifierPressed = e?.ctrlKey || e?.metaKey;
+                              
+                              if (isModifierPressed) {
+                                e.preventDefault();
+                                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                              } else {
+                                navigate(targetUrl);
+                              }
+                            }}
+                            title="View ayah details"
+                          >
+                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </button>
+                        )}
 
                         {/* Note/Page - Word by Word */}
                         <button
                           className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
-                          onClick={() => {
-                            navigate(`/word-by-word/${surahId}/${start}`, {
-                              state: { from: location.pathname },
-                            });
+                          onClick={(e) => {
+                            const url = `/word-by-word/${surahId}/${start}`;
+                            const isModifierPressed = e?.ctrlKey || e?.metaKey;
+                            
+                            if (isModifierPressed) {
+                              e.preventDefault();
+                              window.open(url, '_blank', 'noopener,noreferrer');
+                            } else {
+                              navigate(url, {
+                                state: { from: location.pathname },
+                              });
+                            }
                           }}
                           title="Word by word"
                         >
@@ -1291,7 +1534,7 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Ayah Interpretation (from clicking ayah numbers) */}
           {showInterpretation && selectedNumber && (
-            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full">
                 <InterpretationBlockwise
                   key={`interpretation-${surahId}-${selectedNumber}`}
@@ -1312,7 +1555,7 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (
-            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full shadow-2xl">
                 <InterpretationBlockwise
                   key={`block-interpretation-${surahId}-${selectedInterpretation.range}-${selectedInterpretation.interpretationNumber}`}
@@ -1327,7 +1570,48 @@ const BlockWise = () => {
               </div>
             </div>
           )}
+
+          {/* Floating Back to Top Button */}
+          {showScrollButton && (
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className={`fixed right-6 z-[60] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+                currentAyahInBlock ? 'bottom-32 sm:bottom-36' : 'bottom-6'
+              }`}
+              title="Beginning of Surah"
+              aria-label="Beginning of Surah"
+            >
+              <ArrowUp className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Sticky Audio Player */}
+          {currentAyahInBlock && (
+            <StickyAudioPlayer
+              audioElement={audioRef.current}
+              isPlaying={isContinuousPlay && audioRef.current && !audioRef.current.paused}
+              currentAyah={currentAyahInBlock}
+              totalAyahs={blockRanges.reduce((acc, block) => {
+                const end = block.AyaTo || block.ayato || block.to || 0;
+                const start = block.AyaFrom || block.ayafrom || block.from || 0;
+                return acc + (end - start + 1);
+              }, 0)}
+              surahInfo={blockData?.surahInfo}
+              onPlayPause={handlePlayAudio}
+              onStop={stopPlayback}
+              onSkipBack={() => {
+                // Go to previous ayah
+                moveToPreviousAyahOrBlock();
+              }}
+              onSkipForward={() => {
+                // Go to next ayah
+                moveToNextAyahOrBlock();
+              }}
+              onClose={null}
+            />
+          )}
         </div>
+      </div>
       </div>
     </>
   );

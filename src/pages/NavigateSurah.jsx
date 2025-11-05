@@ -133,7 +133,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     { id: 114, name: "An-Nas" }
   ];
 
-  const NavigateSurah = () => {
+  const NavigateSurahList = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredSurahs = (surahs.length > 0 ? surahs : fallbackSurahs).filter((s) =>
@@ -199,7 +199,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'Surah':
-        return <NavigateSurah />;
+        return <NavigateSurahList />;
       case 'Verse':
         return <Verse />;
       case 'Juz':

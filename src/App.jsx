@@ -12,6 +12,7 @@ import BookVerse from "./pages/bookmarkedVerses";
 import BookmarkBlock from "./pages/BookmarkBlock";
 import BookInterpretations from "./pages/BookInterpretations";
 import MalayalamInterpreter from "./pages/MalayalamInterpreter";
+import FavoriteSurahs from "./pages/FavoriteSurahs";
 import Settings from "./pages/Settings";
 import PlayAudio from "./components/PlayAudio";
 import TableContents from "./pages/TableContents";
@@ -37,15 +38,16 @@ import InterpretationBlockwise from "./pages/InterpretationBlockwise";
 import Note from "./pages/Note";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
-import ApiStatusBanner from "./components/ApiStatusBanner";
 
 function App() {
+  // Use basename only in production, not in development
+  const basename = import.meta.env.PROD ? '/new_thafheem_web' : '/';
+  
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router basename="/new_thafheem_web">
+        <Router basename={basename}>
           <HomepageNavbar />
-          <ApiStatusBanner />
           <Routes>
             <Route path="/" element={<Home />} /> {/* Surah/Home */}
             <Route path="/juz" element={<Juz />} />
@@ -59,6 +61,7 @@ function App() {
             <Route path="/blockwise/:surahId" element={<BlockWise />} />
             <Route path="/bookmarkblock" element={<BookmarkBlock />} />
             <Route path="/bookmarkedverses" element={<BookVerse />} />
+            <Route path="/favoritesurahs" element={<FavoriteSurahs />} />
             <Route
               path="/bookinterpretations"
               element={<BookInterpretations />}

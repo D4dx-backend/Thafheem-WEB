@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/new_thafheem_web/',  // ← ADD THIS LINE
+  // Only use base path in production, not in development
+  base: process.env.NODE_ENV === 'production' ? '/new_thafheem_web/' : '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -19,12 +20,18 @@ export default defineConfig({
       port: 5173,
       clientPort: 5173
     },
-    headers: {
+    // Only apply cache headers in production, not in development
+    // Cache headers can interfere with HMR WebSocket connections
+    headers: process.env.NODE_ENV === 'production' ? {
       'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
+    } : {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none'
+      // Cache headers removed in dev to prevent WebSocket/HMR issues
     },
     proxy: {
       // Proxy API calls to bypass CORS

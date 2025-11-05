@@ -34,16 +34,16 @@ const CACHE_DURATIONS = {
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker installing...');
+  // Service Worker installing
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
-        console.log('📦 Caching static assets...');
+        // Caching static assets
         return cache.addAll(STATIC_ASSETS.filter(url => url !== '/'));
       })
       .then(() => {
-        console.log('✅ Static assets cached successfully');
+        // Static assets cached successfully
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -54,7 +54,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker activating...');
+  // Service Worker activating
   
   event.waitUntil(
     caches.keys()
@@ -64,14 +64,14 @@ self.addEventListener('activate', (event) => {
             if (cacheName !== CACHE_NAME && 
                 cacheName !== API_CACHE_NAME && 
                 cacheName !== STATIC_CACHE_NAME) {
-              console.log('🗑️ Deleting old cache:', cacheName);
+              // Deleting old cache
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(() => {
-        console.log('✅ Service Worker activated');
+        // Service Worker activated
         return self.clients.claim();
       })
   );
@@ -131,18 +131,18 @@ async function handleAPIRequest(request) {
     
     // If we have a cached response, return it immediately
     if (cachedResponse && !isCacheExpired(cachedResponse)) {
-      console.log('📦 Cache HIT:', request.url);
+      // Cache HIT
       
       // Update cache in background (stale-while-revalidate)
       fetchAndCache(request, cache).catch(error => {
-        console.log('Background cache update failed:', error.message);
+        // Background cache update failed
       });
       
       return cachedResponse;
     }
     
     // No valid cache, fetch from network
-    console.log('🌐 Cache MISS, fetching:', request.url);
+    // Cache MISS, fetching
     return await fetchAndCache(request, cache);
     
   } catch (error) {
@@ -151,7 +151,7 @@ async function handleAPIRequest(request) {
     // Fallback to cache even if expired
     const staleResponse = await cache.match(request);
     if (staleResponse) {
-      console.log('🔄 Returning stale response:', request.url);
+      // Returning stale response
       return staleResponse;
     }
     
@@ -180,12 +180,12 @@ async function handleStaticRequest(request) {
     // Try cache first
     const cachedResponse = await cache.match(request);
     if (cachedResponse && !isCacheExpired(cachedResponse)) {
-      console.log('📦 Static cache HIT:', request.url);
+      // Static cache HIT
       return cachedResponse;
     }
     
     // Cache miss or expired, fetch from network
-    console.log('🌐 Static cache MISS, fetching:', request.url);
+    // Static cache MISS, fetching
     return await fetchAndCache(request, cache);
     
   } catch (error) {
@@ -216,7 +216,7 @@ async function handleNetworkFirst(request) {
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('🔄 Network failed, returning cached response:', request.url);
+      // Network failed, returning cached response
       return cachedResponse;
     }
     
@@ -250,12 +250,12 @@ async function fetchAndCache(request, cache) {
     try {
       if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
         cache.put(request, cachedResponse);
-        console.log('💾 Cached response:', request.url);
+        // Cached response
       } else {
-        console.log('⚠️ Skipping cache for unsupported scheme:', request.url);
+        // Skipping cache for unsupported scheme
       }
     } catch (error) {
-      console.log('⚠️ Cache error (unsupported scheme):', request.url, error.message);
+      // Cache error (unsupported scheme)
     }
   }
   
@@ -299,7 +299,7 @@ function isCacheExpired(response) {
  */
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
-    console.log('🔄 Background sync triggered');
+    // Background sync triggered
     event.waitUntil(doBackgroundSync());
   }
 });
@@ -311,7 +311,7 @@ async function doBackgroundSync() {
   try {
     // Clean up expired cache entries
     await cleanupExpiredCache();
-    console.log('✅ Background sync completed');
+    // Background sync completed
   } catch (error) {
     console.error('❌ Background sync failed:', error);
   }
@@ -331,7 +331,7 @@ async function cleanupExpiredCache() {
       const response = await cache.match(request);
       if (response && isCacheExpired(response)) {
         await cache.delete(request);
-        console.log('🧹 Cleaned expired cache entry:', request.url);
+        // Cleaned expired cache entry
       }
     }
   }
@@ -343,7 +343,7 @@ async function cleanupExpiredCache() {
 self.addEventListener('push', (event) => {
   if (event.data) {
     const data = event.data.json();
-    console.log('📱 Push notification received:', data);
+    // Push notification received
     
     const options = {
       body: data.body,
@@ -362,4 +362,4 @@ self.addEventListener('push', (event) => {
   }
 });
 
-console.log('🚀 Thafheem Service Worker loaded successfully');
+// Thafheem Service Worker loaded successfully

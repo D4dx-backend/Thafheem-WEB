@@ -177,7 +177,7 @@ const InterpretationNavbar = ({
                   e.stopPropagation();
                   console.log("Word-by-word button clicked in navbar");
                   if (onWordByWord) {
-                    onWordByWord();
+                    onWordByWord(e);
                   }
                 }}
               >
@@ -304,7 +304,7 @@ const InterpretationNavbar = ({
                   e.stopPropagation();
                   console.log("Word-by-word button clicked in desktop navbar");
                   if (onWordByWord) {
-                    onWordByWord();
+                    onWordByWord(e);
                   }
                 }}
               >

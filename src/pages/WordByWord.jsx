@@ -214,6 +214,7 @@ const WordByWord = ({
           wordData={wordData}
           showSuccess={showSuccess}
           showError={showError}
+          translationLanguage={translationLanguage}
         />
         <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
@@ -255,6 +256,7 @@ const WordByWord = ({
           wordData={wordData}
           showSuccess={showSuccess}
           showError={showError}
+          translationLanguage={translationLanguage}
         />
         <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
           <div className="flex justify-between items-center mb-6">
@@ -302,6 +304,7 @@ const WordByWord = ({
         wordData={wordData}
         showSuccess={showSuccess}
         showError={showError}
+        translationLanguage={translationLanguage}
       />
 
       {/* Scrollable Content */}
@@ -353,7 +356,14 @@ const WordByWord = ({
                 Translation:
               </h4>
               <p
-                className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                className={`text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0 ${
+                  translationLanguage === 'hi' ? 'font-hindi' :
+                  translationLanguage === 'ur' ? 'font-urdu' :
+                  translationLanguage === 'bn' ? 'font-bengali' :
+                  translationLanguage === 'ta' ? 'font-tamil' :
+                  translationLanguage === 'mal' ? 'font-malayalam' :
+                  'font-poppins'
+                }`}
                 style={{ fontSize: `${translationFontSize}px` }}
               >
                 {wordData.translations[0].text}

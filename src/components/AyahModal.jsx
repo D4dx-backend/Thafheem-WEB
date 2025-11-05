@@ -11,10 +11,10 @@ import {
 } from "../api/apifunction";
 import { API_BASE_URL } from "../api/apis";
 import tamilTranslationService from "../services/tamilTranslationService";
-import hindiTranslationService from "../services/hindiTranslationService";
+import hindiTranslationService from "../services/HindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import banglaTranslationService from "../services/banglaTranslationService";
-import banglaInterpretationService from "../services/banglaInterpretationService";
+import englishTranslationService from "../services/englishTranslationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
@@ -60,16 +60,11 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         setError(null);
 
         // Debug: Log the current language
-        console.log('🔍 Current translation language:', translationLanguage);
-        console.log('🔍 Translation language type:', typeof translationLanguage);
-        console.log('🔍 Translation language === "E":', translationLanguage === 'E');
-        console.log('🔍 Translation language === "en":', translationLanguage === 'en');
-        
+
         // For Tamil, Hindi, Urdu, and Bangla, use their respective translation services instead of interpretation API
         const interpretationPromise = translationLanguage === 'ta' 
           ? (() => {
-              console.log('🔍 Taking Tamil translation path');
-              return tamilTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId)
+    return tamilTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId)
                 .then(translation => translation ? [{ 
                   interpretation: translation, 
                   AudioIntrerptn: translation,
@@ -80,22 +75,27 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             })()
           : translationLanguage === 'hi'
             ? (() => {
-                console.log('🔍 Taking Hindi translation path');
-                return hindiTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
-                  .then(explanations => explanations && explanations.length > 0 ? explanations.map(exp => ({ 
-                    interpretation: exp.explanation, 
-                    AudioIntrerptn: exp.explanation,
-                    text: exp.explanation,
-                    content: exp.explanation,
-                    explanation_no_BNG: exp.explanation_no_BNG,
-                    explanation_no_EN: exp.explanation_no_EN
-                  })) : [])
-                  .catch(() => []);
+    return hindiTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
+                  .then(explanations => {
+    const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
+                      interpretation: exp.explanation, 
+                      AudioIntrerptn: exp.explanation,
+                      text: exp.explanation,
+                      content: exp.explanation,
+                      explanation_no_BN: exp.explanation_no_BN,
+                      explanation_no_EN: exp.explanation_no_EN
+                    })) : [];
+
+                    return mappedExplanations;
+                  })
+                  .catch(error => {
+                    console.error('❌ Error fetching Hindi explanations in AyahModal:', error);
+                    return [];
+                  });
               })()
           : translationLanguage === 'ur'
             ? (() => {
-                console.log('🔍 Taking Urdu translation path');
-                return urduTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
+    return urduTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
                   .then(explanations => explanations && explanations.length > 0 ? explanations.map(exp => ({ 
                     interpretation: exp.explanation, 
                     AudioIntrerptn: exp.explanation,
@@ -107,11 +107,9 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               })()
           : translationLanguage === 'bn'
             ? (() => {
-                console.log('🔍 Taking Bangla interpretation path');
-                return banglaInterpretationService.getAllExplanations(parseInt(surahId), currentVerseId)
+    return banglaTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
                   .then(explanations => {
-                    console.log('🔍 Bangla explanations received:', explanations);
-                    return explanations && explanations.length > 0 ? explanations.map(exp => ({ 
+    const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
                       interpretation: exp.explanation, 
                       AudioIntrerptn: exp.explanation,
                       text: exp.explanation,
@@ -119,6 +117,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                       explanation_no_BNG: exp.explanation_no_BNG,
                       explanation_no_EN: exp.explanation_no_EN
                     })) : [];
+
+                    return mappedExplanations;
                   })
                   .catch(error => {
                     console.error('❌ Error fetching Bangla explanations in AyahModal:', error);
@@ -126,130 +126,83 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   });
               })()
             : translationLanguage === 'E'
-              ? (() => {
-                  console.log('🔍 [AyahModal v2.5] Taking English fetchAllInterpretations path');
-                  return fetchAllInterpretations(parseInt(surahId), currentVerseId, translationLanguage)
-                    .then(interpretations => {
-                      console.log('🔍 English interpretations received:', interpretations);
-                      console.log('🔍 English interpretations type:', typeof interpretations);
-                      console.log('🔍 English interpretations isArray:', Array.isArray(interpretations));
-                      console.log('🔍 English interpretations length:', interpretations?.length);
-                      
-                      if (interpretations && interpretations.length > 0) {
-                        // For English, show only the first/primary interpretation to avoid showing "whole" content
-                        const primaryInterpretation = interpretations[0];
-                        console.log('🔍 Using primary English interpretation:', primaryInterpretation);
-                        
-                        const processed = {
-                          interpretation: primaryInterpretation.Interpretation || primaryInterpretation.AudioIntrerptn || primaryInterpretation.interpretation || primaryInterpretation.text || primaryInterpretation.content,
-                          AudioIntrerptn: primaryInterpretation.Interpretation || primaryInterpretation.AudioIntrerptn || primaryInterpretation.interpretation || primaryInterpretation.text || primaryInterpretation.content,
-                          text: primaryInterpretation.Interpretation || primaryInterpretation.AudioIntrerptn || primaryInterpretation.interpretation || primaryInterpretation.text || primaryInterpretation.content,
-                          content: primaryInterpretation.Interpretation || primaryInterpretation.AudioIntrerptn || primaryInterpretation.interpretation || primaryInterpretation.text || primaryInterpretation.content,
-                          interptn_no: primaryInterpretation.InterpretationNo || primaryInterpretation.interptn_no || primaryInterpretation.number
-                        };
-                        console.log('🔍 Processed primary interpretation:', processed);
-                        return [processed]; // Return as single-item array to match expected format
-                      }
-                      console.log('🔍 No interpretations to process, returning empty array');
-                      return [];
-                    })
-                    .catch(async (error) => {
-                      console.log('❌ English interpretation fetchAllInterpretations failed, trying fallback:', error);
-                      // Fallback: Try to fetch multiple interpretations using direct API calls
-                      console.log('🔍 Trying fallback with direct API calls for multiple interpretations');
-                      console.log('🔍 Fallback - surahId:', surahId, 'currentVerseId:', currentVerseId);
-                      
-                      // Try to fetch interpretations sequentially and stop when we don't find valid ones
-                      const validInterpretations = [];
-                      let consecutiveFailures = 0;
-                      const maxConsecutiveFailures = 2; // Stop after 2 consecutive failures
-                      
-                      for (let i = 1; i <= 10; i++) {
-                        // If we've had too many consecutive failures, stop trying
-                        if (consecutiveFailures >= maxConsecutiveFailures) {
-                          console.log(`🔍 Stopping interpretation fetch after ${consecutiveFailures} consecutive failures`);
-                          break;
-                        }
-                        
-                        const directUrl = `${API_BASE_URL}/interpret/${parseInt(surahId)}/${parseInt(currentVerseId)}/${i}/E`;
-                        console.log(`🔍 Trying direct API call for interpretation ${i}:`, directUrl);
-                        
-                        try {
-                          const resp = await fetch(directUrl);
-                          if (!resp.ok) {
-                            console.log(`🔍 Interpretation ${i} API call failed with status:`, resp.status);
-                            consecutiveFailures++;
-                            continue;
+              ? (async () => {
+                  // For English, follow the same pattern as Hindi/Bangla/Urdu
+                  // First get the ayah translation, then extract footnotes from it
+                  try {
+                    const translation = await englishTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId);
+                    
+                    if (!translation) return [];
+                    
+                    // Parse the translation to extract footnote IDs
+                    const footnoteIds = [];
+                    const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
+                    let match;
+                    
+                    while ((match = footnoteRegex.exec(translation)) !== null) {
+                      const footnoteId = match[1];
+                      footnoteIds.push(footnoteId);
+                    }
+                    
+                    console.log(`📚 [AyahModal] Found ${footnoteIds.length} footnotes in English translation for verse ${currentVerseId}`);
+                    
+                    if (footnoteIds.length === 0) return [];
+                    
+                    // Fetch each footnote
+                    const footnotePromises = footnoteIds.map((footnoteId) => {
+                      return fetch(`http://localhost:5000/api/english/footnote/${footnoteId}`)
+                        .then(response => {
+                          if (response.ok) {
+                            return response.json().then(data => ({
+                              footnote_id: footnoteId,
+                              text: data.footnote_text,
+                              content: data.footnote_text,
+                              explanation: data.footnote_text
+                            }));
                           }
-                          
-                          const data = await resp.json();
-                          
-                          // Check if the response indicates no interpretation exists
-                          if (!data || !data.Interpretation || data.Interpretation.trim().length === 0) {
-                            console.log(`🔍 Interpretation ${i} does not exist (empty response)`);
-                            consecutiveFailures++;
-                            continue;
-                          }
-                          
-                          // Check if this interpretation is different from previous ones
-                          const isDuplicate = validInterpretations.some(existing => 
-                            existing.Interpretation === data.Interpretation
-                          );
-                          
-                          if (!isDuplicate) {
-                            console.log(`🔍 Interpretation ${i} received:`, data.Interpretation.substring(0, 100) + '...');
-                            validInterpretations.push(data);
-                            consecutiveFailures = 0; // Reset counter on success
-                          } else {
-                            console.log(`🔍 Interpretation ${i} is duplicate, skipping`);
-                            consecutiveFailures++;
-                          }
-                        } catch (err) {
-                          console.log(`🔍 Interpretation ${i} not available:`, err.message);
-                          consecutiveFailures++;
-                        }
-                      }
-                      
-                      console.log('🔍 Valid interpretations found:', validInterpretations.length);
-                      if (consecutiveFailures >= maxConsecutiveFailures) {
-                        console.log(`🔍 Stopped early after ${consecutiveFailures} consecutive failures`);
-                      }
-                      
-                      // Process the valid interpretations
-                      const processedInterpretations = validInterpretations.map((fallbackData, index) => ({
-                        interpretation: fallbackData.Interpretation,
-                        AudioIntrerptn: fallbackData.Interpretation,
-                        text: fallbackData.Interpretation,
-                        content: fallbackData.Interpretation,
-                        interptn_no: fallbackData.InterpretationNo || fallbackData.ID || (index + 1)
-                      }));
-                      
-                      console.log('🔍 Processed interpretations:', processedInterpretations);
-                      
-                      return processedInterpretations;
+                          return null;
+                        })
+                        .catch(error => {
+                          console.error(`❌ Error fetching footnote ${footnoteId}:`, error);
+                          return null;
+                        });
                     });
+                    
+                    const footnotes = await Promise.all(footnotePromises);
+                    const validFootnotes = footnotes.filter(f => f !== null);
+                    
+                    console.log(`📚 [AyahModal] Fetched ${validFootnotes.length} English footnotes for verse ${currentVerseId}`);
+                    
+                    return validFootnotes.map((footnote, index) => ({
+                      interpretation: footnote.text,
+                      AudioIntrerptn: footnote.text,
+                      text: footnote.text,
+                      content: footnote.text,
+                      interptn_no: footnote.footnote_id || (index + 1)
+                    }));
+                  } catch (error) {
+                    console.error(`❌ [AyahModal] Error fetching English translation for verse ${currentVerseId}:`, error);
+                    return [];
+                  }
                 })()
               : (() => {
-                  console.log('🔍 Taking default fetchInterpretation path');
-                  return fetchInterpretation(
+    return fetchInterpretation(
                     parseInt(surahId),
                     currentVerseId,
                     1,
                     translationLanguage
                   ).catch(
                     (error) => {
-                      console.log("Interpretation API error:", error);
-                      // Special handling for Surah 114
+    // Special handling for Surah 114
                       if (parseInt(surahId) === 114) {
-                        console.log(`🔍 Interpretation fetch failed for Surah 114, Verse ${currentVerseId}. This may be expected if no interpretation data exists.`);
-                      }
+  }
                       return null;
                     }
                   );
                 })();
 
-        // Only fetch translation data if not using Tamil/Hindi/Bangla services
-        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn') 
+        // Only fetch translation data if not using Tamil/Hindi/Bangla/English services
+        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' || translationLanguage === 'E') 
           ? Promise.resolve(null) 
           : fetchAyahAudioTranslations(parseInt(surahId), currentVerseId);
 
@@ -257,10 +210,9 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         const now = Date.now();
         const getSurahsData = async () => {
           if (surahsCache && (now - surahsCacheTime) < CACHE_DURATION) {
-            console.log('Using cached surahs data');
-            return surahsCache;
+    return surahsCache;
           }
-          console.log('Fetching fresh surahs data');
+
           const data = await fetchSurahs();
           surahsCache = data;
           surahsCacheTime = now;
@@ -300,45 +252,61 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               : translationData)
           : null;
 
+        // For English, get translation from English service
+        let englishTranslation = "";
+        if (translationLanguage === 'E') {
+          try {
+            englishTranslation = await englishTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId);
+            // Clean up footnotes for display
+            englishTranslation = englishTranslation
+              ? englishTranslation
+                  .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+                  .replace(/\s+/g, " ")
+                  .trim()
+              : "";
+          } catch (error) {
+            console.error('Error fetching English translation:', error);
+            englishTranslation = "";
+          }
+        }
+
         // Combine verse data
         setVerseData({
           number: currentVerseId,
           arabic: arabicVerse?.text_uthmani || "",
-          translation: translationVerse?.AudioText
-            ? translationVerse.AudioText
-                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-                .replace(/\s+/g, " ")
-                .trim()
-            : "",
+          translation: translationLanguage === 'E' 
+            ? englishTranslation
+            : (translationVerse?.AudioText
+                ? translationVerse.AudioText
+                    .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                : ""),
           verseKey: `${surahId}:${currentVerseId}`,
         });
 
         // Set interpretation data - handle different response structures
-        console.log('🔍 Raw interpretation response:', interpretationResponse);
-        console.log('🔍 Translation language when processing:', translationLanguage);
-        console.log('🔍 Interpretation response type:', typeof interpretationResponse);
-        console.log('🔍 Interpretation response isArray:', Array.isArray(interpretationResponse));
-        
+
+
         if (interpretationResponse) {
           if (Array.isArray(interpretationResponse)) {
-            console.log('🔍 Setting array interpretation data:', interpretationResponse);
-            console.log('🔍 Array length:', interpretationResponse.length);
+
             setInterpretationData(interpretationResponse);
           } else if (
             interpretationResponse.data &&
             Array.isArray(interpretationResponse.data)
           ) {
-            console.log('🔍 Setting nested array interpretation data:', interpretationResponse.data);
+
             setInterpretationData(interpretationResponse.data);
           } else if (typeof interpretationResponse === "object") {
-            console.log('🔍 Setting single object interpretation data:', [interpretationResponse]);
+
             setInterpretationData([interpretationResponse]);
           } else {
-            console.log('🔍 Setting null interpretation data - invalid type:', typeof interpretationResponse);
+
             setInterpretationData(null);
           }
         } else {
-          console.log('🔍 Setting null interpretation data - no response');
+
           setInterpretationData(null);
         }
       } catch (err) {
@@ -357,13 +325,13 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     const handleBanglaExplanationClick = async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const target = e.target.closest(".bangla-explanation-link");
       if (target) {
         const explanationNumber = target.getAttribute("data-explanation-number");
         const surahNo = target.getAttribute("data-surah");
         const ayahNo = target.getAttribute("data-ayah");
-        
+
         if (explanationNumber && surahNo && ayahNo) {
           try {
             const explanation = await banglaTranslationService.getExplanationByNumber(
@@ -371,7 +339,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               parseInt(ayahNo), 
               explanationNumber
             );
-            
+
             if (explanation) {
               // Show explanation in a simple alert for now
               // You can replace this with a modal or toast notification
@@ -390,6 +358,88 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     document.addEventListener("click", handleBanglaExplanationClick);
     return () => {
       document.removeEventListener("click", handleBanglaExplanationClick);
+    };
+  }, []);
+
+  // Handle clicks on Hindi explanation numbers
+  useEffect(() => {
+    const handleHindiExplanationClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target.closest(".hindi-explanation-link");
+      if (target) {
+        const explanationNumber = target.getAttribute("data-explanation-number");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+
+        if (explanationNumber && surahNo && ayahNo) {
+          try {
+            const explanation = await hindiTranslationService.getExplanationByNumber(
+              parseInt(surahNo), 
+              parseInt(ayahNo), 
+              explanationNumber
+            );
+
+            if (explanation) {
+              // Show explanation in a modal or alert
+              alert(`Explanation ${explanationNumber}:\n\n${explanation}`);
+            } else {
+              alert(`Explanation ${explanationNumber} not found.`);
+            }
+          } catch (error) {
+            console.error('❌ Error loading Hindi explanation:', error);
+            alert('Error loading explanation.');
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleHindiExplanationClick);
+    return () => {
+      document.removeEventListener("click", handleHindiExplanationClick);
+    };
+  }, []);
+
+  // Handle clicks on Urdu footnote numbers
+  useEffect(() => {
+    const handleUrduFootnoteClick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target.closest(".urdu-footnote-link");
+      if (target) {
+        const footnoteId = target.getAttribute("data-footnote-id");
+        const footnoteNumber = target.getAttribute("data-footnote-number");
+        const surahNo = target.getAttribute("data-surah");
+        const ayahNo = target.getAttribute("data-ayah");
+
+        if (footnoteId && surahNo && ayahNo) {
+          try {
+            const explanation = await urduTranslationService.getFootnoteExplanation(footnoteId);
+
+            if (explanation && explanation.trim() !== '' && explanation !== 'Explanation not available') {
+              setInterpretationData([{
+                interpretation: explanation,
+                AudioIntrerptn: explanation,
+                text: explanation,
+                content: explanation
+              }]);
+              setShowInterpretationModal(true);
+            } else {
+              showToast('Footnote explanation not available', 'warning');
+            }
+          } catch (error) {
+            console.error('Error fetching Urdu footnote:', error);
+            showToast('Failed to load footnote explanation', 'error');
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleUrduFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleUrduFootnoteClick);
     };
   }, []);
 
@@ -416,7 +466,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   // Loading state
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+      <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
         <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
           <AyathNavbar
             surahId={surahId}
@@ -446,7 +496,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   // Error state
   if (error) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+      <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
         <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
           <AyathNavbar
             surahId={surahId}
@@ -482,7 +532,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70">
+    <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
         <AyathNavbar
           surahId={surahId}
@@ -537,8 +587,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             <div className="mb-4 sm:mb-6">
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {(() => {
-                  console.log('🔍 Label logic - translationLanguage:', translationLanguage);
-                  if (translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn') {
+    if (translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn') {
                     return 'Explanation:';
                   } else if (translationLanguage === 'E') {
                     return 'Interpretation:';
@@ -549,7 +598,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               </h4>
               {translationLanguage === 'bn' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.6] font-bengali sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
                   style={{ fontSize: `${translationFontSize}px` }}
                   dangerouslySetInnerHTML={{ 
                     __html: banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
@@ -558,6 +607,42 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                       currentVerseId
                     )
                   }}
+                />
+              ) : translationLanguage === 'hi' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-hindi sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: hindiTranslationService.parseHindiTranslationWithClickableExplanations(
+                      verseData.translation, 
+                      parseInt(surahId), 
+                      currentVerseId
+                    )
+                  }}
+                />
+              ) : translationLanguage === 'ur' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-urdu sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: urduTranslationService.parseUrduTranslationWithClickableFootnotes(
+                      verseData.translation, 
+                      parseInt(surahId), 
+                      currentVerseId
+                    )
+                  }}
+                />
+              ) : translationLanguage === 'ta' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-tamil sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
+                />
+              ) : translationLanguage === 'mal' ? (
+                <div
+                  className="text-gray-700 leading-[1.6] font-malayalam sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  style={{ fontSize: `${translationFontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
                 />
               ) : (
                 <p
@@ -572,13 +657,9 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
           {/* Interpretation */}
           {(() => {
-            console.log('🔍 Interpretation display check - interpretationData:', interpretationData);
-            console.log('🔍 Interpretation display check - length:', interpretationData?.length);
-            console.log('🔍 Interpretation display check - translationLanguage:', translationLanguage);
-            console.log('🔍 Interpretation display check - isArray:', Array.isArray(interpretationData));
+
             if (interpretationData && interpretationData.length > 0) {
-              console.log('🔍 Interpretation display check - first item:', interpretationData[0]);
-            }
+  }
             return null;
           })()}
           {interpretationData && interpretationData.length > 0 && (
@@ -588,14 +669,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               </h4>
               <div className="space-y-3">
                 {interpretationData.map((interpretation, index) => {
-                  console.log(`🔍 Processing interpretation ${index}:`, interpretation);
-                  const interpretationText =
+    const interpretationText =
                     interpretation.AudioIntrerptn ||
                     interpretation.interpretation ||
                     interpretation.text ||
                     interpretation.content ||
                     "No interpretation available";
-                  console.log(`🔍 Interpretation text for ${index}:`, interpretationText);
 
                   // For Hindi, Urdu, and English, show explanation/interpretation numbers
                   const explanationNumber = translationLanguage === 'hi' 
@@ -645,10 +724,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3 sm:p-4">
                 <p className="text-gray-500 dark:text-gray-400 text-sm italic">
                   {(() => {
-                    console.log('🔍 No interpretation message - interpretationData:', interpretationData);
-                    console.log('🔍 No interpretation message - length:', interpretationData?.length);
-                    console.log('🔍 No interpretation message - surahId:', surahId);
-                    return parseInt(surahId) === 114 
+    return parseInt(surahId) === 114 
                       ? "Interpretation data is not available for Surah An-Nas (114). This surah may not have interpretation content in the current database."
                       : "No interpretation available for this verse. The interpretation API may be temporarily unavailable.";
                   })()}
@@ -692,7 +768,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
       {/* WordByWord Modal */}
       {showWordByWord && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-4 overflow-y-auto">
           <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
             <div className="overflow-y-auto max-h-[90vh]">
               <WordByWord
@@ -705,7 +781,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           </div>
         </div>
       )}
-      
+
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>

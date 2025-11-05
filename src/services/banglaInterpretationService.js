@@ -1,9 +1,16 @@
+import initSqlJs from 'sql.js';
+import { USE_API } from '../config/apiConfig.js';
+import apiService from './apiService.js';
+
 class BanglaInterpretationService {
   constructor() {
     this.db = null;
     this.dbPath = '/quran_bangla.db';
     this.isInitialized = false;
     this.initPromise = null;
+    
+    // API mode configuration
+    this.useApi = USE_API;
   }
 
   async initDB() {
@@ -53,7 +60,6 @@ class BanglaInterpretationService {
       this.db = new SQL.Database(uint8Array);
       this.isInitialized = true;
       
-      console.log('✅ Bangla interpretation database initialized successfully');
       return this.db;
     } catch (error) {
       console.error('❌ Error initializing Bangla interpretation database:', error);
@@ -64,6 +70,24 @@ class BanglaInterpretationService {
   }
 
   async getExplanation(surahNo, ayahNo) {
+    // Try API first if enabled
+    if (this.useApi) {
+      try {
+        const apiResponse = await apiService.getInterpretation('bangla', surahNo, ayahNo);
+        
+        if (apiResponse && apiResponse.explanations && apiResponse.explanations.length > 0) {
+          // Return the first explanation (main explanation)
+          const explanation = apiResponse.explanations[0].explanation;
+          console.log(`✅ Found Bangla explanation from API for Surah ${surahNo}, Ayah ${ayahNo}`);
+          return explanation;
+        }
+      } catch (apiError) {
+        console.warn(`⚠️ API failed for Bangla explanation ${surahNo}:${ayahNo}, falling back to SQL.js:`, apiError.message);
+        // Fall through to SQL.js fallback
+      }
+    }
+
+    // SQL.js fallback (either USE_API is false or API failed)
     try {
       await this.initDB();
       
@@ -71,7 +95,7 @@ class BanglaInterpretationService {
         throw new Error('Database not initialized');
       }
 
-      console.log(`🔍 Fetching Bangla explanation for Surah ${surahNo}, Ayah ${ayahNo}`);
+      console.log(`🔍 Fetching Bangla explanation from SQL.js for Surah ${surahNo}, Ayah ${ayahNo}`);
 
       // Query the bengla_explanations table
       const query = `
@@ -86,7 +110,7 @@ class BanglaInterpretationService {
       stmt.free();
 
       if (result && result.explanation) {
-        console.log(`✅ Found Bangla explanation for Surah ${surahNo}, Ayah ${ayahNo}`);
+        console.log(`✅ Found Bangla explanation from SQL.js for Surah ${surahNo}, Ayah ${ayahNo}`);
         return result.explanation;
       } else {
         console.log(`⚠️ No Bangla explanation found for Surah ${surahNo}, Ayah ${ayahNo}`);
@@ -99,6 +123,23 @@ class BanglaInterpretationService {
   }
 
   async getAllExplanations(surahNo, ayahNo) {
+    // Try API first if enabled
+    if (this.useApi) {
+      try {
+        console.log(`🌐 Fetching all Bangla explanations from API: ${surahNo}:${ayahNo}`);
+        const apiResponse = await apiService.getInterpretation('bangla', surahNo, ayahNo);
+        
+        if (apiResponse && apiResponse.explanations && apiResponse.explanations.length > 0) {
+          console.log(`✅ Found ${apiResponse.explanations.length} Bangla explanation(s) from API for Surah ${surahNo}, Ayah ${ayahNo}`);
+          return apiResponse.explanations;
+        }
+      } catch (apiError) {
+        console.warn(`⚠️ API failed for Bangla explanations ${surahNo}:${ayahNo}, falling back to SQL.js:`, apiError.message);
+        // Fall through to SQL.js fallback
+      }
+    }
+
+    // SQL.js fallback (either USE_API is false or API failed)
     try {
       await this.initDB();
       
@@ -106,7 +147,7 @@ class BanglaInterpretationService {
         throw new Error('Database not initialized');
       }
 
-      console.log(`🔍 Fetching all Bangla explanations for Surah ${surahNo}, Ayah ${ayahNo}`);
+      console.log(`🔍 Fetching all Bangla explanations from SQL.js for Surah ${surahNo}, Ayah ${ayahNo}`);
 
       // Query all explanations for the ayah
       const query = `
@@ -126,7 +167,7 @@ class BanglaInterpretationService {
       stmt.free();
 
       if (results.length > 0) {
-        console.log(`✅ Found ${results.length} Bangla explanation(s) for Surah ${surahNo}, Ayah ${ayahNo}`);
+        console.log(`✅ Found ${results.length} Bangla explanation(s) from SQL.js for Surah ${surahNo}, Ayah ${ayahNo}`);
         return results;
       } else {
         console.log(`⚠️ No Bangla explanations found for Surah ${surahNo}, Ayah ${ayahNo}`);

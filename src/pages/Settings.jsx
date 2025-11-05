@@ -87,7 +87,7 @@ const Settings = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
+    <div className="fixed inset-y-0 right-0 z-[100] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
       {/* Header */}
       {/* <div className="flex items-center justify-between p-6 border-b border-gray-200 "> */}
       <div className="flex items-center justify-between p-6 shadow-md">
@@ -157,11 +157,11 @@ const Settings = ({ onClose }) => {
               Quran Font
             </h3>
 
-            <div className="flex rounded-full bg-gray-100 dark:bg-gray-950 p-1 w-[287px] max-w-sm mx-auto">
+            <div className="flex rounded-full bg-gray-100 dark:bg-gray-950 p-1 w-[287px] max-w-sm">
               {/* ScheherazadeNew Button */}
               <button
                 onClick={() => setQuranFont("ScheherazadeNew-Regular")}
-                className={`flex-1 px-4 py-2 rounded-full transition-all ${
+                className={`flex-1 px-4 py-2 rounded-full transition-all text-center text-sm font-medium ${
                   quranFont === "ScheherazadeNew-Regular"
                     ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
                     : "text-gray-600 hover:text-gray-800 dark:text-white"
@@ -173,13 +173,25 @@ const Settings = ({ onClose }) => {
               {/* Amiri Quran Button */}
               <button
                 onClick={() => setQuranFont("Amiri Quran")}
-                className={`flex-1 px-4 py-2 rounded-full transition-all ${
+                className={`flex-1 px-4 py-2 rounded-full transition-all text-center text-sm font-medium ${
                   quranFont === "Amiri Quran"
                     ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
                     : "text-gray-600 hover:text-gray-800 dark:text-white"
                 }`}
               >
                 Amiri Quran
+              </button>
+
+              {/* Uthmani HAFS Button */}
+              <button
+                onClick={() => setQuranFont("UthmaniHAFS")}
+                className={`flex-1 px-4 py-2 rounded-full transition-all text-center text-sm font-medium ${
+                  quranFont === "UthmaniHAFS"
+                    ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
+                    : "text-gray-600 hover:text-gray-800 dark:text-white"
+                }`}
+              >
+                Uthmani HAFS
               </button>
             </div>
           </div>
@@ -213,7 +225,7 @@ const Settings = ({ onClose }) => {
               className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-gray-950 mx-auto"
               style={{
                 fontSize: `${fontSize}px`,
-                fontFamily: quranFont,
+                fontFamily: quranFont === "UthmaniHAFS" ? "UthmaniHAFS" : quranFont,
                 direction: "rtl",
               }}
             >

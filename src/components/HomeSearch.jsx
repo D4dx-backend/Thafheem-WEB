@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import logoWhite from "../assets/logo-white.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
 import ForwardIcon from "../assets/forward.png";
@@ -49,7 +50,10 @@ const ListIcon = ({ className }) => (
   </svg>
 );
 
+import { useTheme } from "../context/ThemeContext";
+
 const HomepageSearch = () => {
+  const { theme } = useTheme();
   const [showPopular, setShowPopular] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -192,15 +196,31 @@ const HomepageSearch = () => {
     }
   };
 
-  // Handle search result click
-  const handleSearchResultClick = (result) => {
+  // Handle search result click with modifier key support
+  const handleSearchResultClick = (result, event) => {
+    // Check if modifier key is pressed (Ctrl/Cmd)
+    const isModifierPressed = event?.ctrlKey || event?.metaKey;
+    
     if (result.type === 'surah') {
-      navigate(`/surah/${result.data.number}`);
+      const url = `/surah/${result.data.number}`;
+      if (isModifierPressed) {
+        event?.preventDefault();
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      navigate(url);
     } else if (result.type === 'verse' || result.type === 'verse_reference') {
       const surahNumber = result.verse_key.split(':')[0];
       const verseNumber = result.verse_key.split(':')[1];
+      const url = `/surah/${surahNumber}`;
       
-      navigate(`/surah/${surahNumber}`, {
+      if (isModifierPressed) {
+        event?.preventDefault();
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      
+      navigate(url, {
         state: { 
           highlightVerse: result.verse_key,
           scrollToVerse: verseNumber
@@ -235,7 +255,16 @@ const HomepageSearch = () => {
   const handleChapterClick = (chapterId, e) => {
     // Only navigate if we're not dragging
     if (!isDragging.current) {
-      navigate(`/surah/${chapterId}`);
+      const url = `/surah/${chapterId}`;
+      // Check if modifier key is pressed (Ctrl/Cmd)
+      const isModifierPressed = e?.ctrlKey || e?.metaKey;
+      
+      if (isModifierPressed) {
+        e?.preventDefault();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        navigate(url);
+      }
       setShowPopular(false);
     }
   };
@@ -244,20 +273,27 @@ const HomepageSearch = () => {
     <div className="flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4 py-6 sm:py-8 lg:py-12">
       {/* Banner Section */}
       <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl mb-6 sm:mb-8 mx-auto">
-        <img
-          src={banner}
-          alt="Banner"
-          className="w-full h-auto object-contain"
-        />
+        <a
+          href="https://app.thafheem.net/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block cursor-pointer hover:opacity-90 transition-opacity"
+        >
+          <img
+            src={banner}
+            alt="Banner"
+            className="w-full h-auto object-contain"
+          />
+        </a>
       </div>
 
       {/* Logo Section */}
       <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mb-8 sm:mb-10 mx-auto">
         <div className="w-full h-20 sm:h-24 md:h-28 lg:h-32 rounded-lg flex items-center justify-center">
           <img
-            src={logo}
+            src={theme === 'dark' ? logoWhite : logo}
             alt="Logo"
-            className="w-auto h-full object-contain p-2"
+            className="object-contain transition-transform h-16 sm:h-20 md:h-24 lg:h-28 max-w-[260px] sm:max-w-[300px] md:max-w-[360px] lg:max-w-[400px] w-auto"
           />
         </div>
       </div>
@@ -335,7 +371,7 @@ const HomepageSearch = () => {
                   {searchResults.map((result, index) => (
                     <div
                       key={`${result.type}-${index}`}
-                      onClick={() => handleSearchResultClick(result)}
+                      onClick={(e) => handleSearchResultClick(result, e)}
                       className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
                     >
                       {result.type === 'surah' ? (

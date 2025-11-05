@@ -18,6 +18,11 @@ const Transition = ({ showPageInfo = false }) => {
   const { surahId } = useParams();
   const location = useLocation();
 
+  const getSurahIdFromPath = () => {
+    const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
+    return match ? parseInt(match[2]) : undefined;
+  };
+
   const [activeView, setActiveView] = useState("book"); // "book" or "notebook"
 
   // Fetch surah names and update selected surah based on URL
@@ -27,9 +32,10 @@ const Transition = ({ showPageInfo = false }) => {
         const surahs = await listSurahNames();
         setSurahNames(surahs);
         
-        // Update selected surah based on current URL
-        if (surahId) {
-          const currentSurah = surahs.find(s => s.id === parseInt(surahId));
+        // Update selected surah based on current URL (supports navbar scope)
+        const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+        if (effectiveId) {
+          const currentSurah = surahs.find(s => s.id === effectiveId);
           if (currentSurah) {
             setSelectedSurah({
               id: currentSurah.id,
@@ -43,14 +49,15 @@ const Transition = ({ showPageInfo = false }) => {
     };
 
     loadSurahNames();
-  }, [surahId]);
+  }, [surahId, location.pathname]);
 
   // Calculate page number based on surah using page ranges API
   useEffect(() => {
     const calculatePageNumber = async () => {
-      if (surahId && surahNames.length > 0) {
+      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+      if (effectiveId && surahNames.length > 0) {
         try {
-          const surahIdNum = parseInt(surahId);
+          const surahIdNum = effectiveId;
           
           // Fetch page ranges to get accurate page information
           const response = await fetch(PAGE_RANGES_API);
@@ -85,7 +92,7 @@ const Transition = ({ showPageInfo = false }) => {
     };
 
     calculatePageNumber();
-  }, [surahId, surahNames]);
+  }, [surahId, surahNames, location.pathname]);
 
   const handleSurahSelect = (surah) => {
     setSelectedSurah(surah);
@@ -93,8 +100,9 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-[#2A2C38] border-b border-gray-200 px-4 py-3">
-      <div className="flex items-center justify-between ">
+    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-3 sm:px-4 sticky top-[56px] z-[60]">
+      <div className="max-w-none w-full mx-0 py-3">
+        <div className="flex items-center justify-between ">
         {/* Left Section - Chapter Selector */}
         <div className="flex items-center">
           <div className="relative">
@@ -107,13 +115,13 @@ const Transition = ({ showPageInfo = false }) => {
             </button>
 
             {isDropdownOpen && (
-  <div className="absolute top-full left-0 mt-1 z-10">
-    <NavigateSurah 
-      onSurahSelect={handleSurahSelect} 
-      onClose={() => setIsDropdownOpen(false)} // ✅ pass down
-    />
-  </div>
-)}
+              <div className="absolute top-full left-6 mt-1 z-10">
+                <NavigateSurah 
+                  onSurahSelect={handleSurahSelect} 
+                  onClose={() => setIsDropdownOpen(false)}
+                />
+              </div>
+            )}
 
           </div>
         </div>
@@ -131,7 +139,9 @@ const Transition = ({ showPageInfo = false }) => {
           )}
         </div>
       </div>
-    </div>
+        </div>
+      </div>
+  
   );
 };
 

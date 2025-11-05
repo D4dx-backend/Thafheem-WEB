@@ -50,11 +50,22 @@ const Home = () => {
   
   // Use cached surah data hook - prevents duplicate API calls
   const { surahs, loading, error, retry: handleRetry } = useSurahData();
-  const handleSurahClick = (surahNumber) => {
-    if (viewType === "Block Wise") {
-      navigate(`/blockwise/${surahNumber}`);
+  const handleSurahClick = (surahNumber, event) => {
+    // Check if modifier key is pressed (Ctrl/Cmd)
+    const isModifierPressed = event?.ctrlKey || event?.metaKey;
+    
+    // Determine the URL based on view type
+    const url = viewType === "Block Wise" 
+      ? `/blockwise/${surahNumber}`
+      : `/surah/${surahNumber}`;
+    
+    if (isModifierPressed) {
+      // Open in new tab
+      event?.preventDefault();
+      window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      navigate(`/surah/${surahNumber}`);
+      // Normal navigation
+      navigate(url);
     }
   };
   return (
@@ -133,7 +144,7 @@ const Home = () => {
               surahs.map((surah) => (
                 <div
                   key={surah.number}
-                  onClick={() => handleSurahClick(surah.number)}
+                  onClick={(e) => handleSurahClick(surah.number, e)}
                   className="w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
                      rounded-xl px-4 py-3 sm:py-0 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
                      flex items-center hover:border-cyan-500 dark:hover:border-cyan-400"

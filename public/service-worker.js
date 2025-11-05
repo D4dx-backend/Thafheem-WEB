@@ -231,7 +231,14 @@ async function handleNetworkFirst(request) {
 async function fetchAndCache(request, cache) {
   const response = await fetch(request);
   
-  if (response.ok) {
+  // Don't cache partial responses (206) or audio files
+  const isAudioFile = request.url.includes('/audio/') || 
+                      request.url.includes('.mp3') || 
+                      request.url.includes('.ogg') || 
+                      request.url.includes('.wav');
+  const isPartialResponse = response.status === 206;
+  
+  if (response.ok && !isPartialResponse && !isAudioFile) {
     // Clone the response before caching
     const responseToCache = response.clone();
     

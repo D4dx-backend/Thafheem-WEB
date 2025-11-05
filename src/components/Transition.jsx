@@ -1,11 +1,15 @@
 
-import { ChevronDown, BookOpen, Notebook, Info, Play, Pause } from "lucide-react"; // swapped icons
+import { ChevronDown, BookOpen, Notebook, Info, Play, Pause, Heart, LibraryBig } from "lucide-react"; // swapped icons
 import { useState, useEffect } from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import NavigateSurah from "../pages/NavigateSurah";
 import { fetchPageRanges } from "../api/apifunction";
 import { PAGE_RANGES_API } from "../api/apis";
 import { useSurahData } from "../hooks/useSurahData";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import BookmarkService from "../services/bookmarkService";
+import SurahInfoModal from "./SurahInfoModal";
 
 // Custom Kaaba Icon Component (Makkah)
 const KaabaIcon = ({ className }) => (
@@ -52,10 +56,16 @@ const Transition = ({ showPageInfo = false }) => {
   const [currentPage, setCurrentPage] = useState(2);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [verseCount, setVerseCount] = useState(null);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [showSurahInfoModal, setShowSurahInfoModal] = useState(false);
 
   const { surahId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { surahs: surahNames } = useSurahData();
+  const { translationLanguage } = useTheme();
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
@@ -182,18 +192,86 @@ const Transition = ({ showPageInfo = false }) => {
     };
   }, []);
 
+  // Load favorite status for the current surah
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+      if (!user || !effectiveId) {
+        setIsFavorited(false);
+        return;
+      }
+
+      try {
+        const favorited = await BookmarkService.isFavorited(user.uid, effectiveId);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Error loading favorite status:", error);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [user, surahId, location.pathname]);
+
+  // Handle favorite surah toggle
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+
+    const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+    
+    // Check if user is signed in
+    if (!user) {
+      // Dispatch event to show error toast in parent page
+      window.dispatchEvent(new CustomEvent('showToast', { 
+        detail: { type: 'error', message: 'Please sign in to favorite surahs' } 
+      }));
+      navigate("/sign");
+      return;
+    }
+
+    try {
+      setFavoriteLoading(true);
+
+      if (isFavorited) {
+        // Remove from favorites
+        await BookmarkService.deleteFavoriteSurah(user.uid, effectiveId);
+        setIsFavorited(false);
+        window.dispatchEvent(new CustomEvent('showToast', { 
+          detail: { type: 'success', message: 'Surah removed from favorites' } 
+        }));
+      } else {
+        // Add to favorites
+        await BookmarkService.addFavoriteSurah(
+          user.uid,
+          effectiveId,
+          selectedSurah?.name || `Surah ${effectiveId}`
+        );
+        setIsFavorited(true);
+        window.dispatchEvent(new CustomEvent('showToast', { 
+          detail: { type: 'success', message: 'Surah added to favorites' } 
+        }));
+      }
+    } catch (error) {
+      console.error("Error managing favorite:", error);
+      window.dispatchEvent(new CustomEvent('showToast', { 
+        detail: { type: 'error', message: 'Failed to manage favorite. Please try again.' } 
+      }));
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-3 sm:px-4 sticky top-[56px] z-[60]">
-      <div className="max-w-none w-full mx-0 py-3">
+      <div className="max-w-none w-full mx-0 py-1">
         <div className="flex items-center justify-between ">
         {/* Left Section - Chapter Selector */}
-        <div className="flex items-center">
+        <div className="flex items-center ml-2 sm:ml-4">
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-white  rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-2 py-1 text-gray-700 dark:text-white  rounded-lg transition-colors"
             >
-              <span className="font-medium">{selectedSurah.name}</span>
+              <span className="font-medium text-sm">{selectedSurah.name}</span>
               {surahIcon}
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -210,21 +288,109 @@ const Transition = ({ showPageInfo = false }) => {
           </div>
         </div>
 
+        {/* Center Section - Translation/Reading Toggle - Only show on surah, reading, and blockwise pages */}
+        {(location.pathname.startsWith('/surah') || location.pathname.startsWith('/reading') || location.pathname.startsWith('/blockwise')) && (
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            {/* Desktop Translation/Reading Toggle */}
+            <div className="hidden sm:flex">
+              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                      if (location.pathname.startsWith('/reading')) {
+                        navigate(`/surah/${effectiveId}`);
+                      }
+                    }}
+                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
+                      location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')
+                        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                      if (!location.pathname.startsWith('/reading')) {
+                        navigate(`/reading/${effectiveId}`);
+                      }
+                    }}
+                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
+                      location.pathname.startsWith('/reading')
+                        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Translation/Reading Toggle */}
+            <div className="sm:hidden">
+              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                      if (location.pathname.startsWith('/reading')) {
+                        navigate(`/surah/${effectiveId}`);
+                      }
+                    }}
+                    className={`flex items-center space-x-1 px-3 py-2.5 rounded-full text-xs font-medium min-h-[36px] transition-colors ${
+                      location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')
+                        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
+                    }`}
+                  >
+                    <LibraryBig className="w-3 h-3" />
+                    <span className="text-xs font-poppins">Translation</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                      if (!location.pathname.startsWith('/reading')) {
+                        navigate(`/reading/${effectiveId}`);
+                      }
+                    }}
+                    className={`flex items-center space-x-1 px-3 py-2.5 rounded-full text-xs font-medium min-h-[36px] transition-colors ${
+                      location.pathname.startsWith('/reading')
+                        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
+                    }`}
+                  >
+                    <Notebook className="w-3 h-3" />
+                    <span className="text-xs font-poppins">Reading</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Right Section - Surah info on the right, optional Juz/Hizb */}
-        <div className="flex items-center justify-end space-x-3">
+        <div className="flex items-center justify-end space-x-2 mr-2 sm:mr-4">
           {showPageInfo ? (
             <div className="hidden sm:flex items-center text-sm text-gray-500">
               <span>Juz 1 | Hizb 1</span>
             </div>
           ) : null}
-          {/* Verse count for Reading page */}
-          {location.pathname.startsWith('/reading') && verseCount && (
-            <div className="hidden sm:flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              <span>{verseCount} verses</span>
-            </div>
-          )}
-          <div className="hidden sm:flex items-center ml-2 sm:ml-3 space-x-2">
+          <div className="hidden sm:flex items-center ml-1 sm:ml-2 space-x-1">
+            {/* Surah Info Button */}
+            <button
+              onClick={() => setShowSurahInfoModal(true)}
+              className="inline-flex items-center justify-center min-h-[44px] px-1.5 text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF]"
+              aria-label="Surah info"
+            >
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+
             {/* Play Audio Button - Only show on surah, reading, and blockwise pages */}
             {(location.pathname.startsWith('/surah') || location.pathname.startsWith('/reading') || location.pathname.startsWith('/blockwise')) && (
               <button
@@ -232,7 +398,7 @@ const Transition = ({ showPageInfo = false }) => {
                   // Dispatch custom event to trigger audio play in Surah/Reading pages
                   window.dispatchEvent(new CustomEvent('playAudio'));
                 }}
-                className="flex items-center transition-colors text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 min-h-[44px] px-2 relative"
+                className="flex items-center transition-colors text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF] min-h-[44px] px-1.5 relative"
                 aria-label={isAudioPlaying ? "Pause Audio" : "Play Audio"}
               >
                 <div className="relative w-4 h-4 sm:w-5 sm:h-5">
@@ -254,19 +420,43 @@ const Transition = ({ showPageInfo = false }) => {
               </button>
             )}
 
-            <Link
-              to={`/surahinfo/${surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id}`}
-              className="inline-flex"
-              aria-label="Surah info"
-            >
-              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF] hover:opacity-90" />
-            </Link>
+            {/* Favorite Button - Only show on surah, reading, and blockwise pages */}
+            {(location.pathname.startsWith('/surah') || location.pathname.startsWith('/reading') || location.pathname.startsWith('/blockwise')) && (
+              <button
+                onClick={handleFavoriteClick}
+                disabled={favoriteLoading}
+                className={`flex items-center justify-center transition-colors min-h-[44px] px-1.5 ${
+                  favoriteLoading 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:opacity-80'
+                } ${isFavorited ? 'text-red-500' : 'text-[#2AA0BF] dark:text-[#2AA0BF]'}`}
+                title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
+              </button>
+            )}
+
+            {/* Verse count for Reading page - after favorite button */}
+            {location.pathname.startsWith('/reading') && verseCount && (
+              <div className="flex items-center text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] pl-1">
+                <BookOpen className="h-4 w-4 flex-shrink-0 mr-1" aria-hidden="true" />
+                <span>{verseCount}</span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
         </div>
       </div>
-  
+
+      {/* Surah Info Modal */}
+      {showSurahInfoModal && (
+        <SurahInfoModal
+          surahId={surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id}
+          onClose={() => setShowSurahInfoModal(false)}
+        />
+      )}
+    </div>
   );
 };
 

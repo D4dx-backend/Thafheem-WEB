@@ -25,6 +25,7 @@ import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import WordByWord from "./WordByWord";
 import InterpretationBlockwise from "./InterpretationBlockwise";
 import Bismi from "../assets/bismi.png";
 import DarkModeBismi from "../assets/darkmode-bismi.png";
@@ -41,41 +42,6 @@ import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
-
-// Custom Kaaba Icon Component (Makkah)
-const KaabaIcon = ({ className }) => (
-  <svg
-    viewBox="0 0 11 13"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M1 4.05096L5.50813 6.87531M1 4.05096L5.50813 1.22656L10.0017 4.05096M1 4.05096V5.72135M5.50813 12.2306L1 9.44877V5.72135M5.50813 12.2306L10.0017 9.44877V5.72135M5.50813 12.2306V8.52443M5.50813 6.87531L10.0017 4.05096M5.50813 6.87531V8.52443M10.0017 4.05096V5.72135M10.0017 5.72135L5.50813 8.52443M5.50813 8.52443L1 5.72135"
-      stroke="currentColor"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-// Madina Icon Component
-const MadinaIcon = ({ className }) => (
-  <svg
-    width="11"
-    height="15"
-    viewBox="0 0 11 15"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M5.625 1.0498C5.96379 1.0415 6.15318 1.43447 5.9375 1.69434L5.93848 1.69531C5.8059 1.85727 5.73354 2.06001 5.7334 2.26953C5.73364 2.7733 6.13675 3.17749 6.63965 3.17773C6.8485 3.17752 7.05247 3.1038 7.21484 2.9707C7.35907 2.84911 7.5516 2.85714 7.68555 2.94922C7.82703 3.0465 7.89339 3.22605 7.83203 3.42188C7.62359 4.1963 6.95559 4.74982 6.16699 4.82324V4.96973C6.38842 5.29376 6.73956 5.57803 7.17188 5.86035C7.39553 6.00639 7.63673 6.14949 7.88672 6.29688C8.13549 6.44354 8.39372 6.59442 8.64746 6.75391C9.69542 7.41265 10.702 8.26832 10.7217 9.86133C10.7302 10.5552 10.5894 11.4633 9.97949 12.293C10.3948 12.3364 10.7226 12.6925 10.7227 13.1182V13.9834C10.7235 14.202 10.5466 14.3792 10.3281 14.3789V14.3799H1.21582C0.998036 14.379 0.822454 14.2011 0.823242 13.9834V13.1182C0.823351 12.6643 1.19496 12.2891 1.65039 12.2891H8.89941C9.63381 11.6946 9.91674 10.8407 9.93359 9.86035C9.95344 8.7001 9.20568 8.05633 8.22656 7.4209C7.99002 7.26739 7.75176 7.12838 7.51562 6.99219C7.28064 6.85666 7.04583 6.72296 6.82227 6.58398C6.43649 6.34416 6.0728 6.08117 5.77148 5.74121C5.46708 6.08406 5.09223 6.35958 4.7002 6.60547C4.47252 6.74826 4.23591 6.88329 4.00293 7.0166C3.76878 7.15058 3.53754 7.28322 3.31543 7.42285C2.42056 7.98548 1.62622 8.63485 1.61133 9.86523C1.6014 10.6849 1.83171 11.2575 2.07324 11.6484H2.07227C2.13777 11.7504 2.15412 11.8634 2.12402 11.9678C2.0949 12.0686 2.02647 12.1474 1.94727 12.1963C1.86807 12.2451 1.76716 12.2711 1.66406 12.252C1.55623 12.2319 1.46123 12.1657 1.39941 12.0596V12.0586C1.0886 11.5539 0.816533 10.8308 0.823242 9.8623C0.83371 8.36129 1.75222 7.45412 2.89844 6.75293C3.41821 6.43497 3.92281 6.1624 4.37598 5.86426C4.80764 5.58025 5.15748 5.29245 5.37891 4.9668V4.72949C4.62425 4.47414 4.07622 3.76183 4.07617 2.9209C4.07617 2.19418 4.55355 1.26045 5.59473 1.05273L5.61035 1.0498H5.625ZM1.62207 13.0869C1.61745 13.0916 1.61137 13.1013 1.61133 13.1182V13.5908H9.93457V13.1182C9.93452 13.1022 9.92888 13.093 9.92383 13.0879C9.91879 13.0828 9.90931 13.0771 9.89355 13.0771H1.65039C1.63521 13.0771 1.6266 13.0825 1.62207 13.0869ZM4.95801 2.47852C4.89845 2.61488 4.86542 2.76443 4.86523 2.9209L4.87109 3.03613C4.92841 3.60447 5.40474 4.04371 5.98926 4.04395C6.14409 4.04376 6.29155 4.00941 6.42676 3.95117C5.66139 3.85413 5.05306 3.24442 4.95801 2.47852Z"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="0.35469"
-    />
-  </svg>
-);
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -103,6 +69,9 @@ const BlockWise = () => {
   const [blockRanges, setBlockRanges] = useState([]);
   const [blockTranslations, setBlockTranslations] = useState({});
   const [selectedInterpretation, setSelectedInterpretation] = useState(null);
+  // Word-by-Word modal state
+  const [showWordByWord, setShowWordByWord] = useState(false);
+  const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -529,6 +498,23 @@ const BlockWise = () => {
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying } }));
   }, [isContinuousPlay, isPaused, playingBlock]);
 
+  // Listen for toast events from Transition component
+  useEffect(() => {
+    const handleToastEvent = (event) => {
+      const { type, message } = event.detail;
+      if (type === 'success') {
+        showSuccess(message);
+      } else if (type === 'error') {
+        showError(message);
+      }
+    };
+
+    window.addEventListener('showToast', handleToastEvent);
+    return () => {
+      window.removeEventListener('showToast', handleToastEvent);
+    };
+  }, [showSuccess, showError]);
+
   // Function to stop playback completely (same as Reading.jsx stopAudio)
   const stopPlayback = () => {
     if (audioRef.current) {
@@ -930,13 +916,6 @@ const BlockWise = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get the appropriate icon based on surah type
-  const surahIcon = blockData?.surahInfo?.type === 'Makki' ? (
-    <KaabaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
-  ) : (
-    <MadinaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
-  );
-
   // Loading state - only show full loading screen for initial data fetch
   if (loading && blockRanges.length === 0) {
     return (
@@ -1000,63 +979,29 @@ const BlockWise = () => {
         <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
           <div className="mx-auto px-3 sm:px-6 lg:px-8">
             {/* Header with Tabs */}
-            <div className="py-4 sm:py-6">
-              {/* Translation/Reading Tabs */}
-            <div className="flex items-center justify-center mb-6 sm:mb-8">
-              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
-                <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
-                  </button>
-                  <button
-                    onClick={() => navigate(`/reading/${surahId}`)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800 min-h-[40px] sm:min-h-[44px]"
-                  >
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            <div className="py-3 sm:py-4">
+              {/* Translation/Reading Tabs moved to global header (Transition component) */}
 
             {/* Arabic Title */}
-            <div className="text-center mb-4 sm:mb-6">
+            <div className="text-center mb-3 sm:mb-4">
               <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
                 {blockData?.surahInfo?.arabic || "Loading..."}
               </h1>
-              <div className="flex justify-center space-x-3 sm:space-x-4 text-gray-600 mb-4 sm:mb-6">
-                <button className="p-2 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  {surahIcon}
-                </button>
-                <button 
-                  onClick={handleFavoriteClick}
-                  disabled={favoriteLoading}
-                  className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                    favoriteLoading 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:text-gray-800 dark:hover:text-gray-300'
-                  } ${isFavorited ? 'text-red-500' : 'text-gray-400 dark:text-white'}`}
-                  title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                >
-                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
-                </button>
-              </div>
             </div>
 
             {/* Bismillah with Controls */}
-            <div className="mb-6 sm:mb-8 relative">
+            <div className="mb-3 sm:mb-4 relative">
               <div className="flex flex-col items-center px-2 sm:px-4">
                 <img
                   src={theme === "dark" ? DarkModeBismi : Bismi}
                   alt="Bismi"
-                  className="w-[236px] h-[52.9px] mb-4"
+                  className="w-[236px] h-[52.9px] mb-2"
                 />
               </div>
 
               {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="absolute top-0 right-0 hidden sm:block">
+                <div className="absolute top-0 right-4 hidden sm:block">
                   <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
                       className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
@@ -1064,7 +1009,7 @@ const BlockWise = () => {
                     >
                       Ayah wise
                     </button>
-                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 dark:bg-black dark:text-white bg-white text-gray-900 rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
+                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                       Block wise
                     </button>
                   </div>
@@ -1181,7 +1126,7 @@ const BlockWise = () => {
                       <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-3 sm:pt-4">
                         {/* Copy */}
                         <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
                           onClick={async () => {
                             try {
                               // Get Arabic text
@@ -1223,10 +1168,10 @@ const BlockWise = () => {
 
                         {/* Play/Pause */}
                         <button
-                          className={`p-1.5 sm:p-2 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-2 hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
                             playingBlock === blockId 
                               ? 'text-cyan-500 dark:text-cyan-400' 
-                              : 'text-gray-500 dark:text-gray-400'
+                              : 'text-[#2AA0BF]'
                           }`}
                           onClick={() => {
                             // If this block is currently playing, pause/resume
@@ -1275,7 +1220,7 @@ const BlockWise = () => {
                         {/* BookOpen - Interpretation (hidden for Tamil, English, and Malayalam) */}
                         {translationLanguage !== 'ta' && translationLanguage !== 'E' && translationLanguage !== 'mal' && (
                           <button
-                            className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                            className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
                             onClick={(e) => {
                               const targetUrl = `/surah/${surahId}#verse-${start}`;
                               const isModifierPressed = e?.ctrlKey || e?.metaKey;
@@ -1295,19 +1240,18 @@ const BlockWise = () => {
 
                         {/* Note/Page - Word by Word */}
                         <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
                           onClick={(e) => {
                             const url = `/word-by-word/${surahId}/${start}`;
                             const isModifierPressed = e?.ctrlKey || e?.metaKey;
-                            
                             if (isModifierPressed) {
                               e.preventDefault();
                               window.open(url, '_blank', 'noopener,noreferrer');
-                            } else {
-                              navigate(url, {
-                                state: { from: location.pathname },
-                              });
+                              return;
                             }
+                            // Open inline modal instead of navigating
+                            setShowWordByWord(true);
+                            setSelectedVerseForWordByWord(start);
                           }}
                           title="Word by word"
                         >
@@ -1316,7 +1260,7 @@ const BlockWise = () => {
 
                         {/* Bookmark */}
                         <button
-                          className={`p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
                             blockBookmarkLoading[`${start}-${end}`]
                               ? "opacity-50 cursor-not-allowed"
                               : ""
@@ -1370,7 +1314,7 @@ const BlockWise = () => {
 
                         {/* Share */}
                         <button
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
                           onClick={async () => {
                             try {
                               const shareText = `Surah ${surahId} • Verses ${start}-${end}`;
@@ -1491,7 +1435,7 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Ayah Interpretation (from clicking ayah numbers) */}
           {showInterpretation && selectedNumber && (
-            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
+            <div className="fixed inset-0 bg-gray-500/70 bg-opacity-50 flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full">
                 <InterpretationBlockwise
                   key={`interpretation-${surahId}-${selectedNumber}`}
@@ -1510,9 +1454,26 @@ const BlockWise = () => {
             </div>
           )}
 
+      {/* Overlay Popup for Word by Word (from block toolbar button) */}
+      {showWordByWord && selectedVerseForWordByWord && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
+          <WordByWord
+            selectedVerse={selectedVerseForWordByWord}
+            surahId={surahId}
+            onClose={() => { setShowWordByWord(false); setSelectedVerseForWordByWord(null); }}
+            onNavigate={(v) => setSelectedVerseForWordByWord(v)}
+            onSurahChange={(newSurahId) => {
+              setShowWordByWord(false);
+              setSelectedVerseForWordByWord(null);
+              navigate(`/surah/${newSurahId}?wordByWord=1`);
+            }}
+          />
+        </div>
+      )}
+
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (
-            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 overflow-y-auto">
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-y-auto">
               <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full shadow-2xl">
                 <InterpretationBlockwise
                   key={`block-interpretation-${surahId}-${selectedInterpretation.range}-${selectedInterpretation.interpretationNumber}`}

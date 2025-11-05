@@ -293,3 +293,13 @@ input[type="radio"]:checked::after {
 .font-noto-sans {
   font-family: 'NotoSans', sans-serif;
 }
+
+/* Ensure all interactive elements show hand cursor */
+button,
+a,
+[role="button"],
+.cursor-pointer,
+.icon-button,
+.clickable {
+  cursor: pointer;
+}

@@ -463,11 +463,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     setShowWordByWord(false);
   };
 
+  // Prevent body scroll when word-by-word modal is open
+  useEffect(() => {
+    if (showWordByWord) {
+      // Save current body overflow style
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      // Prevent scrolling
+      document.body.style.overflow = 'hidden';
+      
+      // Restore on cleanup
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [showWordByWord]);
+
   // Loading state
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
+        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
           <AyathNavbar
             surahId={surahId}
             verseId={currentVerseId}
@@ -496,8 +511,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   // Error state
   if (error) {
     return (
-      <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
+        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
           <AyathNavbar
             surahId={surahId}
             verseId={currentVerseId}
@@ -532,8 +547,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
         <AyathNavbar
           surahId={surahId}
           verseId={currentVerseId}
@@ -768,9 +783,9 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
       {/* WordByWord Modal */}
       {showWordByWord && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-            <div className="overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
+          <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="overflow-y-auto flex-1">
               <WordByWord
                 selectedVerse={currentVerseId}
                 surahId={surahId}

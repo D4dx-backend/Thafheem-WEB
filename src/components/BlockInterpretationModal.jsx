@@ -14,6 +14,7 @@ import BookmarkService from "../services/bookmarkService";
 import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
 import { useAuth } from "../context/AuthContext";
+import WordByWord from "../pages/WordByWord";
 
 const BlockInterpretationModal = ({
   surahId,
@@ -614,13 +615,14 @@ const BlockInterpretationModal = ({
     }
   };
 
-  const handleWordByWord = () => {
-    // Extract the first verse from the range for word-by-word view
-    const firstVerse = /^\d+/.exec(String(currentRange))?.[0] || "1";
+  // Word-by-Word modal state
+  const [showWordByWord, setShowWordByWord] = useState(false);
+  const [wordByWordVerse, setWordByWordVerse] = useState(1);
 
-    // Since we're in a modal, we'll open the word-by-word in a new tab/window
-    const wordByWordUrl = `/word-by-word/${currentSurahId}/${firstVerse}`;
-    window.open(wordByWordUrl, "_blank");
+  const handleWordByWord = () => {
+    const firstVerse = /^\d+/.exec(String(currentRange))?.[0] || "1";
+    setWordByWordVerse(parseInt(firstVerse));
+    setShowWordByWord(true);
   };
 
   const extractText = (item) => {
@@ -713,9 +715,10 @@ const BlockInterpretationModal = ({
         `}
       </style>
 
-      <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-16 sm:pt-20 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
           {/* Interpretation Navbar */}
+          <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
           <InterpretationNavbar
             interpretationNumber={currentInterpretationNo}
             surahName={surahDisplayName}
@@ -732,9 +735,10 @@ const BlockInterpretationModal = ({
             onPrev={handlePrev}
             onNext={handleNext}
           />
+          </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
             {loading && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
@@ -794,6 +798,19 @@ const BlockInterpretationModal = ({
               ))}
             </div>
           </div>
+
+    {/* Word-by-Word Modal from Interpretation */}
+    {showWordByWord && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[100000] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
+        <WordByWord
+          selectedVerse={wordByWordVerse}
+          surahId={currentSurahId}
+          onClose={() => setShowWordByWord(false)}
+          onNavigate={setWordByWordVerse}
+          onSurahChange={() => {}}
+        />
+      </div>
+    )}
         </div>
       </div>
 

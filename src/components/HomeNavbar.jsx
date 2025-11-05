@@ -305,7 +305,7 @@ const HomepageNavbar = () => {
       )}
 
       <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] ">
-        <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
@@ -332,7 +332,7 @@ const HomepageNavbar = () => {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 mr-2 sm:mr-4">
             {/* Sign In/Sign Out Button */}
 
             <button
@@ -407,7 +407,7 @@ const HomepageNavbar = () => {
         </div>
         {/* Route-scoped dropdown bar under the navbar (only on reading) */}
         {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
-          <div className="pb-2 relative z-[60]">
+          <div className="relative z-[60]">
             <Transition showPageInfo={false} />
           </div>
         )}

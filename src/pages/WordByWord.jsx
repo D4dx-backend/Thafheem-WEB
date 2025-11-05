@@ -202,80 +202,56 @@ const WordByWord = ({
 
   if (loading) {
     return (
-      <>
-        <WordNavbar
-          surahId={currentSurahId}
-          selectedVerse={currentVerseId}
-          surahInfo={surahInfo}
-          onNavigate={onNavigate}
-          onClose={handleClose}
-          onSurahChange={handleSurahChange}
-          onVerseChange={handleVerseChange}
-          wordData={wordData}
-          showSuccess={showSuccess}
-          showError={showError}
-          translationLanguage={translationLanguage}
-        />
-        <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold dark:text-white">
-              Word by Word
-            </h2>
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              >
-                <X className="w-5 h-5 dark:text-white" />
-              </button>
-            )}
-          </div>
-          <div className="text-center py-12">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
+          <WordNavbar
+            surahId={currentSurahId}
+            selectedVerse={currentVerseId}
+            surahInfo={surahInfo}
+            onNavigate={onNavigate}
+            onClose={handleClose}
+            onShowAyahModal={handleShowAyahModal}
+            onSurahChange={handleSurahChange}
+            onVerseChange={handleVerseChange}
+            wordData={wordData}
+            showSuccess={showSuccess}
+            showError={showError}
+            translationLanguage={translationLanguage}
+          />
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6 py-8">
+          <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading word meanings...
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Loading word meanings...</p>
           </div>
         </div>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-      </>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
-        <WordNavbar
-          surahId={currentSurahId}
-          selectedVerse={currentVerseId}
-          surahInfo={surahInfo}
-          onNavigate={onNavigate}
-          onClose={handleClose}
-          onSurahChange={handleSurahChange}
-          onVerseChange={handleVerseChange}
-          wordData={wordData}
-          showSuccess={showSuccess}
-          showError={showError}
-          translationLanguage={translationLanguage}
-        />
-        <div className="max-w-4xl mx-auto p-6 dark:bg-gray-950 bg-white rounded-lg">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold dark:text-white">
-              Word by Word
-            </h2>
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              >
-                <X className="w-5 h-5 dark:text-white" />
-              </button>
-            )}
-          </div>
-          <div className="text-center py-12">
-            <p className="text-red-500 dark:text-red-400 mb-2">
-              Failed to load word meanings
-            </p>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
+          <WordNavbar
+            surahId={currentSurahId}
+            selectedVerse={currentVerseId}
+            surahInfo={surahInfo}
+            onNavigate={onNavigate}
+            onClose={handleClose}
+            onShowAyahModal={handleShowAyahModal}
+            onSurahChange={handleSurahChange}
+            onVerseChange={handleVerseChange}
+            wordData={wordData}
+            showSuccess={showSuccess}
+            showError={showError}
+            translationLanguage={translationLanguage}
+          />
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6 py-8">
+          <div className="text-center">
+            <p className="text-red-500 dark:text-red-400 mb-2">Failed to load word meanings</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -286,29 +262,31 @@ const WordByWord = ({
           </div>
         </div>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
-      </>
+      </div>
     );
   }
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
-      <WordNavbar
-        surahId={currentSurahId}
-        selectedVerse={currentVerseId}
-        surahInfo={surahInfo}
-        onNavigate={onNavigate}
-        onClose={handleClose}
-        onShowAyahModal={handleShowAyahModal}
-        onSurahChange={handleSurahChange}
-        onVerseChange={handleVerseChange}
-        wordData={wordData}
-        showSuccess={showSuccess}
-        showError={showError}
-        translationLanguage={translationLanguage}
-      />
+      <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
+        <WordNavbar
+          surahId={currentSurahId}
+          selectedVerse={currentVerseId}
+          surahInfo={surahInfo}
+          onNavigate={onNavigate}
+          onClose={handleClose}
+          onShowAyahModal={handleShowAyahModal}
+          onSurahChange={handleSurahChange}
+          onVerseChange={handleVerseChange}
+          wordData={wordData}
+          showSuccess={showSuccess}
+          showError={showError}
+          translationLanguage={translationLanguage}
+        />
+      </div>
 
       {/* Scrollable Content */}
-      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto flex-1 min-h-0">
         {/* Verse Info Header */}
         <div className="mb-4 sm:mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -504,7 +482,7 @@ const WordByWord = ({
       </div>
 
       {/* Fixed Bottom Navigation Buttons */}
-      <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4   bg-white dark:bg-gray-900">
+      <div className="flex-shrink-0 flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 bg-white dark:bg-gray-900 z-10">
         <button
           onClick={handlePrevious}
           disabled={currentVerseId <= 1}

@@ -49,41 +49,6 @@ import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 
-// Custom Kaaba Icon Component (Makkah)
-const KaabaIcon = ({ className }) => (
-  <svg
-    viewBox="0 0 11 13"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M1 4.05096L5.50813 6.87531M1 4.05096L5.50813 1.22656L10.0017 4.05096M1 4.05096V5.72135M5.50813 12.2306L1 9.44877V5.72135M5.50813 12.2306L10.0017 9.44877V5.72135M5.50813 12.2306V8.52443M5.50813 6.87531L10.0017 4.05096M5.50813 6.87531V8.52443M10.0017 4.05096V5.72135M10.0017 5.72135L5.50813 8.52443M5.50813 8.52443L1 5.72135"
-      stroke="currentColor"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-// Madina Icon Component
-const MadinaIcon = ({ className }) => (
-  <svg
-    width="11"
-    height="15"
-    viewBox="0 0 11 15"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M5.625 1.0498C5.96379 1.0415 6.15318 1.43447 5.9375 1.69434L5.93848 1.69531C5.8059 1.85727 5.73354 2.06001 5.7334 2.26953C5.73364 2.7733 6.13675 3.17749 6.63965 3.17773C6.8485 3.17752 7.05247 3.1038 7.21484 2.9707C7.35907 2.84911 7.5516 2.85714 7.68555 2.94922C7.82703 3.0465 7.89339 3.22605 7.83203 3.42188C7.62359 4.1963 6.95559 4.74982 6.16699 4.82324V4.96973C6.38842 5.29376 6.73956 5.57803 7.17188 5.86035C7.39553 6.00639 7.63673 6.14949 7.88672 6.29688C8.13549 6.44354 8.39372 6.59442 8.64746 6.75391C9.69542 7.41265 10.702 8.26832 10.7217 9.86133C10.7302 10.5552 10.5894 11.4633 9.97949 12.293C10.3948 12.3364 10.7226 12.6925 10.7227 13.1182V13.9834C10.7235 14.202 10.5466 14.3792 10.3281 14.3789V14.3799H1.21582C0.998036 14.379 0.822454 14.2011 0.823242 13.9834V13.1182C0.823351 12.6643 1.19496 12.2891 1.65039 12.2891H8.89941C9.63381 11.6946 9.91674 10.8407 9.93359 9.86035C9.95344 8.7001 9.20568 8.05633 8.22656 7.4209C7.99002 7.26739 7.75176 7.12838 7.51562 6.99219C7.28064 6.85666 7.04583 6.72296 6.82227 6.58398C6.43649 6.34416 6.0728 6.08117 5.77148 5.74121C5.46708 6.08406 5.09223 6.35958 4.7002 6.60547C4.47252 6.74826 4.23591 6.88329 4.00293 7.0166C3.76878 7.15058 3.53754 7.28322 3.31543 7.42285C2.42056 7.98548 1.62622 8.63485 1.61133 9.86523C1.6014 10.6849 1.83171 11.2575 2.07324 11.6484H2.07227C2.13777 11.7504 2.15412 11.8634 2.12402 11.9678C2.0949 12.0686 2.02647 12.1474 1.94727 12.1963C1.86807 12.2451 1.76716 12.2711 1.66406 12.252C1.55623 12.2319 1.46123 12.1657 1.39941 12.0596V12.0586C1.0886 11.5539 0.816533 10.8308 0.823242 9.8623C0.83371 8.36129 1.75222 7.45412 2.89844 6.75293C3.41821 6.43497 3.92281 6.1624 4.37598 5.86426C4.80764 5.58025 5.15748 5.29245 5.37891 4.9668V4.72949C4.62425 4.47414 4.07622 3.76183 4.07617 2.9209C4.07617 2.19418 4.55355 1.26045 5.59473 1.05273L5.61035 1.0498H5.625ZM1.62207 13.0869C1.61745 13.0916 1.61137 13.1013 1.61133 13.1182V13.5908H9.93457V13.1182C9.93452 13.1022 9.92888 13.093 9.92383 13.0879C9.91879 13.0828 9.90931 13.0771 9.89355 13.0771H1.65039C1.63521 13.0771 1.6266 13.0825 1.62207 13.0869ZM4.95801 2.47852C4.89845 2.61488 4.86542 2.76443 4.86523 2.9209L4.87109 3.03613C4.92841 3.60447 5.40474 4.04371 5.98926 4.04395C6.14409 4.04376 6.29155 4.00941 6.42676 3.95117C5.66139 3.85413 5.05306 3.24442 4.95801 2.47852Z"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="0.35469"
-    />
-  </svg>
-);
-
 const Surah = () => {
   const { quranFont, fontSize, translationFontSize, translationLanguage, theme } = useTheme();
   const { user } = useAuth();
@@ -1081,12 +1046,22 @@ const Surah = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get the appropriate icon based on surah type
-  const surahIcon = surahInfo?.type === 'Makki' ? (
-    <KaabaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
-  ) : (
-    <MadinaIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3FA5C0]" />
-  );
+  // Listen for toast events from Transition component
+  useEffect(() => {
+    const handleToastEvent = (event) => {
+      const { type, message } = event.detail;
+      if (type === 'success') {
+        showSuccess(message);
+      } else if (type === 'error') {
+        showError(message);
+      }
+    };
+
+    window.addEventListener('showToast', handleToastEvent);
+    return () => {
+      window.removeEventListener('showToast', handleToastEvent);
+    };
+  }, [showSuccess, showError]);
 
   const handleCopyVerse = async (arabicText, translation, verseNumber) => {
     const textToCopy = `${arabicText}
@@ -1479,27 +1454,8 @@ const Surah = () => {
       <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Sticky Header */}
         <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
-          <div className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+          <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           <div className="w-full max-w-[1290px] mx-auto text-center px-2 sm:px-0">
-            {/* Toggle Buttons */}
-            <div className="flex items-center justify-center mb-6 sm:mb-8">
-              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
-                <div className="flex items-center">
-                  <button className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
-                    <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                    <span className="text-xs sm:text-sm font-poppins">Translation</span>
-                  </button>
-                  <button
-                    onClick={() => navigate(`/reading/${surahId}`)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800 min-h-[40px] sm:min-h-[44px]"
-                  >
-                    <Notebook className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                    <span className="text-xs sm:text-sm font-poppins">Reading</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Mobile Layout */}
             <div className="sm:hidden space-y-3 sm:space-y-4 px-2">
               {/* Juz Context Indicator */}
@@ -1518,13 +1474,13 @@ const Surah = () => {
               )}
 
               {/* Surah Title */}
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
+              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
                 {surahInfo?.arabic || "Loading..."}
               </h1>
 
               {/* Tamil Download Button */}
               {translationLanguage === 'ta' && !tamilTranslationService.isDatabaseDownloaded() && (
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
                   <div className="text-center">
                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                       Tamil translation database is not downloaded. Download to view Tamil translations.
@@ -1551,27 +1507,8 @@ const Surah = () => {
                 </div>
               )}
 
-              {/* Action Icons */}
-              <div className="flex items-center justify-center space-x-3 sm:space-x-4">
-                <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  {surahIcon}
-                </button>
-                <button 
-                  onClick={handleFavoriteClick}
-                  disabled={favoriteLoading}
-                  className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                    favoriteLoading 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:text-gray-600 dark:hover:text-gray-300'
-                  } ${isFavorited ? 'text-red-500' : 'text-gray-400 dark:text-white'}`}
-                  title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                >
-                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
-                </button>
-              </div>
-
               {/* Bismillah */}
-              <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4">
+              <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4 pt-6 sm:pt-8">
                 <img
                   src={theme === "dark" ? DarkModeBismi : Bismi}
                   alt="Bismillah"
@@ -1619,20 +1556,14 @@ const Surah = () => {
               )}
 
                 {/* Surah Title */}
-                <div className="mb-4 sm:mb-6 relative">
-                  <h1
-                    className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4"
-                    style={{
-                      fontFamily: quranFont,
-                      fontSize: `${fontSize + 20}px`, // Increase the base font size by 8px
-                    }}
-                  >
+                <div className="relative pb-4 sm:pb-6">
+                  <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
                     {surahInfo?.arabic || `Surah ${surahId}`}
                   </h1>
 
                   {/* Tamil Download Button - Desktop */}
                   {translationLanguage === 'ta' && !tamilTranslationService.isDatabaseDownloaded() && (
-                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
                       <div className="text-center">
                         <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                           Tamil translation database is not downloaded. Download to view Tamil translations.
@@ -1659,38 +1590,21 @@ const Surah = () => {
                     </div>
                   )}
 
-                {/* Action Icons */}
-                <div className="flex items-center justify-center space-x-3 sm:space-x-4">
-                  <button className="p-2 text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                    {surahIcon}
-                  </button>
-                  <button 
-                    onClick={handleFavoriteClick}
-                    disabled={favoriteLoading}
-                    className={`p-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                      favoriteLoading 
-                        ? 'opacity-50 cursor-not-allowed' 
-                        : 'hover:text-gray-600 dark:hover:text-gray-300'
-                    } ${isFavorited ? 'text-red-500' : 'text-black dark:text-white'}`}
-                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
-                  </button>
-                </div>
-
                 {/* Bismillah */}
-                <div className="mt-6 sm:mb-8 relative">
-                  <img
-                    src={theme === "dark" ? DarkModeBismi : Bismi}
-                    alt="Bismillah"
-                    className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto"
-                  />
+                <div className="mb-3 sm:mb-4 relative">
+                  <div className="flex flex-col items-center px-2 sm:px-4">
+                    <img
+                      src={theme === "dark" ? DarkModeBismi : Bismi}
+                      alt="Bismillah"
+                      className="w-[236px] h-[52.9px] mb-2"
+                    />
+                  </div>
 
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                    <div className="absolute top-0 right-0">
+                    <div className="absolute top-0 right-0 hidden sm:block">
                       <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                        <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm min-h-[40px] sm:min-h-[44px]">
+                        <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                           Ayah wise
                         </button>
                         <button
@@ -1713,7 +1627,7 @@ const Surah = () => {
 
         {/* Verses */}
         <div className="w-full max-w-[1290px] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 bg-white dark:bg-gray-900">
-          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
             {loading && ayahData.length === 0 ? (
               <VersesSkeleton count={7} />
             ) : !loading && ayahData.length === 0 ? (
@@ -1739,7 +1653,7 @@ const Surah = () => {
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
-                    className="py-5 sm:py-7 pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
+                    className="pt-5 sm:pt-7 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700 rounded-t-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
                     style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}
@@ -1845,7 +1759,7 @@ const Surah = () => {
 
                       {/* Copy */}
                       <button
-                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors relative"
+                        className="p-1 text-[#2AA0BF] hover:text-black transition-colors relative"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCopyVerse(
@@ -1880,7 +1794,7 @@ const Surah = () => {
 
                       {/* Play */}
                       <button
-                        className={`p-1 transition-colors ${playingAyah === index + 1 ? "text-cyan-600" : "hover:text-gray-700 dark:hover:text-white"} ${playingAyah === index + 1 && audioEl && !audioEl.paused ? "animate-pulse" : ""}`}
+                        className={`p-1 transition-colors ${playingAyah === index + 1 ? "text-cyan-600" : "text-[#2AA0BF] hover:text-black"} ${playingAyah === index + 1 && audioEl && !audioEl.paused ? "animate-pulse" : ""}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAyahPlayPause(index + 1);
@@ -1907,7 +1821,7 @@ const Surah = () => {
                       {/* BookOpen - Interpretation (hidden for Tamil) */}
                       {translationLanguage !== 'ta' && (
                         <button
-                          className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                          className="p-1 text-[#2AA0BF] hover:text-black transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleInterpretationClick(index + 1);
@@ -1920,7 +1834,7 @@ const Surah = () => {
 
                       {/* List */}
                       <button
-                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        className="p-1 text-[#2AA0BF] hover:text-black transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleWordByWordClick(index + 1, e);
@@ -1931,11 +1845,7 @@ const Surah = () => {
 
                       {/* Bookmark */}
                       <button
-                        className={`p-1 transition-colors ${
-                          bookmarkedVerses.has(`${surahId}:${index + 1}`)
-                            ? "text-cyan-500 hover:text-cyan-600"
-                            : "hover:text-gray-700 dark:hover:text-white"
-                        } ${
+                        className={`p-1 transition-colors text-[#2AA0BF] hover:text-black ${
                           bookmarkLoading[`${surahId}:${index + 1}`]
                             ? "opacity-50 cursor-not-allowed"
                             : ""
@@ -1970,7 +1880,7 @@ const Surah = () => {
 
                       {/* Share */}
                       <button
-                        className="p-1 hover:text-gray-700 dark:hover:text-white transition-colors"
+                        className="p-1 text-[#2AA0BF] hover:text-black transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleShareVerse(
@@ -2080,18 +1990,14 @@ const Surah = () => {
 
         {/* Overlay Popup for Word by Word */}
         {showWordByWord && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              <div className="overflow-y-auto max-h-[90vh]">
-                <WordByWord
-                  selectedVerse={selectedVerseForWordByWord}
-                  surahId={surahId}
-                  onClose={handleWordByWordClose}
-                  onNavigate={handleWordByWordNavigate}
-                  onSurahChange={handleWordByWordSurahChange}
-                />
-              </div>
-            </div>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-hidden">
+            <WordByWord
+              selectedVerse={selectedVerseForWordByWord}
+              surahId={surahId}
+              onClose={handleWordByWordClose}
+              onNavigate={handleWordByWordNavigate}
+              onSurahChange={handleWordByWordSurahChange}
+            />
           </div>
         )}
 

@@ -54,10 +54,8 @@ const Home = () => {
     // Check if modifier key is pressed (Ctrl/Cmd)
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
     
-    // Determine the URL based on view type
-    const url = viewType === "Block Wise" 
-      ? `/blockwise/${surahNumber}`
-      : `/surah/${surahNumber}`;
+    // Always open Ayah wise view from Home
+    const url = `/surah/${surahNumber}`;
     
     if (isModifierPressed) {
       // Open in new tab

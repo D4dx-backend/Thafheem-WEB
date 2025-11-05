@@ -3459,7 +3459,7 @@ export const fetchEnglishInterpretations = async (surahId, verseId) => {
     for (const footnoteId of footnoteIds) {
       try {
         // Use the correct API endpoint: http://localhost:5000/api/english/footnote/{footnoteId}
-        const response = await fetch(`http://localhost:5000/api/english/footnote/${footnoteId}`);
+        const response = await fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`);
         if (response.ok) {
           const data = await response.json();
           if (data && data.footnote_text) {

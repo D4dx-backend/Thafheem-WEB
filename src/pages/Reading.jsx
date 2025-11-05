@@ -79,7 +79,9 @@ const Reading = () => {
   const [error, setError] = useState(null);
   const [pageRanges, setPageRanges] = useState([]);
   const [selectedQirath, setSelectedQirath] = useState("al-afasy");
-  const [showQirathDropdown, setShowQirathDropdown] = useState(false);
+  const [audioTypes, setAudioTypes] = useState(["quran"]); // Array of selected audio types
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [currentAudioTypeIndex, setCurrentAudioTypeIndex] = useState(0); // Track which audio type is currently playing
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAyah, setCurrentAyah] = useState(null);
   const [audioElement, setAudioElement] = useState(null);
@@ -90,30 +92,57 @@ const Reading = () => {
   // Favorite surah state
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const { translationLanguage } = useTheme();
 
-  // Generate audio URL for the selected Qirath, surah, and ayah
-  const generateAudioUrl = (surahId, ayahId, qirathName, qirathCode) => {
-    // Format: https://old.thafheem.net/audio/qirath/{qirathName}/{prefix}{surahId_3digit}_{ayahId_3digit}.ogg
-    // Example: https://old.thafheem.net/audio/qirath/al-afasy/QA002_004.ogg
+  // Generate audio URL based on audio type
+  const generateAudioUrl = (surahId, ayahId, type, qirathName, qirathCode) => {
     const surahIdPadded = String(surahId).padStart(3, '0');
     const ayahIdPadded = String(ayahId).padStart(3, '0');
     
-    // Use proxy in development to avoid CORS issues
-    if (import.meta.env.DEV) {
-      return `/api/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+    let audioUrl;
+    
+    if (type === 'quran') {
+      // Quran audio format: https://old.thafheem.net/audio/qirath/{qirathName}/{prefix}{surahId_3digit}_{ayahId_3digit}.ogg
+      // Example: https://old.thafheem.net/audio/qirath/al-afasy/QA002_004.ogg
+      if (import.meta.env.DEV) {
+        audioUrl = `/api/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+      } else {
+        audioUrl = `https://old.thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+      }
+    } else if (type === 'translation') {
+      // Translation audio format: https://old.thafheem.net/audio/translation/T{surahId_3digit}_{ayahId_3digit}.ogg
+      // Example: https://old.thafheem.net/audio/translation/T002_004.ogg
+      audioUrl = `https://old.thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+    } else if (type === 'interpretation') {
+      // Interpretation audio format: https://old.thafheem.net/audio/interpretation/I{surahId_3digit}_{ayahId_3digit}.ogg
+      // Example: https://old.thafheem.net/audio/interpretation/I002_004.ogg
+      audioUrl = `https://old.thafheem.net/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
     }
     
-    return `https://old.thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
+    return audioUrl;
   };
 
-  // Play next ayah in sequence
-  const playAyahAtIndex = (index) => {
+  // Play audio types for an ayah in sequence, then move to next ayah
+  // This version accepts audioTypes as parameter to avoid closure issues
+  const playAyahAtIndexWithTypes = (index, audioTypeIndex = 0, typesToPlay = null) => {
+    // Use provided types or fall back to state
+    const activeAudioTypes = typesToPlay || audioTypes;
+    
     if (index >= verses.length) {
       // All ayahs played, stop playback
       setIsPlaying(false);
       setCurrentAyah(null);
       setCurrentAyahIndex(0);
+      setCurrentAudioTypeIndex(0);
       setAudioElement(null);
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+      return;
+    }
+
+    // If all audio types for this ayah have been played, move to next ayah
+    if (audioTypeIndex >= activeAudioTypes.length) {
+      playAyahAtIndexWithTypes(index + 1, 0, typesToPlay);
       return;
     }
 
@@ -129,41 +158,47 @@ const Reading = () => {
     const qirathCode = QIRATHS[selectedQirath];
     const verse = verses[index];
     const ayahId = index + 1; // Since verse_number is undefined, use index + 1
-    const audioUrl = generateAudioUrl(currentSurahId, ayahId, selectedQirath, qirathCode);
+    const currentAudioType = activeAudioTypes[audioTypeIndex];
+    const audioUrl = generateAudioUrl(currentSurahId, ayahId, currentAudioType, selectedQirath, qirathCode);
     
     // Create new audio element
     const audio = new Audio(audioUrl);
     
     // Set audio properties before adding event listeners
     audio.preload = 'none'; // Don't preload to avoid conflicts
+    audio.playbackRate = playbackSpeed; // Apply playback speed
     // Removed crossOrigin to avoid CORS issues
     
     setAudioElement(audio);
     currentAudioRef.current = audio;
     setCurrentAyah(ayahId);
     setCurrentAyahIndex(index);
+    setCurrentAudioTypeIndex(audioTypeIndex);
     
-    // Handle audio end - play next ayah
+    // Handle audio end - play next audio type or next ayah
     audio.onended = () => {
       // Only continue if this is still the current audio element
       if (currentAudioRef.current === audio) {
-        playAyahAtIndex(index + 1);
+        // Play next audio type for this ayah, or move to next ayah if all types done
+        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
       }
     };
     
     audio.onerror = (error) => {
       console.error('Audio playback error:', error);
       console.error('Failed URL:', audioUrl);
-      console.error('Audio element state:', audio);
       // Only continue if this is still the current audio element
       if (currentAudioRef.current === audio) {
-        playAyahAtIndex(index + 1);
+        // Skip to next audio type or next ayah
+        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
       }
     };
     
     // Play the audio with better error handling
     audio.play().then(() => {
       // Successfully started playing
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
     }).catch((error) => {
       // If it's an abort error (interrupted by another play), don't log as error
       if (error.name === 'AbortError') {
@@ -179,19 +214,21 @@ const Reading = () => {
       // Handle CORS errors specifically
       if (error.name === 'NotSupportedError' || error.message.includes('CORS')) {
         console.error('CORS error - audio server does not allow cross-origin requests');
-        // Try to continue to next ayah anyway
+        // Try to continue to next audio type or ayah anyway
         setTimeout(() => {
-          playAyahAtIndex(index + 1);
+          playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
         }, 1000);
         return;
       }
       
-      // For other errors, reset the state
-      setIsPlaying(false);
-      setCurrentAyah(null);
-      setAudioElement(null);
-      currentAudioRef.current = null;
+      // For other errors, skip to next audio type or next ayah
+      playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
     });
+  };
+
+  // Wrapper function that uses state audioTypes (for backwards compatibility)
+  const playAyahAtIndex = (index, audioTypeIndex = 0) => {
+    playAyahAtIndexWithTypes(index, audioTypeIndex, null);
   };
 
   // Stop audio completely (reset to beginning)
@@ -203,8 +240,11 @@ const Reading = () => {
     setIsPlaying(false);
     setCurrentAyah(null);
     setCurrentAyahIndex(0);
+    setCurrentAudioTypeIndex(0);
     setAudioElement(null);
     currentAudioRef.current = null;
+    // Dispatch event to update header button
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
   };
 
   // Handle clicking on a specific ayah
@@ -230,10 +270,11 @@ const Reading = () => {
         // Set the current ayah first to update button text
         setCurrentAyah(parseInt(verseNumber));
         setCurrentAyahIndex(ayahIndex);
+        setCurrentAudioTypeIndex(0);
         
         // Start playing from the clicked ayah
         setIsPlaying(true);
-        playAyahAtIndex(ayahIndex);
+        playAyahAtIndex(ayahIndex, 0);
       }, 100);
     } else {
       console.error(`Invalid ayah index: ${ayahIndex} for verse number ${verseNumber}`);
@@ -250,45 +291,69 @@ const Reading = () => {
           audioElement.pause();
         }
         setIsPlaying(false);
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
         // Don't clear currentAyah or currentAyahIndex - keep them for resume
       } else {
         // Resume playback from current ayah or start from beginning
         if (currentAyahIndex > 0 || currentAyah) {
           // Resume from current position
           setIsPlaying(true);
-          playAyahAtIndex(currentAyahIndex);
+          playAyahAtIndex(currentAyahIndex, currentAudioTypeIndex);
         } else {
           // Start from first ayah
           setIsPlaying(true);
-          playAyahAtIndex(0);
+          playAyahAtIndex(0, 0);
         }
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
       }
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
       setCurrentAyah(null);
       setAudioElement(null);
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     }
   };
 
-  // Close dropdown when clicking outside
+  // Ref to store handlePlayAudio for event listener
+  const handlePlayAudioRef = useRef(null);
+  handlePlayAudioRef.current = handlePlayAudio;
+
+  // Listen for play audio event from header
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showQirathDropdown && !event.target.closest('.qirath-dropdown')) {
-        setShowQirathDropdown(false);
+    const handlePlayAudioEvent = () => {
+      if (handlePlayAudioRef.current) {
+        handlePlayAudioRef.current();
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showQirathDropdown]);
+    window.addEventListener('playAudio', handlePlayAudioEvent);
+    return () => {
+      window.removeEventListener('playAudio', handlePlayAudioEvent);
+    };
+  }, []);
 
-  // Stop audio and clear highlight when Qirath changes
+  // Dispatch audio state changes when isPlaying changes
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying } }));
+  }, [isPlaying]);
+
+  // Stop audio and clear highlight when Qirath or audio types change
   useEffect(() => {
     if (isPlaying && audioElement) {
       stopAudio();
     }
-  }, [selectedQirath]);
+  }, [selectedQirath, audioTypes]);
+
+  // Apply playback speed when it changes
+  useEffect(() => {
+    if (audioElement) {
+      audioElement.playbackRate = playbackSpeed;
+    }
+  }, [audioElement, playbackSpeed]);
 
   // Cleanup audio when component unmounts (navigating away)
   useEffect(() => {
@@ -619,101 +684,9 @@ const Reading = () => {
           {/* Content */}
           {!loading && !error && verses.length > 0 && (
             <div>
-              <div className="hidden sm:flex flex-row items-center justify-between mb-4">
-                {/* Left side */}
-                <div className="flex items-center space-x-2 ml-5">
-                  <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#2AA0BF] dark:text-[#2AA0BF]" />
-                  <Link to={`/surahinfo/${surahId || 2}`}>
-                    <span className="text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] cursor-pointer hover:underline">
-                      Surah info
-                    </span>
-                  </Link>
-                </div>
-
-                {/* Center - Total verses info */}
-                <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  <span>{verses.length} verses</span>
-                </div>
-
-                {/* Right side - Play Audio and Qirath selector */}
-                <div className="flex items-center space-x-3">
-                  {/* Audio Controls */}
-                  <div className="flex items-center space-x-2">
-                    {/* Play/Pause Audio Button */}
-                    <button 
-                      className={`flex items-center space-x-2 transition-colors ${
-                        isPlaying 
-                          ? "text-red-500 hover:text-red-600" 
-                          : "text-cyan-500 hover:text-cyan-600"
-                      }`}
-                      onClick={handlePlayAudio}
-                    >
-                      {isPlaying ? (
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                        <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                      )}
-                      <span className="text-xs sm:text-sm font-medium">
-                        {isPlaying ? "Pause Audio" : (currentAyah ? "Resume Audio" : "Play Audio")}
-                      </span>
-                    </button>
-
-                    {/* Stop/Reset Button */}
-                    {currentAyah && (
-                      <button 
-                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                        onClick={stopAudio}
-                        title="Stop and reset to beginning"
-                      >
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 6h12v12H6z"/>
-                        </svg>
-                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-                          Stop
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Qirath Selector Dropdown */}
-                  <div className="relative qirath-dropdown">
-                    <button
-                      onClick={() => setShowQirathDropdown(!showQirathDropdown)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-300 
-                                 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 
-                                 transition-colors min-h-[32px]"
-                    >
-                      <span className="capitalize">{selectedQirath.replace("-", " ")}</span>
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {showQirathDropdown && (
-                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 
-                                     dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-[140px]">
-                        {Object.keys(QIRATHS).map((qirath) => (
-                          <button
-                            key={qirath}
-                            onClick={() => {
-                              setSelectedQirath(qirath);
-                              setShowQirathDropdown(false);
-                            }}
-                            className={`w-full px-3 py-2 text-left text-xs sm:text-sm transition-colors
-                                       ${selectedQirath === qirath 
-                                         ? "bg-cyan-50 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-400" 
-                                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                                       } first:rounded-t-lg last:rounded-b-lg capitalize`}
-                          >
-                            {qirath.replace("-", " ")}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Verse count moved to header */}
+              {/* Play Audio button moved to header */}
+              {/* Qirath selector moved to audio player settings */}
 
               {/* Verses Content - Grouped by Page */}
               {versesGroupedByPage.map((pageGroup, groupIndex) => (
@@ -882,17 +855,50 @@ const Reading = () => {
             // Go to previous ayah
             if (currentAyahIndex > 0) {
               setIsPlaying(true);
-              playAyahAtIndex(currentAyahIndex - 1);
+              playAyahAtIndex(currentAyahIndex - 1, 0);
             }
           }}
           onSkipForward={() => {
             // Go to next ayah
             if (currentAyahIndex < verses.length - 1) {
               setIsPlaying(true);
-              playAyahAtIndex(currentAyahIndex + 1);
+              playAyahAtIndex(currentAyahIndex + 1, 0);
             }
           }}
           onClose={null}
+          selectedQari={selectedQirath}
+          onQariChange={(newQari) => {
+            setSelectedQirath(newQari);
+            // If audio is currently playing, restart with new reciter
+            if (currentAyah) {
+              stopAudio();
+              setTimeout(() => {
+                if (currentAyahIndex >= 0) {
+                  setIsPlaying(true);
+                  playAyahAtIndex(currentAyahIndex);
+                }
+              }, 100);
+            }
+          }}
+          translationLanguage={translationLanguage}
+          audioTypes={audioTypes}
+          onAudioTypesChange={(newTypes) => {
+            const currentIdx = currentAyahIndex; // Capture current index
+            setAudioTypes(newTypes);
+            // If audio is currently playing, restart with new audio types
+            if (currentAyah && currentIdx >= 0) {
+              stopAudio();
+              // Pass newTypes directly to avoid closure issue
+              setTimeout(() => {
+                setIsPlaying(true);
+                playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
+              }, 100);
+            }
+          }}
+          playbackSpeed={playbackSpeed}
+          onPlaybackSpeedChange={(newSpeed) => {
+            setPlaybackSpeed(newSpeed);
+          }}
         />
       )}
       </div>

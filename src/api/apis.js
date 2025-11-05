@@ -35,7 +35,10 @@ if (isDevelopment) {
 // });
 export const AYA_TRANSLATION_API = `${API_BASE_URL}/ayatransl`;
 export const SURA_NAMES_API = `${API_BASE_URL}/suranames/all`;
-export const PAGE_RANGES_API = `${API_BASE_URL}/pageranges/all`;
+// Use legacy public endpoint for page ranges (supports /pageranges/:pageId)
+export const PAGE_RANGES_API = isDevelopment
+  ? '/api/thafheem/pageranges'
+  : 'https://thafheem.net/thafheem-api/pageranges';
 export const AYAH_AUDIO_TRANSLATION_API = `${API_BASE_URL}/ayaaudiotransl`;
 export const AYA_RANGES_API = `${API_BASE_URL}/ayaranges`;
 export const QURAN_TEXT_API = `${API_BASE_URL}/qurantext`;

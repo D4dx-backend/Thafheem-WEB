@@ -235,8 +235,8 @@ class EnglishTranslationService {
    */
   async _getExplanationInternal(footnoteId, cacheKey) {
     try {
-      // Use the correct API endpoint: http://localhost:5000/api/english/footnote/{footnoteId}
-      const response = await fetch(`http://localhost:5000/api/english/footnote/${footnoteId}`);
+      // Use backend base URL from config
+      const response = await fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -343,6 +343,105 @@ class EnglishTranslationService {
         element.parentNode.replaceChild(button, element);
       }
     });
+    
+    // Fallback 1: handle <sup>n</sup> without foot_note attribute
+    const bareSupElements = tempDiv.querySelectorAll("sup:not([foot_note])");
+    bareSupElements.forEach((element) => {
+      const num = (element.textContent || "").trim();
+      if (!/^[0-9]+$/.test(num)) return;
+      const button = document.createElement('span');
+      button.className = 'english-footnote-link';
+      button.setAttribute("data-footnote-id", num);
+      button.setAttribute("data-surah", surahNo);
+      button.setAttribute("data-ayah", ayahNo);
+      button.setAttribute("title", `Click to view explanation ${num}`);
+      button.textContent = num;
+      button.style.cssText = `
+        cursor: pointer !important;
+        background-color: #19B5DD !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+        border: none !important;
+        padding: 4px 8px !important;
+        margin: 0 4px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
+        border-radius: 50% !important;
+        position: relative !important;
+        top: 0 !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
+        text-align: center !important;
+        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      `;
+      element.parentNode.replaceChild(button, element);
+    });
+
+    // Fallback 2: replace plain text markers like (1), (2) with clickable spans
+    function wrapPlainMarkers(root) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      const targets = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const text = node.nodeValue;
+        if (!text) continue;
+        if (/\(\d+\)/.test(text)) {
+          targets.push(node);
+        }
+      }
+      targets.forEach((textNode) => {
+        const frag = document.createDocumentFragment();
+        const parts = textNode.nodeValue.split(/(\(\d+\))/g);
+        parts.forEach((part) => {
+          const m = part.match(/^\((\d+)\)$/);
+          if (m) {
+            const num = m[1];
+            const span = document.createElement('span');
+            span.className = 'english-footnote-link';
+            span.setAttribute('data-footnote-id', num);
+            span.setAttribute('data-surah', surahNo);
+            span.setAttribute('data-ayah', ayahNo);
+            span.setAttribute('title', `Click to view explanation ${num}`);
+            span.textContent = num;
+            span.style.cssText = `
+              cursor: pointer !important;
+              background-color: #19B5DD !important;
+              color: #ffffff !important;
+              font-weight: 500 !important;
+              text-decoration: none !important;
+              border: none !important;
+              padding: 4px 8px !important;
+              margin: 0 4px !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              font-size: 12px !important;
+              vertical-align: middle !important;
+              line-height: 1 !important;
+              border-radius: 50% !important;
+              position: relative !important;
+              top: 0 !important;
+              min-width: 24px !important;
+              min-height: 24px !important;
+              text-align: center !important;
+              transition: all 0.2s ease-in-out !important;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            `;
+            frag.appendChild(span);
+          } else {
+            frag.appendChild(document.createTextNode(part));
+          }
+        });
+        textNode.parentNode.replaceChild(frag, textNode);
+      });
+    }
+    wrapPlainMarkers(tempDiv);
     
     return tempDiv.innerHTML;
   }

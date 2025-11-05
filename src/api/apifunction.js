@@ -1112,7 +1112,12 @@ export const listSurahVerseIndex = async () => {
 // Fetch page ranges with fallback
 export const fetchPageRanges = async () => {
   try {
-    const response = await fetchWithTimeout(PAGE_RANGES_API, {}, 8000);
+    // Avoid CORS by skipping external /all requests when using absolute URLs
+    if (/^https?:\/\//i.test(PAGE_RANGES_API)) {
+      return [];
+    }
+    // Try fetching all ranges via dev proxy (rewritten by Vite)
+    const response = await fetchWithTimeout(`${PAGE_RANGES_API}/all`, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -1128,6 +1133,23 @@ export const fetchPageRanges = async () => {
     );
     // Return empty array when API is unavailable
     return [];
+  }
+};
+
+// Fetch a single page range by pageId from the public endpoint
+export const fetchPageRangeByPageId = async (pageId) => {
+  try {
+    const response = await fetchWithTimeout(`${PAGE_RANGES_API}/${pageId}`, {}, 8000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    // API returns an array like [{ PageId, SuraId, ayafrom, ayato, juzid }]
+    if (Array.isArray(data) && data.length > 0) return data[0];
+    return null;
+  } catch (error) {
+    console.warn('Failed to fetch page range by pageId:', error.message);
+    return null;
   }
 };
 
@@ -1390,11 +1412,15 @@ export const fetchArabicVersesWithPage = async (surahId, page = 1) => {
 // Fetch verses for a specific page based on page ranges
 export const fetchVersesForPage = async (surahId, pageId) => {
   try {
-    // First get the page ranges to find the verse range for this page
-    const pageRanges = await fetchPageRanges();
-    const pageRange = pageRanges.find(
-      (range) => range.PageId === pageId && range.SuraId === parseInt(surahId)
-    );
+    // Prefer fetching just the required page's range
+    let pageRange = await fetchPageRangeByPageId(pageId);
+    if (!pageRange) {
+      // Fallback: fetch all ranges (if available) and locate the match
+      const pageRanges = await fetchPageRanges();
+      pageRange = pageRanges.find(
+        (range) => range.PageId === pageId && range.SuraId === parseInt(surahId)
+      );
+    }
 
     if (!pageRange) {
       throw new Error(

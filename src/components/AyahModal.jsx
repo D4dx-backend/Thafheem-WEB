@@ -150,7 +150,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     
                     // Fetch each footnote
                     const footnotePromises = footnoteIds.map((footnoteId) => {
-                      return fetch(`http://localhost:5000/api/english/footnote/${footnoteId}`)
+                      return fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`)
                         .then(response => {
                           if (response.ok) {
                             return response.json().then(data => ({

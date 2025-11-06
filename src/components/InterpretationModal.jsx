@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange } from "../api/apifunction";
+import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange, fetchAllInterpretations } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
@@ -51,8 +51,26 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
 
         let interpretationResponse = null;
 
-        // For Tamil and Hindi, use their respective translation services
-        if (effectiveLang === 'ta') {
+        // For Malayalam, use fetchAllInterpretations
+        if (effectiveLang === 'mal') {
+          try {
+            const interpretations = await fetchAllInterpretations(parseInt(surahId), parseInt(verseId), 'mal');
+            if (interpretations && interpretations.length > 0) {
+              // Filter by interpretation number if specified
+              if (interpretationNo) {
+                interpretationResponse = interpretations.filter(i => i.InterpretationNo === String(interpretationNo) || i.interptn_no === interpretationNo);
+                // If no match, use the first one
+                if (interpretationResponse.length === 0) {
+                  interpretationResponse = [interpretations[0]];
+                }
+              } else {
+                interpretationResponse = interpretations;
+              }
+            }
+          } catch (error) {
+            console.log("Malayalam interpretation error:", error);
+          }
+        } else if (effectiveLang === 'ta') {
           try {
             const tamilTranslation = await tamilTranslationService.getAyahTranslation(parseInt(surahId), parseInt(verseId));
             if (tamilTranslation) {
@@ -144,7 +162,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           }
         }
 
-        // 3) Fallback to verse-based fetch (Malayalam or if English strategies failed)
+        // 3) Fallback to verse-based fetch (if English strategies failed)
         if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) {
           interpretationResponse = await fetchInterpretation(
             parseInt(surahId),

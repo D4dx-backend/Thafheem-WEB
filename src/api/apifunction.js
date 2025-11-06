@@ -1836,74 +1836,20 @@ export const fetchInterpretation = async (
     if (l.toLowerCase() === 'mal') return undefined; // default Malayalam, no suffix
     return l;
   })();
-  // Primary endpoint (Audio interpretation)
-  const primaryUrl = `${API_BASE_URL}/audiointerpret/${surahId}/${verseId}`;
-  const rangeUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
-  const langUrl = langParam
-    ? `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${langParam}`
-    : rangeUrl;
-  // Special single-ayah (English) endpoint pattern where interpretNo == verseId
-  const singleAyahLangUrl = langParam
-    ? `${INTERPRETATION_API}/${surahId}/${verseId}/${verseId}/${langParam}`
-    : undefined;
-
-  // Prefer English single-ayah URL first when language is provided
-  if (singleAyahLangUrl) {
-    try {
-      const resp = await fetch(singleAyahLangUrl);
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      const data = await resp.json();
-      console.log("✅ Interpretation data received:", data);
-      return data;
-    } catch (e) {
-      console.warn("Single-ayah language URL failed, trying next:", e.message);
-    }
-  }
-
-  // Next, try language-specific with provided interpretation number
-  if (langParam) {
-    try {
-      console.log("📡 Fetching interpretation from:", langUrl);
-      const langResponse = await fetch(langUrl);
-      if (!langResponse.ok) throw new Error(`HTTP error! status: ${langResponse.status}`);
-      const langData = await langResponse.json();
-      console.log("✅ Interpretation data received:", langData);
-      return langData;
-    } catch (langError) {
-      console.warn("Language-specific interpretation failed, trying fallbacks:", langError.message);
-    }
-  }
-
-  // Fallback A: audiointerpret (may return Malayalam)
+  // For Malayalam, just use the standard /interpret endpoint
+  const interpretUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
+  
   try {
-    console.log("📡 Fetching interpretation from:", primaryUrl);
-    const response = await fetch(primaryUrl);
+    console.log("📡 Fetching interpretation from:", interpretUrl);
+    const response = await fetch(interpretUrl);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     console.log("✅ Interpretation data received:", data);
-    if (Array.isArray(data) && data.length > 0) {
-      const filteredData = data.filter(
-        (item) => item.interptn_no === interpretationNo || !item.interptn_no
-      );
-      return filteredData.length > 0 ? filteredData : data;
-    }
     return data;
   } catch (error) {
-    console.warn("Primary audiointerpret failed, trying range without language:", error.message);
+    console.warn("Interpretation fetch failed:", error.message);
+    return null;
   }
-
-  // Fallback B: range without language
-  try {
-    const rangeResponse = await fetch(rangeUrl);
-    if (!rangeResponse.ok) throw new Error(`HTTP error! status: ${rangeResponse.status}`);
-    const rangeData = await rangeResponse.json();
-    return rangeData;
-  } catch (rangeError) {
-    console.error("All interpretation endpoints failed:", rangeError);
-  }
-
-  console.warn(`Interpretation not available for Surah ${surahId}, Verse ${verseId}.`);
-  return null; // Graceful fallback
 };
 
 
@@ -1969,129 +1915,61 @@ export const fetchAllInterpretations = async (
   verseId,
   language = "E"
 ) => {
-  // Create cache key
-  const cacheKey = `interpretations_${surahId}_${verseId}_${language}`;
+  console.log(`🔄 Fetching all interpretations for Surah ${surahId}, Verse ${verseId}, Language: ${language}`);
   
-  // Check cache first
-  const cached = interpretationCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(`🔄 Using cached interpretations for ${surahId}:${verseId}`);
-    return cached.data;
+  // For Malayalam, determine the correct number of interpretations from the translation
+  let maxInterpretations = 20;
+  if (language === 'mal') {
+    try {
+      // Fetch the translation to count footnote markers
+      const translationUrl = `${LEGACY_TFH_BASE}/ayatransl/${surahId}/${verseId}`;
+      const translationResponse = await fetch(translationUrl);
+      
+      if (translationResponse.ok) {
+        const translationData = await translationResponse.json();
+        
+        if (Array.isArray(translationData) && translationData.length > 0) {
+          const translationText = translationData[0].TranslationText || '';
+          
+          // Count footnote markers in the translation text
+          // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
+          const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
+          maxInterpretations = footnoteMatches.length;
+          
+          console.log(`📊 Found ${maxInterpretations} footnote markers in translation for verse ${verseId}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Could not determine interpretation count from translation:`, error.message);
+      maxInterpretations = 20; // Fallback to trying 20
+    }
   }
-
-  console.log(`🔄 [v2.6] Fetching interpretations for Surah ${surahId}, Verse ${verseId}, Language: ${language}`);
   
-  // Normalize language to API expectation
-  const langParam = (() => {
-    if (!language) return undefined;
-    const l = String(language).trim();
-    if (l.toLowerCase() === 'en' || l === 'E') return 'E';
-    if (l.toLowerCase() === 'mal') return undefined; // default Malayalam, no suffix
-    return l;
-  })();
-
   const allInterpretations = [];
-  let consecutiveEmptyResponses = 0;
-  const maxConsecutiveEmptyResponses = 2; // Stop after 2 consecutive empty responses
-  const maxInterpretations = 5; // Reduced from 8 to 5 to limit API calls
-
-  // Optimized endpoint patterns - try most likely patterns first
-  const endpointPatterns = [
-    // Pattern 1: Standard pattern (most common)
-    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${interpretationNo}/${langParam}`,
-    // Pattern 2: Without language parameter
-    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${interpretationNo}`,
-    // Pattern 3: Special pattern where interpretationNo equals verseId
-    (interpretationNo) => `${API_BASE_URL}/interpret/${surahId}/${verseId}/${verseId}/${langParam}`,
-  ];
-
-  // Try to fetch multiple interpretations (1 through maxInterpretations)
-  for (let interpretationNo = 1; interpretationNo <= maxInterpretations; interpretationNo++) {
-    // If we've had too many consecutive empty responses, stop trying
-    if (consecutiveEmptyResponses >= maxConsecutiveEmptyResponses) {
-      console.log(`🔄 Smart stop: No more interpretations found after ${consecutiveEmptyResponses} consecutive empty responses`);
+  
+  // Fetch interpretations up to the determined count
+  for (let i = 1; i <= maxInterpretations; i++) {
+    try {
+      const data = await fetchInterpretation(surahId, verseId, i, language);
+      
+      // If we got valid data with interpretation text, add it
+      if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
+        console.log(`✅ Found interpretation ${i} for verse ${verseId}`);
+        allInterpretations.push(data);
+      } else {
+        // Empty response means no more interpretations
+        console.log(`⏹️ Stopped at interpretation ${i} (empty response)`);
+        break;
+      }
+    } catch (error) {
+      // Error means no more interpretations
+      console.log(`⏹️ Stopped at interpretation ${i} (error: ${error.message})`);
       break;
     }
-
-    let foundValidInterpretation = false;
-
-    // Try each endpoint pattern for this interpretation number
-    for (let patternIndex = 0; patternIndex < endpointPatterns.length; patternIndex++) {
-      const endpoint = endpointPatterns[patternIndex](interpretationNo);
-      
-      try {
-        console.log(`🔄 Trying pattern ${patternIndex + 1} for interpretation ${interpretationNo} of verse ${verseId}: ${endpoint}`);
-        const response = await fetchWithTimeout(endpoint, {}, 5000); // Add timeout
-        
-        if (!response.ok) {
-          console.log(`🔄 Pattern ${patternIndex + 1} failed with status: ${response.status}`);
-          continue;
-        }
-        
-        const data = await response.json();
-        console.log(`🔄 Data received from pattern ${patternIndex + 1}:`, data);
-        
-        // Check if we got valid interpretation data
-        let interpretationText = '';
-        if (data && typeof data === 'object') {
-          interpretationText = data.Interpretation || data.AudioIntrerptn || data.interpretation || data.text || data.content || '';
-        }
-        
-        // If we got valid interpretation text
-        if (interpretationText && interpretationText.trim().length > 0) {
-          // Check if this interpretation is different from previous ones
-          const isDuplicate = allInterpretations.some(existing => 
-            (existing.Interpretation || existing.AudioIntrerptn || existing.interpretation || existing.text || existing.content) === interpretationText
-          );
-          
-          if (!isDuplicate) {
-            console.log(`✅ Found unique interpretation ${interpretationNo} for verse ${verseId} using pattern ${patternIndex + 1}`);
-            allInterpretations.push({
-              Interpretation: interpretationText,
-              AudioIntrerptn: interpretationText,
-              interpretation: interpretationText,
-              text: interpretationText,
-              content: interpretationText,
-              interptn_no: interpretationNo,
-              InterpretationNo: interpretationNo
-            });
-            foundValidInterpretation = true;
-            consecutiveEmptyResponses = 0; // Reset counter on success
-            break; // Move to next interpretation number
-          } else {
-            console.log(`🔄 Interpretation ${interpretationNo} is duplicate, trying next pattern`);
-          }
-        } else {
-          console.log(`🔄 Pattern ${patternIndex + 1} returned empty interpretation text`);
-        }
-      } catch (endpointError) {
-        console.log(`🔄 Pattern ${patternIndex + 1} error: ${endpointError.message}`);
-        continue;
-      }
-    }
-    
-    if (!foundValidInterpretation) {
-      consecutiveEmptyResponses++;
-      console.log(`🔄 No valid interpretation found for number ${interpretationNo}, consecutive failures: ${consecutiveEmptyResponses}`);
-    }
   }
   
-  console.log(`🔄 Verse-specific fetch complete: Found ${allInterpretations.length} interpretations for verse ${verseId}`);
-  
-  // Cache the result
-  interpretationCache.set(cacheKey, {
-    data: allInterpretations,
-    timestamp: Date.now()
-  });
-  
-  // If we found interpretations, return them
-  if (allInterpretations.length > 0) {
-    return allInterpretations;
-  }
-  
-  // If no interpretations found, return empty array
-  console.warn(`🔄 No interpretations found for Surah ${surahId}, Verse ${verseId}`);
-  return [];
+  console.log(`📚 Found ${allInterpretations.length} interpretations for Surah ${surahId}, Verse ${verseId}`);
+  return allInterpretations;
 };
 
 // Fetch quiz questions for specific surah and verse range

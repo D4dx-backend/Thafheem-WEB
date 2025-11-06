@@ -661,11 +661,18 @@ const BlockWise = () => {
     const handleSupClick = (e) => {
       const target = e.target.closest(".interpretation-link");
       if (target) {
+        // Prevent default behavior and stop event propagation
+        e.preventDefault();
+        e.stopPropagation();
+        
         const interpretationNumber = target.getAttribute("data-interpretation");
         const range = target.getAttribute("data-range");
         const langAttr = target.getAttribute("data-lang");
         if (interpretationNumber && range) {
-          handleInterpretationClick(range, parseInt(interpretationNumber));
+          // Use requestAnimationFrame to ensure state updates properly
+          requestAnimationFrame(() => {
+            handleInterpretationClick(range, parseInt(interpretationNumber));
+          });
         }
       }
     };
@@ -684,9 +691,10 @@ const BlockWise = () => {
     `;
     document.head.appendChild(style);
 
-    document.addEventListener("click", handleSupClick);
+    // Use capture phase to ensure we catch the event first
+    document.addEventListener("click", handleSupClick, true);
     return () => {
-      document.removeEventListener("click", handleSupClick);
+      document.removeEventListener("click", handleSupClick, true);
       document.head.removeChild(style);
     };
   }, []);
@@ -931,12 +939,7 @@ const BlockWise = () => {
                     key={`block-${blockId}-${start}-${end}`}
                     className="rounded-xl mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                   >
-                    <div className="px-3 sm:px-4 pt-3 sm:pt-4 flex items-center justify-between">
-                      <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium">
-                        Block {blockIndex + 1}: Ayahs {start}
-                        {end && end !== start ? `-${end}` : ""}
-                      </span>
-                    </div>
+                    
 
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
                       <p

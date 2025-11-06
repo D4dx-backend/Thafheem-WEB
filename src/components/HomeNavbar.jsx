@@ -304,7 +304,7 @@ const HomepageNavbar = () => {
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] ">
+      <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] shadow-sm">
         <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2">
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
@@ -322,42 +322,48 @@ const HomepageNavbar = () => {
             </button>
 
             {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
-              <img
-                src={theme === 'dark' ? logoWhite : logoBlack}
-                alt="Thafheem ul Quran"
-                className="h-7 sm:h-8 w-auto select-none"
-                draggable="false"
-              />
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="Go to home page"
+              >
+                <img
+                  src={theme === 'dark' ? logoWhite : logoBlack}
+                  alt="Thafheem ul Quran"
+                  className="h-7 sm:h-8 w-auto select-none"
+                  draggable="false"
+                />
+              </button>
             )}
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-1 mr-2 sm:mr-4">
+          <div className="flex items-center gap-1 sm:gap-2 mr-1 sm:mr-4">
             {/* Sign In/Sign Out Button */}
 
             <button
               onClick={() => setIsLanguageOpen(true)}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Languages size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <Languages size={15} className="sm:w-[18px] sm:h-[18px]" />
             </button>
 
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
               {theme === "dark" ? (
-                <Sun size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <Sun size={15} className="sm:w-[18px] sm:h-[18px]" />
               ) : (
-                <Moon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <Moon size={15} className="sm:w-[18px] sm:h-[18px]" />
               )}
             </button>
 
             <button
               onClick={handleBookmarkClick}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Bookmark size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px]" />
             </button>
 
             <button
@@ -367,37 +373,30 @@ const HomepageNavbar = () => {
               <Settings size={18} />
             </button>
             {isSettingsOpen && (
-              <div className="fixed inset-0 z-[90]">
-                <div
-                  className="absolute inset-0 bg-black/50 dark:bg-black/70"
-                  onClick={() => setIsSettingsOpen(false)}
-                ></div>
-                {/* Drawer sits above the backdrop */}
-                <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
-              </div>
+              <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
             )}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <Search size={15} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             {user ? (
               <button
                 onClick={handleAuthButtonClick}
                 disabled={isSigningOut}
-                className="flex items-center justify-center w-10 h-10 rounded-full  text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSigningOut ? (
-                  <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </button>
             ) : (
               <button
                 onClick={handleAuthButtonClick}
-                className="px-2 sm:px-4 py-1.5 text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+                className="px-1.5 sm:px-4 py-1.5 text-[10px] xs:text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
               >
                 <span className="hidden xs:inline">Sign In</span>
                 <span className="xs:hidden">Sign</span>

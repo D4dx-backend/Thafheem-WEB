@@ -194,7 +194,45 @@ class EnglishTranslationService {
       this.setCachedData(cacheKey, translation);
       return translation;
     } catch (error) {
+      // If API returns 503 (database not available), try Quran.com fallback
+      if (error.message?.includes('503') || error.message?.includes('database not available')) {
+        console.warn(`⚠️ English database not available, using Quran.com fallback for ${surahNo}:${ayahNo}`);
+        return await this._getQuranComAyahFallback(surahNo, ayahNo, cacheKey);
+      }
       console.error(`Error fetching English translation for ${surahNo}:${ayahNo}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fallback to Quran.com API for single ayah translation
+   * @param {number} surahNo - Surah number
+   * @param {number} ayahNo - Ayah number
+   * @param {string} cacheKey - Cache key
+   * @returns {Promise<string>} Translation text
+   */
+  async _getQuranComAyahFallback(surahNo, ayahNo, cacheKey) {
+    try {
+      // Use Quran.com API translation ID 131 (Sahih International)
+      const verseKey = `${surahNo}:${ayahNo}`;
+      const response = await fetch(
+        `https://api.quran.com/api/v4/verses/by_key/${verseKey}?translations=131&fields=text_uthmani,translations`
+      );
+      if (!response.ok) {
+        throw new Error(`Quran.com API error: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      // Get the translation text
+      const translation = data.verse?.translations?.[0]?.text || '';
+      
+      // Cache the result
+      if (translation) {
+        this.setCachedData(cacheKey, translation);
+      }
+      return translation;
+    } catch (error) {
+      console.error(`Error fetching Quran.com fallback for ${surahNo}:${ayahNo}:`, error);
       throw error;
     }
   }
@@ -222,7 +260,66 @@ class EnglishTranslationService {
       this.setCachedData(cacheKey, translations);
       return translations;
     } catch (error) {
+      // If API returns 503 (database not available), try Quran.com fallback
+      if (error.message?.includes('503') || error.message?.includes('database not available')) {
+        console.warn(`⚠️ English database not available, using Quran.com fallback for surah ${surahNo}`);
+        return await this._getQuranComFallback(surahNo, cacheKey);
+      }
       console.error(`Error fetching English surah translations for ${surahNo}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fallback to Quran.com API for English translations
+   * @param {number} surahNo - Surah number
+   * @param {string} cacheKey - Cache key
+   * @returns {Promise<Array>} Array of translation objects
+   */
+  async _getQuranComFallback(surahNo, cacheKey) {
+    try {
+      // Get chapter info first to get verse count
+      const chapterResponse = await fetch(`https://api.quran.com/api/v4/chapters/${surahNo}`);
+      if (!chapterResponse.ok) {
+        throw new Error(`Quran.com API error: ${chapterResponse.status}`);
+      }
+      const chapterData = await chapterResponse.json();
+      const verseCount = chapterData.chapter?.verses_count || 0;
+      
+      // Fetch all verses for the surah using verses endpoint
+      const translations = [];
+      for (let verseNum = 1; verseNum <= verseCount; verseNum++) {
+        try {
+          const verseKey = `${surahNo}:${verseNum}`;
+          const verseResponse = await fetch(
+            `https://api.quran.com/api/v4/verses/by_key/${verseKey}?translations=131&fields=text_uthmani,translations`
+          );
+          if (verseResponse.ok) {
+            const verseData = await verseResponse.json();
+            const translation = verseData.verse?.translations?.[0]?.text || '';
+            translations.push({
+              number: verseNum,
+              ArabicText: '',
+              Translation: translation
+            });
+          }
+        } catch (verseError) {
+          // Continue with next verse if one fails
+          translations.push({
+            number: verseNum,
+            ArabicText: '',
+            Translation: ''
+          });
+        }
+      }
+      
+      // Cache the result
+      if (translations.length > 0) {
+        this.setCachedData(cacheKey, translations);
+      }
+      return translations;
+    } catch (error) {
+      console.error(`Error fetching Quran.com fallback for surah ${surahNo}:`, error);
       throw error;
     }
   }

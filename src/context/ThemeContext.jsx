@@ -24,20 +24,33 @@ export const ThemeProvider = ({ children }) => {
   
   const [translationFontSize, setTranslationFontSize] = useState(() => {
     const savedTranslationFontSize = localStorage.getItem("translationFontSize");
-    return savedTranslationFontSize ? parseInt(savedTranslationFontSize) : 17;
+    const fontSize = savedTranslationFontSize ? parseInt(savedTranslationFontSize) : 17;
+    // Ensure font size doesn't exceed maximum of 19
+    return Math.min(19, Math.max(10, fontSize));
   });
 
   const [viewType, setViewType] = useState(() => {
     const savedViewType = localStorage.getItem("viewType");
-    return savedViewType || "Ayah Wise";
+    // Valid view types
+    const validViewTypes = ['Ayah Wise', 'Block Wise'];
+    // Default to Ayah Wise if no saved value or invalid value
+    if (!savedViewType || !validViewTypes.includes(savedViewType)) {
+      return "Ayah Wise";
+    }
+    return savedViewType;
   });
 
   // Selected translation language for APIs (Malayalam default)
   // Store API code variants: 'mal' for Malayalam, 'E' for English, 'ta' for Tamil, 'bn' for Bangla
   const [translationLanguage, setTranslationLanguage] = useState(() => {
     const savedLang = localStorage.getItem("translationLanguage");
-    // Backward compatible default to Malayalam
-    return savedLang || "mal";
+    // Valid language codes
+    const validLanguages = ['mal', 'E', 'ta', 'bn', 'ur', 'hi'];
+    // Default to Malayalam if no saved value or invalid value
+    if (!savedLang || !validLanguages.includes(savedLang)) {
+      return "mal";
+    }
+    return savedLang;
   });
 
   // Apply theme to document
@@ -62,7 +75,12 @@ export const ThemeProvider = ({ children }) => {
   }, [fontSize]);
 
   useEffect(() => {
-    localStorage.setItem("translationFontSize", translationFontSize.toString());
+    // Ensure font size doesn't exceed maximum of 19 before saving
+    const clampedSize = Math.min(19, Math.max(10, translationFontSize));
+    if (clampedSize !== translationFontSize) {
+      setTranslationFontSize(clampedSize);
+    }
+    localStorage.setItem("translationFontSize", clampedSize.toString());
   }, [translationFontSize]);
 
   useEffect(() => {

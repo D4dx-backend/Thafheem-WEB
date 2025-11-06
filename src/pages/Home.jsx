@@ -70,10 +70,10 @@ const Home = () => {
     <>
       {/* <HomepageNavbar /> */}
       <HomepageSearch />
-      <div className=" mx-auto bg-white dark:bg-gray-900 min-h-screen">
-        <div className="max-w-[1290px] w-full mx-auto px-2 sm:px-4">
+      <div className="w-full mx-auto bg-white dark:bg-gray-900 min-h-screen">
+        <div className="max-w-[1290px] w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
           {/* Header Tabs */}
-          <div className="border-b border-gray-200 dark:border-gray-700">
+          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex overflow-x-auto">
               <button
                 onClick={() => navigate("/")}
@@ -99,7 +99,7 @@ const Home = () => {
           </div>
 
           {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 py-4 sm:py-6">
             {loading ? (
               // Loading skeleton
               Array.from({ length: 6 }).map((_, index) => (
@@ -143,9 +143,9 @@ const Home = () => {
                 <div
                   key={surah.number}
                   onClick={(e) => handleSurahClick(surah.number, e)}
-                  className="w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+                  className="group w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
                      rounded-xl px-4 py-3 sm:py-0 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
-                     flex items-center hover:border-cyan-500 dark:hover:border-cyan-400"
+                     flex items-center hover:border-[#3FA5C0]"
                 >
                   {/* Left: number + name + small meta */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -157,7 +157,7 @@ const Home = () => {
 
                     {/* Name + meta column */}
                     <div className="flex flex-col justify-center min-w-0">
-                      <h3 className="text-base sm:text-[16px] font-semibold text-gray-900 dark:text-white truncate font-poppins">
+                      <h3 className="text-base sm:text-[16px] font-semibold text-gray-900 dark:text-white truncate font-poppins transition-colors duration-200 group-hover:text-[#3FA5C0]">
                         {surah.name}
                       </h3>
 
@@ -178,7 +178,7 @@ const Home = () => {
                   {/* Right: Arabic title */}
                   <div className="ml-auto text-right" dir="rtl">
                     <h3
-                      className="text-lg sm:text-[30px] font-normal text-gray-900 dark:text-white"
+                      className="text-lg sm:text-[30px] font-normal text-gray-900 dark:text-white transition-colors duration-200 group-hover:text-[#3FA5C0]"
                       style={{ fontFamily: "SuraName, Amiri, serif" }}
                     >
                       {surahNameUnicodes[surah.number]

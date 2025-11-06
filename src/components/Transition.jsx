@@ -261,19 +261,19 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-3 sm:px-4 sticky top-[56px] z-[60]">
+    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-2 sm:px-4 sticky top-[56px] z-[60]">
       <div className="max-w-none w-full mx-0 py-1">
-        <div className="flex items-center justify-between ">
+        <div className="flex items-center justify-between gap-1 sm:gap-2">
         {/* Left Section - Chapter Selector */}
-        <div className="flex items-center ml-2 sm:ml-4">
+        <div className="flex items-center flex-shrink-0 ml-[17px] sm:ml-[21px]">
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 px-2 py-1 text-gray-700 dark:text-white  rounded-lg transition-colors"
+              className="flex items-center space-x-1 sm:space-x-2 px-1.5 sm:px-2 py-1 text-gray-700 dark:text-white rounded-lg transition-colors"
             >
-              <span className="font-medium text-sm">{selectedSurah.name}</span>
+              <span className="font-medium text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{selectedSurah.name}</span>
               {surahIcon}
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
             </button>
 
             {isDropdownOpen && (
@@ -290,7 +290,7 @@ const Transition = ({ showPageInfo = false }) => {
 
         {/* Center Section - Translation/Reading Toggle - Only show on surah, reading, and blockwise pages */}
         {(location.pathname.startsWith('/surah') || location.pathname.startsWith('/reading') || location.pathname.startsWith('/blockwise')) && (
-          <div className="absolute left-1/2 transform -translate-x-1/2">
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex-shrink-0">
             {/* Desktop Translation/Reading Toggle */}
             <div className="hidden sm:flex">
               <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
@@ -333,8 +333,8 @@ const Transition = ({ showPageInfo = false }) => {
 
             {/* Mobile Translation/Reading Toggle */}
             <div className="sm:hidden">
-              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-1">
-                <div className="flex items-center">
+              <div className="bg-gray-100 dark:bg-[#323A3F] rounded-full p-0.5">
+                <div className="flex items-center gap-0.5">
                   <button
                     onClick={() => {
                       const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
@@ -342,14 +342,14 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/surah/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-1 px-3 py-2.5 rounded-full text-xs font-medium min-h-[36px] transition-colors ${
+                    className={`flex items-center space-x-0.5 px-2 py-2 rounded-full text-[10px] font-medium min-h-[32px] transition-colors ${
                       location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
                     }`}
                   >
-                    <LibraryBig className="w-3 h-3" />
-                    <span className="text-xs font-poppins">Translation</span>
+                    <LibraryBig className="w-2.5 h-2.5" />
+                    <span className="text-[10px] font-poppins whitespace-nowrap">Translation</span>
                   </button>
                   <button
                     onClick={() => {
@@ -358,14 +358,14 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/reading/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-1 px-3 py-2.5 rounded-full text-xs font-medium min-h-[36px] transition-colors ${
+                    className={`flex items-center space-x-0.5 px-2 py-2 rounded-full text-[10px] font-medium min-h-[32px] transition-colors ${
                       location.pathname.startsWith('/reading')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
                     }`}
                   >
-                    <Notebook className="w-3 h-3" />
-                    <span className="text-xs font-poppins">Reading</span>
+                    <Notebook className="w-2.5 h-2.5" />
+                    <span className="text-[10px] font-poppins whitespace-nowrap">Reading</span>
                   </button>
                 </div>
               </div>
@@ -375,7 +375,7 @@ const Transition = ({ showPageInfo = false }) => {
 
 
         {/* Right Section - Surah info on the right, optional Juz/Hizb */}
-        <div className="flex items-center justify-end space-x-2 mr-2 sm:mr-4">
+        <div className="flex items-center justify-end space-x-1 sm:space-x-2 mr-1 sm:mr-4 flex-shrink-0">
           {showPageInfo ? (
             <div className="hidden sm:flex items-center text-sm text-gray-500">
               <span>Juz 1 | Hizb 1</span>

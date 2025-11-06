@@ -18,8 +18,22 @@ import {
   ARTICLES_API,
   AYA_TRANSLATION_API,
   LEGACY_TFH_BASE,
+  WORD_MEANINGS_API,
 } from "./apis";
 
+// Session-level tracking to reduce console noise
+const apiAvailabilityState = {
+  thafheemApiUnavailable: false,
+  warningsLogged: new Set(),
+};
+
+// Helper function to log warnings only once per session
+const logWarningOnce = (key, message, ...args) => {
+  if (!apiAvailabilityState.warningsLogged.has(key)) {
+    apiAvailabilityState.warningsLogged.add(key);
+    console.warn(message, ...args);
+  }
+};
 
 // Helper function to add timeout to fetch requests
 const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
@@ -60,81 +74,156 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 };
 
 // (duplicate import block removed)
-export const fetchAyaTranslation = async (surahId, range, language = 'mal') => {
+export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 2) => {
   // Malayalam uses legacy base; others use new backend
   const isMalayalam = !language || language === 'mal';
   const base = isMalayalam ? LEGACY_TFH_BASE : API_BASE_URL;
   const langSuffix = isMalayalam ? '' : `/${language}`;
   const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
   
-  try {
-    const response = await fetchWithTimeout(url, {}, 8000);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  // Increase timeout for block translations (15 seconds)
+  const timeout = 15000;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, {}, timeout);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      const isLastAttempt = attempt === retries;
+      const isTimeout = error.message?.includes('timeout');
+      
+      // Only log errors on the last attempt or if not a timeout (to reduce spam)
+      if (isLastAttempt || !isTimeout) {
+        console.error(`Error fetching translation for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
+      }
+      
+      if (isLastAttempt) {
+        throw error;
+      }
+      
+      // Exponential backoff: wait 1s, then 2s before retries
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`Error fetching translation for ${surahId}:${range}${language ? ':' + language : ''}:`, error.message);
-    throw error;
   }
 };
 export const fetchSurahs = async () => {
   try {
-    // Fetching surahs from API
+    // Skip Thafheem API if endpoint doesn't exist (default prod backend)
+    const shouldSkipThafheemAPI = !import.meta.env.VITE_API_BASE_URL && 
+                                   !import.meta.env.DEV && 
+                                   SURA_NAMES_API.includes('thafheemapi.thafheem.net');
+    
+    let surahResponse = null;
+    let surahData = null;
+    
+    if (!shouldSkipThafheemAPI) {
+      try {
+        // Fetch both surah names and page ranges to get accurate ayah counts
+        surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 8000);
+        
+        // Check if response is HTML (likely 404 error page)
+        const contentType = surahResponse.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error('Received HTML response, endpoint likely unavailable');
+        }
+        
+        if (!surahResponse.ok) {
+          throw new Error(`HTTP error! status: ${surahResponse.status}`);
+        }
+        
+        surahData = await surahResponse.json();
+        // Reset availability state on success
+        apiAvailabilityState.thafheemApiUnavailable = false;
+      } catch (apiError) {
+        // If API fails, fall through to Quran.com fallback below
+        apiAvailabilityState.thafheemApiUnavailable = true;
+        logWarningOnce(
+          'surahs-api-unavailable',
+          '⚠️ Thafheem API unavailable, using fallback.',
+          apiError.message
+        );
+        surahResponse = null;
+      }
+    }
+    
+    // If we got data from API, use it; otherwise fallback
+    if (surahData && Array.isArray(surahData) && surahData.length > 0) {
+      const pageRangesResponse = await fetchPageRanges().catch(() => []); // Don't fail if page ranges unavailable
 
-    // Fetch both surah names and page ranges to get accurate ayah counts
-    const [surahResponse, pageRangesResponse] = await Promise.all([
-      fetchWithTimeout(SURA_NAMES_API, {}, 8000),
-      fetchPageRanges().catch(() => []), // Don't fail if page ranges unavailable
-    ]);
+      // Create a function to get accurate ayah count from page ranges
+      const getAyahCountFromPageRanges = (surahId, pageRanges) => {
+        const surahRanges = pageRanges.filter(
+          (range) => range.SuraId === surahId
+        );
+        if (surahRanges.length === 0) return null;
 
-    if (!surahResponse.ok) {
-      throw new Error(`HTTP error! status: ${surahResponse.status}`);
+        // Find the maximum ayato value for this surah
+        return Math.max(...surahRanges.map((range) => range.ayato));
+      };
+
+      const result = surahData.map((surah) => {
+        // Get ayah count from page ranges API if available, otherwise use original data
+        const ayahCountFromPageRanges = getAyahCountFromPageRanges(
+          surah.SuraID,
+          pageRangesResponse
+        );
+        const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
+
+        return {
+          number: surah.SuraID,
+          arabic: surah.ASuraName?.trim(),
+          name: surah.ESuraName?.trim(),
+          ayahs: ayahCount,
+          type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
+        };
+      });
+
+      // Successfully fetched surahs with accurate ayah counts
+      return result;
     }
 
-    const surahData = await surahResponse.json();
-
-    // Create a function to get accurate ayah count from page ranges
-    const getAyahCountFromPageRanges = (surahId, pageRanges) => {
-      const surahRanges = pageRanges.filter(
-        (range) => range.SuraId === surahId
-      );
-      if (surahRanges.length === 0) return null;
-
-      // Find the maximum ayato value for this surah
-      return Math.max(...surahRanges.map((range) => range.ayato));
-    };
-
-    const result = surahData.map((surah) => {
-      // Get ayah count from page ranges API if available, otherwise use original data
-      const ayahCountFromPageRanges = getAyahCountFromPageRanges(
-        surah.SuraID,
-        pageRangesResponse
-      );
-      const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
-
-      return {
-        number: surah.SuraID,
-        arabic: surah.ASuraName?.trim(),
-        name: surah.ESuraName?.trim(),
-        ayahs: ayahCount,
-        type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
-      };
-    });
-
-    // Successfully fetched surahs with accurate ayah counts
-    return result;
-  } catch (error) {
-
-    console.warn('Failed to fetch surahs from Thafheem API, trying fallback');
-    
-    // Try Quran.com API as fallback
+    // Fallback to Quran.com API
+    logWarningOnce(
+      'surahs-fallback',
+      '📡 Using Quran.com API as fallback for surah data'
+    );
     try {
-      const fallbackResponse = await fetchWithTimeout(`${QURAN_API_BASE_URL}/chapters`, {}, 8000);
+      const fallbackResponse = await fetchWithTimeout(
+        `${QURAN_API_BASE_URL}/chapters`,
+        {},
+        8000
+      );
 
-    console.warn(
-      "Failed to fetch surahs from Thafheem API, trying Quran.com fallback:",
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        const result = fallbackData.chapters.map((chapter) => ({
+          number: chapter.id,
+          arabic: chapter.name_arabic,
+          name: chapter.name_simple,
+          ayahs: chapter.verses_count,
+          type: chapter.revelation_place === "makkah" ? "Makki" : "Madani",
+        }));
+
+        // Successfully fetched surahs from Quran.com fallback API
+        return result;
+      }
+    } catch (fallbackError) {
+      logWarningOnce(
+        'surahs-fallback-failed',
+        '❌ Quran.com fallback also failed:',
+        fallbackError.message
+      );
+    }
+  } catch (error) {
+    logWarningOnce(
+      'surahs-error',
+      '⚠️ Error fetching surahs, trying fallback:',
       error.message
     );
 
@@ -160,12 +249,20 @@ export const fetchSurahs = async () => {
         return result;
       }
     } catch (fallbackError) {
-      console.warn('Quran.com fallback also failed:', fallbackError.message);
+      logWarningOnce(
+        'surahs-fallback-error',
+        '❌ Quran.com fallback also failed:',
+        fallbackError.message
+      );
     }
-    
-    // Return comprehensive fallback data when all APIs are unavailable
-    console.warn('Using comprehensive hardcoded fallback data for all 114 Surahs');
-    return [
+  }
+  
+  // Return comprehensive fallback data when all APIs are unavailable
+  logWarningOnce(
+    'surahs-hardcoded-fallback',
+    '📋 Using hardcoded fallback data for all 114 Surahs'
+  );
+  return [
       { number: 1, arabic: "الفاتحة", name: "Al-Fatiha", ayahs: 7, type: "Makki" },
       { number: 2, arabic: "البقرة", name: "Al-Baqarah", ayahs: 286, type: "Madani" },
       { number: 3, arabic: "آل عمران", name: "Ali 'Imran", ayahs: 200, type: "Madani" },
@@ -280,18 +377,10 @@ export const fetchSurahs = async () => {
       { number: 112, arabic: "الإخلاص", name: "Al-Ikhlas", ayahs: 4, type: "Makki" },
       { number: 113, arabic: "الفلق", name: "Al-Falaq", ayahs: 5, type: "Makki" },
       { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" }
-    ]
-        // Successfully fetched surahs from Quran.com fallback API
-        return result;
-      }
-     catch (fallbackError) {
-      console.warn("Quran.com fallback also failed:", fallbackError.message);
-    }
-
+    ];
+    
     // Return comprehensive fallback data when all APIs are unavailable
-    console.warn(
-      "Using comprehensive hardcoded fallback data for all 114 Surahs"
-    );
+    console.warn('Using comprehensive hardcoded fallback data for all 114 Surahs');
     return [
       {
         number: 1,
@@ -952,10 +1041,8 @@ export const fetchSurahs = async () => {
         ayahs: 5,
         type: "Makki",
       },
-      { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" },
-
+      { number: 114, arabic: "الناس", name: "An-Nas", ayahs: 6, type: "Makki" }
     ];
-  }
 };
 
 /**
@@ -977,57 +1064,13 @@ export const listSurahNames = async () => {
     }));
     return result;
   } catch (error) {
-    console.warn('Failed to fetch surah names from Thafheem API, trying Quran.com fallback:', error.message);
-    
-    // Try Quran.com API as fallback
-    try {
-      const fallbackResponse = await fetchWithTimeout(`${QURAN_API_BASE_URL}/chapters`, {}, 8000);
-
-    // Fetch both surah names and page ranges to get accurate ayah counts
-    const [surahResponse, pageRangesResponse] = await Promise.all([
-      fetchWithTimeout(SURA_NAMES_API, {}, 8000),
-      fetchPageRanges().catch(() => []), // Don't fail if page ranges unavailable
-    ]);
-
-    if (!surahResponse.ok) {
-      throw new Error(`HTTP error! status: ${surahResponse.status}`);
-    }
-
-    const data = await surahResponse.json();
-
-    // Create a function to get accurate ayah count from page ranges
-    const getAyahCountFromPageRanges = (surahId, pageRanges) => {
-      const surahRanges = pageRanges.filter(
-        (range) => range.SuraId === surahId
-      );
-      if (surahRanges.length === 0) return null;
-
-      // Find the maximum ayato value for this surah
-      return Math.max(...surahRanges.map((range) => range.ayato));
-    };
-
-    const result = data.map((surah) => {
-      // Get ayah count from page ranges API if available, otherwise use original data
-      const ayahCountFromPageRanges = getAyahCountFromPageRanges(
-        surah.SuraID,
-        pageRangesResponse
-      );
-      const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
-
-      return {
-        id: surah.SuraID,
-        arabic: surah.ASuraName?.trim(),
-        english: surah.ESuraName?.trim(),
-        ayahs: ayahCount,
-      };
-    });
-    return result;
-  } catch (error) {
-    console.warn(
-      "Failed to fetch surah names from Thafheem API, trying Quran.com fallback:",
+    apiAvailabilityState.thafheemApiUnavailable = true;
+    logWarningOnce(
+      'surah-names-api-unavailable',
+      '⚠️ Thafheem API unavailable for surah names, using fallback',
       error.message
     );
-
+    
     // Try Quran.com API as fallback
     try {
       const fallbackResponse = await fetchWithTimeout(
@@ -1045,15 +1088,21 @@ export const listSurahNames = async () => {
           ayahs: chapter.verses_count,
         }));
     
-        console.log("✅ Successfully fetched surah names from Quran.com fallback API");
         return result;
       }
     } catch (fallbackError) {
-      console.warn("⚠️ Quran.com fallback also failed:", fallbackError.message);
+      logWarningOnce(
+        'surah-names-fallback-failed',
+        '❌ Quran.com fallback also failed for surah names:',
+        fallbackError.message
+      );
     }
     
-    // 🧩 Return basic fallback data when all APIs are unavailable
-    console.warn("🚨 Using hardcoded fallback data for surah names");
+    // Return basic fallback data when all APIs are unavailable
+    logWarningOnce(
+      'surah-names-hardcoded-fallback',
+      '📋 Using hardcoded fallback data for surah names'
+    );
     return [
       { id: 1, arabic: "الفاتحة", english: "Al-Fatiha", ayahs: 7 },
       { id: 2, arabic: "البقرة", english: "Al-Baqarah", ayahs: 286 },
@@ -1066,25 +1115,8 @@ export const listSurahNames = async () => {
       { id: 9, arabic: "التوبة", english: "At-Tawbah", ayahs: 129 },
       { id: 10, arabic: "يونس", english: "Yunus", ayahs: 109 },
     ];
-    
-    // Return basic fallback data when all APIs are unavailable
-    // console.warn("Using hardcoded fallback data for surah names");
-    // return [
-    //   { id: 1, arabic: "الفاتحة", english: "Al-Fatiha", ayahs: 7 },
-    //   { id: 2, arabic: "البقرة", english: "Al-Baqarah", ayahs: 286 },
-    //   { id: 3, arabic: "آل عمران", english: "Ali 'Imran", ayahs: 200 },
-    //   { id: 4, arabic: "النساء", english: "An-Nisa", ayahs: 176 },
-    //   { id: 5, arabic: "المائدة", english: "Al-Ma'idah", ayahs: 120 },
-    //   { id: 6, arabic: "الأنعام", english: "Al-An'am", ayahs: 165 },
-    //   { id: 7, arabic: "الأعراف", english: "Al-A'raf", ayahs: 206 },
-    //   { id: 8, arabic: "الأنفال", english: "Al-Anfal", ayahs: 75 },
-    //   { id: 9, arabic: "التوبة", english: "At-Tawbah", ayahs: 129 },
-    //   { id: 10, arabic: "يونس", english: "Yunus", ayahs: 109 },
-
-    // ];
   }
 };
-}
 /**
  * Get a single surah's names by id
  * Returns: { id, arabic, english } | null
@@ -1121,19 +1153,33 @@ export const fetchPageRanges = async () => {
     }
     // Try fetching all ranges via dev proxy (rewritten by Vite)
     const response = await fetchWithTimeout(`${PAGE_RANGES_API}/all`, {}, 8000);
+    
+    // Double-check content type before parsing (fetchWithTimeout should catch this, but be safe)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      throw new Error('Received HTML response instead of JSON - endpoint likely unavailable');
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-
-    console.warn('Failed to fetch page ranges from Thafheem API:', error.message);
-
-    console.warn(
-      "Failed to fetch page ranges from Thafheem API:",
-      error.message
-    );
+      // Handle HTML parsing errors specifically
+      if (error.message?.includes('HTML') || error.message?.includes('Unexpected token')) {
+        logWarningOnce(
+          'page-ranges-html',
+          '⚠️ Page ranges API returned HTML (likely CORS/404), using empty array'
+        );
+      } else {
+        logWarningOnce(
+          'page-ranges-api-unavailable',
+          '⚠️ Page ranges API unavailable:',
+          error.message
+        );
+      }
     // Return empty array when API is unavailable
     return [];
   }
@@ -1151,7 +1197,11 @@ export const fetchPageRangeByPageId = async (pageId) => {
     if (Array.isArray(data) && data.length > 0) return data[0];
     return null;
   } catch (error) {
-    console.warn('Failed to fetch page range by pageId:', error.message);
+    logWarningOnce(
+      'page-range-by-id-unavailable',
+      '⚠️ Failed to fetch page range by pageId:',
+      error.message
+    );
     return null;
   }
 };
@@ -1188,20 +1238,32 @@ export const fetchJuzData = async () => {
     // 🧩 Fetch both APIs concurrently, but handle failures gracefully
     const [pageRangesData, surahsData] = await Promise.allSettled([
       fetchPageRanges().catch((error) => {
-        console.warn("⚠️ Failed to fetch page ranges:", error.message);
+        // Handle HTML response errors (CORS/404 pages)
+        if (error.message?.includes('HTML') || error.message?.includes('Unexpected token')) {
+          console.warn("⚠️ Page ranges API returned HTML (likely CORS/404), skipping");
+        } else {
+          console.warn("⚠️ Failed to fetch page ranges:", error.message);
+        }
         return []; // Return empty array on failure
       }),
       fetchSurahs().catch((error) => {
-        console.warn("⚠️ Failed to fetch surahs:", error.message);
+        // Handle HTML response errors
+        if (error.message?.includes('HTML') || error.message?.includes('Unexpected token')) {
+          console.warn("⚠️ Surahs API returned HTML (likely CORS/404), using fallback");
+        } else {
+          console.warn("⚠️ Failed to fetch surahs:", error.message);
+        }
         return []; // Return empty array on failure
       }),
     ]);
 
     // ✅ Extract the actual data from Promise.allSettled results
-    const pageRanges =
-      pageRangesData.status === "fulfilled" ? pageRangesData.value : [];
-    const surahs =
-      surahsData.status === "fulfilled" ? surahsData.value : [];
+    let pageRanges = pageRangesData.status === "fulfilled" ? pageRangesData.value : [];
+    let surahs = surahsData.status === "fulfilled" ? surahsData.value : [];
+    
+    // Ensure arrays are valid (not HTML strings)
+    if (!Array.isArray(pageRanges)) pageRanges = [];
+    if (!Array.isArray(surahs)) surahs = [];
 
     // 🕌 Create surah names mapping
     const surahNamesMap = {};
@@ -1577,10 +1639,9 @@ export const fetchThafheemPreface = async (suraId) => {
 
 // Fetch ayah ranges for block-based reading structure
 export const fetchAyaRanges = async (surahId, language = 'mal') => {
-  // Malayalam uses legacy base; others use new backend
-  const isMalayalam = !language || language === 'mal';
-  const base = isMalayalam ? LEGACY_TFH_BASE : API_BASE_URL;
-  const langSuffix = isMalayalam ? '' : `/${language}`;
+  // All languages use legacy base for ayaranges endpoint
+  const base = LEGACY_TFH_BASE;
+  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
   const response = await fetch(`${base}/ayaranges/${surahId}${langSuffix}`);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1705,7 +1766,8 @@ export const fetchWordByWordMeaning = async (
 
 // Fetch word meanings from Thafheem API
 export const fetchThafheemWordMeanings = async (surahId, verseId) => {
-  const url = `${API_BASE_URL}/wordmeanings/${surahId}/${verseId}`;
+  // Use legacy API for word meanings
+  const url = `${WORD_MEANINGS_API}/${surahId}/${verseId}`;
 
   try {
     const response = await fetch(url);
@@ -3059,9 +3121,10 @@ export const fetchWordMeanings = async (
   language = "E"
 ) => {
   try {
+    // Use legacy API for word meanings
     const url = language
-      ? `${API_BASE_URL}/wordmeanings/${surahId}/${ayahNumber}/${language}`
-      : `${API_BASE_URL}/wordmeanings/${surahId}/${ayahNumber}`;
+      ? `${WORD_MEANINGS_API}/${surahId}/${ayahNumber}/${language}`
+      : `${WORD_MEANINGS_API}/${surahId}/${ayahNumber}`;
 
     console.log("Fetching word meanings from:", url);
     const response = await fetchWithTimeout(url, {}, 8000);

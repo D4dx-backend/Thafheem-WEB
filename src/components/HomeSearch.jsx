@@ -282,7 +282,7 @@ const HomepageSearch = () => {
           <img
             src={banner}
             alt="Banner"
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain rounded-xl"
           />
         </a>
       </div>

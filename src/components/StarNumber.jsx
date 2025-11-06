@@ -37,7 +37,7 @@ const StarNumber = ({
         className={`${
           isHighlighted
             ? "fill-[#2c3e50]"
-            : "fill-[#EBEEF0] dark:fill-[#323A3F]"
+            : "fill-[#EBEEF0] dark:fill-[#323A3F] group-hover:fill-[#3FA5C0] transition-colors duration-200"
         }`}
       />
 
@@ -52,7 +52,7 @@ const StarNumber = ({
         className={`${
           isHighlighted
             ? "fill-white"
-            : "fill-black dark:fill-white"
+            : "fill-black dark:fill-white group-hover:fill-white transition-colors duration-200"
         }`}
       >
         {number}

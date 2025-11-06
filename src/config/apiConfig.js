@@ -5,7 +5,12 @@
 // Environment variables with defaults
 // Default to true (use API) - set VITE_USE_API=false to use SQL.js fallback
 const USE_API = import.meta.env.VITE_USE_API !== 'false';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// Default to remote API - only use localhost if explicitly set to localhost:5000
+// This allows the app to work with the remote API by default
+const isDevelopment = import.meta.env.DEV;
+const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+// If VITE_API_BASE_URL is explicitly set, use it; otherwise default to remote API
+const API_BASE_URL = envApiUrl || 'https://thafheemapi.thafheem.net';
 const CACHE_ENABLED = import.meta.env.VITE_CACHE_ENABLED !== 'false'; // Default to true
 const CACHE_TTL = parseInt(import.meta.env.VITE_CACHE_TTL) || 300000; // 5 minutes default
 // API version

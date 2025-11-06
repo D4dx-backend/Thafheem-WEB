@@ -1653,14 +1653,14 @@ const Surah = () => {
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
-                    className="pt-5 sm:pt-7 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700 rounded-t-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
+                    className="pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
                     style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}
                     {/* Arabic Text */}
-                    <div className="text-right mb-2 sm:mb-3 lg:mb-4">
+                    <div className="text-right mb-1.5 sm:mb-2">
                       <p
-                        className="leading-loose dark:text-white text-gray-900 px-4 sm:px-6 md:px-8"
+                        className="leading-relaxed dark:text-white text-gray-900 px-4 sm:px-6 md:px-8"
                         style={{
                           fontFamily: quranFont,
                           fontSize: `${fontSize}px`,
@@ -1679,7 +1679,7 @@ const Surah = () => {
                     </div>
 
                     {/* Translation */}
-                    <div className="mb-2 sm:mb-3">
+                    <div className="text-left mb-1.5 sm:mb-2">
                       {translationLanguage === 'hi' ? (
                         <p
                           className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-hindi font-normal"

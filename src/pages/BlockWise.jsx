@@ -83,7 +83,7 @@ const BlockWise = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
-  const { quranFont, translationLanguage, theme } = useTheme();
+  const { quranFont, translationLanguage, theme, translationFontSize } = useTheme();
   const { surahId } = useParams();
   
   // Use cached surah data
@@ -668,7 +668,11 @@ const BlockWise = () => {
 
 
             } catch (error) {
-              console.error(`❌ BlockWise: Failed to load block ${range}:`, error.message);
+              // Only log timeout errors once (errors are already logged in fetchAyaTranslation with retry info)
+              // This reduces console spam while still showing important errors
+              if (!error.message?.includes('timeout')) {
+                console.error(`❌ BlockWise: Failed to load block ${range}:`, error.message);
+              }
               
               // Remove from loading set even on error
               setLoadingBlocks(prev => {
@@ -679,6 +683,38 @@ const BlockWise = () => {
             }
           };
 
+          // REQUEST THROTTLING: Limit concurrent requests to prevent server overload
+          const MAX_CONCURRENT_REQUESTS = 3;
+          const requestQueue = [];
+          let activeRequests = 0;
+          
+          const processWithThrottle = async (block, blockIndex) => {
+            return new Promise((resolve) => {
+              const execute = async () => {
+                activeRequests++;
+                try {
+                  await processBlockTranslation(block, blockIndex);
+                } catch (error) {
+                  // Error already handled in processBlockTranslation
+                } finally {
+                  activeRequests--;
+                  // Process next item in queue
+                  if (requestQueue.length > 0) {
+                    const next = requestQueue.shift();
+                    next();
+                  }
+                  resolve();
+                }
+              };
+              
+              if (activeRequests < MAX_CONCURRENT_REQUESTS) {
+                execute();
+              } else {
+                requestQueue.push(execute);
+              }
+            });
+          };
+          
           // VIEWPORT-BASED LOADING: Load visible blocks first, then background
           const prioritizeBlocks = (blocks) => {
             // First 2 blocks are likely visible (above the fold)
@@ -690,19 +726,19 @@ const BlockWise = () => {
           
           const { visibleBlocks, backgroundBlocks } = prioritizeBlocks(ayaRangesResponse);
           
-          // Load visible blocks first (high priority)
+          // Load visible blocks first (high priority) - no throttling for initial load
           const visiblePromises = visibleBlocks.map((block, index) => processBlockTranslation(block, index));
           
-          // Load background blocks after a short delay (low priority)
+          // Load background blocks with throttling and staggered delays (low priority)
           setTimeout(() => {
-            const backgroundPromises = backgroundBlocks.map((block, index) => 
-              processBlockTranslation(block, index + visibleBlocks.length)
-            );
-            
-            Promise.allSettled(backgroundPromises).then((results) => {
-              const successful = results.filter(r => r.status === 'fulfilled').length;
+            // Process background blocks with throttling and staggered delays
+            backgroundBlocks.forEach((block, index) => {
+              // Stagger requests: 200ms delay between starting each batch
+              setTimeout(() => {
+                processWithThrottle(block, index + visibleBlocks.length);
+              }, 200 * Math.floor(index / MAX_CONCURRENT_REQUESTS));
             });
-          }, 100); // 100ms delay for background loading
+          }, 500); // 500ms delay before starting background loading
           
           // Monitor visible loading completion
           Promise.allSettled(visiblePromises).then((results) => {
@@ -1048,19 +1084,19 @@ const BlockWise = () => {
                 return (
                   <div
                     key={`block-${blockId}-${start}-${end}`}
-                    className="rounded-xl mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
+                    className="rounded-xl mb-3 sm:mb-4 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                   >
-                    <div className="px-3 sm:px-4 pt-3 sm:pt-4 flex items-center justify-between">
+                    <div className="px-3 sm:px-4 pt-2 sm:pt-3 flex items-center justify-between">
                       <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium">
                         Block {blockIndex + 1}: Ayahs {start}
                         {end && end !== start ? `-${end}` : ""}
                       </span>
                     </div>
 
-                    <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
-                        style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-relaxed text-right text-gray-900 dark:text-white"
+                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl' }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -1074,16 +1110,19 @@ const BlockWise = () => {
                     </div>
 
                     {/* Translation Text for this block */}
-                    <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
+                    <div className="px-4 sm:px-6 md:px-8 pb-2 sm:pb-3">
                       {translationData ? (
-                        <div className={`text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base ${
-                          translationLanguage === 'hi' ? 'font-hindi' :
-                          translationLanguage === 'ur' ? 'font-urdu' :
-                          translationLanguage === 'bn' ? 'font-bengali' :
-                          translationLanguage === 'ta' ? 'font-tamil' :
-                          translationLanguage === 'mal' ? 'font-malayalam' :
-                          'font-poppins'
-                        }`}>
+                        <div 
+                          className={`text-gray-700 dark:text-white leading-relaxed text-left ${
+                            translationLanguage === 'hi' ? 'font-hindi' :
+                            translationLanguage === 'ur' ? 'font-urdu' :
+                            translationLanguage === 'bn' ? 'font-bengali' :
+                            translationLanguage === 'ta' ? 'font-tamil' :
+                            translationLanguage === 'mal' ? 'font-malayalam' :
+                            'font-poppins'
+                          }`}
+                          style={{ fontSize: `${translationFontSize}px` }}
+                        >
                           {/* Render translation text with HTML and clickable interpretation numbers */}
                           {Array.isArray(translationData) && translationData.length > 0 ? (
                             translationData.map((item, idx) => {
@@ -1096,14 +1135,14 @@ const BlockWise = () => {
                               return (
                                 <div
                                   key={`translation-${blockId}-${idx}`}
-                                  className="text-justify leading-relaxed"
+                                  className="leading-relaxed"
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
                             })
                           ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
                             <div
-                              className="text-justify leading-relaxed"
+                              className="leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: parseTranslationWithClickableSup(
                                   translationData.TranslationText || translationData.translationText || translationData.text,
@@ -1123,7 +1162,7 @@ const BlockWise = () => {
                         </p>
                       )}
 
-                      <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-3 sm:pt-4">
+                      <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-2 sm:pt-3">
                         {/* Copy */}
                         <button
                           className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"

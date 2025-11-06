@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Sun,
@@ -11,7 +11,34 @@ import {
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
+// Helper function to convert language code to display name
+const getLanguageNameFromCode = (code) => {
+  const languageMap = {
+    'mal': 'Malayalam',
+    'E': 'English',
+    'hi': 'Hindi',
+    'bn': 'Bangla',
+    'ur': 'Urdu',
+    'ta': 'Tamil',
+  };
+  return languageMap[code] || 'Malayalam';
+};
+
+// Helper function to convert display name to language code
+const getLanguageCodeFromName = (name) => {
+  const codeMap = {
+    'Malayalam': 'mal',
+    'English': 'E',
+    'Hindi': 'hi',
+    'Bangla': 'bn',
+    'Urdu': 'ur',
+    'Tamil': 'ta',
+  };
+  return codeMap[name] || 'mal';
+};
+
 const Settings = ({ onClose }) => {
+
   const {
     theme: contextTheme,
     toggleTheme,
@@ -23,13 +50,34 @@ const Settings = ({ onClose }) => {
     setTranslationFontSize: setContextTranslationFontSize,
     viewType: contextViewType,
     setViewType: setContextViewType,
+    translationLanguage: contextTranslationLanguage,
+    setTranslationLanguage: setContextTranslationLanguage,
   } = useTheme();
+
   const [theme, setTheme] = useState(
     contextTheme === "dark" ? "Dark" : "Light"
   );
   const [quranFont, setQuranFont] = useState(contextQuranFont);
   const [fontSize, setFontSize] = useState(contextFontSize);
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(() => 
+    getLanguageNameFromCode(contextTranslationLanguage)
+  );
+
+  // Prevent body scroll when Settings is open
+  useEffect(() => {
+    // Disable body scroll
+    document.body.style.overflow = "hidden";
+    
+    // Cleanup: restore body scroll when component unmounts or closes
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Sync language state when translationLanguage changes externally
+  useEffect(() => {
+    setLanguage(getLanguageNameFromCode(contextTranslationLanguage));
+  }, [contextTranslationLanguage]);
   const [translationFontSize, setTranslationFontSize] = useState(
     contextTranslationFontSize
   );
@@ -37,23 +85,23 @@ const Settings = ({ onClose }) => {
   const [quranAudio, setQuranAudio] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [rhythm, setRhythm] = useState(1.0);
-  const [reciter, setReciter] = useState("Mishari Rashid Al-Afasy, The quran");
+  const [reciter, setReciter] = useState(() => {
+    const savedReciter = localStorage.getItem("reciter");
+    return savedReciter || "al-afasy";
+  });
 
   const languages = [
+    "Malayalam",
     "English",
-    "Arabic",
+    "Hindi",
+    "Bangla",
     "Urdu",
-    "French",
-    "Spanish",
-    "Turkish",
+    "Tamil",
   ];
   const reciters = [
-    "Mishari Rashid Al-Afasy, The quran",
-    "Abdul Basit Abdul Samad",
-    "Saad Al Ghamdi",
-    "Maher Al Mueaqly",
-    "Ahmed Al Ajamy",
-    "Yasser Al Dosari",
+    { value: "al-afasy", label: "Mishari Rashid al-`Afasy" },
+    { value: "al-ghamidi", label: "Saad Al Ghamidi" },
+    { value: "al-hudaify", label: "Al-Hudaify" },
   ];
 
   const handleReset = () => {
@@ -65,7 +113,8 @@ const Settings = ({ onClose }) => {
     setContextQuranFont("Amiri Quran");
     setFontSize(26);
     setContextFontSize(26);
-    setLanguage("English");
+    setLanguage("Malayalam");
+    setContextTranslationLanguage("mal");
     setTranslationFontSize(12);
     setContextTranslationFontSize(12);
     setViewType("Ayah Wise");
@@ -73,7 +122,8 @@ const Settings = ({ onClose }) => {
     setQuranAudio(true);
     setPlaybackSpeed(1.0);
     setRhythm(1.0);
-    setReciter("Mishari Rashid Al-Afasy, The quran");
+    setReciter("al-afasy");
+    localStorage.setItem("reciter", "al-afasy");
   };
 
   const handleSave = () => {
@@ -82,37 +132,44 @@ const Settings = ({ onClose }) => {
     setContextFontSize(fontSize);
     setContextTranslationFontSize(translationFontSize);
     setContextViewType(viewType);
+    // Save reciter to localStorage
+    localStorage.setItem("reciter", reciter);
     console.log("Settings saved");
     if (onClose) onClose();
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-[100] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins">
-      {/* Header */}
-      {/* <div className="flex items-center justify-between p-6 border-b border-gray-200 "> */}
-      <div className="flex items-center justify-between p-6 shadow-md">
-        <h2 className="text-2xl text-gray-900 dark:text-white">Settings</h2>
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X size={24} />
-        </button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[99]"
+        onClick={onClose}
+      ></div>
+      
+      {/* Settings Panel */}
+      <div className="fixed inset-y-0 right-0 z-[100] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 shadow-md border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-normal text-gray-900 dark:text-white">Settings</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-      {/* Content */}
-      <div className="flex-1  overflow-y-auto p-2">
-        <div className="space-y-10 max-w-4xl mx-auto">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-5">
           {/* Theme */}
-          {/* Theme */}
-
-          <div className="border-b border-gray-200 dark:border-black  pb-4 mb-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-normal text-gray-900 mb-3 dark:text-white">
               Theme
             </h3>
 
             {/* Wrapper */}
-            <div className="flex rounded-full bg-gray-100 p-1 dark:bg-gray-950 w-[287px] max-w-sm mx-auto">
+            <div className="flex rounded-full bg-gray-100 p-1 dark:bg-gray-950 w-full max-w-sm">
               {/* Light Button */}
               <button
                 onClick={() => {
@@ -152,12 +209,12 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* Quran Font */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-normal text-gray-900 dark:text-white mb-3">
               Quran Font
             </h3>
 
-            <div className="flex rounded-full bg-gray-100 dark:bg-gray-950 p-1 w-[287px] max-w-sm">
+            <div className="flex rounded-full bg-gray-100 dark:bg-gray-950 p-1 w-full max-w-sm">
               {/* ScheherazadeNew Button */}
               <button
                 onClick={() => setQuranFont("ScheherazadeNew-Regular")}
@@ -181,31 +238,19 @@ const Settings = ({ onClose }) => {
               >
                 Amiri Quran
               </button>
-
-              {/* Uthmani HAFS Button */}
-              <button
-                onClick={() => setQuranFont("UthmaniHAFS")}
-                className={`flex-1 px-4 py-2 rounded-full transition-all text-center text-sm font-medium ${
-                  quranFont === "UthmaniHAFS"
-                    ? "bg-white shadow text-gray-900 dark:bg-[#2A2C38] dark:text-white"
-                    : "text-gray-600 hover:text-gray-800 dark:text-white"
-                }`}
-              >
-                Uthmani HAFS
-              </button>
             </div>
           </div>
 
           {/* Font Size */}
-          <div>
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg text-gray-900 dark:text-white">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-normal text-gray-900 dark:text-white">
                 Font Size
               </h3>
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setFontSize(Math.max(12, fontSize - 1))}
-                  className="p-2  rounded-lg  transition-colors dark:text-white dark:border-0 "
+                  className="p-2 rounded-lg transition-colors dark:text-white dark:border-0 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Minus size={18} />
                 </button>
@@ -214,7 +259,7 @@ const Settings = ({ onClose }) => {
                 </span>
                 <button
                   onClick={() => setFontSize(Math.min(48, fontSize + 1))}
-                  className="p-2 bg-[#B3B3B3] rounded-full  transition-colors dark:bg-white dark:text-black dark:border-0 "
+                  className="p-2 bg-[#B3B3B3] rounded-full transition-colors dark:bg-white dark:text-black dark:border-0 hover:bg-[#999999]"
                 >
                   <Plus size={18} />
                 </button>
@@ -222,10 +267,10 @@ const Settings = ({ onClose }) => {
             </div>
 
             <div
-              className="mt-4 p-4 w-[310px] bg-gray-50 rounded-lg text-center dark:bg-gray-950 mx-auto"
+              className="p-3 w-full bg-gray-50 rounded-lg text-center dark:bg-gray-950 mt-3"
               style={{
                 fontSize: `${fontSize}px`,
-                fontFamily: quranFont === "UthmaniHAFS" ? "UthmaniHAFS" : quranFont,
+                fontFamily: quranFont,
                 direction: "rtl",
               }}
             >
@@ -239,16 +284,21 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* Language */}
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg text-gray-900 dark:text-white">Language</h3>
+          <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-normal text-gray-900 dark:text-white">Language</h3>
             <div className="relative flex items-center">
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="w-[98px] h-[32px] pr-8 border text-[#2AA0BF] 
+                onChange={(e) => {
+                  const selectedName = e.target.value;
+                  const selectedCode = getLanguageCodeFromName(selectedName);
+                  setLanguage(selectedName);
+                  setContextTranslationLanguage(selectedCode);
+                }}
+                className="w-[120px] h-[36px] pr-8 pl-3 border text-[#2AA0BF] 
                  dark:bg-[#323A3F] dark:border-none dark:text-[#4FAEC7] border-gray-300 rounded-lg 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 
-                 appearance-none bg-white text-center"
+                 appearance-none bg-white text-sm cursor-pointer"
               >
                 {languages.map((lang) => (
                   <option key={lang} value={lang}>
@@ -258,27 +308,27 @@ const Settings = ({ onClose }) => {
               </select>
               <ChevronDown
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 
-                 text-[#2AA0BF] dark:text-[#225B6A] pointer-events-none"
+                 text-[#2AA0BF] dark:text-[#4FAEC7] pointer-events-none"
                 size={16}
               />
             </div>
           </div>
 
           {/* Translation Font Size */}
-          <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg  text-gray-900 dark:text-white">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-normal text-gray-900 dark:text-white">
                 Translation Font Size
               </h3>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
                     setTranslationFontSize(
                       Math.max(10, translationFontSize - 1)
                     )
                   }
-                  className="p-2  rounded-lg  transition-colors dark:text-white dark:border-0 "
+                  className="p-2 rounded-lg transition-colors dark:text-white dark:border-0 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Minus size={18} />
                 </button>
@@ -290,34 +340,32 @@ const Settings = ({ onClose }) => {
                 <button
                   onClick={() =>
                     setTranslationFontSize(
-                      Math.min(20, translationFontSize + 1)
+                      Math.min(19, translationFontSize + 1)
                     )
                   }
-                  className="p-2  bg-[#B3B3B3] dark:bg-[#2A2C38] rounded-full  transition-colors dark:text-white dark:border-0 "
+                  className="p-2 bg-[#B3B3B3] dark:bg-[#2A2C38] rounded-full transition-colors dark:text-white dark:border-0 hover:bg-[#999999]"
                 >
                   <Plus size={18} />
                 </button>
               </div>
             </div>
-            <div className="border-b border-black  pb-4 mb-4">
-              <div className="bg-[#F8F9FA] mt-5 p-2 rounded-sm h-[100px] w-[310px] dark:bg-gray-950 ">
-                <p
-                  className="text-gray-600 mt-2 dark:text-white"
-                  style={{ fontSize: `${translationFontSize}px` }}
-                >
-                  Verse wise format in the Quran, establish prayer and spend out
-                  of what We have provided for them.
-                </p>
-              </div>
+            <div className="bg-[#F8F9FA] p-3 rounded-lg h-[100px] w-full dark:bg-gray-950 mt-3">
+              <p
+                className="text-gray-600 dark:text-white"
+                style={{ fontSize: `${translationFontSize}px` }}
+              >
+                Verse wise format in the Quran, establish prayer and spend out
+                of what We have provided for them.
+              </p>
             </div>
           </div>
 
           {/* View Type */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-white">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-normal text-gray-900 mb-3 dark:text-white">
               View Type
             </h3>
-            <div className="flex rounded-full bg-gray-100 w-[287px] p-1 dark:bg-gray-950">
+            <div className="flex rounded-full bg-gray-100 w-full p-1 dark:bg-gray-950">
               {/* Ayah Wise Button */}
               <button
                 onClick={() => {
@@ -351,9 +399,9 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* Quran Audio */}
-          <div>
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg  text-black dark:text-white">
+              <h3 className="text-lg font-normal text-gray-900 dark:text-white">
                 Quran Audio
               </h3>
               <button
@@ -370,19 +418,20 @@ const Settings = ({ onClose }) => {
               </button>
             </div>
           </div>
-          <div>
+          
+          {/* Playback Speed */}
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="text-lg font-normal text-gray-900 dark:text-white">
                 Playback Speed
               </h3>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 {playbackSpeed.toFixed(1)}x
               </span>
             </div>
 
             <div className="relative w-full">
               {/* Slider */}
-
               <input
                 type="range"
                 min="0.5"
@@ -412,31 +461,34 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* Reciter */}
-          <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-950">
-            <div className="flex flex-col space-y-1">
+          <div className="pb-2">
+            <div className="flex flex-col space-y-2">
               {/* Label */}
-              <label className="text-sm font-medium text-gray-500">
+              <label className="text-sm font-normal text-gray-700 dark:text-gray-300">
                 Selected Reciter
               </label>
 
               {/* Select wrapper */}
-              <div className="relative ">
+              <div className="relative">
                 <select
                   value={reciter}
-                  onChange={(e) => setReciter(e.target.value)}
-                  className="w-full text-lg  text-gray-900 
-                   bg-transparent border border-gray-300 rounded-lg 
-                   pl-3 pr-10 py-2 
+                  onChange={(e) => {
+                    setReciter(e.target.value);
+                    localStorage.setItem("reciter", e.target.value);
+                  }}
+                  className="w-full text-base text-gray-900 
+                   bg-white border border-gray-300 rounded-lg 
+                   pl-3 pr-10 py-2.5 
                    focus:outline-none focus:ring-2 focus:ring-blue-500 
-                   cursor-pointer appearance-none dark:border-none dark:text-white"
+                   cursor-pointer appearance-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
                   {reciters.map((rec) => (
                     <option
-                      key={rec}
-                      value={rec}
-                      className="text-base font-normal text-gray-700"
+                      key={rec.value}
+                      value={rec.value}
+                      className="text-base font-normal text-gray-700 dark:text-gray-300"
                     >
-                      {rec}
+                      {rec.label}
                     </option>
                   ))}
                 </select>
@@ -444,7 +496,7 @@ const Settings = ({ onClose }) => {
                 {/* Chevron Icon */}
                 <ChevronDown
                   className="absolute right-3 top-1/2 -translate-y-1/2 
-                   text-gray-500 pointer-events-none"
+                   text-gray-500 dark:text-gray-400 pointer-events-none"
                   size={20}
                 />
               </div>
@@ -454,7 +506,7 @@ const Settings = ({ onClose }) => {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 shadow dark:bg-[#2A2C38] dark:border-0">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2C38] shadow-lg">
         <button
           onClick={handleReset}
           className="flex items-center space-x-2 px-4 py-2 
@@ -473,28 +525,8 @@ const Settings = ({ onClose }) => {
           <span>Save Settings</span>
         </button>
       </div>
-
-      {/* <style jsx>{`
-  .slider::-webkit-slider-thumb {
-    appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #2AA0BF;
-    cursor: pointer;
-    border: none;
-  }
-  .slider::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #2AA0BF;
-    cursor: pointer;
-    border: none;
-  }
-`}</style> */}
-
-    </div>
+      </div>
+    </>
   );
 };
 

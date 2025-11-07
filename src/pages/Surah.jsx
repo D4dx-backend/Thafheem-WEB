@@ -50,12 +50,42 @@ import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkelet
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 
 const Surah = () => {
-  const { quranFont, fontSize, translationFontSize, translationLanguage, theme } = useTheme();
+  const {
+    quranFont,
+    fontSize,
+    translationFontSize,
+    translationLanguage,
+    theme,
+    viewType,
+    setViewType: setContextViewType,
+  } = useTheme();
+  const showBlockNavigation = translationLanguage === 'mal' || translationLanguage === 'E';
   const { user } = useAuth();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
   const location = useLocation(); // Add this to get query parameters
+  const { pathname } = location;
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
+
+  const handleNavigateToBlockWise = useCallback(() => {
+    if (showBlockNavigation) {
+      setContextViewType("Block Wise");
+    }
+  }, [setContextViewType, showBlockNavigation]);
+
+  useEffect(() => {
+    if (!showBlockNavigation && viewType !== "Ayah Wise") {
+      setContextViewType("Ayah Wise");
+      return;
+    }
+
+    if (showBlockNavigation && viewType === "Block Wise") {
+      const targetPath = `/blockwise/${surahId}`;
+      if (pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    }
+  }, [viewType, showBlockNavigation, surahId, navigate, pathname, setContextViewType]);
 
   // Check if user came from Juz view
   const fromJuz = new URLSearchParams(location.search).get("fromJuz");
@@ -1176,6 +1206,20 @@ const Surah = () => {
     return languageMap[code] || code;
   };
 
+  // Stop audio when navigating away from this page (unmount)
+  useEffect(() => {
+    return () => {
+      try {
+        stopCurrentAudio();
+      } catch (e) {}
+      setIsSequencePlaying(false);
+      setPlayingAyah(null);
+      setCurrentAudioTypeIndex(0);
+      // Notify header controls
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+    };
+  }, []);
+
   // Play audio types for an ayah in sequence, then move to next ayah
   // This version accepts audioTypes as parameter to avoid closure issues
   const playAyahSequenceWithTypes = (ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
@@ -1507,35 +1551,36 @@ const Surah = () => {
                 </div>
               )}
 
-              {/* Bismillah */}
-              <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4 pt-6 sm:pt-8">
-                <img
-                  src={theme === "dark" ? DarkModeBismi : Bismi}
-                  alt="Bismillah"
-                  className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto"
-                />
-              </p>
+              {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
+              {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 && (
+                <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4 pt-6 sm:pt-8">
+                  <img
+                    src={theme === "dark" ? DarkModeBismi : Bismi}
+                    alt="Bismillah"
+                    className="w-auto h-8 sm:h-10 lg:h-12 xl:h-14 mx-auto"
+                  />
+                </p>
+              )}
 
               {/* Surah Info moved to global header */}
               {/* Play Audio button moved to header */}
 
               {/* Ayah/Block selector */}
-              <div className="flex justify-end mb-4">
-                <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
-                  <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                    Ayah
-                  </button>
-                  {/* Hide blockwise for Tamil, Hindi, Urdu, and Bangla */}
-                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && translationLanguage !== 'bn' && (
+              {showBlockNavigation && (
+                <div className="flex justify-end mb-4">
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                      Ayah
+                    </button>
                     <button
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={() => navigate(`/blockwise/${surahId}`)}
+                      onClick={handleNavigateToBlockWise}
                     >
                       Block
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Desktop Layout */}
@@ -1590,26 +1635,32 @@ const Surah = () => {
                     </div>
                   )}
 
-                {/* Bismillah */}
+                {/* Bismillah and Controls Container */}
                 <div className="mb-3 sm:mb-4 relative">
-                  <div className="flex flex-col items-center px-2 sm:px-4">
-                    <img
-                      src={theme === "dark" ? DarkModeBismi : Bismi}
-                      alt="Bismillah"
-                      className="w-[236px] h-[52.9px] mb-2"
-                    />
-                  </div>
+                  {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
+                  {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                    <div className="flex flex-col items-center px-2 sm:px-4">
+                      <img
+                        src={theme === "dark" ? DarkModeBismi : Bismi}
+                        alt="Bismillah"
+                        className="w-[236px] h-[52.9px] mb-2"
+                      />
+                    </div>
+                  ) : (
+                    // Spacer to preserve layout when Bismillah is hidden (keeps buttons aligned)
+                    <div className="h-[52.9px] mb-2" />
+                  )}
 
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                    <div className="absolute top-0 right-0 hidden sm:block">
-                      <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
+                      <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                         <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                           Ayah wise
                         </button>
                         <button
                           className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
-                          onClick={() => navigate(`/blockwise/${surahId}`)}
+                          onClick={handleNavigateToBlockWise}
                         >
                           Block wise
                         </button>
@@ -1751,7 +1802,7 @@ const Surah = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-2 sm:px-4 md:px-6">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6 text-gray-500 dark:text-gray-300 px-4 sm:px-6 md:px-8">
                       {/* Verse Number */}
                       <span className="text-xs sm:text-sm font-medium">
                         {surahId}.{index + 1}
@@ -1807,16 +1858,7 @@ const Surah = () => {
                           <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                       </button>
-                      {playingAyah === index + 1 && (
-                        <span className="inline-flex items-center ml-1 text-cyan-600">
-                          {/* simple equalizer indicator */}
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-                            <rect x="1" y="3" width="2" height="6" className="animate-[bounce_1s_infinite]" />
-                            <rect x="5" y="2" width="2" height="8" className="animate-[bounce_1s_infinite_200ms]" />
-                            <rect x="9" y="4" width="2" height="4" className="animate-[bounce_1s_infinite_400ms]" />
-                          </svg>
-                        </span>
-                      )}
+                      {/* Equalizer indicator removed as requested */}
 
                       {/* BookOpen - Interpretation (hidden for Tamil) */}
                       {translationLanguage !== 'ta' && (
@@ -2235,25 +2277,34 @@ const Surah = () => {
               setSelectedQari(newQari);
               // If audio is currently playing, restart with new reciter
               if (playingAyah) {
-                handleTopStopReset();
-                setTimeout(() => {
-                  playAyahSequence(playingAyah, 0);
-                }, 100);
+              // Soft restart: do not clear playingAyah to keep player/modal mounted
+              stopCurrentAudio();
+              setIsSequencePlaying(false);
+              setTimeout(() => {
+                playAyahSequence(playingAyah, 0);
+              }, 50);
               }
             }}
             translationLanguage={translationLanguage}
             audioTypes={audioTypes}
             onAudioTypesChange={(newTypes) => {
               const currentPlayingAyah = playingAyah; // Capture current ayah
+              console.debug('[Surah] onAudioTypesChange called', {
+                prevAudioTypes: audioTypes,
+                newAudioTypes: newTypes,
+                currentPlayingAyah
+              });
               setAudioTypes(newTypes);
               // If audio is currently playing, restart with new audio types
               if (currentPlayingAyah) {
-                handleTopStopReset();
+                // Soft restart without unmounting the player
+                stopCurrentAudio();
+                setIsSequencePlaying(false);
                 // Use newTypes directly instead of relying on state
                 setTimeout(() => {
-                  // Temporarily update the function to use newTypes
+                  console.debug('[Surah] restarting sequence with newTypes', newTypes);
                   playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
-                }, 100);
+                }, 50);
               }
             }}
             playbackSpeed={playbackSpeed}

@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import {
   fetchInterpretationRange,
   fetchInterpretation,
+  fetchAllInterpretations,
   listSurahNames,
   fetchNoteById,
   fetchSurahs,
@@ -105,9 +106,25 @@ const BlockInterpretationModal = ({
           `🔄 Loading interpretation: Surah ${currentSurahId}, Range ${currentRange}, Interpretation ${currentInterpretationNo}, Language: ${currentLanguage}`
         );
 
-        // For Hindi and Urdu, use their respective translation services instead of interpretation API
+        // For Malayalam, Hindi and Urdu, use their respective services/APIs
         let data;
-        if (currentLanguage === 'hi') {
+        if (currentLanguage === 'mal') {
+          const isSingle = /^\d+$/.test(currentRange);
+          if (isSingle) {
+            // Single verse - get all interpretations for that verse
+            const interpretations = await fetchAllInterpretations(currentSurahId, parseInt(currentRange, 10), 'mal');
+            // Filter by interpretation number if specified
+            if (currentInterpretationNo && interpretations.length > 0) {
+              const filtered = interpretations.filter(i => i.InterpretationNo === String(currentInterpretationNo) || i.interptn_no === currentInterpretationNo);
+              data = filtered.length > 0 ? filtered : [interpretations[0]];
+            } else {
+              data = interpretations;
+            }
+          } else {
+            // Range - use the range-based endpoint
+            data = await fetchInterpretationRange(currentSurahId, currentRange, currentInterpretationNo, 'mal');
+          }
+        } else if (currentLanguage === 'hi') {
           const isSingle = /^\d+$/.test(currentRange);
           if (isSingle) {
             // Single verse - get explanation for that verse

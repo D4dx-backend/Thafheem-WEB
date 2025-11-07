@@ -614,8 +614,8 @@ const Reading = () => {
                 {surahInfo?.arabic || "Loading..."}
               </h1>
 
-              {/* Bismillah - show for all surahs except At-Tawbah (9) */}
-              {surahInfo?.number !== 9 && (
+              {/* Bismillah - hide for Al-Fatihah (1) as it's the first ayah, and At-Tawbah (9) */}
+              {surahInfo?.number !== 1 && surahInfo?.number !== 9 && (
                 <div className="mb-3 sm:mb-4">
                   <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-arabic dark:text-white text-gray-800 leading-relaxed px-2">
                     <img
@@ -879,6 +879,12 @@ const Reading = () => {
           audioTypes={audioTypes}
           onAudioTypesChange={(newTypes) => {
             const currentIdx = currentAyahIndex; // Capture current index
+            console.debug('[Reading] onAudioTypesChange called', {
+              prevAudioTypes: audioTypes,
+              newAudioTypes: newTypes,
+              currentIdx,
+              currentAyah
+            });
             setAudioTypes(newTypes);
             // If audio is currently playing, restart with new audio types
             if (currentAyah && currentIdx >= 0) {
@@ -886,6 +892,7 @@ const Reading = () => {
               // Pass newTypes directly to avoid closure issue
               setTimeout(() => {
                 setIsPlaying(true);
+                console.debug('[Reading] restarting play with newTypes', newTypes);
                 playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
               }, 100);
             }

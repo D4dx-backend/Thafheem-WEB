@@ -81,11 +81,43 @@ const BlockWise = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { pathname } = location;
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
-  const { quranFont, translationLanguage, theme, translationFontSize } = useTheme();
+  const {
+    quranFont,
+    translationLanguage,
+    theme,
+    translationFontSize,
+    viewType: contextViewType,
+    setViewType: setContextViewType,
+  } = useTheme();
   const { surahId } = useParams();
   
+  useEffect(() => {
+    const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+
+    if (!supportsBlockwise) {
+      if (contextViewType !== 'Ayah Wise') {
+        setContextViewType('Ayah Wise');
+      }
+      return;
+    }
+
+    if (contextViewType === 'Ayah Wise') {
+      const targetPath = `/surah/${surahId}`;
+      if (pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    } else if (contextViewType !== 'Block Wise') {
+      setContextViewType('Block Wise');
+    }
+  }, [contextViewType, translationLanguage, surahId, navigate, pathname, setContextViewType]);
+
+  const handleNavigateToAyahWise = () => {
+    setContextViewType('Ayah Wise');
+  };
+
   // Use cached surah data
   const { surahs } = useSurahData();
 
@@ -531,6 +563,15 @@ const BlockWise = () => {
     setIsPaused(false);
   };
 
+  // Stop audio on unmount (navigating away)
+  useEffect(() => {
+    return () => {
+      try {
+        stopPlayback();
+      } catch (e) {}
+    };
+  }, []);
+
   // Audio chaining is now handled inside playAyahAudio function with audioTypes array
 
   // Cleanup audio when surahId changes
@@ -893,11 +934,18 @@ const BlockWise = () => {
     const handleSupClick = (e) => {
       const target = e.target.closest(".interpretation-link");
       if (target) {
+        // Prevent default behavior and stop event propagation
+        e.preventDefault();
+        e.stopPropagation();
+        
         const interpretationNumber = target.getAttribute("data-interpretation");
         const range = target.getAttribute("data-range");
         const langAttr = target.getAttribute("data-lang");
         if (interpretationNumber && range) {
-          handleInterpretationClick(range, parseInt(interpretationNumber));
+          // Use requestAnimationFrame to ensure state updates properly
+          requestAnimationFrame(() => {
+            handleInterpretationClick(range, parseInt(interpretationNumber));
+          });
         }
       }
     };
@@ -916,9 +964,10 @@ const BlockWise = () => {
     `;
     document.head.appendChild(style);
 
-    document.addEventListener("click", handleSupClick);
+    // Use capture phase to ensure we catch the event first
+    document.addEventListener("click", handleSupClick, true);
     return () => {
-      document.removeEventListener("click", handleSupClick);
+      document.removeEventListener("click", handleSupClick, true);
       document.head.removeChild(style);
     };
   }, []);
@@ -1025,23 +1074,46 @@ const BlockWise = () => {
               </h1>
             </div>
 
-            {/* Bismillah with Controls */}
+            {/* Bismillah and Controls Container */}
             <div className="mb-3 sm:mb-4 relative">
-              <div className="flex flex-col items-center px-2 sm:px-4">
-                <img
-                  src={theme === "dark" ? DarkModeBismi : Bismi}
-                  alt="Bismi"
-                  className="w-[236px] h-[52.9px] mb-2"
-                />
-              </div>
+              {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
+              {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                <div className="flex flex-col items-center px-2 sm:px-4">
+                  <img
+                    src={theme === "dark" ? DarkModeBismi : Bismi}
+                    alt="Bismi"
+                    className="w-[236px] h-[52.9px] mb-2"
+                  />
+                </div>
+              ) : (
+                // Spacer to preserve layout when Bismillah is hidden (keeps buttons aligned)
+                <div className="h-[52.9px] mb-2" />
+              )}
+
+              {/* Mobile Ayah/Block selector (only for Malayalam and English) */}
+              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                <div className="flex justify-end mb-4 sm:hidden">
+                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                    <button
+                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                      onClick={handleNavigateToAyahWise}
+                    >
+                      Ayah
+                    </button>
+                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                      Block
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="absolute top-0 right-4 hidden sm:block">
-                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                <div className="absolute top-0 right-4 sm:right-6 lg:right-42 hidden sm:block">
+                  <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
                       className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
-                      onClick={() => navigate(`/surah/${surahId}`)}
+                      onClick={handleNavigateToAyahWise}
                     >
                       Ayah wise
                     </button>
@@ -1086,12 +1158,7 @@ const BlockWise = () => {
                     key={`block-${blockId}-${start}-${end}`}
                     className="rounded-xl mb-3 sm:mb-4 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                   >
-                    <div className="px-3 sm:px-4 pt-2 sm:pt-3 flex items-center justify-between">
-                      <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium">
-                        Block {blockIndex + 1}: Ayahs {start}
-                        {end && end !== start ? `-${end}` : ""}
-                      </span>
-                    </div>
+                    
 
                     <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
                       <p
@@ -1581,12 +1648,19 @@ const BlockWise = () => {
               onAudioTypesChange={(newTypes) => {
                 const currentBlock = playingBlock;
                 const currentAyah = currentAyahInBlock;
+                console.debug('[BlockWise] onAudioTypesChange called', {
+                  prevAudioTypes: audioTypes,
+                  newAudioTypes: newTypes,
+                  currentBlock,
+                  currentAyah
+                });
                 setAudioTypes(newTypes);
                 // If audio is currently playing, restart with new audio types
                 if (currentBlock && currentAyah) {
                   stopPlayback();
                   // Pass newTypes directly to avoid closure issue
                   setTimeout(() => {
+                    console.debug('[BlockWise] restarting ayah audio with newTypes', newTypes);
                     playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
                   }, 100);
                 }

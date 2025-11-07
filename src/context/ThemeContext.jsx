@@ -2,6 +2,7 @@
 
 // ThemeContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
+import { preloadLanguageServices } from "../utils/serviceLoader";
 
 const ThemeContext = createContext();
 
@@ -89,6 +90,14 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem("translationLanguage", translationLanguage);
+    
+    // Preload translation services when language changes
+    // This ensures services are ready when user navigates to pages that need them
+    if (translationLanguage && translationLanguage !== 'mal') {
+      preloadLanguageServices(translationLanguage).catch(error => {
+        console.warn(`Failed to preload services for ${translationLanguage}:`, error);
+      });
+    }
   }, [translationLanguage]);
 
   const toggleTheme = () => {

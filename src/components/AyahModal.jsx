@@ -61,8 +61,15 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
         // Debug: Log the current language
 
-        // For Tamil, Hindi, Urdu, and Bangla, use their respective translation services instead of interpretation API
-        const interpretationPromise = translationLanguage === 'ta' 
+        // For Malayalam, use fetchAllInterpretations to get all interpretations for the verse
+        const interpretationPromise = translationLanguage === 'mal'
+          ? fetchAllInterpretations(parseInt(surahId), currentVerseId, 'mal')
+              .then(interpretations => interpretations || [])
+              .catch(error => {
+                console.error('❌ Error fetching Malayalam interpretations:', error);
+                return [];
+              })
+          : translationLanguage === 'ta' 
           ? (() => {
     return tamilTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId)
                 .then(translation => translation ? [{ 
@@ -185,23 +192,36 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     return [];
                   }
                 })()
-              : (() => {
-    return fetchInterpretation(
-                    parseInt(surahId),
-                    currentVerseId,
-                    1,
-                    translationLanguage
-                  ).catch(
-                    (error) => {
-    // Special handling for Surah 114
-                      if (parseInt(surahId) === 114) {
-  }
+              : (async () => {
+                  try {
+                    // For Malayalam, fetch all interpretations
+                    if (translationLanguage === 'mal') {
+                      const allInterpretations = await fetchAllInterpretations(
+                        parseInt(surahId),
+                        currentVerseId,
+                        'mal'
+                      );
+                      return allInterpretations;
+                    }
+                    
+                    // For other languages, fetch single interpretation
+                    return await fetchInterpretation(
+                      parseInt(surahId),
+                      currentVerseId,
+                      1,
+                      translationLanguage
+                    );
+                  } catch (error) {
+                    // Special handling for Surah 114
+                    if (parseInt(surahId) === 114) {
                       return null;
                     }
-                  );
+                    return null;
+                  }
                 })();
 
-        // Only fetch translation data if not using Tamil/Hindi/Bangla/English services
+        // Only fetch translation data if not using Tamil/Hindi/Bangla/English services  
+        // For Malayalam, also fetch from the audio translation API
         const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' || translationLanguage === 'E') 
           ? Promise.resolve(null) 
           : fetchAyahAudioTranslations(parseInt(surahId), currentVerseId);
@@ -650,12 +670,6 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               ) : translationLanguage === 'ta' ? (
                 <div
                   className="text-gray-700 leading-[1.6] font-tamil sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
-                  style={{ fontSize: `${translationFontSize}px` }}
-                  dangerouslySetInnerHTML={{ __html: verseData.translation }}
-                />
-              ) : translationLanguage === 'mal' ? (
-                <div
-                  className="text-gray-700 leading-[1.6] font-malayalam sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
                   style={{ fontSize: `${translationFontSize}px` }}
                   dangerouslySetInnerHTML={{ __html: verseData.translation }}
                 />

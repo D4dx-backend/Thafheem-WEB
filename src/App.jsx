@@ -1,43 +1,48 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Juz from "./pages/Juz";
-import Footer from "./components/Footer";
-import Sign from "./pages/Sign";
-import Surah from "./pages/Surah";
-import SurahInfo from "./pages/SurahInfo";
-import Reading from "./pages/Reading";
-
-import BlockWise from "./pages/BlockWise";
-import BookVerse from "./pages/bookmarkedVerses";
-import BookmarkBlock from "./pages/BookmarkBlock";
-import BookInterpretations from "./pages/BookInterpretations";
-import MalayalamInterpreter from "./pages/MalayalamInterpreter";
-import FavoriteSurahs from "./pages/FavoriteSurahs";
-import Settings from "./pages/Settings";
-import PlayAudio from "./components/PlayAudio";
-import TableContents from "./pages/TableContents";
-import Maududi from "./pages/Maududi";
-import WhatsNew from "./pages/WhatsNew";
-import Digitisation from "./pages/Digitisation";
-import About from "./pages/About";
-import AuthorPreface from "./pages/AuthorPreface";
-import HomepageNavbar from "./components/HomeNavbar";
-import EnglishTranslate from "./pages/EnglishTranslate";
-import Quiz from "./pages/Quiz";
-import DragDrop from "./pages/DragDrop";
-import Privacy from "./pages/Privacy";
-import DeleteAccount from "./pages/DeleteAccount";
-import LogOut from "./pages/LogOut";
-import Conclusion from "./pages/Conclusion";
-import Tajweed from "./pages/Tajweed";
-import QuranStudy from "./pages/QuranStudy";
-import EndofProphethood from "./pages/EndofProphethood";
-import WordByWord from "./pages/WordByWord";
-import WordByWordPage from "./pages/WordByWordPage";
-import InterpretationBlockwise from "./pages/InterpretationBlockwise";
-import Note from "./pages/Note";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
+
+// Always load critical components immediately
+import HomepageNavbar from "./components/HomeNavbar";
+import Footer from "./components/Footer";
+import LazyLoadFallback from "./components/LazyLoadFallback";
+
+// Lazy load all route components to reduce initial bundle size
+// These will only load when the user navigates to them
+const Home = lazy(() => import("./pages/Home"));
+const Juz = lazy(() => import("./pages/Juz"));
+const Sign = lazy(() => import("./pages/Sign"));
+const Surah = lazy(() => import("./pages/Surah"));
+const SurahInfo = lazy(() => import("./pages/SurahInfo"));
+const Reading = lazy(() => import("./pages/Reading"));
+const BlockWise = lazy(() => import("./pages/BlockWise"));
+const BookVerse = lazy(() => import("./pages/bookmarkedVerses"));
+const BookmarkBlock = lazy(() => import("./pages/BookmarkBlock"));
+const BookInterpretations = lazy(() => import("./pages/BookInterpretations"));
+const MalayalamInterpreter = lazy(() => import("./pages/MalayalamInterpreter"));
+const FavoriteSurahs = lazy(() => import("./pages/FavoriteSurahs"));
+const Settings = lazy(() => import("./pages/Settings"));
+const PlayAudio = lazy(() => import("./components/PlayAudio"));
+const TableContents = lazy(() => import("./pages/TableContents"));
+const Maududi = lazy(() => import("./pages/Maududi"));
+const WhatsNew = lazy(() => import("./pages/WhatsNew"));
+const Digitisation = lazy(() => import("./pages/Digitisation"));
+const About = lazy(() => import("./pages/About"));
+const AuthorPreface = lazy(() => import("./pages/AuthorPreface"));
+const EnglishTranslate = lazy(() => import("./pages/EnglishTranslate"));
+const Quiz = lazy(() => import("./pages/Quiz"));
+const DragDrop = lazy(() => import("./pages/DragDrop"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const LogOut = lazy(() => import("./pages/LogOut"));
+const Conclusion = lazy(() => import("./pages/Conclusion"));
+const Tajweed = lazy(() => import("./pages/Tajweed"));
+const QuranStudy = lazy(() => import("./pages/QuranStudy"));
+const EndofProphethood = lazy(() => import("./pages/EndofProphethood"));
+const WordByWordPage = lazy(() => import("./pages/WordByWordPage"));
+const InterpretationBlockwise = lazy(() => import("./pages/InterpretationBlockwise"));
+const Note = lazy(() => import("./pages/Note"));
 
 function App() {
   // Use basename only in production, not in development
@@ -48,56 +53,56 @@ function App() {
       <AuthProvider>
         <Router basename={basename}>
           <HomepageNavbar />
-          <Routes>
-            <Route path="/" element={<Home />} /> {/* Surah/Home */}
-            <Route path="/juz" element={<Juz />} />
-            <Route path="/juz/:juzId" element={<Juz />} />
-            <Route path="/sign" element={<Sign />} />
-            {/* <Route path="/surah" element={<Surah />} /> */}
-            <Route path="/surah/:surahId" element={<Surah />} />
-            {/* <Route path="/surahinfo" element={<SurahInfo />} /> */}
-            <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
-            <Route path="/reading/:surahId?" element={<Reading />} />
-            <Route path="/blockwise/:surahId" element={<BlockWise />} />
-            <Route path="/bookmarkblock" element={<BookmarkBlock />} />
-            <Route path="/bookmarkedverses" element={<BookVerse />} />
-            <Route path="/favoritesurahs" element={<FavoriteSurahs />} />
-            <Route
-              path="/bookinterpretations"
-              element={<BookInterpretations />}
-            />
-            <Route
-              path="/malayalaminterpretations"
-              element={<MalayalamInterpreter />}
-            />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/play" element={<PlayAudio />} />
-            <Route path="/tablecontents" element={<TableContents />} />
-            <Route path="/maududi" element={<Maududi />} />
-            <Route path="/whatsnew" element={<WhatsNew />} />
-            <Route path="/digitisation" element={<Digitisation />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/authorpreface" element={<AuthorPreface />} />
-            <Route path="/englishtranslate" element={<EnglishTranslate />} />
-            <Route path="/quiz" element={<Quiz />} />
-            <Route path="/dragdrop" element={<DragDrop />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/deleteaccount" element={<DeleteAccount />} />
-            <Route path="/logout" element={<LogOut />} />
-            <Route path="/conclusion" element={<Conclusion />} />
-            <Route path="/tajweed" element={<Tajweed />} />
-            <Route path="/quranstudy" element={<QuranStudy />} />
-            <Route path="/end" element={<EndofProphethood />} />
-            <Route
-              path="/word-by-word/:surahId/:verseId"
-              element={<WordByWordPage />}
-            />
-            <Route
-              path="/interpretation-blockwise"
-              element={<InterpretationBlockwise />}
-            />
-            <Route path="/note/:id" element={<Note />} />
-          </Routes>
+          <Suspense fallback={<LazyLoadFallback message="Loading page..." />}>
+            <Routes>
+              <Route path="/" element={<Home />} /> {/* Surah/Home */}
+              <Route path="/juz" element={<Juz />} />
+              <Route path="/juz/:juzId" element={<Juz />} />
+              <Route path="/sign" element={<Sign />} />
+              <Route path="/surah/:surahId" element={<Surah />} />
+              <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
+              <Route path="/reading/:surahId?" element={<Reading />} />
+              <Route path="/blockwise/:surahId" element={<BlockWise />} />
+              <Route path="/bookmarkblock" element={<BookmarkBlock />} />
+              <Route path="/bookmarkedverses" element={<BookVerse />} />
+              <Route path="/favoritesurahs" element={<FavoriteSurahs />} />
+              <Route
+                path="/bookinterpretations"
+                element={<BookInterpretations />}
+              />
+              <Route
+                path="/malayalaminterpretations"
+                element={<MalayalamInterpreter />}
+              />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/play" element={<PlayAudio />} />
+              <Route path="/tablecontents" element={<TableContents />} />
+              <Route path="/maududi" element={<Maududi />} />
+              <Route path="/whatsnew" element={<WhatsNew />} />
+              <Route path="/digitisation" element={<Digitisation />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/authorpreface" element={<AuthorPreface />} />
+              <Route path="/englishtranslate" element={<EnglishTranslate />} />
+              <Route path="/quiz" element={<Quiz />} />
+              <Route path="/dragdrop" element={<DragDrop />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/deleteaccount" element={<DeleteAccount />} />
+              <Route path="/logout" element={<LogOut />} />
+              <Route path="/conclusion" element={<Conclusion />} />
+              <Route path="/tajweed" element={<Tajweed />} />
+              <Route path="/quranstudy" element={<QuranStudy />} />
+              <Route path="/end" element={<EndofProphethood />} />
+              <Route
+                path="/word-by-word/:surahId/:verseId"
+                element={<WordByWordPage />}
+              />
+              <Route
+                path="/interpretation-blockwise"
+                element={<InterpretationBlockwise />}
+              />
+              <Route path="/note/:id" element={<Note />} />
+            </Routes>
+          </Suspense>
           <Footer />
         </Router>
       </AuthProvider>

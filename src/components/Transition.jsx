@@ -1,6 +1,6 @@
 
 import { ChevronDown, BookOpen, Notebook, Info, Play, Pause, Heart, LibraryBig } from "lucide-react"; // swapped icons
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import NavigateSurah from "../pages/NavigateSurah";
 import { fetchPageRanges } from "../api/apifunction";
@@ -48,6 +48,7 @@ const MadinaIcon = ({ className }) => (
 
 const Transition = ({ showPageInfo = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const [selectedSurah, setSelectedSurah] = useState({
     id: 2,
     name: "Al-Baqarah",
@@ -73,6 +74,22 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   const [activeView, setActiveView] = useState("book"); // "book" or "notebook"
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isDropdownOpen]);
 
   // Update selected surah based on URL when surahNames are loaded
   useEffect(() => {
@@ -261,12 +278,12 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-2 sm:px-4 sticky top-[56px] z-[60]">
+    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md px-2 sm:px-4 sticky top-[64px] z-[60]">
       <div className="max-w-none w-full mx-0 py-1">
-        <div className="flex items-center justify-between gap-1 sm:gap-2">
+        <div className="relative flex items-center justify-between gap-1 sm:gap-2 min-h-[48px]">
         {/* Left Section - Chapter Selector */}
         <div className="flex items-center flex-shrink-0 ml-[17px] sm:ml-[21px]">
-          <div className="relative">
+          <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center space-x-1 sm:space-x-2 px-1.5 sm:px-2 py-1 text-gray-700 dark:text-white rounded-lg transition-colors"
@@ -342,14 +359,14 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/surah/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-0.5 px-2 py-2 rounded-full text-[10px] font-medium min-h-[32px] transition-colors ${
+                    aria-label="Translation"
+                    className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
                       location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
                     }`}
                   >
                     <LibraryBig className="w-2.5 h-2.5" />
-                    <span className="text-[10px] font-poppins whitespace-nowrap">Translation</span>
                   </button>
                   <button
                     onClick={() => {
@@ -358,14 +375,14 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/reading/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-0.5 px-2 py-2 rounded-full text-[10px] font-medium min-h-[32px] transition-colors ${
+                    aria-label="Reading"
+                    className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
                       location.pathname.startsWith('/reading')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
                     }`}
                   >
                     <Notebook className="w-2.5 h-2.5" />
-                    <span className="text-[10px] font-poppins whitespace-nowrap">Reading</span>
                   </button>
                 </div>
               </div>

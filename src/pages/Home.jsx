@@ -44,7 +44,7 @@ const Mad = ({ className }) => (
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState("Quran");
-  const { viewType } = useTheme();
+  const { viewType, translationLanguage } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -54,8 +54,13 @@ const Home = () => {
     // Check if modifier key is pressed (Ctrl/Cmd)
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
     
-    // Always open Ayah wise view from Home
-    const url = `/surah/${surahNumber}`;
+    const shouldOpenBlockWise =
+      viewType === "Block Wise" &&
+      (translationLanguage === "mal" || translationLanguage === "E");
+
+    const url = shouldOpenBlockWise
+      ? `/blockwise/${surahNumber}`
+      : `/surah/${surahNumber}`;
     
     if (isModifierPressed) {
       // Open in new tab

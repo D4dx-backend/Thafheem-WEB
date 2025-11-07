@@ -50,12 +50,42 @@ import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkelet
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 
 const Surah = () => {
-  const { quranFont, fontSize, translationFontSize, translationLanguage, theme } = useTheme();
+  const {
+    quranFont,
+    fontSize,
+    translationFontSize,
+    translationLanguage,
+    theme,
+    viewType,
+    setViewType: setContextViewType,
+  } = useTheme();
+  const showBlockNavigation = translationLanguage === 'mal' || translationLanguage === 'E';
   const { user } = useAuth();
   const { surahId } = useParams(); // Get surah ID from URL
   const navigate = useNavigate();
   const location = useLocation(); // Add this to get query parameters
+  const { pathname } = location;
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
+
+  const handleNavigateToBlockWise = useCallback(() => {
+    if (showBlockNavigation) {
+      setContextViewType("Block Wise");
+    }
+  }, [setContextViewType, showBlockNavigation]);
+
+  useEffect(() => {
+    if (!showBlockNavigation && viewType !== "Ayah Wise") {
+      setContextViewType("Ayah Wise");
+      return;
+    }
+
+    if (showBlockNavigation && viewType === "Block Wise") {
+      const targetPath = `/blockwise/${surahId}`;
+      if (pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    }
+  }, [viewType, showBlockNavigation, surahId, navigate, pathname, setContextViewType]);
 
   // Check if user came from Juz view
   const fromJuz = new URLSearchParams(location.search).get("fromJuz");
@@ -1536,22 +1566,21 @@ const Surah = () => {
               {/* Play Audio button moved to header */}
 
               {/* Ayah/Block selector */}
-              <div className="flex justify-end mb-4">
-                <div className={`flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm ${translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'ur' || translationLanguage === 'bn' ? 'w-[55px]' : 'w-[115px]'}`}>
-                  <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                    Ayah
-                  </button>
-                  {/* Hide blockwise for Tamil, Hindi, Urdu, and Bangla */}
-                  {translationLanguage !== 'ta' && translationLanguage !== 'hi' && translationLanguage !== 'ur' && translationLanguage !== 'bn' && (
+              {showBlockNavigation && (
+                <div className="flex justify-end mb-4">
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                      Ayah
+                    </button>
                     <button
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={() => navigate(`/blockwise/${surahId}`)}
+                      onClick={handleNavigateToBlockWise}
                     >
                       Block
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Desktop Layout */}
@@ -1624,14 +1653,14 @@ const Surah = () => {
 
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                    <div className="absolute top-0 right-0 hidden sm:block">
-                      <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
+                      <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                         <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                           Ayah wise
                         </button>
                         <button
                           className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
-                          onClick={() => navigate(`/blockwise/${surahId}`)}
+                          onClick={handleNavigateToBlockWise}
                         >
                           Block wise
                         </button>

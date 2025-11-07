@@ -19,12 +19,15 @@ import {
   AYA_TRANSLATION_API,
   LEGACY_TFH_BASE,
   WORD_MEANINGS_API,
+  TAJWEED_RULES_API,
 } from "./apis";
+import { getFallbackTajweedData } from "../data/tajweedFallback";
 
 // Session-level tracking to reduce console noise
 const apiAvailabilityState = {
   thafheemApiUnavailable: false,
   warningsLogged: new Set(),
+  tajweedApiUnavailable: false,
 };
 
 // Helper function to log warnings only once per session
@@ -1836,9 +1839,11 @@ export const fetchInterpretation = async (
     if (l.toLowerCase() === 'mal') return undefined; // default Malayalam, no suffix
     return l;
   })();
-  // For Malayalam, just use the standard /interpret endpoint
-  const interpretUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
-  
+  // Build endpoint: Malayalam uses default path, other languages append lang suffix
+  const interpretUrl = langParam
+    ? `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}/${langParam}`
+    : `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
+
   try {
     console.log("📡 Fetching interpretation from:", interpretUrl);
     const response = await fetch(interpretUrl);
@@ -1848,6 +1853,24 @@ export const fetchInterpretation = async (
     return data;
   } catch (error) {
     console.warn("Interpretation fetch failed:", error.message);
+
+    // Fallback: retry without language suffix for languages that may not have localized data
+    if (langParam) {
+      try {
+        const fallbackUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
+        console.log("🔁 Retrying interpretation fetch without language:", fallbackUrl);
+        const fallbackResponse = await fetch(fallbackUrl);
+        if (!fallbackResponse.ok) {
+          throw new Error(`HTTP error! status: ${fallbackResponse.status}`);
+        }
+        const fallbackData = await fallbackResponse.json();
+        console.log("✅ Interpretation fallback data received:", fallbackData);
+        return fallbackData;
+      } catch (fallbackError) {
+        console.warn("Interpretation fallback also failed:", fallbackError.message);
+      }
+    }
+
     return null;
   }
 };
@@ -2971,25 +2994,83 @@ export const fetchPopularChapters = async (language = "en") => {
 
 // Fetch Tajweed rules
 export const fetchTajweedRules = async (ruleNo = "0") => {
-  try {
-    // Replace dots with underscores in rule number as per API spec
-    const formattedRuleNo = ruleNo.toString().replace(/\./g, "_");
-    const url = `${API_BASE_URL}/thajweedrules/${formattedRuleNo}`;
-
-    console.log("Fetching Tajweed rules from:", url);
-    const response = await fetchWithTimeout(url, {}, 8000);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Tajweed rules data received:", data);
-    return data;
-  } catch (error) {
-    console.error("Error fetching Tajweed rules:", error);
-    throw error;
+  if (apiAvailabilityState.tajweedApiUnavailable) {
+    return getFallbackTajweedData(ruleNo?.toString().replace(/\./g, "_") ?? "0");
   }
+
+  // Replace dots with underscores in rule number as per API spec
+  const formattedRuleNo = ruleNo?.toString().replace(/\./g, "_") ?? "0";
+
+  // Build list of candidate endpoints (handles older misspelled route and new route)
+  const baseCandidates = Array.from(
+    new Set(
+      [
+        TAJWEED_RULES_API,
+        `${API_BASE_URL}/tajweedrules`,
+        `${API_BASE_URL}/thajweedrules`,
+        `${LEGACY_TFH_BASE}/tajweedrules`,
+        `${LEGACY_TFH_BASE}/thajweedrules`,
+      ].filter(Boolean)
+    )
+  );
+
+  let lastError = null;
+  let lastStatus = null;
+
+  for (const baseUrl of baseCandidates) {
+    const url = formattedRuleNo ? `${baseUrl}/${formattedRuleNo}` : baseUrl;
+
+    try {
+      console.log("Fetching Tajweed rules from:", url);
+      const response = await fetchWithTimeout(url, {}, 8000);
+
+      lastStatus = response.status;
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          lastError = new Error(`HTTP error! status: ${response.status}`);
+          lastStatus = 404;
+          // Stop trying other endpoints after the first 404 to avoid noisy retries
+          break;
+        }
+
+        if (response.status >= 500) {
+          // Try the next candidate endpoint
+          continue;
+        }
+
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Tajweed rules data received:", data);
+      return data;
+    } catch (error) {
+      lastError = error;
+      // Continue trying other candidates if available
+      continue;
+    }
+  }
+
+  if (lastStatus === 404) {
+    logWarningOnce(
+      `tajweed-rules-${formattedRuleNo}`,
+      `Tajweed rule ${formattedRuleNo} returned 404 - using fallback data`
+    );
+    apiAvailabilityState.tajweedApiUnavailable = true;
+    return getFallbackTajweedData(formattedRuleNo);
+  }
+
+  console.error("Error fetching Tajweed rules:", lastError);
+  if (lastError) {
+    apiAvailabilityState.tajweedApiUnavailable = true;
+  }
+  const fallback = getFallbackTajweedData(formattedRuleNo);
+  if (fallback.length > 0) {
+    return fallback;
+  }
+
+  throw lastError ?? new Error("Failed to fetch Tajweed rules");
 };
 
 // Fetch word meanings for drag and drop quiz

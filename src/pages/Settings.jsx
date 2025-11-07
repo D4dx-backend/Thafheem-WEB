@@ -37,6 +37,8 @@ const getLanguageCodeFromName = (name) => {
   return codeMap[name] || 'mal';
 };
 
+const VIEW_TYPE_SUPPORTED_LANGUAGES = ["mal", "E"];
+
 const Settings = ({ onClose }) => {
 
   const {
@@ -104,6 +106,19 @@ const Settings = ({ onClose }) => {
     { value: "al-hudaify", label: "Al-Hudaify" },
   ];
 
+  const viewTypeAvailable = VIEW_TYPE_SUPPORTED_LANGUAGES.includes(contextTranslationLanguage);
+
+  useEffect(() => {
+    setViewType(contextViewType);
+  }, [contextViewType]);
+
+  useEffect(() => {
+    if (!VIEW_TYPE_SUPPORTED_LANGUAGES.includes(contextTranslationLanguage) && (contextViewType !== "Ayah Wise" || viewType !== "Ayah Wise")) {
+      setViewType("Ayah Wise");
+      setContextViewType("Ayah Wise");
+    }
+  }, [contextTranslationLanguage, contextViewType, viewType, setContextViewType]);
+
   const handleReset = () => {
     setTheme("Light");
     if (contextTheme === "dark") {
@@ -131,7 +146,9 @@ const Settings = ({ onClose }) => {
     setContextQuranFont(quranFont);
     setContextFontSize(fontSize);
     setContextTranslationFontSize(translationFontSize);
-    setContextViewType(viewType);
+    const normalizedViewType = viewTypeAvailable ? viewType : "Ayah Wise";
+    setViewType(normalizedViewType);
+    setContextViewType(normalizedViewType);
     // Save reciter to localStorage
     localStorage.setItem("reciter", reciter);
     console.log("Settings saved");
@@ -294,6 +311,14 @@ const Settings = ({ onClose }) => {
                   const selectedCode = getLanguageCodeFromName(selectedName);
                   setLanguage(selectedName);
                   setContextTranslationLanguage(selectedCode);
+                  if (!VIEW_TYPE_SUPPORTED_LANGUAGES.includes(selectedCode)) {
+                    if (viewType !== "Ayah Wise") {
+                      setViewType("Ayah Wise");
+                    }
+                    if (contextViewType !== "Ayah Wise") {
+                      setContextViewType("Ayah Wise");
+                    }
+                  }
                 }}
                 className="w-[120px] h-[36px] pr-8 pl-3 border text-[#2AA0BF] 
                  dark:bg-[#323A3F] dark:border-none dark:text-[#4FAEC7] border-gray-300 rounded-lg 
@@ -361,6 +386,7 @@ const Settings = ({ onClose }) => {
           </div>
 
           {/* View Type */}
+          {viewTypeAvailable && (
           <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-normal text-gray-900 mb-3 dark:text-white">
               View Type
@@ -397,6 +423,7 @@ const Settings = ({ onClose }) => {
               </button>
             </div>
           </div>
+          )}
 
           {/* Quran Audio */}
           <div className="pb-4 border-b border-gray-200 dark:border-gray-700">

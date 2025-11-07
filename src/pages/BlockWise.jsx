@@ -81,11 +81,43 @@ const BlockWise = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { pathname } = location;
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
-  const { quranFont, translationLanguage, theme, translationFontSize } = useTheme();
+  const {
+    quranFont,
+    translationLanguage,
+    theme,
+    translationFontSize,
+    viewType: contextViewType,
+    setViewType: setContextViewType,
+  } = useTheme();
   const { surahId } = useParams();
   
+  useEffect(() => {
+    const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+
+    if (!supportsBlockwise) {
+      if (contextViewType !== 'Ayah Wise') {
+        setContextViewType('Ayah Wise');
+      }
+      return;
+    }
+
+    if (contextViewType === 'Ayah Wise') {
+      const targetPath = `/surah/${surahId}`;
+      if (pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    } else if (contextViewType !== 'Block Wise') {
+      setContextViewType('Block Wise');
+    }
+  }, [contextViewType, translationLanguage, surahId, navigate, pathname, setContextViewType]);
+
+  const handleNavigateToAyahWise = () => {
+    setContextViewType('Ayah Wise');
+  };
+
   // Use cached surah data
   const { surahs } = useSurahData();
 
@@ -1061,10 +1093,10 @@ const BlockWise = () => {
               {/* Mobile Ayah/Block selector (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
                 <div className="flex justify-end mb-4 sm:hidden">
-                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
                     <button
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={() => navigate(`/surah/${surahId}`)}
+                      onClick={handleNavigateToAyahWise}
                     >
                       Ayah
                     </button>
@@ -1077,11 +1109,11 @@ const BlockWise = () => {
 
               {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="absolute top-0 right-4 hidden sm:block">
-                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                <div className="absolute top-0 right-4 sm:right-6 lg:right-42 hidden sm:block">
+                  <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
                       className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
-                      onClick={() => navigate(`/surah/${surahId}`)}
+                      onClick={handleNavigateToAyahWise}
                     >
                       Ayah wise
                     </button>

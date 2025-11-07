@@ -35,3 +35,4 @@ export const CompactLoadFallback = ({ message = "Loading..." }) => {
 
 export default LazyLoadFallback;
 
+

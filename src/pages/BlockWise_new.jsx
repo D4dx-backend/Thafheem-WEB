@@ -75,10 +75,41 @@ const BlockWise = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { pathname } = location;
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  const { quranFont, translationLanguage, theme } = useTheme();
+  const {
+    quranFont,
+    translationLanguage,
+    theme,
+    viewType: contextViewType,
+    setViewType: setContextViewType,
+  } = useTheme();
   const { surahId } = useParams();
+
+  useEffect(() => {
+    const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+
+    if (!supportsBlockwise) {
+      if (contextViewType !== 'Ayah Wise') {
+        setContextViewType('Ayah Wise');
+      }
+      return;
+    }
+
+    if (contextViewType === 'Ayah Wise') {
+      const targetPath = `/surah/${surahId}`;
+      if (pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    } else if (contextViewType !== 'Block Wise') {
+      setContextViewType('Block Wise');
+    }
+  }, [contextViewType, translationLanguage, surahId, navigate, pathname, setContextViewType]);
+
+  const handleNavigateToAyahWise = () => {
+    setContextViewType('Ayah Wise');
+  };
 
   // Use cached surah data
   const { surahs } = useSurahData();
@@ -846,7 +877,7 @@ const BlockWise = () => {
                   <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
                       className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
-                      onClick={() => navigate(`/surah/${surahId}`)}
+                      onClick={handleNavigateToAyahWise}
                     >
                       Ayah wise
                     </button>
@@ -942,19 +973,32 @@ const BlockWise = () => {
                     
 
                     <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-                      <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
-                        style={{ fontFamily: `'${quranFont}', serif`, textAlign: 'right', direction: 'rtl' }}
-                      >
-                        {arabicSlice.length > 0
-                          ? arabicSlice
-                              .map(
-                                (verse, idx) =>
-                                  `${verse.text_uthmani} ﴿${toArabicNumber(start + idx)}﴾`
-                              )
-                              .join(" ")
-                          : "Loading Arabic text..."}
-                      </p>
+                      {arabicSlice.length > 0 ? (
+                        <div
+                          className="flex flex-col gap-8 text-lg sm:text-xl md:text-[1.45rem] lg:text-[1.6rem] xl:text-[1.7rem] text-gray-900 dark:text-white px-4 sm:px-6"
+                          style={{ fontFamily: `'${quranFont}', serif` }}
+                          dir="rtl"
+                        >
+                          {arabicSlice.map((verse, idx) => (
+                            <p
+                              key={`arabic-verse-${blockId}-${start + idx}`}
+                              className="text-right leading-[3.2rem] sm:leading-[3.6rem]"
+                            >
+                              {verse.text_uthmani}
+                              <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
+                                ﴿{toArabicNumber(start + idx)}﴾
+                              </span>
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p
+                          className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
+                          style={{ fontFamily: `'${quranFont}', serif` }}
+                        >
+                          Loading Arabic text...
+                        </p>
+                      )}
                     </div>
 
                     {/* Translation Text for this block */}

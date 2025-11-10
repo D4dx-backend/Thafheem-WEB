@@ -151,8 +151,7 @@ const Settings = ({ onClose }) => {
     setContextViewType(normalizedViewType);
     // Save reciter to localStorage
     localStorage.setItem("reciter", reciter);
-    console.log("Settings saved");
-    if (onClose) onClose();
+if (onClose) onClose();
   };
 
   return (

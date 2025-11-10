@@ -102,8 +102,7 @@ const AyathNavbar = ({
       onVerseChange(newVerseId);
     } else {
       // Just update the verse in the current modal
-      console.log(`Changing to verse ${newVerseId}`);
-    }
+}
     setVerseDropdownOpen(false);
   };
 

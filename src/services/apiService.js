@@ -30,7 +30,6 @@ class ApiService {
     
     const cached = this.cache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp)) {
-      console.log(`📦 Cache hit for API: ${cacheKey}`);
       return cached.data;
     }
     
@@ -50,8 +49,6 @@ class ApiService {
       data,
       timestamp: Date.now()
     });
-    
-    console.log(`💾 Cached API response: ${cacheKey}`);
   }
 
   // Make API request with caching and deduplication
@@ -66,7 +63,6 @@ class ApiService {
 
     // Check if request is already in progress
     if (this.requestQueue.has(cacheKey)) {
-      console.log(`⏳ Request already in progress: ${cacheKey}`);
       return this.requestQueue.get(cacheKey);
     }
 
@@ -89,10 +85,9 @@ class ApiService {
 
   // Actual API request implementation
   async _makeActualRequest(endpoint, params = {}, options = {}) {
-    // Construct the full URL - API_BASE_URL already includes the base (e.g., http://localhost:5000)
-    // endpoint already includes /api prefix (e.g., /english/surah/3)
-    const fullUrl = `${API_BASE_URL}/api${endpoint}`;
-    const url = new URL(fullUrl);
+    const basePath = API_BASE_PATH || `${API_BASE_URL}/api/v1`;
+    const sanitizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = new URL(`${basePath}${sanitizedEndpoint}`);
     
     // Add query parameters
     Object.keys(params).forEach(key => {
@@ -100,9 +95,6 @@ class ApiService {
         url.searchParams.append(key, params[key]);
       }
     });
-
-    console.log(`🌐 Making API request: ${url.toString()}`);
-
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
@@ -116,10 +108,7 @@ class ApiService {
       const errorText = await response.text();
       throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
-
     const data = await response.json();
-    console.log(`✅ API request successful: ${endpoint}`);
-    
     return data;
   }
 
@@ -158,7 +147,6 @@ class ApiService {
   clearCache() {
     this.cache.clear();
     this.requestQueue.clear();
-    console.log('🧹 API cache cleared');
   }
 
   // Get cache statistics

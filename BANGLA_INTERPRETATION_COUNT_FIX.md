@@ -159,14 +159,7 @@ ORDER BY explanation_no_EN ASC
 ```javascript
 // Get all explanations for an ayah
 const explanations = await banglaTranslationService.getAllExplanations(1, 1);
-
-console.log(`Found ${explanations.length} explanations`);
-
-explanations.forEach((exp, index) => {
-  console.log(`Explanation ${index + 1}:`, exp.explanation);
-  console.log(`Bangla Number:`, exp.explanation_no_BNG);
-  console.log(`English Number:`, exp.explanation_no_EN);
-});
+// Inspect `explanations` in DevTools if needed
 ```
 
 ## Conclusion

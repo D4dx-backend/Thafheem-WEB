@@ -879,21 +879,14 @@ const Reading = () => {
           audioTypes={audioTypes}
           onAudioTypesChange={(newTypes) => {
             const currentIdx = currentAyahIndex; // Capture current index
-            console.debug('[Reading] onAudioTypesChange called', {
-              prevAudioTypes: audioTypes,
-              newAudioTypes: newTypes,
-              currentIdx,
-              currentAyah
-            });
-            setAudioTypes(newTypes);
+setAudioTypes(newTypes);
             // If audio is currently playing, restart with new audio types
             if (currentAyah && currentIdx >= 0) {
               stopAudio();
               // Pass newTypes directly to avoid closure issue
               setTimeout(() => {
                 setIsPlaying(true);
-                console.debug('[Reading] restarting play with newTypes', newTypes);
-                playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
+playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
               }, 100);
             }
           }}

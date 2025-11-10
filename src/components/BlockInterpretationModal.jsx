@@ -102,11 +102,7 @@ const BlockInterpretationModal = ({
         setError(null);
         setContent([]);
 
-        console.log(
-          `🔄 Loading interpretation: Surah ${currentSurahId}, Range ${currentRange}, Interpretation ${currentInterpretationNo}, Language: ${currentLanguage}`
-        );
-
-        // For Malayalam, Hindi and Urdu, use their respective services/APIs
+// For Malayalam, Hindi and Urdu, use their respective services/APIs
         let data;
         if (currentLanguage === 'mal') {
           const isSingle = /^\d+$/.test(currentRange);
@@ -192,29 +188,15 @@ const BlockInterpretationModal = ({
               );
         }
 
-        console.log(
-          `✅ Received interpretation data for ${currentSurahId}:${currentRange}:${currentInterpretationNo}:`,
-          data
-        );
-
-        // Normalize to array of items with a text/content field
+// Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
         
         // Log interpretation numbers from the actual data
         if (items.length > 0) {
           const interpretationNos = items.map(item => item?.InterpretationNo || item?.interpretationNo || item?.interptn_no).filter(Boolean);
-          console.log(`📊 API returned ${items.length} item(s) with interpretation numbers:`, interpretationNos);
-          
-          // Show first item structure for debugging
+// Show first item structure for debugging
           if (items[0]) {
-            console.log(`📋 First item structure:`, {
-              ID: items[0].ID,
-              SuraID: items[0].SuraID,
-              InterpretationNo: items[0].InterpretationNo,
-              hasInterpretation: !!items[0].Interpretation,
-              interpretationLength: items[0].Interpretation?.length || 0
-            });
-          }
+}
         }
         
         // Check if we got empty or invalid data
@@ -521,8 +503,7 @@ const BlockInterpretationModal = ({
         return;
       }
       const newVerse = v - 1;
-      console.log('🔙 Moving to verse:', newVerse);
-      setCurrentRange(String(newVerse));
+setCurrentRange(String(newVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
       // Range: move to previous block of same size
       const match = current.match(/^(\d+)-(\d+)$/);
@@ -678,8 +659,7 @@ const BlockInterpretationModal = ({
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-        console.log(`📝 Extracted text from fallback field: ${k}`);
-        return v;
+return v;
       }
     }
     

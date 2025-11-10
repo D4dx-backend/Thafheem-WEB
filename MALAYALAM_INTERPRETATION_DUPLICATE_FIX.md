@@ -59,10 +59,8 @@ return {
 if (interpretation.appliesToVerse(ayahNumber)) {
   // Include this interpretation
   interpretations.push(...);
-  console.log(`✓ Interpretation ${i} applies to verse ${ayahNumber} (covers ${ayaFrom}-${ayaTo})`);
 } else {
   // Skip this interpretation
-  console.log(`⊘ Interpretation ${i} does NOT apply to verse ${ayahNumber} (covers ${ayaFrom}-${ayaTo})`);
 }
 ```
 
@@ -75,7 +73,7 @@ if (!seenInterpretations.has(textKey)) {
   seenInterpretations.add(textKey);
   interpretations.push(...);
 } else {
-  console.log(`⊘ Interpretation ${i} is duplicate, skipping`);
+  // Duplicate interpretation - skip
 }
 ```
 

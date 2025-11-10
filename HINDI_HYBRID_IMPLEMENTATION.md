@@ -122,7 +122,7 @@ const explanation = await hindiTranslationService.getExplanationByNumber(1, 1, '
 ```javascript
 try {
   const explanations = await hindiTranslationService.getAllExplanations(1, 1);
-  console.log(`Found ${explanations.length} explanations`);
+  // Found ${explanations.length} explanations
 } catch (error) {
   console.error('Error fetching explanations:', error);
 }

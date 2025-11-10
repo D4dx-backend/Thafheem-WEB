@@ -110,7 +110,7 @@ Console: 3-5 logs per load
 2. **Wrap debug logs in development checks**:
    ```javascript
    if (import.meta.env.DEV) {
-     console.log('Debug info:', data);
+     // Debug info: ${data}
    }
    ```
 
@@ -144,11 +144,11 @@ Console: 3-5 logs per load
 2. **Don't add excessive console logs without dev checks**:
    ```javascript
    // ❌ BAD
-   console.log('Every render:', data);
+   // Every render: ${data}
    
    // ✅ GOOD
    if (import.meta.env.DEV) {
-     console.log('Debug:', data);
+     // Debug: ${data}
    }
    ```
 

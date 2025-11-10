@@ -41,9 +41,7 @@ const Tajweed = () => {
         setError(null);
 
         const rulesData = await fetchAllTajweedRules();
-        console.log("Loaded Tajweed rules:", rulesData);
-
-        // Check if rulesData is an array, if not, wrap it in an array
+// Check if rulesData is an array, if not, wrap it in an array
         const rulesArray = Array.isArray(rulesData) ? rulesData : [rulesData];
 
         // Transform the rules data based on actual API response structure
@@ -61,8 +59,7 @@ const Tajweed = () => {
             subRulesLoaded: false, // Track if sub-rules have been loaded
           }));
 
-        console.log("Transformed rules:", transformedRules);
-        setTajweedRules(transformedRules);
+setTajweedRules(transformedRules);
       } catch (err) {
         console.error("Failed to load Tajweed rules:", err);
         setError(err.message);
@@ -113,14 +110,8 @@ const Tajweed = () => {
 
           // Convert rule number format for API call (e.g., "1.4" -> "1_4")
           const formattedRuleNo = ruleId.toString().replace(/\./g, "_");
-          console.log(
-            `Fetching sub-rules for rule ${ruleId} (formatted as ${formattedRuleNo})`
-          );
-
-          const subRulesData = await fetchSpecificTajweedRule(formattedRuleNo);
-          console.log("Fetched sub-rules data:", subRulesData);
-
-          // Process sub-rules data
+const subRulesData = await fetchSpecificTajweedRule(formattedRuleNo);
+// Process sub-rules data
           let processedSubRules = [];
           let allExamples = "";
 
@@ -160,10 +151,7 @@ const Tajweed = () => {
             )
           );
 
-          console.log(
-            `Successfully loaded ${processedSubRules.length} sub-rules for rule ${ruleId}`
-          );
-        } catch (error) {
+} catch (error) {
           console.error("Failed to fetch sub-rules:", error);
           // Mark as loaded even on error to prevent repeated failed attempts
           setTajweedRules((prevRules) =>
@@ -210,16 +198,10 @@ const Tajweed = () => {
 
           // Convert sub-rule number format for API call
           const formattedSubRuleNo = subRuleId.toString().replace(/\./g, "_");
-          console.log(
-            `Fetching nested sub-rules for sub-rule ${subRuleId} (formatted as ${formattedSubRuleNo})`
-          );
-
-          const nestedSubRulesData = await fetchSpecificTajweedRule(
+const nestedSubRulesData = await fetchSpecificTajweedRule(
             formattedSubRuleNo
           );
-          console.log("Fetched nested sub-rules data:", nestedSubRulesData);
-
-          // Process nested sub-rules data
+// Process nested sub-rules data
           let processedNestedSubRules = [];
           let allNestedExamples = "";
 
@@ -270,10 +252,7 @@ const Tajweed = () => {
             )
           );
 
-          console.log(
-            `Successfully loaded ${processedNestedSubRules.length} nested sub-rules for sub-rule ${subRuleId}`
-          );
-        } catch (error) {
+} catch (error) {
           console.error("Failed to fetch nested sub-rules:", error);
           // Mark as loaded even on error to prevent repeated failed attempts
           setTajweedRules((prevRules) =>
@@ -371,9 +350,7 @@ const Tajweed = () => {
         const verseKey = `${matches[0][1]}:${matches[0][2]}`;
         const surahNumber = matches[0][1];
         const ayahNumber = matches[0][2];
-        console.log(`Fetching Arabic text for verse: ${verseKey}`);
-
-        const arabicText = await fetchArabicAyah(verseKey);
+const arabicText = await fetchArabicAyah(verseKey);
 
         // Add ayah number to the Arabic text (convert to Arabic numbers)
         const arabicAyahNumber = convertToArabicNumbers(ayahNumber);

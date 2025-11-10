@@ -49,6 +49,8 @@ import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 
+const URDU_BATCH_SIZE = 20;
+
 const Surah = () => {
   const {
     quranFont,
@@ -146,6 +148,12 @@ const Surah = () => {
   // In-memory cache for English per-ayah translation map
   const englishAyahCacheRef = useRef(new Map()); // key: `${surahId}-E` -> Map(ayah->text)
 
+  // Urdu lazy-loading state
+  const [totalUrduVerses, setTotalUrduVerses] = useState(0);
+  const [urduLoadedCount, setUrduLoadedCount] = useState(0);
+  const [isLoadingUrduBatch, setIsLoadingUrduBatch] = useState(false);
+  const loadMoreUrduRef = useRef(null);
+
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
     return num
@@ -154,6 +162,126 @@ const Surah = () => {
       .map((digit) => arabicDigits[digit] || digit)
       .join("");
   };
+
+  const loadUrduBatch = useCallback(
+    async (startVerse, endVerse, replace = false) => {
+      if (!surahId || translationLanguage !== 'ur') return;
+
+      const surahNumber = parseInt(surahId, 10);
+      if (Number.isNaN(surahNumber)) return;
+
+      setIsLoadingUrduBatch(true);
+      try {
+        const verseNumbers = Array.from(
+          { length: endVerse - startVerse + 1 },
+          (_, idx) => startVerse + idx
+        );
+
+        const items = await Promise.all(
+          verseNumbers.map(async (verseNumber) => {
+            const rawTranslation =
+              (await urduTranslationService.getAyahTranslation(
+                surahNumber,
+                verseNumber
+              )) || "";
+
+            const parsedTranslation =
+              urduTranslationService.parseUrduTranslationWithClickableFootnotes(
+                rawTranslation,
+                surahNumber,
+                verseNumber
+              );
+
+            return {
+              number: verseNumber,
+              ArabicText: "",
+              Translation: parsedTranslation,
+              RawTranslation: rawTranslation,
+            };
+          })
+        );
+
+        setAyahData((prev) => (replace ? items : [...prev, ...items]));
+        setUrduLoadedCount(endVerse);
+      } catch (error) {
+        if (replace) {
+          setAyahData([]);
+        }
+        console.error(
+          `Error fetching Urdu translations for ayahs ${startVerse}-${endVerse}:`,
+          error
+        );
+        throw error;
+      } finally {
+        setIsLoadingUrduBatch(false);
+      }
+    },
+    [surahId, translationLanguage]
+  );
+
+  const handleLoadMoreUrdu = useCallback(async () => {
+    if (
+      translationLanguage !== 'ur' ||
+      isLoadingUrduBatch ||
+      urduLoadedCount >= totalUrduVerses
+    ) {
+      return;
+    }
+
+    const nextStart = urduLoadedCount + 1;
+    const nextEnd = Math.min(
+      urduLoadedCount + URDU_BATCH_SIZE,
+      totalUrduVerses
+    );
+
+    try {
+      await loadUrduBatch(nextStart, nextEnd);
+    } catch (error) {
+      showError?.("Failed to load more Urdu ayahs. Please try again.");
+    }
+  }, [
+    isLoadingUrduBatch,
+    loadUrduBatch,
+    totalUrduVerses,
+    showError,
+    urduLoadedCount,
+    translationLanguage,
+  ]);
+
+  useEffect(() => {
+    if (translationLanguage !== 'ur') {
+      return;
+    }
+
+    const target = loadMoreUrduRef.current;
+    if (!target) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0]?.isIntersecting &&
+          !isLoadingUrduBatch &&
+          urduLoadedCount < totalUrduVerses
+        ) {
+          handleLoadMoreUrdu();
+        }
+      },
+      { root: null, rootMargin: '200px', threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    handleLoadMoreUrdu,
+    isLoadingUrduBatch,
+    totalUrduVerses,
+    translationLanguage,
+    urduLoadedCount,
+  ]);
 
   // Ref to store handleTopPlayPause for event listener (defined later)
   const handleTopPlayPauseRef = useRef(null);
@@ -307,6 +435,12 @@ const Surah = () => {
           }
         }
 
+        // Reset Urdu tracking for non-Urdu languages
+        if (translationLanguage !== 'ur') {
+          setTotalUrduVerses(0);
+          setUrduLoadedCount(0);
+        }
+
         // Translation source depends on selected language
         if (translationLanguage === 'ta') {
           // Tamil translations using hybrid service (API-first with SQL.js fallback)
@@ -351,31 +485,16 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'ur') {
-          // Urdu translations using hybrid service (API-first with SQL.js fallback)
+          // Urdu translations with lazy loading batches from API
           try {
-            // Build list of translations per ayah using hybrid service
-            const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
-            const items = await Promise.all(
-              verseNumbers.map(async (v) => {
-                const rawTranslation = await urduTranslationService.getAyahTranslation(parseInt(surahId), v) || '';
-                
-                // Store both raw and parsed versions
-                const parsedTranslation = urduTranslationService.parseUrduTranslationWithClickableFootnotes(
-                  rawTranslation, 
-                  parseInt(surahId), 
-                  v
-                );
-                
-                return {
-                  number: v,
-                  ArabicText: '',
-                  Translation: parsedTranslation,
-                  RawTranslation: rawTranslation // Store raw version for re-parsing if needed
-                };
-              })
-            );
-            setAyahData(items);
-            
+            setTotalUrduVerses(verseCount);
+            setUrduLoadedCount(0);
+            setAyahData([]);
+
+            if (verseCount > 0) {
+              const initialEnd = Math.min(URDU_BATCH_SIZE, verseCount);
+              await loadUrduBatch(1, initialEnd, true);
+            }
           } catch (error) {
             console.error('Error fetching Urdu translations:', error);
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
@@ -386,10 +505,8 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'bn') {
-          // Bangla translations from SQLite database (auto-load, no prompt)
+          // Bangla translations from API
           try {
-            // Ensure DB is initialized; this will mark it as downloaded internally
-            await banglaTranslationService.initDB();
             const banglaTranslations = await banglaTranslationService.getSurahTranslations(parseInt(surahId));
             if (banglaTranslations && banglaTranslations.length > 0) {
               // Parse Bangla translations to make explanation numbers clickable
@@ -506,7 +623,7 @@ const Surah = () => {
     };
 
     loadSurahData();
-  }, [surahId, translationLanguage]);
+  }, [surahId, translationLanguage, loadUrduBatch]);
 
   // Load bookmarked verses for signed-in users
   useEffect(() => {
@@ -634,9 +751,7 @@ const Surah = () => {
 
   const handleInterpretationClick = async (verseNumber) => {
     try {
-      console.log(`🔄 Opening interpretation for verse ${verseNumber} in Surah ${surahId}`);
-
-      // Special handling for Surah 114
+// Special handling for Surah 114
       if (parseInt(surahId) === 114) {
         // Add any special logic for Surah 114 if needed
       }
@@ -644,8 +759,7 @@ const Surah = () => {
       // For English language, we don't need to fetch interpretation count
       // The AyahModal will handle fetching the specific footnotes directly
       if (translationLanguage === 'E') {
-        console.log(`📚 [Surah] Opening English interpretation modal for verse ${verseNumber}`);
-      }
+}
 
       // Open the AyahModal
       setSelectedVerseForInterpretation(verseNumber);
@@ -1688,7 +1802,8 @@ const Surah = () => {
                 </p>
               </div>
             ) : !loading && ayahData.length > 0 ? (
-              ayahData.map((verse, index) => {
+              <>
+              {ayahData.map((verse, index) => {
                 // Find corresponding Arabic verse by index (more reliable than verse_key matching)
                 const arabicVerse = arabicVerses[index];
                 const arabicText = arabicVerse?.text_uthmani || "";
@@ -1938,7 +2053,25 @@ const Surah = () => {
                     </div>
                   </div>
                 );
-              })
+              })}
+              {translationLanguage === 'ur' && totalUrduVerses > 0 && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Showing {Math.min(urduLoadedCount, totalUrduVerses)} of {totalUrduVerses} ayahs
+                  </p>
+                  <div
+                    ref={loadMoreUrduRef}
+                    className="w-full flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 h-12"
+                  >
+                    {urduLoadedCount >= totalUrduVerses
+                      ? 'All ayahs loaded'
+                      : isLoadingUrduBatch
+                        ? 'Loading more ayahs…'
+                        : 'Scroll to load more ayahs'}
+                  </div>
+                </div>
+              )}
+              </>
             ) : null}
           </div>
         </div>
@@ -2289,12 +2422,7 @@ const Surah = () => {
             audioTypes={audioTypes}
             onAudioTypesChange={(newTypes) => {
               const currentPlayingAyah = playingAyah; // Capture current ayah
-              console.debug('[Surah] onAudioTypesChange called', {
-                prevAudioTypes: audioTypes,
-                newAudioTypes: newTypes,
-                currentPlayingAyah
-              });
-              setAudioTypes(newTypes);
+setAudioTypes(newTypes);
               // If audio is currently playing, restart with new audio types
               if (currentPlayingAyah) {
                 // Soft restart without unmounting the player
@@ -2302,8 +2430,7 @@ const Surah = () => {
                 setIsSequencePlaying(false);
                 // Use newTypes directly instead of relying on state
                 setTimeout(() => {
-                  console.debug('[Surah] restarting sequence with newTypes', newTypes);
-                  playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
+playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
                 }, 50);
               }
             }}

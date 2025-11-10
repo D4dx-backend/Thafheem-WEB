@@ -103,8 +103,7 @@ const HomepageNavbar = () => {
     try {
       setIsSigningOut(true);
       await signOut(auth);
-      console.log("User signed out successfully");
-      navigate("/"); // Redirect to home page after successful logout
+navigate("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {

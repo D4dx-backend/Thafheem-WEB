@@ -111,8 +111,7 @@ const FavoriteSurahs = () => {
       );
       
       showSuccess("Surah removed from favorites");
-      console.log("Favorite removed successfully");
-    } catch (error) {
+} catch (error) {
       console.error("Error deleting favorite:", error);
       showError("Failed to delete favorite. Please try again.");
     } finally {

@@ -31,20 +31,14 @@ const InterpretationNavbar = ({
   onNext,
 }) => {
   // Debug logging
-  console.log('🔍 InterpretationNavbar received props:', {
-    interpretationNumber,
-    verseRange,
-    surahName
-  });
-  const navigate = useNavigate();
+const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null); // 'surah' | 'range' | null
   const surahBtnRef = useRef(null);
   const rangeBtnRef = useRef(null);
   
   // Force re-render when interpretationNumber changes
   useEffect(() => {
-    console.log('🔄 InterpretationNavbar: interpretationNumber changed to:', interpretationNumber);
-  }, [interpretationNumber]);
+}, [interpretationNumber]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -154,8 +148,7 @@ const InterpretationNavbar = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Close button clicked in mobile navbar");
-                handleClose();
+handleClose();
               }}
               className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-700 transition-colors ml-2"
             >
@@ -175,8 +168,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Word-by-word button clicked in navbar");
-                  if (onWordByWord) {
+if (onWordByWord) {
                     onWordByWord(e);
                   }
                 }}
@@ -190,8 +182,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Bookmark button clicked in navbar");
-                  if (onBookmark) {
+if (onBookmark) {
                     onBookmark();
                   }
                 }}
@@ -207,8 +198,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Share button clicked in navbar");
-                  if (onShare) {
+if (onShare) {
                     onShare();
                   }
                 }}
@@ -302,8 +292,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Word-by-word button clicked in desktop navbar");
-                  if (onWordByWord) {
+if (onWordByWord) {
                     onWordByWord(e);
                   }
                 }}
@@ -317,8 +306,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Bookmark button clicked in desktop navbar");
-                  if (onBookmark) {
+if (onBookmark) {
                     onBookmark();
                   }
                 }}
@@ -333,8 +321,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Share button clicked in desktop navbar");
-                  if (onShare) {
+if (onShare) {
                     onShare();
                   }
                 }}
@@ -346,8 +333,7 @@ const InterpretationNavbar = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Close button clicked in desktop navbar");
-                  handleClose();
+handleClose();
                 }}
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-700 transition-colors ml-2"
               >
@@ -364,8 +350,7 @@ const InterpretationNavbar = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Previous navigation button clicked");
-                if (onPrev) {
+if (onPrev) {
                   onPrev();
                 }
               }}
@@ -388,8 +373,7 @@ const InterpretationNavbar = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Next navigation button clicked");
-                if (onNext) {
+if (onNext) {
                   onNext();
                 }
               }}

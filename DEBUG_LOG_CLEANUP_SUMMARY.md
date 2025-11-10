@@ -53,11 +53,12 @@ Successfully removed all debug console logs from the codebase while preserving e
 
 ### Before Cleanup
 ```javascript
-console.log(`🔧 Bangla Translation Service initialized - Mode: ${this.useApi ? 'API-first' : 'SQL.js only'}`);
-console.log(`💾 Cached: ${cacheKey} with ${Array.isArray(data) ? data.length : 'not array'} items`);
-console.log(`🌐 API Request: ${url.toString()}`);
-console.log(`✅ API Response: ${endpoint}`);
-console.log(`📦 Cache hit: ${cacheKey}`);
+// Example debug logs that were removed:
+// 🔧 Bangla Translation Service initialized - Mode: ${this.useApi ? 'API-first' : 'SQL.js only'}
+// 💾 Cached: ${cacheKey} with ${Array.isArray(data) ? data.length : 'not array'} items
+// 🌐 API Request: ${url.toString()}
+// ✅ API Response: ${endpoint}
+// 📦 Cache hit: ${cacheKey}
 ```
 
 ### After Cleanup
@@ -102,10 +103,10 @@ console.error(`❌ Error fetching translation for ${surahId}:${ayahNumber}:`, er
 If debug logging is needed for development, consider adding:
 
 ```javascript
-// Conditional debug logging
-if (process.env.NODE_ENV === 'development') {
-  console.log(`🔍 Debug info: ${data}`);
-}
+// Conditional debug logging (add custom debug helper here if needed)
+// if (process.env.NODE_ENV === 'development') {
+//   debugLog(`🔍 Debug info: ${data}`);
+// }
 ```
 
 ### 📊 **Monitoring**

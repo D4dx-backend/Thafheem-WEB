@@ -155,13 +155,11 @@ const StickyAudioPlayer = ({
 
   // Debug: trace modal state changes
   useEffect(() => {
-    console.debug('[AudioSettings] showSettingsModal changed:', showSettingsModal);
-  }, [showSettingsModal]);
+}, [showSettingsModal]);
 
   // Debug: trace audioTypes prop changes
   useEffect(() => {
-    console.debug('[AudioSettings] audioTypes prop changed:', audioTypes);
-  }, [audioTypes]);
+}, [audioTypes]);
 
   // Keep modal open when audio types change
   useEffect(() => {
@@ -169,8 +167,7 @@ const StickyAudioPlayer = ({
     if (showSettingsModal && isUpdatingAudioTypes.current) {
       // Modal should remain open - no action needed
       isUpdatingAudioTypes.current = false;
-      console.debug('[AudioSettings] Completed audioTypes update while modal open');
-    }
+}
   }, [audioTypes, showSettingsModal]);
 
   // Close dropdown when clicking outside
@@ -183,8 +180,7 @@ const StickyAudioPlayer = ({
       
       if (showReciterDropdown && !event.target.closest('.reciter-dropdown')) {
         setShowReciterDropdown(false);
-        console.debug('[AudioSettings] Closed reciter dropdown due to outside click');
-      }
+}
       // Do NOT auto-close settings modal via document click. The modal already
       // has an overlay click and an explicit close button; keeping it open
       // during interactions allows selecting multiple audio options.
@@ -326,8 +322,7 @@ const StickyAudioPlayer = ({
             onClick={(e) => {
               // Only close if clicking directly on the backdrop element and not updating audio types
               if (e.target === e.currentTarget && !isUpdatingAudioTypes.current) {
-                console.debug('[AudioSettings] Backdrop clicked -> closing settings modal');
-                setShowSettingsModal(false);
+setShowSettingsModal(false);
               }
             }}
           ></div>
@@ -338,8 +333,7 @@ const StickyAudioPlayer = ({
               e.stopPropagation();
               // Debug container click
               if (process.env.NODE_ENV !== 'production') {
-                console.debug('[AudioSettings] Modal content click');
-              }
+}
             }}
           >
             {/* Modal Header */}
@@ -347,8 +341,7 @@ const StickyAudioPlayer = ({
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Audio Settings</h2>
               <button
                 onClick={() => {
-                  console.debug('[AudioSettings] Close (X) clicked');
-                  setShowSettingsModal(false);
+setShowSettingsModal(false);
                 }}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
@@ -385,20 +378,14 @@ const StickyAudioPlayer = ({
                             
                             // Ensure at least one is selected (prevent empty array)
                             if (newAudioTypes.length > 0) {
-                              console.debug('[AudioSettings] Option clicked:', {
-                                option: type.value,
-                                wasSelected: isSelected,
-                                newAudioTypes
-                              });
-                              onAudioTypesChange(newAudioTypes);
+onAudioTypesChange(newAudioTypes);
                             }
                           }
                           
                           // Reset flag after a short delay to allow re-render to complete
                           setTimeout(() => {
                             isUpdatingAudioTypes.current = false;
-                            console.debug('[AudioSettings] isUpdatingAudioTypes reset');
-                          }, 100);
+}, 100);
                         }}
                         className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
                           isSelected

@@ -1,6 +1,6 @@
 // English Translation Service - Database-only approach
 // Uses local English database for translations, explanations, and ayah ranges
-import { API_BASE_URL } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
 
 class EnglishTranslationService {
@@ -333,7 +333,7 @@ class EnglishTranslationService {
   async _getExplanationInternal(footnoteId, cacheKey) {
     try {
       // Use backend base URL from config
-      const response = await fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`);
+      const response = await fetch(`${API_BASE_PATH}/english/footnote/${footnoteId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -33,8 +33,7 @@ function cleanFile(filePath) {
   try {
     const fullPath = path.join(__dirname, filePath);
     if (!fs.existsSync(fullPath)) {
-      console.log(`File not found: ${filePath}`);
-      return;
+return;
     }
 
     let content = fs.readFileSync(fullPath, 'utf8');
@@ -48,10 +47,10 @@ function cleanFile(filePath) {
     // Clean up empty lines
     content = content.replace(/\n\s*\n\s*\n/g, '\n\n');
     
-    // Remove standalone console.log statements
+    // Remove standalone logging statements
     content = content.replace(/^\s*console\.log\([^)]*\);\s*$/gm, '');
     
-    // Remove console.log statements with emojis
+    // Remove logging statements with emojis
     content = content.replace(/^\s*console\.log\(`[^`]*[💾🔧📥✅🌐⚠️📦⏳🔍][^`]*`\);\s*$/gm, '');
     
     // Clean up multiple empty lines
@@ -59,17 +58,12 @@ function cleanFile(filePath) {
 
     if (content.length !== originalLength) {
       fs.writeFileSync(fullPath, content, 'utf8');
-      console.log(`✅ Cleaned ${filePath} (removed ${originalLength - content.length} characters)`);
-    } else {
-      console.log(`ℹ️  No changes needed for ${filePath}`);
-    }
+} else {
+}
   } catch (error) {
     console.error(`❌ Error cleaning ${filePath}:`, error.message);
   }
 }
 
 // Clean all files
-console.log('🧹 Removing debug console logs...\n');
 files.forEach(cleanFile);
-console.log('\n✨ Debug log cleanup complete!');
-

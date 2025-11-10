@@ -14,8 +14,7 @@ const JuzNavigate = ({ onClose }) => {
       try {
         setLoading(true);
         const data = await fetchJuzData();
-        console.log('Juz API data:', data);
-        setJuzData(data.juzData || []);
+setJuzData(data.juzData || []);
       } catch (error) {
         console.error('Error loading Juz data:', error);
         // Fallback to hardcoded data if API fails
@@ -191,31 +190,17 @@ const JuzNavigate = ({ onClose }) => {
   );
 
   const handleJuzClick = (juz) => {
-    console.log('Juz clicked:', juz);
-    
-    // Navigate to the first surah and verse of this Juz
+// Navigate to the first surah and verse of this Juz
     if (juz.surahs && juz.surahs.length > 0) {
       const firstSurah = juz.surahs[0];
-      console.log('First surah:', firstSurah);
-      
-      // Extract the first verse number from the verses string (e.g., "142-252" -> 142)
+// Extract the first verse number from the verses string (e.g., "142-252" -> 142)
       const firstVerse = firstSurah.verses.split('-')[0].split(',')[0].trim();
       const targetUrl = `/surah/${firstSurah.number}#verse-${firstVerse}`;
       
-      console.log('Juz navigation:', {
-        juz: juz.title || juz.name,
-        surah: firstSurah.name,
-        surahId: firstSurah.number,
-        verses: firstSurah.verses,
-        firstVerse: firstVerse,
-        targetUrl
-      });
-      
-      navigate(targetUrl);
+navigate(targetUrl);
     } else {
       // Fallback: navigate to Juz page if no surah data
-      console.log('No surahs found, navigating to Juz page');
-      navigate(`/juz/${juz.id}`);
+navigate(`/juz/${juz.id}`);
     }
     
     // Close the navigation modal

@@ -4,7 +4,7 @@
 // const Privacy = () => {
 //   const handleBack = () => {
 //     // Handle navigation back
-//     console.log("Navigate back");
+//     // Navigate back
 //   };
 
 //   return (
@@ -411,8 +411,7 @@ import { ArrowLeft } from "lucide-react";
 const Privacy = () => {
   const handleBack = () => {
     // Handle navigation back
-    console.log("Navigate back");
-  };
+};
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-poppins">

@@ -9,7 +9,7 @@ import {
   fetchAyahAudioTranslations,
   fetchSurahs,
 } from "../api/apifunction";
-import { API_BASE_URL } from "../api/apis";
+import { API_BASE_PATH } from "../api/apis";
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
 import urduTranslationService from "../services/urduTranslationService";
@@ -52,18 +52,22 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
   // Fetch data when surahId or currentVerseId changes
   useEffect(() => {
+    let isCancelled = false;
+
     const loadVerseData = async () => {
       if (!surahId || !currentVerseId) return;
 
       try {
         setLoading(true);
         setError(null);
+        setInterpretationData(null);
+        setVerseData(null);
 
-        // Debug: Log the current language
+        const verseNumberForRequest = currentVerseId;
 
         // For Malayalam, use fetchAllInterpretations to get all interpretations for the verse
         const interpretationPromise = translationLanguage === 'mal'
-          ? fetchAllInterpretations(parseInt(surahId), currentVerseId, 'mal')
+          ? fetchAllInterpretations(parseInt(surahId), verseNumberForRequest, 'mal')
               .then(interpretations => interpretations || [])
               .catch(error => {
                 console.error('❌ Error fetching Malayalam interpretations:', error);
@@ -71,7 +75,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               })
           : translationLanguage === 'ta' 
           ? (() => {
-    return tamilTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId)
+    return tamilTranslationService.getAyahTranslation(parseInt(surahId), verseNumberForRequest)
                 .then(translation => translation ? [{ 
                   interpretation: translation, 
                   AudioIntrerptn: translation,
@@ -82,7 +86,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             })()
           : translationLanguage === 'hi'
             ? (() => {
-    return hindiTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
+    return hindiTranslationService.getAllExplanations(parseInt(surahId), verseNumberForRequest)
                   .then(explanations => {
     const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
                       interpretation: exp.explanation, 
@@ -102,7 +106,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               })()
           : translationLanguage === 'ur'
             ? (() => {
-    return urduTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
+    return urduTranslationService.getAllExplanations(parseInt(surahId), verseNumberForRequest)
                   .then(explanations => explanations && explanations.length > 0 ? explanations.map(exp => ({ 
                     interpretation: exp.explanation, 
                     AudioIntrerptn: exp.explanation,
@@ -114,7 +118,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               })()
           : translationLanguage === 'bn'
             ? (() => {
-    return banglaTranslationService.getAllExplanations(parseInt(surahId), currentVerseId)
+    return banglaTranslationService.getAllExplanations(parseInt(surahId), verseNumberForRequest)
                   .then(explanations => {
     const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
                       interpretation: exp.explanation, 
@@ -134,30 +138,24 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               })()
             : translationLanguage === 'E'
               ? (async () => {
-                  // For English, follow the same pattern as Hindi/Bangla/Urdu
-                  // First get the ayah translation, then extract footnotes from it
                   try {
-                    const translation = await englishTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId);
-                    
+                    const translation = await englishTranslationService.getAyahTranslation(parseInt(surahId), verseNumberForRequest);
+
                     if (!translation) return [];
-                    
-                    // Parse the translation to extract footnote IDs
+
                     const footnoteIds = [];
                     const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
                     let match;
-                    
+
                     while ((match = footnoteRegex.exec(translation)) !== null) {
                       const footnoteId = match[1];
                       footnoteIds.push(footnoteId);
                     }
-                    
-                    console.log(`📚 [AyahModal] Found ${footnoteIds.length} footnotes in English translation for verse ${currentVerseId}`);
-                    
-                    if (footnoteIds.length === 0) return [];
-                    
-                    // Fetch each footnote
+
+if (footnoteIds.length === 0) return [];
+
                     const footnotePromises = footnoteIds.map((footnoteId) => {
-                      return fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`)
+                      return fetch(`${API_BASE_PATH}/english/footnote/${footnoteId}`)
                         .then(response => {
                           if (response.ok) {
                             return response.json().then(data => ({
@@ -174,13 +172,11 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                           return null;
                         });
                     });
-                    
+
                     const footnotes = await Promise.all(footnotePromises);
                     const validFootnotes = footnotes.filter(f => f !== null);
-                    
-                    console.log(`📚 [AyahModal] Fetched ${validFootnotes.length} English footnotes for verse ${currentVerseId}`);
-                    
-                    return validFootnotes.map((footnote, index) => ({
+
+return validFootnotes.map((footnote, index) => ({
                       interpretation: footnote.text,
                       AudioIntrerptn: footnote.text,
                       text: footnote.text,
@@ -188,31 +184,28 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                       interptn_no: footnote.footnote_id || (index + 1)
                     }));
                   } catch (error) {
-                    console.error(`❌ [AyahModal] Error fetching English translation for verse ${currentVerseId}:`, error);
+                    console.error(`❌ [AyahModal] Error fetching English translation for verse ${verseNumberForRequest}:`, error);
                     return [];
                   }
                 })()
               : (async () => {
                   try {
-                    // For Malayalam, fetch all interpretations
                     if (translationLanguage === 'mal') {
                       const allInterpretations = await fetchAllInterpretations(
                         parseInt(surahId),
-                        currentVerseId,
+                        verseNumberForRequest,
                         'mal'
                       );
                       return allInterpretations;
                     }
-                    
-                    // For other languages, fetch single interpretation
+
                     return await fetchInterpretation(
                       parseInt(surahId),
-                      currentVerseId,
+                      verseNumberForRequest,
                       1,
                       translationLanguage
                     );
                   } catch (error) {
-                    // Special handling for Surah 114
                     if (parseInt(surahId) === 114) {
                       return null;
                     }
@@ -220,13 +213,10 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                   }
                 })();
 
-        // Only fetch translation data if not using Tamil/Hindi/Bangla/English services  
-        // For Malayalam, also fetch from the audio translation API
         const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' || translationLanguage === 'E') 
           ? Promise.resolve(null) 
-          : fetchAyahAudioTranslations(parseInt(surahId), currentVerseId);
+          : fetchAyahAudioTranslations(parseInt(surahId), verseNumberForRequest);
 
-        // Use cached surahs data if available and not expired
         const now = Date.now();
         const getSurahsData = async () => {
           if (surahsCache && (now - surahsCacheTime) < CACHE_DURATION) {
@@ -251,7 +241,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           interpretationPromise,
         ]);
 
-        // Get surah info
+        if (isCancelled) return;
+
         const currentSurah = surahsData.find(
           (s) => s.number === parseInt(surahId)
         );
@@ -260,24 +251,20 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         );
         setTotalVerses(currentSurah?.ayahs || 0);
 
-        // Get Arabic verse
         const arabicVerse = arabicVerses.find(
-          (v) => v.verse_key === `${surahId}:${currentVerseId}`
+          (v) => v.verse_key === `${surahId}:${verseNumberForRequest}`
         );
 
-        // Get translation (only if translationData exists)
         const translationVerse = translationData 
           ? (Array.isArray(translationData)
-              ? translationData.find((t) => t.contiayano === currentVerseId)
+              ? translationData.find((t) => t.contiayano === verseNumberForRequest)
               : translationData)
           : null;
 
-        // For English, get translation from English service
         let englishTranslation = "";
         if (translationLanguage === 'E') {
           try {
-            englishTranslation = await englishTranslationService.getAyahTranslation(parseInt(surahId), currentVerseId);
-            // Clean up footnotes for display
+            englishTranslation = await englishTranslationService.getAyahTranslation(parseInt(surahId), verseNumberForRequest);
             englishTranslation = englishTranslation
               ? englishTranslation
                   .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
@@ -290,9 +277,10 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           }
         }
 
-        // Combine verse data
+        if (isCancelled) return;
+
         setVerseData({
-          number: currentVerseId,
+          number: verseNumberForRequest,
           arabic: arabicVerse?.text_uthmani || "",
           translation: translationLanguage === 'E' 
             ? englishTranslation
@@ -302,11 +290,10 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     .replace(/\s+/g, " ")
                     .trim()
                 : ""),
-          verseKey: `${surahId}:${currentVerseId}`,
+          verseKey: `${surahId}:${verseNumberForRequest}`,
         });
 
-        // Set interpretation data - handle different response structures
-
+        if (isCancelled) return;
 
         if (interpretationResponse) {
           if (Array.isArray(interpretationResponse)) {
@@ -330,15 +317,21 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           setInterpretationData(null);
         }
       } catch (err) {
+        if (isCancelled) return;
         setError(err.message);
         console.error("Error fetching verse data:", err);
       } finally {
+        if (isCancelled) return;
         setLoading(false);
       }
     };
 
     loadVerseData();
-  }, [surahId, currentVerseId]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [surahId, currentVerseId, translationLanguage]);
 
   // Handle clicks on Bangla explanation numbers
   useEffect(() => {
@@ -698,12 +691,20 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               </h4>
               <div className="space-y-3">
                 {interpretationData.map((interpretation, index) => {
-    const interpretationText =
-                    interpretation.AudioIntrerptn ||
-                    interpretation.interpretation ||
-                    interpretation.text ||
-                    interpretation.content ||
-                    "No interpretation available";
+    const interpretationTextCandidates = [
+                      interpretation.AudioIntrerptn,
+                      interpretation.interpretation,
+                      interpretation.Interpretation,
+                      interpretation.text,
+                      interpretation.content,
+                      interpretation?.interpretation_text,
+                      interpretation?.InterpretationText,
+                    ];
+
+                    const interpretationText = interpretationTextCandidates.find(
+                      (value) =>
+                        typeof value === "string" && value.trim().length > 0
+                    ) || "No interpretation available";
 
                   // For Hindi, Urdu, and English, show explanation/interpretation numbers
                   const explanationNumber = translationLanguage === 'hi' 

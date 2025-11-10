@@ -224,18 +224,10 @@ const [translation, wordByWord, interpretation] = await Promise.allSettled([
 
 ## 📈 Monitoring & Debugging
 
-### Console Logs
-The service loader includes helpful logging:
-```
-✅ Loaded Hindi translation service
-✅ Loaded Tamil word-by-word service
-⚠️ Failed to load Bangla interpretation service
-```
-
 ### Performance Metrics
 Monitor lazy loading impact:
 ```javascript
-console.log('Service cache size:', getServiceCacheSize());
+const cacheSize = getServiceCacheSize();
 ```
 
 ### Network Tab
@@ -363,7 +355,8 @@ window.location.reload();
 4. Test service loader directly:
 ```javascript
 import { loadTranslationService } from './utils/serviceLoader';
-loadTranslationService('hi').then(console.log);
+const service = await loadTranslationService('hi');
+// Inspect `service` in DevTools
 ```
 
 ## 📚 Related Documentation

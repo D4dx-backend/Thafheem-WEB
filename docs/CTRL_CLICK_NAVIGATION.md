@@ -106,8 +106,8 @@ const navigateWithModifier = useNavigateWithModifier();
 <button 
   data-url="/surah/1"
   onClick={(e) => navigateWithModifier(e, '/surah/1', {
-    onNavigate: () => console.log('Navigated in same tab'),
-    onNewTab: () => console.log('Opened in new tab')
+    onNavigate: () => {/* Navigated in same tab */},
+    onNewTab: () => {/* Opened in new tab */}
   })}
 >
   Surah 1

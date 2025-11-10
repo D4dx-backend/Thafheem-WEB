@@ -12,8 +12,7 @@ const DeleteAccount = () => {
 
   const handleCancel = () => {
     setIsOpen(false);
-    console.log("Delete account cancelled");
-    navigate(-1); // 👈 Goes back to the previous page
+navigate(-1); // 👈 Goes back to the previous page
   };
 
   const handleDeleteAccount = async () => {
@@ -32,9 +31,7 @@ const DeleteAccount = () => {
       // Clear any local storage data
       localStorage.clear();
 
-      console.log("Account deleted successfully");
-
-      // Redirect to home page or sign-in page
+// Redirect to home page or sign-in page
       navigate("/", { replace: true });
     } catch (error) {
       console.error("Error deleting account:", error);

@@ -181,18 +181,13 @@ BanglaTranslationService.clearCache();
 
 // Get cache statistics
 const stats = BanglaTranslationService.getCacheStats();
-console.log('Cache stats:', stats);
 ```
 
 ### Service Health Check
 ```javascript
 // Check if service is available
 const isAvailable = await BanglaTranslationService.isAvailable();
-if (isAvailable) {
-  console.log('Service is ready');
-} else {
-  console.log('Service is not available');
-}
+// `isAvailable` will be true if the API responds successfully
 ```
 
 ### HTML Rendering for Clickable Explanations
@@ -214,7 +209,6 @@ const clickableHtml = BanglaTranslationService.parseBanglaTranslationWithClickab
 
 // The result will have blue circular buttons for explanation numbers
 // with hover effects and click handlers
-console.log(clickableHtml);
 
 // Get specific explanation by number
 const explanation1 = await BanglaTranslationService.getExplanationByNumber(1, 1, '1');

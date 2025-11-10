@@ -68,8 +68,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }
             }
           } catch (error) {
-            console.log("Malayalam interpretation error:", error);
-          }
+}
         } else if (effectiveLang === 'ta') {
           try {
             const tamilTranslation = await tamilTranslationService.getAyahTranslation(parseInt(surahId), parseInt(verseId));
@@ -82,8 +81,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-            console.log("Tamil translation error:", error);
-          }
+}
         } else if (effectiveLang === 'hi') {
           try {
             const hindiExplanation = await hindiTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -96,8 +94,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-            console.log("Hindi translation error:", error);
-          }
+}
         } else if (effectiveLang === 'ur') {
           try {
             const urduExplanation = await urduTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -110,8 +107,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-            console.log("Urdu translation error:", error);
-          }
+}
         } else if (effectiveLang === 'bn') {
           try {
             const banglaExplanation = await banglaTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -124,8 +120,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-            console.log("Bangla interpretation error:", error);
-          }
+}
         } else if (effectiveLang === 'E') {
           // 1) Try single-ayah English endpoint (fast path)
           try {
@@ -233,8 +228,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-        console.log(`📝 Extracted interpretation text from fallback field: ${k}`);
-        return v;
+return v;
       }
     }
     

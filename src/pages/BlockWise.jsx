@@ -1648,20 +1648,13 @@ const BlockWise = () => {
               onAudioTypesChange={(newTypes) => {
                 const currentBlock = playingBlock;
                 const currentAyah = currentAyahInBlock;
-                console.debug('[BlockWise] onAudioTypesChange called', {
-                  prevAudioTypes: audioTypes,
-                  newAudioTypes: newTypes,
-                  currentBlock,
-                  currentAyah
-                });
-                setAudioTypes(newTypes);
+setAudioTypes(newTypes);
                 // If audio is currently playing, restart with new audio types
                 if (currentBlock && currentAyah) {
                   stopPlayback();
                   // Pass newTypes directly to avoid closure issue
                   setTimeout(() => {
-                    console.debug('[BlockWise] restarting ayah audio with newTypes', newTypes);
-                    playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
+playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
                   }, 100);
                 }
               }}

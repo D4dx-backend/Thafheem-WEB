@@ -52,7 +52,7 @@ await preloadLanguageServices('ta'); // Tamil
 | `loadInterpretationService(lang)` | Load interpretation service | `await loadInterpretationService('bn')` |
 | `preloadLanguageServices(lang)` | Preload all services for language | `await preloadLanguageServices('ur')` |
 | `clearServiceCache()` | Clear cached services | `clearServiceCache()` |
-| `getServiceCacheSize()` | Get number of cached services | `console.log(getServiceCacheSize())` |
+| `getServiceCacheSize()` | Get number of cached services | `const cacheSize = getServiceCacheSize();` |
 
 ### From `hooks/useTranslationService.js`:
 
@@ -189,7 +189,7 @@ import LazyLoadFallback from '../components/LazyLoadFallback';
 ```javascript
 import { getServiceCacheSize } from '../utils/serviceLoader';
 
-console.log(`Cached services: ${getServiceCacheSize()}`);
+const cachedServices = getServiceCacheSize();
 ```
 
 ### Force Reload Service:
@@ -256,11 +256,11 @@ import { loadTranslationService } from './utils/serviceLoader';
 
 // Test Hindi
 const hindi = await loadTranslationService('hi');
-console.log('Hindi service:', hindi);
+// Inspect `hindi` in DevTools
 
 // Test Tamil
 const tamil = await loadTranslationService('ta');
-console.log('Tamil service:', tamil);
+// Inspect `tamil` in DevTools
 ```
 
 ### Test Hook:

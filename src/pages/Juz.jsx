@@ -165,8 +165,7 @@ const Juz = () => {
       // Third column: Juz 29-30
       result = juzData.filter(juz => juz.id >= 29 && juz.id <= 30);
     }
-    console.log(`Column ${columnIndex} data:`, result);
-    return result;
+return result;
   };
 
   // Get current Juz data if juzId is provided
@@ -185,16 +184,7 @@ const Juz = () => {
       const firstVerse = firstSurah.verses.split('-')[0].split(',')[0].trim();
       const targetUrl = `/surah/${firstSurah.number}#verse-${firstVerse}?fromJuz=${juzId}`;
       
-      console.log('Juz navigation:', {
-        juz: selectedJuz.title,
-        surah: firstSurah.name,
-        surahId: firstSurah.number,
-        verses: firstSurah.verses,
-        firstVerse: firstVerse,
-        targetUrl
-      });
-      
-      navigate(targetUrl);
+navigate(targetUrl);
     }
   };
 
@@ -204,14 +194,7 @@ const Juz = () => {
     if (typeof surahOrId === 'object' && surahOrId !== null) {
       const firstVerse = surahOrId.startVerse ? String(surahOrId.startVerse) : '1';
       const targetUrl = `/surah/${surahOrId.number}#verse-${firstVerse}`;
-      console.log('Surah click from Juz grid:', {
-        surahId: surahOrId.number,
-        verses: surahOrId.verses,
-        startVerse: surahOrId.startVerse,
-        firstVerse,
-        targetUrl,
-      });
-      navigate(targetUrl);
+navigate(targetUrl);
       return;
     }
 

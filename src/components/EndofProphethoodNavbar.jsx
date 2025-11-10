@@ -12,15 +12,12 @@ const EndofProphethoodNavbar = ({ activeSection, setActiveSection }) => {
     const loadArticles = async () => {
       try {
         setLoading(true);
-        console.log("Loading articles list...");
-        const data = await fetchArticlesList();
-        console.log("Articles list received:", data);
-        setNavigationItems(data);
+const data = await fetchArticlesList();
+setNavigationItems(data);
 
         // Set first item as active if none selected
         if (!activeSection && data.length > 0) {
-          console.log("Setting first article as active:", data[0]);
-          setActiveSection(data[0]);
+setActiveSection(data[0]);
         }
       } catch (err) {
         console.error("Error loading articles:", err);

@@ -13,10 +13,11 @@ const envApiUrl = import.meta.env.VITE_API_BASE_URL;
 const API_BASE_URL = envApiUrl || 'https://thafheemapi.thafheem.net';
 const CACHE_ENABLED = import.meta.env.VITE_CACHE_ENABLED !== 'false'; // Default to true
 const CACHE_TTL = parseInt(import.meta.env.VITE_CACHE_TTL) || 300000; // 5 minutes default
-// API version
-const API_VERSION = 'v1';
+// API version (optional) - falls back to unversioned /api when not provided
+const envApiVersion = import.meta.env.VITE_API_VERSION;
+const API_VERSION = envApiVersion && envApiVersion.trim() !== '' ? envApiVersion.trim() : '';
 // Complete API base path
-const API_BASE_PATH = `${API_BASE_URL}/api/${API_VERSION}`;
+const API_BASE_PATH = `${API_BASE_URL}/api${API_VERSION ? `/${API_VERSION}` : ''}`;
 export {
   USE_API,
   API_BASE_URL,
@@ -25,14 +26,3 @@ export {
   CACHE_TTL,
   API_VERSION
 };
-
-// Log current configuration on import
-if (import.meta.env.DEV) {
-  console.log('🔧 API Configuration:', {
-    USE_API,
-    API_BASE_URL,
-    API_BASE_PATH,
-    CACHE_ENABLED,
-    CACHE_TTL: `${CACHE_TTL}ms`
-  });
-}

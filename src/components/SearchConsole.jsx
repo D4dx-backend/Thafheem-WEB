@@ -27,14 +27,12 @@ const SearchConsole = ({ onClose }) => {
       },
     };
 
-    console.log("Search data:", searchData);
-    // Implement your search logic here
+// Implement your search logic here
   };
 
   const handleAdvancedSearch = () => {
     setActiveTab("advanced");
-    console.log("Advanced search clicked");
-    // Implement advanced search options
+// Implement advanced search options
   };
   const SlidersHorizontal = ({ className }) => (
     <svg

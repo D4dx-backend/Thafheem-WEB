@@ -3,7 +3,7 @@
 
 // const Conclusion = () => {
 //   const handleBack = () => {
-//     console.log("Navigate back");
+//     // Navigate back
 //   };
 
 //   return (
@@ -113,8 +113,7 @@ import { ArrowLeft } from "lucide-react";
 
 const Conclusion = () => {
   const handleBack = () => {
-    console.log("Navigate back");
-  };
+};
 
   return (
     <div className="min-h-screen bg-white dark:bg-black font-poppins">

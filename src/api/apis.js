@@ -6,13 +6,29 @@ import {
   API_BASE_PATH as CONFIG_API_BASE_PATH
 } from '../config/apiConfig.js';
 
+const normalizeBaseUrl = (value, { allowTrailingSlash = false } = {}) => {
+  if (!value) return value;
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if (allowTrailingSlash) {
+    return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+  }
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+};
+
 export const API_BASE_URL = CONFIG_API_BASE_URL;
 export const API_BASE_PATH = CONFIG_API_BASE_PATH;
 
 export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.com/api/v4';
 export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
+
+const legacyEnvBase = normalizeBaseUrl(import.meta.env.VITE_LEGACY_TFH_BASE_URL);
+const DEFAULT_LEGACY_BASE = '/api/thafheem';
+const REMOTE_LEGACY_BASE = 'https://thafheem.net/thafheem-api';
+
 // Legacy Thafheem public API (Malayalam + blockwise + pageranges)
-export const LEGACY_TFH_BASE = isDevelopment ? '/api/thafheem' : 'https://thafheem.net/thafheem-api';
+export const LEGACY_TFH_BASE = legacyEnvBase || DEFAULT_LEGACY_BASE;
+export const LEGACY_TFH_REMOTE_BASE = REMOTE_LEGACY_BASE;
 
 // Legacy endpoints - use LEGACY_TFH_BASE (thafheem.net/thafheem-api)
 export const AYA_TRANSLATION_API = `${LEGACY_TFH_BASE}/ayatransl`;

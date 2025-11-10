@@ -18,6 +18,7 @@ import {
   ARTICLES_API,
   AYA_TRANSLATION_API,
   LEGACY_TFH_BASE,
+  LEGACY_TFH_REMOTE_BASE,
   WORD_MEANINGS_API,
   TAJWEED_RULES_API,
   API_BASE_PATH,
@@ -83,40 +84,59 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
   // Malayalam uses legacy base; others use new backend
   const isMalayalam = !language || language === 'mal';
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
-  const base = isMalayalam ? LEGACY_TFH_BASE : apiBase;
+  const baseCandidates = isMalayalam
+    ? Array.from(new Set([LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE].filter(Boolean)))
+    : [apiBase];
   const langSuffix = isMalayalam ? '' : `/${language}`;
-  const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
-  
+
   // Increase timeout for block translations (15 seconds)
   const timeout = 15000;
-  
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await fetchWithTimeout(url, {}, timeout);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      const isLastAttempt = attempt === retries;
-      const isTimeout = error.message?.includes('timeout');
-      
-      // Only log errors on the last attempt or if not a timeout (to reduce spam)
-      if (isLastAttempt || !isTimeout) {
-        console.error(`Error fetching translation for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
-      }
-      
-      if (isLastAttempt) {
-        throw error;
-      }
-      
-      // Exponential backoff: wait 1s, then 2s before retries
-      if (attempt < retries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+
+  let lastError = null;
+
+  for (let baseIndex = 0; baseIndex < baseCandidates.length; baseIndex++) {
+    const base = baseCandidates[baseIndex];
+    const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetchWithTimeout(url, {}, timeout);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        lastError = error;
+        const isLastAttempt = attempt === retries;
+        const isTimeout = error.message?.includes('timeout');
+
+        // Only log errors on the last attempt or if not a timeout (to reduce spam)
+        if (isLastAttempt || !isTimeout) {
+          console.error(`Error fetching translation from ${url} for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
+        }
+
+        if (isLastAttempt) {
+          // If this was the primary proxy and we still have another base candidate, warn once
+          const hasAnotherBase = baseIndex < baseCandidates.length - 1;
+          if (isMalayalam && hasAnotherBase) {
+            logWarningOnce(
+              'malayalam-legacy-fallback',
+              '⚠️ Malayalam translation proxy unavailable, retrying direct legacy API.'
+            );
+          }
+          break;
+        }
+
+        // Exponential backoff: wait 1s, then 2s before retries
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
       }
     }
   }
+
+  throw lastError || new Error('Failed to fetch translation');
 };
 export const fetchSurahs = async () => {
   try {

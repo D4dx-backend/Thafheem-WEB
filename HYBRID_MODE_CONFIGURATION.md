@@ -14,6 +14,11 @@ VITE_USE_API=false
 # API Base URL (only used when VITE_USE_API=true)
 VITE_API_BASE_URL=http://localhost:5000
 
+# Legacy Thafheem public endpoints (Malayalam translations, blockwise data)
+# Use relative path (/api/thafheem) when deploying behind a proxy (e.g. Netlify)
+# Override with the direct origin only if you control its CORS policy.
+VITE_LEGACY_TFH_BASE_URL=/api/thafheem
+
 # Cache Configuration
 VITE_CACHE_ENABLED=true
 VITE_CACHE_TTL=300000
@@ -37,6 +42,11 @@ VITE_NODE_ENV=development
 - **Default**: `http://localhost:5000`
 - **Description**: Base URL for the backend API
 - **Example**: `http://localhost:5000` or `https://api.thafheem.com`
+
+### VITE_LEGACY_TFH_BASE_URL
+- **Type**: `string`
+- **Default**: `/api/thafheem`
+- **Description**: Base URL for legacy public endpoints that serve Malayalam translations and blockwise data. Use the default relative path so deployment platforms (e.g. Netlify) can proxy requests and bypass CORS restrictions. Override with a fully qualified URL only if the destination domain explicitly whitelists your production origin.
 
 ### VITE_CACHE_ENABLED
 - **Type**: `boolean`

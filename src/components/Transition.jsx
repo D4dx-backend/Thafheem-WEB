@@ -319,7 +319,7 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/surah/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
+                    className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
                       location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -335,7 +335,7 @@ const Transition = ({ showPageInfo = false }) => {
                         navigate(`/reading/${effectiveId}`);
                       }
                     }}
-                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
+                    className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
                       location.pathname.startsWith('/reading')
                         ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'

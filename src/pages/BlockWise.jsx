@@ -42,6 +42,7 @@ import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
+import englishTranslationService from "../services/englishTranslationService";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -78,6 +79,16 @@ const BlockWise = () => {
   // Favorite surah state
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  // English footnote modal state
+  const [showEnglishFootnoteModal, setShowEnglishFootnoteModal] = useState(false);
+  const [englishFootnoteContent, setEnglishFootnoteContent] = useState("");
+  const [englishFootnoteLoading, setEnglishFootnoteLoading] = useState(false);
+  const [englishFootnoteMeta, setEnglishFootnoteMeta] = useState({
+    footnoteId: null,
+    footnoteNumber: null,
+    surah: null,
+    ayah: null,
+  });
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -610,6 +621,14 @@ const BlockWise = () => {
     const loadBlockWiseData = async () => {
       if (!surahId || hasFetchedRef.current || surahs.length === 0) return;
       
+      // 🔒 CRITICAL: Check if language supports blockwise before fetching
+      const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+      if (!supportsBlockwise) {
+        console.log(`⚠️ BlockWise: Language '${translationLanguage}' doesn't support blockwise. Skipping fetch.`);
+        setLoading(false);
+        return;
+      }
+      
       // Mark as fetched to prevent duplicate calls in StrictMode
       hasFetchedRef.current = true;
 
@@ -809,6 +828,17 @@ const BlockWise = () => {
     setBlockRanges([]);
     setLoadingBlocks(new Set());
     hasFetchedRef.current = false;
+    setSelectedInterpretation(null);
+    setShowInterpretation(false);
+    setShowEnglishFootnoteModal(false);
+    setEnglishFootnoteContent("");
+    setEnglishFootnoteLoading(false);
+    setEnglishFootnoteMeta({
+      footnoteId: null,
+      footnoteNumber: null,
+      surah: null,
+      ayah: null,
+    });
   }, [translationLanguage]);
 
   // Load favorite status for the current surah
@@ -829,6 +859,57 @@ const BlockWise = () => {
 
     loadFavoriteStatus();
   }, [user, surahId]);
+
+  // Handle clicks on English footnotes (E translation)
+  useEffect(() => {
+    if (translationLanguage !== 'E') {
+      return;
+    }
+
+    const handleEnglishFootnoteClick = async (event) => {
+      const target = event.target.closest(".english-footnote-link");
+      if (!target) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const footnoteId = target.getAttribute("data-footnote-id");
+      if (!footnoteId) {
+        return;
+      }
+
+      const footnoteNumber = (target.textContent || "").trim() || target.getAttribute("data-footnote-number");
+      const ayahNoAttr = target.getAttribute("data-ayah");
+      const ayahNo = ayahNoAttr ? parseInt(ayahNoAttr, 10) : null;
+
+      setEnglishFootnoteMeta({
+        footnoteId: footnoteId,
+        footnoteNumber: footnoteNumber || null,
+        surah: surahId ? parseInt(surahId, 10) : null,
+        ayah: ayahNo,
+      });
+      setEnglishFootnoteContent("Loading...");
+      setEnglishFootnoteLoading(true);
+      setShowEnglishFootnoteModal(true);
+
+      try {
+        const explanation = await englishTranslationService.getExplanation(parseInt(footnoteId, 10));
+        setEnglishFootnoteContent(explanation || "Explanation not available.");
+      } catch (error) {
+        console.error("Error fetching English footnote explanation:", error);
+        setEnglishFootnoteContent(`Error loading explanation: ${error.message || error}`);
+      } finally {
+        setEnglishFootnoteLoading(false);
+      }
+    };
+
+    document.addEventListener("click", handleEnglishFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleEnglishFootnoteClick);
+    };
+  }, [translationLanguage, surahId]);
 
   // Handle favorite surah toggle
   const handleFavoriteClick = async (e) => {
@@ -1001,18 +1082,25 @@ const BlockWise = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Loading state - only show full loading screen for initial data fetch
+  // Loading state - Show shimmer skeleton for better perceived performance
   if (loading && blockRanges.length === 0) {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading Block-wise data...
-            </p>
+        <div className="min-h-screen bg-white dark:bg-gray-900 px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Surah Header Skeleton */}
+            <div className="text-center mb-8">
+              <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-64 mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+              <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-40 mx-auto relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+            </div>
+            {/* Blocks Skeleton */}
+            <BlocksSkeleton count={3} />
           </div>
         </div>
       </>
@@ -1110,14 +1198,14 @@ const BlockWise = () => {
               {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
                 <div className="absolute top-0 right-4 sm:right-6 lg:right-42 hidden sm:block">
-                  <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
-                      className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
+                      className="flex items-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
                       onClick={handleNavigateToAyahWise}
                     >
                       Ayah wise
                     </button>
-                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
+                    <button className="flex items-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                       Block wise
                     </button>
                   </div>
@@ -1162,8 +1250,8 @@ const BlockWise = () => {
 
                     <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-relaxed text-right text-gray-900 dark:text-white"
-                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl' }}
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl text-right text-gray-900 dark:text-white"
+                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl', lineHeight: '2.5' }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -1194,10 +1282,29 @@ const BlockWise = () => {
                           {Array.isArray(translationData) && translationData.length > 0 ? (
                             translationData.map((item, idx) => {
                               const translationText = item.TranslationText || item.translationText || item.text || "";
-                              const parsedHtml = parseTranslationWithClickableSup(
-                                translationText,
-                                `${start}-${end}`
-                              );
+                              const rawVerseNumber =
+                                item.VerseNo ||
+                                item.Verse_Number ||
+                                item.verse_number ||
+                                item.VerseNumber ||
+                                item.ayah_number ||
+                                item.AyaId ||
+                                item.AyahId ||
+                                (start + idx);
+                              const verseNumber = Number.isFinite(parseInt(rawVerseNumber, 10))
+                                ? parseInt(rawVerseNumber, 10)
+                                : start + idx;
+                              const parsedHtml =
+                                translationLanguage === 'E'
+                                  ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                                      translationText,
+                                      parseInt(surahId, 10),
+                                      verseNumber
+                                    )
+                                  : parseTranslationWithClickableSup(
+                                      translationText,
+                                      `${start}-${end}`
+                                    );
                               
                               return (
                                 <div
@@ -1211,10 +1318,17 @@ const BlockWise = () => {
                             <div
                               className="leading-relaxed"
                               dangerouslySetInnerHTML={{
-                                __html: parseTranslationWithClickableSup(
-                                  translationData.TranslationText || translationData.translationText || translationData.text,
-                                  `${start}-${end}`
-                                ),
+                                __html:
+                                  translationLanguage === 'E'
+                                    ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                                        translationData.TranslationText || translationData.translationText || translationData.text,
+                                        parseInt(surahId, 10),
+                                        start
+                                      )
+                                    : parseTranslationWithClickableSup(
+                                        translationData.TranslationText || translationData.translationText || translationData.text,
+                                        `${start}-${end}`
+                                      ),
                               }}
                             />
                           ) : (
@@ -1228,8 +1342,11 @@ const BlockWise = () => {
                           Translation not available
                         </p>
                       )}
+                    </div>
 
-                      <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-2 sm:pt-3">
+                    {/* Action Icons - Aligned with translation text */}
+                    <div className="px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6">
                         {/* Copy */}
                         <button
                           className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
@@ -1269,7 +1386,7 @@ const BlockWise = () => {
                           }}
                           title="Copy text"
                         >
-                          <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Play/Pause */}
@@ -1316,9 +1433,9 @@ const BlockWise = () => {
                           }
                         >
                           {playingBlock === blockId && !isPaused ? (
-                            <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (
-                          <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
@@ -1340,7 +1457,7 @@ const BlockWise = () => {
                             }}
                             title="View ayah details"
                           >
-                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         )}
 
@@ -1361,7 +1478,7 @@ const BlockWise = () => {
                           }}
                           title="Word by word"
                         >
-                          <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Bookmark */}
@@ -1414,7 +1531,7 @@ const BlockWise = () => {
                           {blockBookmarkLoading[`${start}-${end}`] ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b border-current"></div>
                           ) : (
-                            <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
@@ -1445,7 +1562,7 @@ const BlockWise = () => {
                           }}
                           title="Share block"
                         >
-                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
@@ -1576,6 +1693,69 @@ const BlockWise = () => {
           />
         </div>
       )}
+
+          {/* English Footnote Modal */}
+          {showEnglishFootnoteModal && (
+            <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
+              <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      English Explanation
+                    </h2>
+                    {englishFootnoteMeta?.footnoteNumber && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Footnote {englishFootnoteMeta.footnoteNumber}
+                        {englishFootnoteMeta?.ayah
+                          ? ` • Ayah ${englishFootnoteMeta.ayah}`
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowEnglishFootnoteModal(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+                  {englishFootnoteLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Loading explanation...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                      <div
+                        className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
+                        style={{ fontSize: `${translationFontSize}px` }}
+                      >
+                        {englishFootnoteContent}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (

@@ -461,6 +461,14 @@ const BlockWise = () => {
     const loadBlockWiseData = async () => {
       if (!surahId || hasFetchedRef.current || surahs.length === 0) return;
       
+      // 🔒 CRITICAL: Check if language supports blockwise before fetching
+      const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+      if (!supportsBlockwise) {
+        console.log(`⚠️ BlockWise: Language '${translationLanguage}' doesn't support blockwise. Skipping fetch.`);
+        setLoading(false);
+        return;
+      }
+      
       // Mark as fetched to prevent duplicate calls in StrictMode
       hasFetchedRef.current = true;
 
@@ -777,18 +785,25 @@ const BlockWise = () => {
     </svg>
   );
 
-  // Loading state - only show full loading screen for initial data fetch
+  // Loading state - Show shimmer skeleton for better perceived performance
   if (loading && blockRanges.length === 0) {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading Block-wise data...
-            </p>
+        <div className="min-h-screen bg-white dark:bg-gray-900 px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Surah Header Skeleton */}
+            <div className="text-center mb-8">
+              <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-64 mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+              <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-40 mx-auto relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+            </div>
+            {/* Blocks Skeleton */}
+            <BlocksSkeleton count={3} />
           </div>
         </div>
       </>
@@ -856,7 +871,7 @@ const BlockWise = () => {
                   {kabahIcon}
                 </button>
                 <button className="p-2 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
@@ -1002,7 +1017,7 @@ const BlockWise = () => {
                     </div>
 
                     {/* Translation Text for this block */}
-                    <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
+                    <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-2 sm:pb-3">
                       {translationData ? (
                         <div className={`text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base ${
                           translationLanguage === 'hi' ? 'font-hindi' :
@@ -1050,8 +1065,11 @@ const BlockWise = () => {
                           Translation not available
                         </p>
                       )}
+                    </div>
 
-                      <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-3 sm:pt-4">
+                    {/* Action Icons - Aligned with translation text */}
+                    <div className="px-3 sm:px-4 md:px-6 lg:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6">
                         {/* Copy */}
                         <button
                           className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
@@ -1091,7 +1109,7 @@ const BlockWise = () => {
                           }}
                           title="Copy text"
                         >
-                          <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Play */}
@@ -1109,9 +1127,9 @@ const BlockWise = () => {
                           }
                         >
                           {playingBlock === blockId && !isPaused ? (
-                            <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (
-                          <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
@@ -1133,7 +1151,7 @@ const BlockWise = () => {
                             }}
                             title="View ayah details"
                           >
-                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         )}
 
@@ -1153,7 +1171,7 @@ const BlockWise = () => {
                           }}
                           title="Word by word"
                         >
-                          <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Bookmark */}
@@ -1206,7 +1224,7 @@ const BlockWise = () => {
                           {blockBookmarkLoading[`${start}-${end}`] ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b border-current"></div>
                           ) : (
-                            <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
@@ -1237,7 +1255,7 @@ const BlockWise = () => {
                           }}
                           title="Share block"
                         >
-                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>

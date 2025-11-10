@@ -1565,19 +1565,24 @@ const Surah = () => {
     }
   };
 
-  // Loading state
+  // Loading state - Show shimmer skeleton for better perceived performance
   if (loading) {
     return (
-      <>
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading Surah data...
-            </p>
+      <div className="min-h-screen bg-white dark:bg-gray-900 px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Surah Header Skeleton */}
+          <div className="mb-8">
+            <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-48 mx-auto mb-4 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+            </div>
+            <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-32 mx-auto relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+            </div>
           </div>
+          {/* Verses Skeleton */}
+          <VersesSkeleton count={5} />
         </div>
-      </>
+      </div>
     );
   }
 
@@ -1768,12 +1773,12 @@ const Surah = () => {
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
                     <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
-                      <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                        <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
+                      <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                        <button className="flex items-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
                           Ayah wise
                         </button>
                         <button
-                          className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
+                          className="flex items-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
                           onClick={handleNavigateToBlockWise}
                         >
                           Block wise
@@ -1826,10 +1831,11 @@ const Surah = () => {
                     {/* Arabic Text */}
                     <div className="text-right mb-1.5 sm:mb-2">
                       <p
-                        className="leading-relaxed dark:text-white text-gray-900 px-4 sm:px-6 md:px-8"
+                        className="text-gray-900 dark:text-white px-4 sm:px-6 md:px-8"
                         style={{
                           fontFamily: quranFont,
                           fontSize: `${fontSize}px`,
+                          lineHeight: '2.2',
                         }}
                         dir="rtl"
                       >

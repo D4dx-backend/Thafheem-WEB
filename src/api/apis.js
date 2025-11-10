@@ -23,7 +23,7 @@ export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.
 export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
 
 const legacyEnvBase = normalizeBaseUrl(import.meta.env.VITE_LEGACY_TFH_BASE_URL);
-const DEFAULT_LEGACY_BASE = '/api/thafheem';
+const DEFAULT_LEGACY_BASE = isDevelopment ? '/api/thafheem' : 'https://thafheem.net/thafheem-api';
 const REMOTE_LEGACY_BASE = 'https://thafheem.net/thafheem-api';
 
 // Legacy Thafheem public API (Malayalam + blockwise + pageranges)

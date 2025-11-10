@@ -2,10 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const ensureTrailingSlash = (value) => (value.endsWith('/') ? value : `${value}/`)
+
+const resolveBasePath = () => {
+  const raw = process.env.VITE_BASE_PATH?.trim()
+  if (!raw) return '/'
+  if (raw === '/' || raw === '.') return '/'
+  return ensureTrailingSlash(raw.startsWith('/') ? raw : `/${raw}`)
+}
+
+const basePath = resolveBasePath()
+
 // https://vite.dev/config/
 export default defineConfig({
-  // Only use base path in production, not in development
-  base: process.env.NODE_ENV === 'production' ? '/new_thafheem_web/' : '/',
+  base: basePath,
   plugins: [
     react(),
     tailwindcss(),
@@ -41,11 +51,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/thafheem/, '/thafheem-api'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-});
+})
           proxy.on('proxyReq', (proxyReq, req, res) => {
-});
+})
           proxy.on('proxyRes', (proxyRes, req, res) => {
-});
+})
         },
       },
       // Proxy Quran.com API calls
@@ -55,7 +65,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/quran/, '/api/v4'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-});
+})
         },
       },
       // Proxy Directus CMS API calls
@@ -65,7 +75,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/directus/, ''),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-});
+})
         },
       },
       // Proxy audio files to bypass CORS
@@ -75,7 +85,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/audio/, '/audio'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-});
+})
         },
       }
     }

@@ -44,9 +44,17 @@ const WordByWordPage = lazy(() => import("./pages/WordByWordPage"));
 const InterpretationBlockwise = lazy(() => import("./pages/InterpretationBlockwise"));
 const Note = lazy(() => import("./pages/Note"));
 
+function resolveRouterBasename() {
+  const raw = import.meta.env.VITE_BASE_PATH?.trim();
+  if (!raw) return '/';
+  if (raw === '/' || raw === '.') return '/';
+  const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+  return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
+}
+
 function App() {
-  // Use basename only in production, not in development
-  const basename = import.meta.env.PROD ? '/new_thafheem_web' : '/';
+  // Use configurable basename to mirror Vite base path
+  const basename = resolveRouterBasename();
   
   return (
     <ThemeProvider>

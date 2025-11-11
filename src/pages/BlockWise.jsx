@@ -43,7 +43,6 @@ import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
-import { saveLastReading } from "../services/readingProgressService";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -105,15 +104,6 @@ const BlockWise = () => {
     setViewType: setContextViewType,
   } = useTheme();
   const { surahId } = useParams();
-  useEffect(() => {
-    if (surahId) {
-      saveLastReading({
-        surahId,
-        viewType: "blockwise",
-        path: `/blockwise/${surahId}`,
-      });
-    }
-  }, [surahId]);
   
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -673,13 +663,26 @@ const BlockWise = () => {
         if (ayaRangesResponse && ayaRangesResponse.length > 0) {
           
           const processBlockTranslation = async (block, blockIndex) => {
-            const ayaFrom = block.AyaFrom || block.ayafrom || block.from;
-            const ayaTo = block.AyaTo || block.ayato || block.to;
-            const blockId = block.ID || block.id;
+            const rawAyaFrom = block.AyaFrom || block.ayafrom || block.from;
+            const rawAyaTo = block.AyaTo || block.ayato || block.to;
 
-            if (!ayaFrom || !ayaTo) return;
+            if (rawAyaFrom === undefined || rawAyaFrom === null || rawAyaTo === undefined || rawAyaTo === null) {
+              return;
+            }
 
-            const range = `${ayaFrom}-${ayaTo}`;
+            const normalizedAyaFrom = Number.parseInt(rawAyaFrom, 10);
+            const normalizedAyaTo = Number.parseInt(rawAyaTo, 10);
+            const hasNumericRange = Number.isFinite(normalizedAyaFrom) && Number.isFinite(normalizedAyaTo);
+            const range = hasNumericRange
+              ? `${normalizedAyaFrom}-${normalizedAyaTo}`
+              : `${rawAyaFrom}-${rawAyaTo}`;
+            const blockId =
+              block.ID ||
+              block.id ||
+              range ||
+              `block-${blockIndex}`;
+            const ayaFrom = hasNumericRange ? normalizedAyaFrom : rawAyaFrom;
+            const ayaTo = hasNumericRange ? normalizedAyaTo : rawAyaTo;
 
             try {
               // Mark this specific block as loading
@@ -1172,56 +1175,78 @@ const BlockWise = () => {
               </h1>
             </div>
 
-            {/* Bismillah and Controls Container */}
-            <div className="mb-3 sm:mb-4 relative flex flex-col items-center sm:flex sm:items-center sm:justify-center">
-              {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
-              {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
-                <div className="flex flex-col items-center px-2 sm:px-4">
-                  <img
-                    src={theme === "dark" ? DarkModeBismi : Bismi}
-                    alt="Bismi"
-                    className="w-[236px] h-[52.9px] mb-2"
-                  />
-                </div>
-              ) : (
-                // Spacer to preserve layout when Bismillah is hidden (keeps buttons aligned)
-                <div className="h-[52.9px] mb-2" />
-              )}
-
-              {/* Mobile Ayah/Block selector (only for Malayalam and English) */}
-              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="mt-3 flex justify-end self-end sm:hidden">
-                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
-                    <button
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={handleNavigateToAyahWise}
-                    >
-                      Ayah
-                    </button>
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Block
-                    </button>
+             {/* Bismillah and Controls Container */}
+            <div className="mb-3 sm:mb-4">
+              {/* Desktop Layout */}
+              <div className="hidden sm:block">
+                <div className="max-w-[1290px] mx-auto relative flex items-center justify-center px-4 lg:px-8">
+                  {/* Center - Bismillah */}
+                  <div className="flex-shrink-0">
+                    {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                      <img
+                        src={theme === "dark" ? DarkModeBismi : Bismi}
+                        alt="Bismi"
+                        className="w-[236px] h-[52.9px]"
+                      />
+                    ) : (
+                      <div className="h-[52.9px]" />
+                    )}
                   </div>
+                  
+                  {/* Right - Desktop Buttons (absolute positioned) */}
+                  {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                    <div className="absolute -right-4 md:-right-3 lg:-right-2 xl:-right-1 top-1/2 -translate-y-1/2">
+                      <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                        <button
+                          className="flex items-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-sm font-medium transition-colors whitespace-nowrap"
+                          onClick={handleNavigateToAyahWise}
+                        >
+                          Ayah wise
+                        </button>
+                        <button className="flex items-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
+                          Block wise
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
-              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="hidden sm:flex sm:absolute sm:right-0 sm:top-0">
-                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                    <button
-                      className="flex items-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
-                      onClick={handleNavigateToAyahWise}
-                    >
-                      Ayah wise
-                    </button>
-                    <button className="flex items-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
-                      Block wise
-                    </button>
-                  </div>
+              {/* Mobile Layout - Bismillah centered, buttons below */}
+              <div className="sm:hidden">
+                {/* Bismillah */}
+                <div className="flex justify-center">
+                  {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                    <img
+                      src={theme === "dark" ? DarkModeBismi : Bismi}
+                      alt="Bismi"
+                      className="w-[236px] h-[52.9px]"
+                    />
+                  ) : (
+                    <div className="h-[52.9px]" />
+                  )}
                 </div>
-              )}
+                
+                {/* Mobile Ayah/Block selector */}
+                {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                  <div className="mt-3 flex justify-end px-4">
+                    <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                      <button
+                        className="px-2 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                        onClick={handleNavigateToAyahWise}
+                      >
+                        Ayah
+                      </button>
+                      <button className="px-2 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
+                        Block
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
+
 
             {/* Surah Info moved to global header */}
             {/* Play Audio button moved to header */}
@@ -1238,9 +1263,23 @@ const BlockWise = () => {
               <BlocksSkeleton count={5} />
             ) : blockRanges && blockRanges.length > 0 ? (
               blockRanges.map((block, blockIndex) => {
-                const blockId = block.ID || block.id;
-                const start = block.AyaFrom || block.ayafrom || block.from || 1;
-                const end = block.AyaTo || block.ayato || block.to || start;
+                const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+                const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+                const parsedStart = Number.parseInt(rawStart, 10);
+                const parsedEnd = Number.parseInt(rawEnd, 10);
+                const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+                const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+                const start = hasNumericBounds ? parsedStart : fallbackStart;
+                const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+                const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+                const rangeKey = hasNumericBounds
+                  ? `${start}-${end}`
+                  : `${rawStart}-${rawEnd}`;
+                const blockId =
+                  block.ID ||
+                  block.id ||
+                  rangeKey ||
+                  `block-${blockIndex}`;
                 
                 // Get translation data for this block
                 const translationInfo = blockTranslations[blockId] || null;

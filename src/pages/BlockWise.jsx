@@ -43,6 +43,7 @@ import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
+import { saveLastReading } from "../services/readingProgressService";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -104,6 +105,15 @@ const BlockWise = () => {
     setViewType: setContextViewType,
   } = useTheme();
   const { surahId } = useParams();
+  useEffect(() => {
+    if (surahId) {
+      saveLastReading({
+        surahId,
+        viewType: "blockwise",
+        path: `/blockwise/${surahId}`,
+      });
+    }
+  }, [surahId]);
   
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -1163,7 +1173,7 @@ const BlockWise = () => {
             </div>
 
             {/* Bismillah and Controls Container */}
-            <div className="mb-3 sm:mb-4 relative">
+            <div className="mb-3 sm:mb-4 relative flex flex-col items-center sm:flex sm:items-center sm:justify-center">
               {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
               {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
                 <div className="flex flex-col items-center px-2 sm:px-4">
@@ -1180,7 +1190,7 @@ const BlockWise = () => {
 
               {/* Mobile Ayah/Block selector (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="flex justify-end mb-4 sm:hidden">
+                <div className="mt-3 flex justify-end self-end sm:hidden">
                   <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
                     <button
                       className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
@@ -1197,7 +1207,7 @@ const BlockWise = () => {
 
               {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
               {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="absolute top-0 right-4 sm:right-6 lg:right-42 hidden sm:block">
+                <div className="hidden sm:flex sm:absolute sm:right-0 sm:top-0">
                   <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
                       className="flex items-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"

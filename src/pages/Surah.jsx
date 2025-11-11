@@ -48,6 +48,7 @@ import englishTranslationService from "../services/englishTranslationService";
 import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
+import { saveLastReading } from "../services/readingProgressService";
 
 const URDU_BATCH_SIZE = 20;
 
@@ -153,6 +154,12 @@ const Surah = () => {
   const [urduLoadedCount, setUrduLoadedCount] = useState(0);
   const [isLoadingUrduBatch, setIsLoadingUrduBatch] = useState(false);
   const loadMoreUrduRef = useRef(null);
+
+  useEffect(() => {
+    if (surahId) {
+      saveLastReading({ surahId, viewType: "surah", path: `/surah/${surahId}` });
+    }
+  }, [surahId]);
 
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];

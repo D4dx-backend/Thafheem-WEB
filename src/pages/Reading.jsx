@@ -26,6 +26,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import { VersesSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import { saveLastReading } from "../services/readingProgressService";
 
 // Lazy load heavy components
 const StickyAudioPlayer = lazy(() => import("../components/StickyAudioPlayer"));
@@ -38,6 +39,16 @@ const QIRATHS = {
 
 const Reading = () => {
   const { surahId } = useParams();
+
+  useEffect(() => {
+    if (surahId) {
+      saveLastReading({
+        surahId,
+        viewType: "reading",
+        path: `/reading/${surahId}`,
+      });
+    }
+  }, [surahId]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();

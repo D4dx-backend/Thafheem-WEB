@@ -123,7 +123,7 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
   
               {/* Right: Checkmark */}
               {currentSelected === language.name && (
-                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
                   <Check size={12} className="text-white" />
                 </div>
               )}

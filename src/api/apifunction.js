@@ -1655,16 +1655,51 @@ export const fetchThafheemPreface = async (suraId) => {
 // Block-wise reading API functions
 
 // Fetch ayah ranges for block-based reading structure
+const normalizeAyaRangeLanguage = (language) => {
+  const code = (language || 'mal').toString().trim().toLowerCase();
+
+  if (code === 'mal' || code === 'ml' || code === 'malayalam') {
+    return { type: 'legacy', value: '' };
+  }
+
+  const apiLanguageMap = {
+    e: 'english',
+    en: 'english',
+    english: 'english',
+    bn: 'bangla',
+    bangla: 'bangla',
+    hi: 'hindi',
+    hindi: 'hindi',
+    ta: 'tamil',
+    tamil: 'tamil',
+    ur: 'urdu',
+    urdu: 'urdu',
+  };
+
+  return {
+    type: 'api',
+    value: apiLanguageMap[code] || code,
+  };
+};
+
 export const fetchAyaRanges = async (surahId, language = 'mal') => {
-  // All languages use legacy base for ayaranges endpoint
-  const base = LEGACY_TFH_BASE;
-  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
-  const response = await fetch(`${base}/ayaranges/${surahId}${langSuffix}`);
+  const { type, value } = normalizeAyaRangeLanguage(language);
+
+  if (type === 'legacy') {
+    const response = await fetch(`${LEGACY_TFH_BASE}/ayaranges/${surahId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  }
+
+  const apiLanguage = value;
+  const url = `${API_BASE_PATH}/${apiLanguage}/ayaranges/${surahId}`;
+  const response = await fetchWithTimeout(url, {}, 10000);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  const data = await response.json();
-  return data;
+  return await response.json();
 };
 
 // Fetch translation for a specific ayah range

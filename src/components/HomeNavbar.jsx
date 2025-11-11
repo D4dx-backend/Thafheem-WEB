@@ -342,43 +342,43 @@ navigate("/"); // Redirect to home page after successful logout
 
             <button
               onClick={() => setIsLanguageOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Languages size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Languages size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
               {theme === "dark" ? (
-                <Sun size={15} className="sm:w-[18px] sm:h-[18px]" />
+                <Sun size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
               ) : (
-                <Moon size={15} className="sm:w-[18px] sm:h-[18px]" />
+                <Moon size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
               )}
             </button>
 
             <button
               onClick={handleBookmarkClick}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
+              className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
             >
-              <Settings size={18} />
+              <Settings size={18} className="transition-colors duration-200" />
             </button>
             {isSettingsOpen && (
               <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
             )}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
             >
-              <Search size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Search size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
             {user ? (
               <button

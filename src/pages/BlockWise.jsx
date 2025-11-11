@@ -1235,6 +1235,13 @@ const BlockWise = () => {
                 // Get translation data for this block
                 const translationInfo = blockTranslations[blockId] || null;
                 const translationData = translationInfo?.data;
+                const translationEntries = Array.isArray(translationData)
+                  ? translationData
+                  : Array.isArray(translationData?.translations)
+                    ? translationData.translations
+                    : Array.isArray(translationData?.data)
+                      ? translationData.data
+                      : [];
 
                 // Get Arabic verses for this block
                 const arabicSlice = Array.isArray(arabicVerses)
@@ -1279,9 +1286,14 @@ const BlockWise = () => {
                           style={{ fontSize: `${translationFontSize}px` }}
                         >
                           {/* Render translation text with HTML and clickable interpretation numbers */}
-                          {Array.isArray(translationData) && translationData.length > 0 ? (
-                            translationData.map((item, idx) => {
-                              const translationText = item.TranslationText || item.translationText || item.text || "";
+                          {translationEntries.length > 0 ? (
+                            translationEntries.map((item, idx) => {
+                              const translationText =
+                                item.TranslationText ||
+                                item.translationText ||
+                                item.translation_text ||
+                                item.text ||
+                                "";
                               const rawVerseNumber =
                                 item.VerseNo ||
                                 item.Verse_Number ||
@@ -1314,19 +1326,22 @@ const BlockWise = () => {
                                 />
                               );
                             })
-                          ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
+                          ) : translationData?.TranslationText ||
+                            translationData?.translationText ||
+                            translationData?.translation_text ||
+                            translationData?.text ? (
                             <div
                               className="leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html:
                                   translationLanguage === 'E'
                                     ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                                        translationData.TranslationText || translationData.translationText || translationData.text,
+                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
                                         parseInt(surahId, 10),
                                         start
                                       )
                                     : parseTranslationWithClickableSup(
-                                        translationData.TranslationText || translationData.translationText || translationData.text,
+                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
                                         `${start}-${end}`
                                       ),
                               }}
@@ -1366,9 +1381,23 @@ const BlockWise = () => {
                               // Get translation text (strip HTML for clipboard)
                               let translationText = "Loading translation...";
                               if (translationData) {
-                                const rawText = Array.isArray(translationData) && translationData.length > 0
-                                  ? (translationData[0].TranslationText || translationData[0].translationText || translationData[0].text || "")
-                                  : (translationData.TranslationText || translationData.translationText || translationData.text || "");
+                                let rawText = "";
+                                if (translationEntries.length > 0) {
+                                  const firstEntry = translationEntries[0];
+                                  rawText =
+                                    firstEntry.TranslationText ||
+                                    firstEntry.translationText ||
+                                    firstEntry.translation_text ||
+                                    firstEntry.text ||
+                                    "";
+                                } else {
+                                  rawText =
+                                    translationData.TranslationText ||
+                                    translationData.translationText ||
+                                    translationData.translation_text ||
+                                    translationData.text ||
+                                    "";
+                                }
                                 
                                 // Strip HTML tags for clipboard
                                 const tempDiv = document.createElement("div");

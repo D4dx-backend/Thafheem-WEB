@@ -26,8 +26,6 @@ import {
 import { API_BASE_PATH as CONFIG_API_BASE_PATH } from "../config/apiConfig.js";
 import { getFallbackTajweedData } from "../data/tajweedFallback";
 
-const isDevelopment = import.meta.env.DEV;
-
 // Session-level tracking to reduce console noise
 const apiAvailabilityState = {
   thafheemApiUnavailable: false,
@@ -82,124 +80,14 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 };
 
 // (duplicate import block removed)
-const normalizeTranslationLanguage = (language) => {
-  const raw = (language ?? '').toString().trim();
-  if (!raw) {
-    return { apiCode: 'mal', isMalayalam: true, original: 'mal' };
-  }
-
-  const lower = raw.toLowerCase();
-
-  if (lower === 'mal' || lower === 'ml' || lower === 'malayalam') {
-    return { apiCode: 'mal', isMalayalam: true, original: raw };
-  }
-
-  if (lower === 'e' || lower === 'en' || lower === 'eng' || lower === 'english') {
-    return { apiCode: 'english', isMalayalam: false, original: raw };
-  }
-
-  return { apiCode: lower, isMalayalam: false, original: raw };
-};
-
-const getLanguageVariantsForEndpoint = (languageCode) => {
-  const variants = [languageCode];
-
-  switch (languageCode) {
-    case 'english':
-      variants.push('E', 'e', 'en', 'EN');
-      break;
-    case 'bangla':
-      variants.push('bn', 'BN');
-      break;
-    case 'hindi':
-      variants.push('hi', 'HI');
-      break;
-    case 'tamil':
-      variants.push('ta', 'TA');
-      break;
-    case 'urdu':
-      variants.push('ur', 'UR');
-      break;
-    default:
-      break;
-  }
-
-  return Array.from(new Set(variants));
-};
-
-const blockwiseEndpointState = {
-  unsupported: new Set(),
-  unsupportedCanonical: new Set(),
-};
-
-const getEndpointKey = (base, variant) => `${base}|${variant || ''}`;
-const getCanonicalEndpointKey = (base, canonicalLanguage) => `${base}::${canonicalLanguage}`;
-
-const normalizeBlockTranslationPayload = (payload) => {
-  if (!payload) return payload;
-
-  const normalizeItem = (item) => {
-    if (!item || typeof item !== 'object') {
-      return item;
-    }
-
-    const translationText =
-      item.TranslationText ??
-      item.translation_text ??
-      item.translationText ??
-      item.text ??
-      '';
-
-    return {
-      ...item,
-      TranslationText: translationText,
-    };
-  };
-
-  if (Array.isArray(payload)) {
-    return payload.map(normalizeItem);
-  }
-
-  if (Array.isArray(payload.translations)) {
-    return payload.translations.map(normalizeItem);
-  }
-
-  if (payload.translation_text || payload.translationText || payload.text) {
-    return normalizeItem(payload);
-  }
-
-  return payload;
-};
-
 export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 2) => {
   // Malayalam uses legacy base; others use new backend
-  const { apiCode: resolvedLanguage, isMalayalam } = normalizeTranslationLanguage(language);
+  const isMalayalam = !language || language === 'mal';
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
-
-  const primaryBases = isMalayalam
+  const baseCandidates = isMalayalam
     ? Array.from(new Set([LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE].filter(Boolean)))
-    : [];
-
-  const fallbackBases = [];
-
-  if (!isMalayalam) {
-    // For English, skip the hosted API (it doesn't support blockwise yet)
-    if (resolvedLanguage === 'english') {
-      if (isDevelopment) {
-        primaryBases.push('http://localhost:5000/api');
-      }
-      primaryBases.push(LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE);
-    } else {
-      // For other languages, try hosted API first
-      primaryBases.push(apiBase);
-      if (isDevelopment) {
-        fallbackBases.push('http://localhost:5000/api');
-      }
-    }
-  }
-
-  const baseCandidates = Array.from(new Set([...primaryBases, ...fallbackBases].filter(Boolean)));
-  const languageVariants = isMalayalam ? [''] : getLanguageVariantsForEndpoint(resolvedLanguage);
+    : [apiBase];
+  const langSuffix = isMalayalam ? '' : `/${language}`;
 
   // Increase timeout for block translations (15 seconds)
   const timeout = 15000;
@@ -208,93 +96,42 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
 
   for (let baseIndex = 0; baseIndex < baseCandidates.length; baseIndex++) {
     const base = baseCandidates[baseIndex];
-    const canonicalKey = getCanonicalEndpointKey(base, resolvedLanguage);
+    const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
 
-    for (let langIndex = 0; langIndex < languageVariants.length; langIndex++) {
-      const variant = languageVariants[langIndex];
-      const langSuffix = isMalayalam ? '' : `/${variant}`;
-      const endpointKey = getEndpointKey(base, variant);
-
-      if (!isMalayalam) {
-        if (blockwiseEndpointState.unsupportedCanonical.has(canonicalKey)) {
-          continue;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetchWithTimeout(url, {}, timeout);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        if (blockwiseEndpointState.unsupported.has(endpointKey)) {
-          continue;
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        lastError = error;
+        const isLastAttempt = attempt === retries;
+        const isTimeout = error.message?.includes('timeout');
+
+        // Only log errors on the last attempt or if not a timeout (to reduce spam)
+        if (isLastAttempt || !isTimeout) {
+          console.error(`Error fetching translation from ${url} for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
         }
-      }
 
-      // Prefer skipping remote APIs that already failed for the canonical language
-      if (!isMalayalam && blockwiseEndpointState.unsupportedCanonical.has(canonicalKey)) {
-        continue;
-      }
-
-      let shouldSkipVariant = false;
-      const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
-
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          const response = await fetchWithTimeout(url, {}, timeout);
-          if (!response.ok) {
-            if (!isMalayalam && response.status === 404) {
-              blockwiseEndpointState.unsupportedCanonical.add(canonicalKey);
-              languageVariants.forEach((variantValue) => {
-                blockwiseEndpointState.unsupported.add(getEndpointKey(base, variantValue));
-              });
-              logWarningOnce(
-                `blockwise-unsupported-${canonicalKey}`,
-                `⚠️ Block translation not available for '${variant}' at ${base}. Falling back to legacy source.`
-              );
-              lastError = new Error(`Block translation endpoint not available for language '${variant}' at ${base}`);
-              shouldSkipVariant = true;
-              break;
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (isLastAttempt) {
+          // If this was the primary proxy and we still have another base candidate, warn once
+          const hasAnotherBase = baseIndex < baseCandidates.length - 1;
+          if (isMalayalam && hasAnotherBase) {
+            logWarningOnce(
+              'malayalam-legacy-fallback',
+              '⚠️ Malayalam translation proxy unavailable, retrying direct legacy API.'
+            );
           }
-          const data = await response.json();
-          return normalizeBlockTranslationPayload(data);
-        } catch (error) {
-          if (shouldSkipVariant) {
-            break;
-          }
-
-          lastError = error;
-          const isLastAttemptForVariant = attempt === retries;
-          const isTimeout = error.message?.includes('timeout');
-
-          // Only log errors on the last attempt or if not a timeout (to reduce spam)
-          if (isLastAttemptForVariant || !isTimeout) {
-            console.error(`Error fetching translation from ${url} for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
-          }
-
-          if (isLastAttemptForVariant) {
-            const hasMoreVariants = langIndex < languageVariants.length - 1;
-            const hasAnotherBase = baseIndex < baseCandidates.length - 1;
-
-            if (isMalayalam && hasAnotherBase) {
-              logWarningOnce(
-                'malayalam-legacy-fallback',
-                '⚠️ Malayalam translation proxy unavailable, retrying direct legacy API.'
-              );
-            }
-
-            if (!hasMoreVariants && !hasAnotherBase) {
-              // Exhausted variants and bases for this request
-              break;
-            }
-          }
-
-          // Exponential backoff: wait 1s, then 2s before retries
-          if (attempt < retries) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-          }
+          break;
         }
-      }
-      if (shouldSkipVariant) {
-        continue;
-      }
-      if (lastError === null) {
-        break;
+
+        // Exponential backoff: wait 1s, then 2s before retries
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
       }
     }
   }
@@ -1818,81 +1655,16 @@ export const fetchThafheemPreface = async (suraId) => {
 // Block-wise reading API functions
 
 // Fetch ayah ranges for block-based reading structure
-const normalizeLanguageCode = (language = 'mal') => {
-  const raw = (language ?? 'mal').toString().trim();
-  if (!raw) return 'mal';
-  const lower = raw.toLowerCase();
-  if (lower === 'english' || lower === 'en') return 'e';
-  return lower;
-};
-
-const englishRangeEndpointState = {
-  unsupported: new Set(),
-};
-
 export const fetchAyaRanges = async (surahId, language = 'mal') => {
-  const normalizedLang = normalizeLanguageCode(language);
-
-  // English has dedicated backend endpoint; try that first
-  if (normalizedLang === 'e') {
-    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
-    const candidates = [];
-
-    const isRemoteThafheemApi =
-      typeof apiBase === 'string' &&
-      apiBase.includes('thafheemapi.thafheem.net');
-
-    if (apiBase && !isRemoteThafheemApi && !englishRangeEndpointState.unsupported.has(apiBase)) {
-      candidates.push(`${apiBase}/english/ayaranges/${surahId}`);
-    }
-
-    if (import.meta.env?.DEV && !englishRangeEndpointState.unsupported.has('http://localhost:5000/api')) {
-      candidates.push(`http://localhost:5000/api/english/ayaranges/${surahId}`);
-    }
-
-    // Final fallback to legacy public API
-    candidates.push(`${LEGACY_TFH_BASE}/ayaranges/${surahId}/E`);
-
-    let lastError = null;
-    for (const url of Array.from(new Set(candidates))) {
-      try {
-        const response = await fetchWithTimeout(url, {}, 8000);
-        if (!response.ok) {
-          if (response.status === 404 && !url.includes(LEGACY_TFH_BASE)) {
-            const base = url.replace(/\/english\/ayaranges\/.+$/, '');
-            englishRangeEndpointState.unsupported.add(base);
-            logWarningOnce(
-              `english-range-unsupported-${base}`,
-              `⚠️ English ayah ranges not available at ${base}. Falling back to legacy source.`
-            );
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        lastError = error;
-        if (!url.includes(LEGACY_TFH_BASE)) {
-          console.debug(`English ayah range fetch attempt failed at ${url}: ${error.message}`);
-        } else {
-          console.warn(`Failed to fetch English ayah ranges from ${url}:`, error.message);
-        }
-      }
-    }
-
-    if (lastError) {
-      throw lastError;
-    }
-  }
-
-  // Default behaviour: use legacy base for other languages
+  // All languages use legacy base for ayaranges endpoint
   const base = LEGACY_TFH_BASE;
-  const langSuffix = normalizedLang && normalizedLang !== 'mal' ? `/${language}` : '';
+  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
   const response = await fetch(`${base}/ayaranges/${surahId}${langSuffix}`);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 // Fetch translation for a specific ayah range

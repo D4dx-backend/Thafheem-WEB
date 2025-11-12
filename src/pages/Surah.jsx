@@ -1664,6 +1664,7 @@ const Surah = () => {
                           ? 'bg-gray-400 text-white cursor-not-allowed'
                           : 'bg-blue-500 hover:bg-blue-600 text-white'
                       }`}
+                      title="Ayah wise view"
                     >
                       {tamilDownloading ? (
                         <div className="flex items-center space-x-2">
@@ -1699,6 +1700,7 @@ const Surah = () => {
                     <button
                       className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors"
                       aria-label="Ayah wise view selected"
+                      title="Ayah wise view"
                     >
                       <AyahViewIcon className="w-4 h-4" />
                       <span className="sr-only">Ayah wise</span>
@@ -1707,6 +1709,7 @@ const Surah = () => {
                       className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors"
                       onClick={handleNavigateToBlockWise}
                       aria-label="Switch to block wise view"
+                      title="Switch to block wise view"
                     >
                       <BlockViewIcon className="w-4 h-4" />
                       <span className="sr-only">Block wise</span>
@@ -1791,6 +1794,7 @@ const Surah = () => {
                         <button
                           className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]"
                           aria-label="Ayah wise view selected"
+                          title="Ayah wise view"
                         >
                           <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           <span className="sr-only">Ayah wise</span>
@@ -1799,6 +1803,7 @@ const Surah = () => {
                           className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
                           onClick={handleNavigateToBlockWise}
                           aria-label="Switch to block wise view"
+                          title="Switch to block wise view"
                         >
                           <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           <span className="sr-only">Block wise</span>
@@ -1806,6 +1811,7 @@ const Surah = () => {
                       </div>
                     </div>
                   )}
+                  
                 </div>
 
                 {/* Desktop Bottom Section */}

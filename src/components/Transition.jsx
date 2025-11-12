@@ -270,6 +270,93 @@ const Transition = ({ showPageInfo = false }) => {
     <MadinaIcon className="w-4 h-4 text-[#3FA5C0]" />
   );
 
+  const renderActionButtons = (variant = "desktop") => {
+    const isDesktop = variant === "desktop";
+    const containerClasses = isDesktop
+      ? "hidden sm:flex items-center ml-1 sm:ml-2 space-x-1"
+      : "flex sm:hidden items-center space-x-1";
+    const baseButtonClasses = isDesktop
+      ? "inline-flex items-center justify-center min-h-[44px] px-1.5 text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF]"
+      : "inline-flex items-center justify-center h-9 w-9 rounded-full text-[#2AA0BF] dark:text-[#2AA0BF] bg-gray-50 dark:bg-gray-800/70 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors";
+    const playButtonClasses = isDesktop
+      ? "flex items-center transition-colors text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF] min-h-[44px] px-1.5 relative"
+      : "flex items-center justify-center h-9 w-9 rounded-full text-[#2AA0BF] dark:text-[#2AA0BF] bg-gray-50 dark:bg-gray-800/70 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors relative";
+    const favoriteButtonClasses = isDesktop
+      ? `flex items-center justify-center transition-colors min-h-[44px] px-1.5 ${
+          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+        } ${isFavorited ? "text-red-500" : "text-[#2AA0BF] dark:text-[#2AA0BF]"}`
+      : `flex items-center justify-center h-9 w-9 rounded-full transition-colors ${
+          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+        } ${isFavorited ? "text-red-500 bg-red-50 dark:bg-red-900/40" : "text-[#2AA0BF] dark:text-[#2AA0BF] bg-gray-50 dark:bg-gray-800/70"} dark:hover:bg-red-900/50`;
+    const iconSizeClasses = isDesktop ? "w-4 h-4 sm:w-5 sm:h-5" : "w-4 h-4";
+    const playIconWrapperClasses = isDesktop
+      ? "relative w-4 h-4 sm:w-5 sm:h-5"
+      : "relative w-4 h-4";
+    const verseCountClasses = isDesktop
+      ? "flex items-center text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] pl-1"
+      : "flex items-center text-xs text-[#2AA0BF] dark:text-[#2AA0BF] pl-1";
+
+    return (
+      <div className={containerClasses}>
+        <button
+          onClick={() => setShowSurahInfoModal(true)}
+          className={baseButtonClasses}
+          aria-label="Surah info"
+          title="View Surah info"
+        >
+          <Info className={iconSizeClasses} />
+        </button>
+
+        {(location.pathname.startsWith('/surah') ||
+          location.pathname.startsWith('/reading') ||
+          location.pathname.startsWith('/blockwise')) && (
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('playAudio'));
+            }}
+            className={playButtonClasses}
+            aria-label={isAudioPlaying ? "Pause Audio" : "Play Audio"}
+            title={isAudioPlaying ? "Pause recitation audio" : "Play recitation audio"}
+          >
+            <div className={playIconWrapperClasses}>
+              <Play
+                className={`absolute inset-0 w-full h-full transition-all duration-300 ${
+                  isAudioPlaying ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
+                }`}
+              />
+              <Pause
+                className={`absolute inset-0 w-full h-full transition-all duration-300 ${
+                  isAudioPlaying ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-90'
+                }`}
+              />
+            </div>
+          </button>
+        )}
+
+        {(location.pathname.startsWith('/surah') ||
+          location.pathname.startsWith('/reading') ||
+          location.pathname.startsWith('/blockwise')) && (
+          <button
+            onClick={handleFavoriteClick}
+            disabled={favoriteLoading}
+            className={favoriteButtonClasses}
+            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart className={`${iconSizeClasses} ${isFavorited ? 'fill-current' : ''}`} />
+          </button>
+        )}
+
+        {location.pathname.startsWith('/reading') && verseCount && (
+          <div className={verseCountClasses}>
+            <BookOpen className="h-4 w-4 flex-shrink-0 mr-1" aria-hidden="true" />
+            <span>{verseCount}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md dark:shadow-lg">
       <div className="px-2 sm:px-4 py-1">
@@ -362,6 +449,7 @@ const Transition = ({ showPageInfo = false }) => {
                             }
                           }}
                           aria-label="Translation"
+                          title="Go to translation view"
                           className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
                             location.pathname.startsWith('/surah') ||
                             location.pathname.startsWith('/blockwise')
@@ -380,6 +468,7 @@ const Transition = ({ showPageInfo = false }) => {
                             }
                           }}
                           aria-label="Reading"
+                          title="Go to reading view"
                           className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
                             location.pathname.startsWith('/reading')
                               ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
@@ -402,68 +491,8 @@ const Transition = ({ showPageInfo = false }) => {
                   <span>Juz 1 | Hizb 1</span>
                 </div>
               ) : null}
-              <div className="hidden sm:flex items-center ml-1 sm:ml-2 space-x-1">
-                {/* Surah Info Button */}
-                <button
-                  onClick={() => setShowSurahInfoModal(true)}
-                  className="inline-flex items-center justify-center min-h-[44px] px-1.5 text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF]"
-                  aria-label="Surah info"
-                >
-                  <Info className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-
-                {/* Play Audio Button - Only show on surah, reading, and blockwise pages */}
-                {(location.pathname.startsWith('/surah') ||
-                  location.pathname.startsWith('/reading') ||
-                  location.pathname.startsWith('/blockwise')) && (
-                  <button
-                    onClick={() => {
-                      // Dispatch custom event to trigger audio play in Surah/Reading pages
-                      window.dispatchEvent(new CustomEvent('playAudio'));
-                    }}
-                    className="flex items-center transition-colors text-[#2AA0BF] hover:opacity-90 dark:text-[#2AA0BF] min-h-[44px] px-1.5 relative"
-                    aria-label={isAudioPlaying ? "Pause Audio" : "Play Audio"}
-                  >
-                    <div className="relative w-4 h-4 sm:w-5 sm:h-5">
-                      <Play
-                        className={`absolute inset-0 w-full h-full transition-all duration-300 ${
-                          isAudioPlaying ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
-                        }`}
-                      />
-                      <Pause
-                        className={`absolute inset-0 w-full h-full transition-all duration-300 ${
-                          isAudioPlaying ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-90'
-                        }`}
-                      />
-                    </div>
-                  </button>
-                )}
-
-                {/* Favorite Button - Only show on surah, reading, and blockwise pages */}
-                {(location.pathname.startsWith('/surah') ||
-                  location.pathname.startsWith('/reading') ||
-                  location.pathname.startsWith('/blockwise')) && (
-                  <button
-                    onClick={handleFavoriteClick}
-                    disabled={favoriteLoading}
-                    className={`flex items-center justify-center transition-colors min-h-[44px] px-1.5 ${
-                      favoriteLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'
-                    } ${isFavorited ? 'text-red-500' : 'text-[#2AA0BF] dark:text-[#2AA0BF]'}`}
-                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                    aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
-                  </button>
-                )}
-
-                {/* Verse count for Reading page - after favorite button */}
-                {location.pathname.startsWith('/reading') && verseCount && (
-                  <div className="flex items-center text-xs sm:text-sm text-[#2AA0BF] dark:text-[#2AA0BF] pl-1">
-                    <BookOpen className="h-4 w-4 flex-shrink-0 mr-1" aria-hidden="true" />
-                    <span>{verseCount}</span>
-                  </div>
-                )}
-              </div>
+              {renderActionButtons("mobile")}
+              {renderActionButtons("desktop")}
             </div>
           </div>
         </div>

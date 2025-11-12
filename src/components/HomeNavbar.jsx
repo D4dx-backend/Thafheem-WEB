@@ -375,7 +375,7 @@ navigate("/"); // Redirect to home page after successful logout
         className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${
           isReaderPage ? "shadow-none" : "shadow-sm"
         } sticky top-0 transition-transform duration-300 ${
-          isReaderPage ? (isNavbarVisible ? "translate-y-0" : "-translate-y-full") : ""
+          isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
         }`}
       >
         <div
@@ -394,6 +394,7 @@ navigate("/"); // Redirect to home page after successful logout
              rounded-lg transition-colors 
              min-h-[44px] min-w-[44px] justify-center 
              sm:min-h-auto sm:min-w-auto sm:justify-start"
+              title="Open menu"
             >
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
@@ -421,6 +422,7 @@ navigate("/"); // Redirect to home page after successful logout
             <button
               onClick={() => setIsLanguageOpen(true)}
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="Change language"
             >
               <Languages size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
@@ -428,6 +430,7 @@ navigate("/"); // Redirect to home page after successful logout
             <button
               onClick={toggleTheme}
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? (
                 <Sun size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
@@ -439,13 +442,15 @@ navigate("/"); // Redirect to home page after successful logout
             <button
               onClick={handleBookmarkClick}
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="View bookmarks"
             >
               <Bookmark size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
+              className="flex p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] items-center justify-center"
+              title="Open settings"
             >
               <Settings size={18} className="transition-colors duration-200" />
             </button>
@@ -455,6 +460,7 @@ navigate("/"); // Redirect to home page after successful logout
             <button
               onClick={() => setIsSearchOpen(true)}
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="Search"
             >
               <Search size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
@@ -463,6 +469,7 @@ navigate("/"); // Redirect to home page after successful logout
                 onClick={handleAuthButtonClick}
                 disabled={isSigningOut}
                 className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Sign out"
               >
                 {isSigningOut ? (
                   <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
@@ -474,6 +481,7 @@ navigate("/"); // Redirect to home page after successful logout
               <button
                 onClick={handleAuthButtonClick}
                 className="px-1.5 sm:px-4 py-1.5 text-[10px] xs:text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+                title="Sign in"
               >
                 <span className="hidden xs:inline">Sign In</span>
                 <span className="xs:hidden">Sign</span>

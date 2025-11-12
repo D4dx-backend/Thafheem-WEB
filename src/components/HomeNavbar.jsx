@@ -317,15 +317,7 @@ navigate("/"); // Redirect to home page after successful logout
       )}
       {/* Search Console Popup */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 dark:bg-black/70"
-            onClick={() => setIsSearchOpen(false)}
-          ></div>
-          <div className="bg-white dark:bg-[#2A2C38] w-full max-w-lg rounded-lg relative z-10 max-h-[90vh] overflow-auto mx-4">
-            <SearchConsole onClose={() => setIsSearchOpen(false)} />
-          </div>
-        </div>
+        <SearchConsole onClose={() => setIsSearchOpen(false)} />
       )}
 
       {/* Language Console Popup */}

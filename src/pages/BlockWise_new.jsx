@@ -41,6 +41,7 @@ import { useSurahData } from "../hooks/useSurahData";
 import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -891,13 +892,19 @@ const BlockWise = () => {
                 <div className="absolute top-0 right-4 hidden sm:block">
                   <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
-                      className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
+                      className="flex items-center justify-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
                       onClick={handleNavigateToAyahWise}
+                      aria-label="Switch to ayah wise view"
                     >
-                      Ayah wise
+                      <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="sr-only">Ayah wise</span>
                     </button>
-                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
-                      Block wise
+                    <button
+                      className="flex items-center justify-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]"
+                      aria-label="Block wise view selected"
+                    >
+                      <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="sr-only">Block wise</span>
                     </button>
                   </div>
                 </div>

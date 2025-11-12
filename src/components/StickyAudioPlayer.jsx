@@ -194,6 +194,18 @@ const StickyAudioPlayer = ({
 
   if (!currentAyah) return null;
 
+  useEffect(() => {
+    console.log("[StickyAudioPlayer] Props update", {
+      isPlaying,
+      currentAyah,
+      totalAyahs,
+      selectedQari,
+      translationLanguage,
+      audioTypes,
+      playbackSpeed
+    });
+  }, [isPlaying, currentAyah, totalAyahs, selectedQari, translationLanguage, audioTypes, playbackSpeed]);
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 dark:border-gray-700 shadow-lg z-50">
       {/* Title/Label */}
@@ -284,7 +296,10 @@ const StickyAudioPlayer = ({
 
             {/* Play/Pause Button */}
             <button
-              onClick={onPlayPause}
+              onClick={() => {
+                console.log("[StickyAudioPlayer] PlayPause clicked", { isPlaying });
+                onPlayPause();
+              }}
               className="p-2 bg-cyan-500 dark:bg-cyan-400 text-white dark:text-black rounded-full transition-colors shadow-md hover:shadow-lg hover:bg-cyan-600 dark:hover:bg-cyan-300"
             >
               {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
@@ -316,7 +331,7 @@ const StickyAudioPlayer = ({
 
       {/* Settings Modal */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/50 dark:bg-black/70 modal-backdrop"
             onClick={(e) => {
@@ -327,7 +342,7 @@ setShowSettingsModal(false);
             }}
           ></div>
           <div 
-            className="relative z-10 bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-md settings-modal"
+            className="relative z-[1001] bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-md settings-modal"
             onClick={(e) => {
               // Prevent any clicks inside modal from bubbling to backdrop
               e.stopPropagation();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Menu,
   Search,
@@ -51,7 +51,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Transition from "./Transition";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
-import { useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { auth } from "../firebase";
@@ -68,10 +67,18 @@ const HomepageNavbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const [navbarHeight, setNavbarHeight] = useState(0);
+
+  const navRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
-
+  const isReaderPage =
+    location.pathname.startsWith("/reading") ||
+    location.pathname.startsWith("/surah") ||
+    location.pathname.startsWith("/blockwise");
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
@@ -186,6 +193,66 @@ navigate("/"); // Redirect to home page after successful logout
     // Navigate to bookmarks page - users can then click on their preferred tab
     navigate("/bookmarkedverses");
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateNavbarHeight = () => {
+      if (navRef.current) {
+        setNavbarHeight(navRef.current.offsetHeight || 0);
+      }
+    };
+
+    updateNavbarHeight();
+    window.addEventListener("resize", updateNavbarHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    lastScrollY.current = window.scrollY;
+    setIsNavbarVisible(true);
+
+    if (!isReaderPage) {
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScroll = window.scrollY;
+      const delta = Math.abs(currentScroll - lastScrollY.current);
+
+      if (delta < 4) {
+        return;
+      }
+
+      let nextVisible = true;
+
+      if (currentScroll < 80) {
+        nextVisible = true;
+      } else if (currentScroll > lastScrollY.current) {
+        nextVisible = false;
+      } else {
+        nextVisible = true;
+      }
+
+      setIsNavbarVisible((prev) => (prev === nextVisible ? prev : nextVisible));
+      lastScrollY.current = currentScroll;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isReaderPage, location.pathname]);
   return (
     <>
       {/* Share Modal */}
@@ -303,8 +370,19 @@ navigate("/"); // Redirect to home page after successful logout
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] shadow-sm">
-        <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2">
+      <nav
+        ref={navRef}
+        className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${
+          isReaderPage ? "shadow-none" : "shadow-sm"
+        } sticky top-0 transition-transform duration-300 ${
+          isReaderPage ? (isNavbarVisible ? "translate-y-0" : "-translate-y-full") : ""
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between px-3 sm:px-4 ${
+            isReaderPage ? "py-1 sm:py-1.5" : "py-1.5 sm:py-2"
+          }`}
+        >
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
@@ -403,13 +481,17 @@ navigate("/"); // Redirect to home page after successful logout
             )}
           </div>
         </div>
-        {/* Route-scoped dropdown bar under the navbar (only on reading) */}
-        {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
-          <div className="relative z-[60]">
-            <Transition showPageInfo={false} />
-          </div>
-        )}
       </nav>
+
+      {/* Route-scoped dropdown bar under the navbar (only on reading/surah/blockwise) - Made STICKY */}
+      {isReaderPage && (
+        <div
+          className="sticky z-[70] transition-all duration-300"
+          style={{ top: isNavbarVisible ? navbarHeight : 0 }}
+        >
+          <Transition showPageInfo={false} />
+        </div>
+      )}
 
       {/* Sidebar */}
       {isMenuOpen && (

@@ -41,6 +41,7 @@ import { useSurahData } from "../hooks/useSurahData";
 import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
 
@@ -59,6 +60,10 @@ const BlockWise = () => {
   const [isContinuousPlay, setIsContinuousPlay] = useState(false); // Track if continuous playback is active
   const [isPaused, setIsPaused] = useState(false); // Track if audio is paused
   const audioRef = useRef(null); // Audio element reference
+  
+  useEffect(() => {
+    console.log("[BlockWise] audioTypes state updated", audioTypes);
+  }, [audioTypes]);
   
   // State management for API data
   const [blockData, setBlockData] = useState(null);
@@ -142,6 +147,14 @@ const BlockWise = () => {
       .join("");
   };
 
+  const normalizeAyahNumber = (value, fallbackValue = null) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+    return fallbackValue;
+  };
+
   // Initialize audio element
   useEffect(() => {
     if (!audioRef.current) {
@@ -188,6 +201,14 @@ const BlockWise = () => {
   const playBlockAudio = (blockId, fromContinuous = false) => {
     if (!audioRef.current) return;
 
+    console.log("[BlockWise] playBlockAudio start", {
+      blockId,
+      fromContinuous,
+      audioTypes,
+      translationLanguage,
+      selectedQirath
+    });
+
     // Check if translation/interpretation audio is selected but language is not Malayalam
     // Only check if not already in continuous mode (to allow resume)
     if (!fromContinuous && translationLanguage !== 'mal') {
@@ -225,19 +246,25 @@ const BlockWise = () => {
     }
 
     const startingAyah = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
-    
+    const normalizedStartingAyah = normalizeAyahNumber(startingAyah, 1);
 
     setIsContinuousPlay(true);
     setPlayingBlock(blockId);
-    setCurrentAyahInBlock(startingAyah);
+    setCurrentAyahInBlock(normalizedStartingAyah);
     setCurrentInterpretationNumber(1); // Reset interpretation number for new block
     setIsPaused(false);
     
+    console.log("[BlockWise] playBlockAudio state set", {
+      playingBlock: blockId,
+      normalizedStartingAyah,
+      currentAudioType: audioTypes?.[0] || 'quran'
+    });
+
     // Dispatch event to update header button
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
     
     // Play the first ayah's audio (will play all selected types in sequence)
-    playAyahAudio(blockId, startingAyah, 0);
+    playAyahAudio(blockId, normalizedStartingAyah, 0);
   };
 
   // Generate audio URL based on audio type
@@ -260,12 +287,29 @@ const BlockWise = () => {
   const playAyahAudioWithTypes = (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!audioRef.current) return;
 
+    const ayahToPlay = normalizeAyahNumber(
+      ayahNumber,
+      normalizeAyahNumber(currentAyahInBlock, 1) || 1
+    );
+
     // Use provided types or fall back to state
     const activeAudioTypes = typesToPlay || audioTypes;
 
+    console.log("[BlockWise] playAyahAudioWithTypes", {
+      blockId,
+      requestedAyah: ayahNumber,
+      ayahToPlay,
+      audioTypeIndex,
+      audioTypes: activeAudioTypes,
+      playbackSpeed,
+      isContinuousPlay,
+      isPaused,
+      playingBlock
+    });
+
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
-      moveToNextAyahOrBlock();
+      moveToNextAyahOrBlock(ayahToPlay, activeAudioTypes);
       return;
     }
 
@@ -273,12 +317,19 @@ const BlockWise = () => {
     audioRef.current.pause();
     
     const currentAudioType = activeAudioTypes[audioTypeIndex];
-    const audioUrl = generateAudioUrl(surahId, ayahNumber, currentAudioType);
+    const audioUrl = generateAudioUrl(surahId, ayahToPlay, currentAudioType);
     if (!audioUrl) {
       // If URL generation fails, skip to next audio type
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, typesToPlay);
       return;
     }
+
+    console.log("[BlockWise] generated audioUrl", {
+      blockId,
+      ayahToPlay,
+      currentAudioType,
+      audioUrl
+    });
     
     // Map audioType to currentAudioType format for display
     const audioTypeMap = {
@@ -289,19 +340,23 @@ const BlockWise = () => {
     const mappedAudioType = audioTypeMap[currentAudioType] || 'qirath';
     
     setCurrentAudioType(mappedAudioType);
-    setCurrentAyahInBlock(ayahNumber);
-    setCurrentInterpretationNumber(1); // Reset interpretation counter
+    setCurrentAyahInBlock(ayahToPlay);
+    // FIXED: Don't reset interpretation number here - it should only reset when moving to a new ayah
+    
+    // CRITICAL FIX: Remove old event handlers before adding new ones to prevent multiple triggers
+    audioRef.current.onended = null;
+    audioRef.current.onerror = null;
     
     // Set up audio event handlers before setting src
     audioRef.current.onended = () => {
       // Play next audio type for this ayah, or move to next ayah if all types done
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     };
     
     audioRef.current.onerror = () => {
       console.error('Error playing audio:', audioUrl);
       // Skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     };
     
     audioRef.current.src = audioUrl;
@@ -310,21 +365,22 @@ const BlockWise = () => {
     audioRef.current.play().catch(err => {
       console.error('Error playing audio:', err.name, err.message, audioUrl);
       // If audio fails, skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     });
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)
-  const playAyahAudio = (blockId, ayahNumber, audioTypeIndex = 0) => {
-    playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex, null);
+  const playAyahAudio = (blockId, ayahNumber, audioTypeIndex = 0, typesOverride = null) => {
+    playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex, typesOverride);
   };
 
   // Old functions removed - now handled by playAyahAudio with audioTypes array
 
   // Function to move to the next ayah in the block or the next block
-  const moveToNextAyahOrBlock = () => {
+  const moveToNextAyahOrBlock = (currentAyahOverride = null, activeAudioTypes = null) => {
     
-    if (!playingBlock || !currentAyahInBlock) {
+    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
+    if (!playingBlock || !effectiveCurrentAyah) {
       return;
     }
 
@@ -334,15 +390,34 @@ const BlockWise = () => {
     }
 
     const ayaTo = blockInfo.AyaTo || blockInfo.ayato || blockInfo.to;
-    const nextAyah = currentAyahInBlock + 1;
+    const currentAyahNumber = normalizeAyahNumber(effectiveCurrentAyah, null);
+    const ayaToNumber = normalizeAyahNumber(ayaTo, currentAyahNumber);
 
+    if (currentAyahNumber === null || ayaToNumber === null) {
+      console.warn("[BlockWise] moveToNextAyahOrBlock aborted - invalid ayah numbers", {
+        playingBlock,
+        currentAyahInBlock: effectiveCurrentAyah,
+        ayaTo
+      });
+      return;
+    }
+
+    const nextAyah = currentAyahNumber + 1;
+
+    console.log("[BlockWise] moveToNextAyahOrBlock", {
+      playingBlock,
+      currentAyahNumber,
+      nextAyah,
+      ayaToNumber,
+      isContinuousPlay
+    });
 
     // Check if there are more ayahs in this block
-    if (nextAyah <= ayaTo) {
+    if (nextAyah <= ayaToNumber) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the next ayah in the same block (start with first audio type)
-      playAyahAudio(playingBlock, nextAyah, 0);
+      playAyahAudio(playingBlock, nextAyah, 0, activeAudioTypes);
       } else {
         // Block is finished, move to next block or stop
         if (isContinuousPlay) {
@@ -361,8 +436,9 @@ const BlockWise = () => {
   };
 
   // Function to move to previous ayah in the block or previous block
-  const moveToPreviousAyahOrBlock = () => {
-    if (!playingBlock || !currentAyahInBlock) {
+  const moveToPreviousAyahOrBlock = (currentAyahOverride = null, activeAudioTypes = null) => {
+    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
+    if (!playingBlock || !effectiveCurrentAyah) {
       return;
     }
 
@@ -372,14 +448,33 @@ const BlockWise = () => {
     }
 
     const ayaFrom = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
-    const previousAyah = currentAyahInBlock - 1;
+    const currentAyahNumber = normalizeAyahNumber(effectiveCurrentAyah, null);
+    const ayaFromNumber = normalizeAyahNumber(ayaFrom, 1);
 
+    if (currentAyahNumber === null || ayaFromNumber === null) {
+      console.warn("[BlockWise] moveToPreviousAyahOrBlock aborted - invalid ayah numbers", {
+        playingBlock,
+        currentAyahInBlock: effectiveCurrentAyah,
+        ayaFrom
+      });
+      return;
+    }
+
+    const previousAyah = currentAyahNumber - 1;
+
+    console.log("[BlockWise] moveToPreviousAyahOrBlock", {
+      playingBlock,
+      currentAyahNumber,
+      previousAyah,
+      ayaFromNumber,
+      isContinuousPlay
+    });
     // Check if there's a previous ayah in this block
-    if (previousAyah >= ayaFrom) {
+    if (previousAyah >= ayaFromNumber) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the previous ayah in the same block (start with first audio type)
-      playAyahAudio(playingBlock, previousAyah, 0);
+      playAyahAudio(playingBlock, previousAyah, 0, activeAudioTypes);
     } else {
       // Need to go to previous block or stop
       if (isContinuousPlay) {
@@ -409,7 +504,8 @@ const BlockWise = () => {
     if (currentIndex > 0) {
       const previousBlock = blockRanges[currentIndex - 1];
       const previousBlockId = previousBlock.ID || previousBlock.id;
-      const lastAyah = previousBlock.AyaTo || previousBlock.ayato || previousBlock.to || 1;
+      const lastAyahRaw = previousBlock.AyaTo || previousBlock.ayato || previousBlock.to || 1;
+      const lastAyah = normalizeAyahNumber(lastAyahRaw, 1);
       
       setIsContinuousPlay(true);
       setPlayingBlock(previousBlockId);
@@ -423,7 +519,8 @@ const BlockWise = () => {
       // Already at first block, go to first ayah
       const firstBlock = blockRanges[0];
       const firstBlockId = firstBlock.ID || firstBlock.id;
-      const firstAyah = firstBlock.AyaFrom || firstBlock.ayafrom || firstBlock.from || 1;
+      const firstAyahRaw = firstBlock.AyaFrom || firstBlock.ayafrom || firstBlock.from || 1;
+      const firstAyah = normalizeAyahNumber(firstAyahRaw, 1);
       
       setPlayingBlock(firstBlockId);
       setCurrentAyahInBlock(firstAyah);
@@ -1198,13 +1295,19 @@ const BlockWise = () => {
                     <div className="absolute -right-4 md:-right-3 lg:-right-2 xl:-right-1 top-1/2 -translate-y-1/2">
                       <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                         <button
-                          className="flex items-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-sm font-medium transition-colors whitespace-nowrap"
+                          className="flex items-center justify-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
                           onClick={handleNavigateToAyahWise}
+                          aria-label="Switch to ayah wise view"
                         >
-                          Ayah wise
+                          <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Ayah wise</span>
                         </button>
-                        <button className="flex items-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
-                          Block wise
+                        <button
+                          className="flex items-center justify-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors whitespace-nowrap"
+                          aria-label="Block wise view selected"
+                        >
+                          <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Block wise</span>
                         </button>
                       </div>
                     </div>
@@ -1230,15 +1333,21 @@ const BlockWise = () => {
                 {/* Mobile Ayah/Block selector */}
                 {(translationLanguage === 'mal' || translationLanguage === 'E') && (
                   <div className="mt-3 flex justify-end px-4">
-                    <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
+                    <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                       <button
-                        className="px-2 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                        className="flex items-center justify-center px-2 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors"
                         onClick={handleNavigateToAyahWise}
+                        aria-label="Switch to ayah wise view"
                       >
-                        Ayah
+                        <AyahViewIcon className="w-4 h-4" />
+                        <span className="sr-only">Ayah wise</span>
                       </button>
-                      <button className="px-2 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                        Block
+                      <button
+                        className="flex items-center justify-center px-2 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors"
+                        aria-label="Block wise view selected"
+                      >
+                        <BlockViewIcon className="w-4 h-4" />
+                        <span className="sr-only">Block wise</span>
                       </button>
                     </div>
                   </div>
@@ -1906,13 +2015,36 @@ const BlockWise = () => {
               onAudioTypesChange={(newTypes) => {
                 const currentBlock = playingBlock;
                 const currentAyah = currentAyahInBlock;
+                console.log("[BlockWise] onAudioTypesChange", {
+                  newTypes,
+                  currentBlock,
+                  currentAyah,
+                  isContinuousPlay,
+                  isPaused
+                });
 setAudioTypes(newTypes);
                 // If audio is currently playing, restart with new audio types
                 if (currentBlock && currentAyah) {
-                  stopPlayback();
+                  if (audioRef.current) {
+                    try {
+                      audioRef.current.pause();
+                      audioRef.current.currentTime = 0;
+                    } catch (pauseError) {
+                      console.warn("[BlockWise] Failed to pause audio before restarting with new types", pauseError);
+                    }
+                  }
+                  setIsContinuousPlay(true);
+                  setIsPaused(false);
+                  setPlayingBlock(currentBlock);
+                  setCurrentAyahInBlock(currentAyah);
                   // Pass newTypes directly to avoid closure issue
                   setTimeout(() => {
-playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
+                    console.log("[BlockWise] restarting playback after audioTypes change", {
+                      currentBlock,
+                      currentAyah,
+                      newTypes
+                    });
+                    playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
                   }, 100);
                 }
               }}

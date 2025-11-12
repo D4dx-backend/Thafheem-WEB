@@ -190,7 +190,13 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       
       // Call the onSurahSelect callback if provided
       if (onSurahSelect) {
-        onSurahSelect({ id: surahId, name: surah.name, english: surah.english || surah.name });
+        onSurahSelect({
+          ...surah,
+          id: surahId,
+          number: surah.number ?? surahId,
+          name: surah.name,
+          english: surah.english || surah.name,
+        });
       }
       
       // Close the navigation modal

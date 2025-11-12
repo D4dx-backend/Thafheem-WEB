@@ -49,6 +49,7 @@ import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import { saveLastReading } from "../services/readingProgressService";
+import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 
 const URDU_BATCH_SIZE = 20;
 
@@ -1694,15 +1695,21 @@ const Surah = () => {
               {/* Ayah/Block selector */}
               {showBlockNavigation && (
                 <div className="flex justify-end mb-4">
-                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Ayah
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <button
+                      className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors"
+                      aria-label="Ayah wise view selected"
+                    >
+                      <AyahViewIcon className="w-4 h-4" />
+                      <span className="sr-only">Ayah wise</span>
                     </button>
                     <button
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                      className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors"
                       onClick={handleNavigateToBlockWise}
+                      aria-label="Switch to block wise view"
                     >
-                      Block
+                      <BlockViewIcon className="w-4 h-4" />
+                      <span className="sr-only">Block wise</span>
                     </button>
                   </div>
                 </div>
@@ -1781,14 +1788,20 @@ const Surah = () => {
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
                     <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
                       <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                        <button className="flex items-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
-                          Ayah wise
+                        <button
+                          className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]"
+                          aria-label="Ayah wise view selected"
+                        >
+                          <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Ayah wise</span>
                         </button>
                         <button
-                          className="flex items-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
+                          className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
                           onClick={handleNavigateToBlockWise}
+                          aria-label="Switch to block wise view"
                         >
-                          Block wise
+                          <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Block wise</span>
                         </button>
                       </div>
                     </div>
@@ -1826,19 +1839,28 @@ const Surah = () => {
                 );
                 const finalArabicText =
                   arabicText || fallbackArabicVerse?.text_uthmani || "";
+                const isPlaying = playingAyah === index + 1;
+                const translationBaseClass = `leading-relaxed px-4 sm:px-6 md:px-8 ${
+                  isPlaying
+                    ? "text-cyan-700 dark:text-cyan-300"
+                    : "text-gray-700 dark:text-white"
+                }`;
 
                 return (
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
                     className="pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
-                    style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}
                     {/* Arabic Text */}
                     <div className="text-right mb-1.5 sm:mb-2">
                       <p
-                        className="text-gray-900 dark:text-white px-4 sm:px-6 md:px-8"
+                        className={`px-4 sm:px-6 md:px-8 ${
+                          isPlaying
+                            ? "text-cyan-700 dark:text-cyan-300"
+                            : "text-gray-900 dark:text-white"
+                        }`}
                         style={{
                           fontFamily: quranFont,
                           fontSize: `${fontSize}px`,
@@ -1861,7 +1883,7 @@ const Surah = () => {
                     <div className="text-left mb-1.5 sm:mb-2">
                       {translationLanguage === 'hi' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-hindi font-normal"
+                          className={`${translationBaseClass} font-hindi font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-hindi-translation={verse.RawTranslation || verse.Translation}
@@ -1871,7 +1893,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ur' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-urdu font-normal"
+                          className={`${translationBaseClass} font-urdu font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-urdu-translation={verse.RawTranslation || verse.Translation}
@@ -1881,7 +1903,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'bn' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-bengali font-normal"
+                          className={`${translationBaseClass} font-bengali font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-bangla-translation={verse.RawTranslation || verse.Translation}
@@ -1891,7 +1913,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ta' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-tamil font-normal"
+                          className={`${translationBaseClass} font-tamil font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-tamil-translation={verse.RawTranslation || verse.Translation}
@@ -1901,7 +1923,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'E' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
+                          className={`${translationBaseClass} font-poppins font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-english-translation={verse.RawTranslation || verse.Translation}
@@ -1911,7 +1933,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'mal' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-malayalam font-normal"
+                          className={`${translationBaseClass} font-malayalam font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-malayalam-translation={verse.RawTranslation || verse.Translation}
@@ -1921,7 +1943,7 @@ const Surah = () => {
                         />
                       ) : (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
+                          className={`${translationBaseClass} font-poppins font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                         >
                           {verse.Translation}

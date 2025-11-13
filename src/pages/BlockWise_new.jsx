@@ -665,10 +665,10 @@ const BlockWise = () => {
           cursor: pointer !important;
           background-color: #19B5DD !important;
           color: #ffffff !important;
-          font-weight: 500 !important;
+          font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 4px 8px !important;
+          padding: 0 !important;
           margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
@@ -676,11 +676,13 @@ const BlockWise = () => {
           font-size: 12px !important;
           vertical-align: middle !important;
           line-height: 1 !important;
-          border-radius: 8px !important;
+          border-radius: 9999px !important;
           position: relative !important;
           top: 0 !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
+          min-width: 24px !important;
+          min-height: 24px !important;
+          width: 24px !important;
+          height: 24px !important;
           text-align: center !important;
           transition: all 0.2s ease-in-out !important;
         `;
@@ -720,6 +722,19 @@ const BlockWise = () => {
     // Add CSS for hover and active effects
     const style = document.createElement('style');
     style.textContent = `
+      .interpretation-link {
+        cursor: pointer !important;
+      }
+      .interpretation-link > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        color: inherit !important;
+        font-weight: inherit !important;
+        text-decoration: none !important;
+      }
       .interpretation-link:hover {
         background-color: #0891b2 !important;
         transform: scale(1.05) !important;

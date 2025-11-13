@@ -1977,6 +1977,43 @@ export const fetchAllInterpretations = async (
   verseId,
   language = "E"
 ) => {
+  const decodeHtmlEntities = (text) => {
+    if (typeof text !== "string" || text.length === 0) {
+      return "";
+    }
+
+    if (typeof window !== "undefined" && window.document) {
+      const textarea = window.document.createElement("textarea");
+      textarea.innerHTML = text;
+      return textarea.value;
+    }
+
+    return text
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  };
+
+  const extractInterpretationNumbers = (translationText) => {
+    const decoded = decodeHtmlEntities(translationText);
+
+    if (!decoded) {
+      return [];
+    }
+
+    const matches = decoded.matchAll(
+      /<sup[^>]*f-note[^>]*>\s*(?:<a[^>]*>)?\s*(\d+)\s*(?:<\/a>)?\s*<\/sup>/gi
+    );
+
+    const numbers = Array.from(matches, (match) => parseInt(match[1], 10)).filter(
+      (value) => !Number.isNaN(value) && value > 0
+    );
+
+    return Array.from(new Set(numbers)).sort((a, b) => a - b);
+  };
+
   const cacheKey = getInterpretationCacheKey(surahId, verseId, language);
   const now = Date.now();
 
@@ -1996,6 +2033,7 @@ export const fetchAllInterpretations = async (
   const fetchPromise = (async () => {
 // For Malayalam, determine the correct number of interpretations from the translation
     let maxInterpretations = 20;
+    let explicitInterpretationNumbers = [];
     if (language === 'mal') {
       try {
         // Fetch the translation to count footnote markers
@@ -2006,12 +2044,39 @@ export const fetchAllInterpretations = async (
           const translationData = await translationResponse.json();
 
           if (Array.isArray(translationData) && translationData.length > 0) {
-            const translationText = translationData[0].TranslationText || '';
+            const verseNumber = parseInt(verseId, 10);
+            const matchingTranslation =
+              translationData.find((item) => {
+                const from = parseInt(item?.AyaFrom ?? item?.AyaFromAyath, 10);
+                const to = parseInt(item?.AyaTo ?? item?.AyaToAyath ?? item?.AyaFrom, 10);
+                if (Number.isNaN(from) && Number.isNaN(to)) {
+                  return false;
+                }
+                if (!Number.isNaN(from) && !Number.isNaN(to)) {
+                  return verseNumber >= from && verseNumber <= to;
+                }
+                if (!Number.isNaN(from)) {
+                  return verseNumber === from;
+                }
+                if (!Number.isNaN(to)) {
+                  return verseNumber === to;
+                }
+                return false;
+              }) || translationData.find((item) => parseInt(item?.ID, 10) === verseNumber) || translationData[0];
 
-            // Count footnote markers in the translation text
-            // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
-            const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
-            maxInterpretations = footnoteMatches.length;
+            const translationText = matchingTranslation?.TranslationText || '';
+
+            // Extract interpretation numbers from the translation text
+            explicitInterpretationNumbers = extractInterpretationNumbers(translationText);
+
+            if (explicitInterpretationNumbers.length > 0) {
+              maxInterpretations = explicitInterpretationNumbers.length;
+            } else {
+              // Count footnote markers in the translation text as fallback
+              // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
+              const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
+              maxInterpretations = footnoteMatches.length;
+            }
 
 }
         }
@@ -2024,35 +2089,103 @@ export const fetchAllInterpretations = async (
     const allInterpretations = [];
 
     // Fetch interpretations up to the determined count
-    for (let i = 1; i <= maxInterpretations; i++) {
-      try {
-        const data = await fetchInterpretation(surahId, verseId, i, language);
+    const usingExplicitNumbers = explicitInterpretationNumbers.length > 0;
+    const interpretationNumbersToFetch = usingExplicitNumbers
+      ? explicitInterpretationNumbers
+      : Array.from({ length: maxInterpretations }, (_, index) => index + 1);
 
-        // If we got valid data with interpretation text, add it
-        if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
-allInterpretations.push(data);
-        } else {
-          // Empty response means no more interpretations
-break;
+    const seenInterpretationNos = new Set();
+
+    if (usingExplicitNumbers) {
+      const fetchResults = await Promise.allSettled(
+        interpretationNumbersToFetch.map(async (interpretationNo) => {
+          const data = await fetchInterpretation(surahId, verseId, interpretationNo, language);
+          return { interpretationNo, data };
+        })
+      );
+
+      fetchResults.forEach((result) => {
+        if (result.status !== "fulfilled") {
+          return;
         }
-      } catch (error) {
-        // Error means no more interpretations
-break;
+
+        const { interpretationNo, data } = result.value || {};
+        if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
+          const interpretationNumberValue =
+            parseInt(data.InterpretationNo, 10) ||
+            parseInt(data.Interpretation_No, 10) ||
+            parseInt(data.interptn_no, 10) ||
+            interpretationNo;
+
+          if (!seenInterpretationNos.has(interpretationNumberValue)) {
+            seenInterpretationNos.add(interpretationNumberValue);
+            allInterpretations.push({
+              ...data,
+              requestedInterpretationNo: interpretationNo,
+              resolvedInterpretationNo: interpretationNumberValue,
+            });
+          }
+        }
+      });
+    } else {
+      for (const interpretationNo of interpretationNumbersToFetch) {
+        try {
+          const data = await fetchInterpretation(surahId, verseId, interpretationNo, language);
+
+          // If we got valid data with interpretation text, add it
+          if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
+            const interpretationNumberValue =
+              parseInt(data.InterpretationNo, 10) ||
+              parseInt(data.Interpretation_No, 10) ||
+              parseInt(data.interptn_no, 10) ||
+              interpretationNo;
+
+            if (!seenInterpretationNos.has(interpretationNumberValue)) {
+              seenInterpretationNos.add(interpretationNumberValue);
+              allInterpretations.push({
+                ...data,
+                requestedInterpretationNo: interpretationNo,
+                resolvedInterpretationNo: interpretationNumberValue,
+              });
+            }
+            continue;
+          }
+
+          // Empty response means no more interpretations
+          break;
+        } catch (error) {
+          // Error means no more interpretations
+          break;
+        }
       }
     }
 
-return allInterpretations;
+    return allInterpretations;
   })();
 
   interpretationCache.set(cacheKey, { promise: fetchPromise });
 
   try {
     const result = await fetchPromise;
+    const sortedResult = Array.isArray(result)
+      ? [...result].sort((a, b) => {
+          const aNo =
+            parseInt(a?.resolvedInterpretationNo ?? a?.InterpretationNo ?? a?.Interpretation_No ?? a?.interptn_no, 10) ||
+            parseInt(a?.requestedInterpretationNo, 10) ||
+            0;
+          const bNo =
+            parseInt(b?.resolvedInterpretationNo ?? b?.InterpretationNo ?? b?.Interpretation_No ?? b?.interptn_no, 10) ||
+            parseInt(b?.requestedInterpretationNo, 10) ||
+            0;
+          return aNo - bNo;
+        })
+      : result;
+
     interpretationCache.set(cacheKey, {
-      data: result,
+      data: sortedResult,
       timestamp: Date.now(),
     });
-    return result;
+    return sortedResult;
   } catch (error) {
     interpretationCache.delete(cacheKey);
     throw error;

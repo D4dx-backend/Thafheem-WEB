@@ -50,6 +50,10 @@ import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkelet
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import { saveLastReading } from "../services/readingProgressService";
 import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
 
 const URDU_BATCH_SIZE = 20;
 
@@ -1618,6 +1622,13 @@ const Surah = () => {
     );
   }
 
+  const accessibleSurahName =
+    surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
+
   return (
     <div>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -1645,8 +1656,12 @@ const Surah = () => {
               )}
 
               {/* Surah Title */}
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-                {surahInfo?.arabic || "Loading..."}
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {calligraphicSurahName}
               </h1>
 
               {/* Tamil Download Button */}
@@ -1681,7 +1696,7 @@ const Surah = () => {
 
               {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
               {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 && (
-                <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4 pt-6 sm:pt-8">
+                <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-6 pt-8 pb-6 sm:px-8 sm:pt-10 sm:pb-8">
                   <img
                     src={theme === "dark" ? DarkModeBismi : Bismi}
                     alt="Bismillah"
@@ -1698,7 +1713,7 @@ const Surah = () => {
                 <div className="flex justify-end mb-4">
                   <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                     <button
-                      className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors"
+                      className="flex items-center justify-center px-2 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors whitespace-nowrap"
                       aria-label="Ayah wise view selected"
                       title="Ayah wise view"
                     >
@@ -1706,7 +1721,7 @@ const Surah = () => {
                       <span className="sr-only">Ayah wise</span>
                     </button>
                     <button
-                      className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors"
+                      className="flex items-center justify-center px-2 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
                       onClick={handleNavigateToBlockWise}
                       aria-label="Switch to block wise view"
                       title="Switch to block wise view"
@@ -1738,8 +1753,12 @@ const Surah = () => {
 
                 {/* Surah Title */}
                 <div className="relative pb-4 sm:pb-6">
-                  <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-                    {surahInfo?.arabic || `Surah ${surahId}`}
+                  <h1
+                    className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4 sm:px-6"
+                    style={{ fontFamily: surahNameFontFamily }}
+                    aria-label={accessibleSurahName}
+                  >
+                    {calligraphicSurahName}
                   </h1>
 
                   {/* Tamil Download Button - Desktop */}
@@ -1775,7 +1794,7 @@ const Surah = () => {
                 <div className="mb-3 sm:mb-4 relative">
                   {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
                   {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
-                    <div className="flex flex-col items-center px-2 sm:px-4">
+                    <div className="flex flex-col items-center px-4 sm:px-6 pt-8 pb-6 sm:pt-10 sm:pb-8">
                       <img
                         src={theme === "dark" ? DarkModeBismi : Bismi}
                         alt="Bismillah"
@@ -1789,10 +1808,10 @@ const Surah = () => {
 
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                    <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-6 lg:right-11 hidden sm:block">
                       <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
                         <button
-                          className="flex items-center justify-center px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]"
+                          className="flex items-center justify-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors whitespace-nowrap"
                           aria-label="Ayah wise view selected"
                           title="Ayah wise view"
                         >
@@ -1800,7 +1819,7 @@ const Surah = () => {
                           <span className="sr-only">Ayah wise</span>
                         </button>
                         <button
-                          className="flex items-center justify-center px-2 sm:px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
+                          className="flex items-center justify-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
                           onClick={handleNavigateToBlockWise}
                           aria-label="Switch to block wise view"
                           title="Switch to block wise view"
@@ -1860,7 +1879,7 @@ const Surah = () => {
                   >
                     {/* Arabic Text */}
                     {/* Arabic Text */}
-                    <div className="text-right mb-1.5 sm:mb-2">
+                    <div className="text-right mb-3 sm:mb-4">
                       <p
                         className={`px-4 sm:px-6 md:px-8 ${
                           isPlaying
@@ -1886,7 +1905,7 @@ const Surah = () => {
                     </div>
 
                     {/* Translation */}
-                    <div className="text-left mb-1.5 sm:mb-2">
+                    <div className="text-left mt-2 sm:mt-3 mb-1.5 sm:mb-2">
                       {translationLanguage === 'hi' ? (
                         <p
                           className={`${translationBaseClass} font-hindi font-normal`}

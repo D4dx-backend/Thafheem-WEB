@@ -44,6 +44,10 @@ import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -108,6 +112,10 @@ const BlockWise = () => {
     viewType: contextViewType,
     setViewType: setContextViewType,
   } = useTheme();
+  const adjustedTranslationFontSize = Math.max(
+    Number(translationFontSize) - 2,
+    10
+  );
   const { surahId } = useParams();
   
   useEffect(() => {
@@ -1089,10 +1097,10 @@ const BlockWise = () => {
           cursor: pointer !important;
           background-color: #19B5DD !important;
           color: #ffffff !important;
-          font-weight: 500 !important;
+          font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 4px 8px !important;
+          padding: 0 !important;
           margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
@@ -1100,11 +1108,13 @@ const BlockWise = () => {
           font-size: 12px !important;
           vertical-align: middle !important;
           line-height: 1 !important;
-          border-radius: 8px !important;
+          border-radius: 9999px !important;
           position: relative !important;
           top: 0 !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
+          min-width: 24px !important;
+          min-height: 24px !important;
+          width: 24px !important;
+          height: 24px !important;
           text-align: center !important;
           transition: all 0.2s ease-in-out !important;
         `;
@@ -1144,6 +1154,19 @@ const BlockWise = () => {
     // Add CSS for hover and active effects
     const style = document.createElement('style');
     style.textContent = `
+      .interpretation-link {
+        cursor: pointer !important;
+      }
+      .interpretation-link > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        color: inherit !important;
+        font-weight: inherit !important;
+        text-decoration: none !important;
+      }
       .interpretation-link:hover {
         background-color: #0891b2 !important;
         transform: scale(1.05) !important;
@@ -1254,6 +1277,13 @@ const BlockWise = () => {
     );
   }
 
+  const accessibleSurahName =
+    blockData?.surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
+
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -1267,8 +1297,12 @@ const BlockWise = () => {
 
             {/* Arabic Title */}
             <div className="text-center mb-3 sm:mb-4">
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
-                {blockData?.surahInfo?.arabic || "Loading..."}
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-5 sm:mb-7 px-4 sm:px-6"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {blockData ? calligraphicSurahName : accessibleSurahName}
               </h1>
             </div>
 
@@ -1278,7 +1312,7 @@ const BlockWise = () => {
               <div className="hidden sm:block">
                 <div className="max-w-[1290px] mx-auto relative flex items-center justify-center px-4 lg:px-8">
                   {/* Center - Bismillah */}
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 px-4 sm:px-6 pt-8 pb-6 sm:pt-10 sm:pb-8">
                     {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
                       <img
                         src={theme === "dark" ? DarkModeBismi : Bismi}
@@ -1320,11 +1354,13 @@ const BlockWise = () => {
                 {/* Bismillah */}
                 <div className="flex justify-center">
                   {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
-                    <img
-                      src={theme === "dark" ? DarkModeBismi : Bismi}
-                      alt="Bismi"
-                      className="w-[236px] h-[52.9px]"
-                    />
+                    <div className="px-4 pt-8 pb-6">
+                      <img
+                        src={theme === "dark" ? DarkModeBismi : Bismi}
+                        alt="Bismi"
+                        className="w-[236px] h-[52.9px]"
+                      />
+                    </div>
                   ) : (
                     <div className="h-[52.9px]" />
                   )}
@@ -1409,11 +1445,11 @@ const BlockWise = () => {
                 return (
                   <div
                     key={`block-${blockId}-${start}-${end}`}
-                    className="rounded-xl mb-3 sm:mb-4 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
+                    className="rounded-xl mb-2 sm:mb-3 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                   >
                     
 
-                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
+                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-1 sm:pb-1.5">
                       <p
                         className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl text-right text-gray-900 dark:text-white"
                         style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl', lineHeight: '2.5' }}
@@ -1430,7 +1466,7 @@ const BlockWise = () => {
                     </div>
 
                     {/* Translation Text for this block */}
-                    <div className="px-4 sm:px-6 md:px-8 pb-2 sm:pb-3">
+                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
                       {translationData ? (
                         <div 
                           className={`text-gray-700 dark:text-white leading-relaxed text-left ${
@@ -1441,7 +1477,7 @@ const BlockWise = () => {
                             translationLanguage === 'mal' ? 'font-malayalam' :
                             'font-poppins'
                           }`}
-                          style={{ fontSize: `${translationFontSize}px` }}
+                          style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                         >
                           {/* Render translation text with HTML and clickable interpretation numbers */}
                           {translationEntries.length > 0 ? (
@@ -1518,11 +1554,11 @@ const BlockWise = () => {
                     </div>
 
                     {/* Action Icons - Aligned with translation text */}
-                    <div className="px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 md:pb-6 lg:pb-8">
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:gap-6">
+                    <div className="px-4 sm:px-6 md:px-8 pt-0.5 pb-1 sm:pb-1.5">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 lg:gap-2">
                         {/* Copy */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={async () => {
                             try {
                               // Get Arabic text
@@ -1578,7 +1614,7 @@ const BlockWise = () => {
 
                         {/* Play/Pause */}
                         <button
-                          className={`p-1.5 sm:p-2 hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-1.5 hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center ${
                             playingBlock === blockId 
                               ? 'text-cyan-500 dark:text-cyan-400' 
                               : 'text-[#2AA0BF]'
@@ -1630,7 +1666,7 @@ const BlockWise = () => {
                         {/* BookOpen - Interpretation (hidden for Tamil, English, and Malayalam) */}
                         {translationLanguage !== 'ta' && translationLanguage !== 'E' && translationLanguage !== 'mal' && (
                           <button
-                            className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                            className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
                             onClick={(e) => {
                               const targetUrl = `/surah/${surahId}#verse-${start}`;
                               const isModifierPressed = e?.ctrlKey || e?.metaKey;
@@ -1650,7 +1686,7 @@ const BlockWise = () => {
 
                         {/* Note/Page - Word by Word */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={(e) => {
                             const url = `/word-by-word/${surahId}/${start}`;
                             const isModifierPressed = e?.ctrlKey || e?.metaKey;
@@ -1670,7 +1706,7 @@ const BlockWise = () => {
 
                         {/* Bookmark */}
                         <button
-                          className={`p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center ${
                             blockBookmarkLoading[`${start}-${end}`]
                               ? "opacity-50 cursor-not-allowed"
                               : ""
@@ -1724,7 +1760,7 @@ const BlockWise = () => {
 
                         {/* Share */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={async () => {
                             try {
                               const shareText = `Surah ${surahId} • Verses ${start}-${end}`;

@@ -27,6 +27,10 @@ import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import { VersesSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import { saveLastReading } from "../services/readingProgressService";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
 
 // Lazy load heavy components
 const StickyAudioPlayer = lazy(() => import("../components/StickyAudioPlayer"));
@@ -610,6 +614,13 @@ const Reading = () => {
   // Memoize grouped verses to prevent recalculation on every render
   const versesGroupedByPage = useMemo(() => getVersesGroupedByPage(), [verses, pageRanges]);
 
+  const accessibleSurahName =
+    surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
+
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -621,9 +632,13 @@ const Reading = () => {
             {/* Toggle Buttons moved to global header (Transition component) */}
 
             {/* Surah Title */}
-            <div className="mb-3 sm:mb-4">
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8">
-                {surahInfo?.arabic || "Loading..."}
+            <div className="mb-4 sm:mb-5">
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {calligraphicSurahName}
               </h1>
 
               {/* Bismillah - hide for Al-Fatihah (1) as it's the first ayah, and At-Tawbah (9) */}

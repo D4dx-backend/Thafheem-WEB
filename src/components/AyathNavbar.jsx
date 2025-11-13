@@ -277,11 +277,15 @@ const AyathNavbar = ({
             )}
           </button>
           <button
-            className="p-2 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="relative group p-2 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
             title="Word by Word"
+            aria-label="Word by Word"
             onClick={() => onWordByWordClick && onWordByWordClick(verseId)}
           >
             <List className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-white dark:text-gray-900 z-50">
+              Word by Word
+            </span>
           </button>
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

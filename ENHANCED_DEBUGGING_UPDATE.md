@@ -31,9 +31,8 @@ The issue is a **race condition** or **caching problem** where:
 ```javascript
 // Check for pending request
 if (this.pendingRequests.has(cacheKey)) {
-  console.log(`⏳ Request already pending: ${cacheKey}`);
   const pendingResult = await this.pendingRequests.get(cacheKey);
-  console.log(`⏳ Pending result length: ${Array.isArray(pendingResult) ? pendingResult.length : 'not array'}`);
+  debugPendingRequest(cacheKey, pendingResult);
   return pendingResult;
 }
 ```
@@ -44,7 +43,7 @@ if (this.pendingRequests.has(cacheKey)) {
 ```javascript
 try {
   const result = await requestPromise;
-  console.log(`🔍 getAllExplanations result length: ${Array.isArray(result) ? result.length : 'not array'}`);
+  debugResultLength(result);
   return result;
 } finally {
   this.pendingRequests.delete(cacheKey);

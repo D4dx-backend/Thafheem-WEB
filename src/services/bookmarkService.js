@@ -55,7 +55,6 @@
 
 //       if (!response.ok) {
 //         // Fallback to localStorage if API fails
-//         console.log('API failed, using localStorage fallback');
 //         // Filter local bookmarks by type when using fallback
 //         const all = this.getLocalBookmarks(userId);
 //         return Array.isArray(all)
@@ -109,7 +108,6 @@
 
 //       if (!response.ok) {
 //         // Fallback to localStorage
-//         console.log('API failed, using localStorage fallback for adding bookmark');
 //         const localBookmarks = this.getLocalBookmarks(userId);
 //         localBookmarks.push(bookmarkData);
 //         this.saveLocalBookmarks(userId, localBookmarks);
@@ -217,7 +215,6 @@
 //       if (!response.ok) {
 //         // Fallback to localStorage
 //         if (userId) {
-//           console.log('API failed, using localStorage fallback for deleting bookmark');
 //           const localBookmarks = this.getLocalBookmarks(userId);
 //           const filteredBookmarks = localBookmarks.filter(bookmark => bookmark.id !== bookmarkId);
 //           this.saveLocalBookmarks(userId, filteredBookmarks);
@@ -321,8 +318,7 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-        console.log('API failed, using localStorage fallback');
-        const all = this.getLocalBookmarks(userId);
+const all = this.getLocalBookmarks(userId);
         return Array.isArray(all)
           ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
           : [];
@@ -371,8 +367,7 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-        console.log('API failed, using localStorage fallback for adding bookmark');
-        const localBookmarks = this.getLocalBookmarks(userId);
+const localBookmarks = this.getLocalBookmarks(userId);
         localBookmarks.push(bookmarkData);
         this.saveLocalBookmarks(userId, localBookmarks);
         return bookmarkData;
@@ -512,8 +507,7 @@ class BookmarkService {
 
       if (!response.ok) {
         if (userId) {
-          console.log('API failed, using localStorage fallback for deleting bookmark');
-          const localBookmarks = this.getLocalBookmarks(userId);
+const localBookmarks = this.getLocalBookmarks(userId);
           const filteredBookmarks = localBookmarks.filter(bookmark => bookmark.id !== bookmarkId);
           this.saveLocalBookmarks(userId, filteredBookmarks);
         }
@@ -560,8 +554,7 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-        console.log('API failed, using localStorage fallback for favorites');
-        return this.getLocalFavoriteSurahs(userId);
+return this.getLocalFavoriteSurahs(userId);
       }
 
       const data = await response.json();
@@ -592,8 +585,7 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-        console.log('API failed, using localStorage fallback for adding favorite');
-        this.addLocalFavoriteSurah(userId, favoriteData);
+this.addLocalFavoriteSurah(userId, favoriteData);
         return favoriteData;
       }
 
@@ -617,8 +609,7 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-        console.log('API failed, using localStorage fallback for deleting favorite');
-        this.removeLocalFavoriteSurah(userId, surahId);
+this.removeLocalFavoriteSurah(userId, surahId);
         return { success: true };
       }
 

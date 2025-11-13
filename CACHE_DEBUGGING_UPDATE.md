@@ -21,19 +21,20 @@ The issue appears to be in the **caching mechanism** where:
 
 **In `BanglaTranslationService.js`:**
 ```javascript
-// Added to getCachedData()
-console.log(`📦 Cache data length: ${Array.isArray(cached.data) ? cached.data.length : 'not array'}`);
+// Added instrumentation to report cache data length
+// Example: 📦 Cache data length: ${Array.isArray(cached.data) ? cached.data.length : 'not array'}
 
-// Enhanced setCachedData()
-console.log(`💾 Cached: ${cacheKey} with ${Array.isArray(data) ? data.length : 'not array'} items`);
+// Enhanced setCachedData() to track cached items
+// Example: 💾 Cached: ${cacheKey} with ${Array.isArray(data) ? data.length : 'not array'} items
 ```
 
 ### 2. **Enhanced AyahModal Logging**
 
 **In `AyahModal.jsx`:**
 ```javascript
-console.log('🔍 Bangla explanations count:', explanations ? explanations.length : 0);
-console.log('🔍 Mapped explanations count:', mappedExplanations.length);
+// Instrumentation examples:
+// 🔍 Bangla explanations count: ${explanations ? explanations.length : 0}
+// 🔍 Mapped explanations count: ${mappedExplanations.length}
 ```
 
 ## Expected Console Output

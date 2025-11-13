@@ -18,9 +18,12 @@ import {
   ARTICLES_API,
   AYA_TRANSLATION_API,
   LEGACY_TFH_BASE,
+  LEGACY_TFH_REMOTE_BASE,
   WORD_MEANINGS_API,
   TAJWEED_RULES_API,
+  API_BASE_PATH,
 } from "./apis";
+import { API_BASE_PATH as CONFIG_API_BASE_PATH } from "../config/apiConfig.js";
 import { getFallbackTajweedData } from "../data/tajweedFallback";
 
 // Session-level tracking to reduce console noise
@@ -80,40 +83,60 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 2) => {
   // Malayalam uses legacy base; others use new backend
   const isMalayalam = !language || language === 'mal';
-  const base = isMalayalam ? LEGACY_TFH_BASE : API_BASE_URL;
+  const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+  const baseCandidates = isMalayalam
+    ? Array.from(new Set([LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE].filter(Boolean)))
+    : [apiBase];
   const langSuffix = isMalayalam ? '' : `/${language}`;
-  const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
-  
+
   // Increase timeout for block translations (15 seconds)
   const timeout = 15000;
-  
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await fetchWithTimeout(url, {}, timeout);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      const isLastAttempt = attempt === retries;
-      const isTimeout = error.message?.includes('timeout');
-      
-      // Only log errors on the last attempt or if not a timeout (to reduce spam)
-      if (isLastAttempt || !isTimeout) {
-        console.error(`Error fetching translation for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
-      }
-      
-      if (isLastAttempt) {
-        throw error;
-      }
-      
-      // Exponential backoff: wait 1s, then 2s before retries
-      if (attempt < retries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+
+  let lastError = null;
+
+  for (let baseIndex = 0; baseIndex < baseCandidates.length; baseIndex++) {
+    const base = baseCandidates[baseIndex];
+    const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetchWithTimeout(url, {}, timeout);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        lastError = error;
+        const isLastAttempt = attempt === retries;
+        const isTimeout = error.message?.includes('timeout');
+
+        // Only log errors on the last attempt or if not a timeout (to reduce spam)
+        if (isLastAttempt || !isTimeout) {
+          console.error(`Error fetching translation from ${url} for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
+        }
+
+        if (isLastAttempt) {
+          // If this was the primary proxy and we still have another base candidate, warn once
+          const hasAnotherBase = baseIndex < baseCandidates.length - 1;
+          if (isMalayalam && hasAnotherBase) {
+            logWarningOnce(
+              'malayalam-legacy-fallback',
+              '⚠️ Malayalam translation proxy unavailable, retrying direct legacy API.'
+            );
+          }
+          break;
+        }
+
+        // Exponential backoff: wait 1s, then 2s before retries
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
       }
     }
   }
+
+  throw lastError || new Error('Failed to fetch translation');
 };
 export const fetchSurahs = async () => {
   try {
@@ -1225,10 +1248,7 @@ export const getSurahAyahCount = async (surahId) => {
 
     // Find the maximum ayato value for this surah
     const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
-    console.log(
-      `Surah ${surahId} has ${maxAyah} ayahs according to page ranges API`
-    );
-    return maxAyah;
+return maxAyah;
   } catch (error) {
     console.error("Error getting surah ayah count from page ranges:", error);
     return null;
@@ -1503,10 +1523,7 @@ export const fetchVersesForPage = async (surahId, pageId) => {
     // Fetch all verses for the surah and then filter by verse range
     const url = `${QURAN_API_BASE_URL}/quran/verses/uthmani?chapter_number=${surahId}`;
 
-    console.log("Fetching all verses for surah:", surahId);
-    console.log("Will filter verses:", `${verseStart}-${verseEnd}`);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -1518,11 +1535,7 @@ export const fetchVersesForPage = async (surahId, pageId) => {
       return verseNumber >= verseStart && verseNumber <= verseEnd;
     });
 
-    console.log("Filtered verses:", filteredVerses);
-    console.log("Total verses in response:", data.verses.length);
-    console.log("Filtered verses count:", filteredVerses.length);
-
-    return {
+return {
       verses: filteredVerses || [],
       pageRange: pageRange,
       verseStart: verseStart,
@@ -1617,7 +1630,8 @@ export const fetchChapterInfo = async (chapterId, language = "en") => {
 
 export const fetchThafheemPreface = async (suraId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/preface/${suraId}`);
+    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+    const response = await fetch(`${apiBase}/preface/${suraId}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -1641,16 +1655,51 @@ export const fetchThafheemPreface = async (suraId) => {
 // Block-wise reading API functions
 
 // Fetch ayah ranges for block-based reading structure
+const normalizeAyaRangeLanguage = (language) => {
+  const code = (language || 'mal').toString().trim().toLowerCase();
+
+  if (code === 'mal' || code === 'ml' || code === 'malayalam') {
+    return { type: 'legacy', value: '' };
+  }
+
+  const apiLanguageMap = {
+    e: 'english',
+    en: 'english',
+    english: 'english',
+    bn: 'bangla',
+    bangla: 'bangla',
+    hi: 'hindi',
+    hindi: 'hindi',
+    ta: 'tamil',
+    tamil: 'tamil',
+    ur: 'urdu',
+    urdu: 'urdu',
+  };
+
+  return {
+    type: 'api',
+    value: apiLanguageMap[code] || code,
+  };
+};
+
 export const fetchAyaRanges = async (surahId, language = 'mal') => {
-  // All languages use legacy base for ayaranges endpoint
-  const base = LEGACY_TFH_BASE;
-  const langSuffix = language && language !== 'mal' ? `/${language}` : '';
-  const response = await fetch(`${base}/ayaranges/${surahId}${langSuffix}`);
+  const { type, value } = normalizeAyaRangeLanguage(language);
+
+  if (type === 'legacy') {
+    const response = await fetch(`${LEGACY_TFH_BASE}/ayaranges/${surahId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  }
+
+  const apiLanguage = value;
+  const url = `${API_BASE_PATH}/${apiLanguage}/ayaranges/${surahId}`;
+  const response = await fetchWithTimeout(url, {}, 10000);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  const data = await response.json();
-  return data;
+  return await response.json();
 };
 
 // Fetch translation for a specific ayah range
@@ -1751,16 +1800,13 @@ export const fetchWordByWordMeaning = async (
   
   const url = `${QURAN_API_BASE_URL}/verses/by_key/${verseKey}?words=true&word_fields=verse_key,word_number,location,text_uthmani,text_indopak,text_simple,class_name,line_number,page_number,code_v1,qpc_uthmani_hafs,translation&translation_fields=resource_name,language_name&language=${apiLanguageCode}&translations=${translationId}`;
 
-  console.log("Fetching word-by-word data from:", url);
-
-  try {
+try {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log("Word-by-word API response:", data);
-    return data.verse;
+return data.verse;
   } catch (error) {
     console.error("Error fetching word-by-word meaning:", error);
     throw error;
@@ -1791,10 +1837,7 @@ export const fetchNoteById = async (noteId) => {
   const url = `${NOTES_API}/${encodeURIComponent(id)}`;
 
   
-  console.log('🔍 Fetching note:', { noteId: id, url });
-
-
-  // Fetching note by ID
+// Fetching note by ID
   try {
     const response = await fetchWithTimeout(
       url,
@@ -1809,8 +1852,7 @@ export const fetchNoteById = async (noteId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('📝 Note API response:', { noteId: id, data });
-    return data;
+return data;
   } catch (error) {
     console.warn("Error fetching note by id:", error.message);
     // Return a fallback note when API is unavailable
@@ -1845,12 +1887,10 @@ export const fetchInterpretation = async (
     : `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
 
   try {
-    console.log("📡 Fetching interpretation from:", interpretUrl);
-    const response = await fetch(interpretUrl);
+const response = await fetch(interpretUrl);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    console.log("✅ Interpretation data received:", data);
-    return data;
+return data;
   } catch (error) {
     console.warn("Interpretation fetch failed:", error.message);
 
@@ -1858,14 +1898,12 @@ export const fetchInterpretation = async (
     if (langParam) {
       try {
         const fallbackUrl = `${INTERPRETATION_API}/${surahId}/${verseId}/${interpretationNo}`;
-        console.log("🔁 Retrying interpretation fetch without language:", fallbackUrl);
-        const fallbackResponse = await fetch(fallbackUrl);
+const fallbackResponse = await fetch(fallbackUrl);
         if (!fallbackResponse.ok) {
           throw new Error(`HTTP error! status: ${fallbackResponse.status}`);
         }
         const fallbackData = await fallbackResponse.json();
-        console.log("✅ Interpretation fallback data received:", fallbackData);
-        return fallbackData;
+return fallbackData;
       } catch (fallbackError) {
         console.warn("Interpretation fallback also failed:", fallbackError.message);
       }
@@ -1915,11 +1953,7 @@ export const fetchInterpretationRange = async (
         throw new Error(`HTTP error! status: ${noLangResponse.status}`);
       }
       const noLangData = await noLangResponse.json();
-      console.log(
-        "Range interpretation without language received:",
-        noLangData
-      );
-      return noLangData;
+return noLangData;
     } catch (noLangError) {
       console.error("Range interpretation fallback also failed:", noLangError);
       throw error;
@@ -1931,68 +1965,231 @@ export const fetchInterpretationRange = async (
 // Updated: v2.5 - Fixed to use correct verse-specific interpretation endpoints
 // Cache for interpretations to prevent redundant API calls
 const interpretationCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const INTERPRETATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getInterpretationCacheKey = (surahId, verseId, language) => {
+  const langKey = String(language ?? "default").toLowerCase();
+  return `${langKey}|${surahId}|${verseId}`;
+};
 
 export const fetchAllInterpretations = async (
   surahId,
   verseId,
   language = "E"
 ) => {
-  console.log(`🔄 Fetching all interpretations for Surah ${surahId}, Verse ${verseId}, Language: ${language}`);
-  
-  // For Malayalam, determine the correct number of interpretations from the translation
-  let maxInterpretations = 20;
-  if (language === 'mal') {
-    try {
-      // Fetch the translation to count footnote markers
-      const translationUrl = `${LEGACY_TFH_BASE}/ayatransl/${surahId}/${verseId}`;
-      const translationResponse = await fetch(translationUrl);
-      
-      if (translationResponse.ok) {
-        const translationData = await translationResponse.json();
-        
-        if (Array.isArray(translationData) && translationData.length > 0) {
-          const translationText = translationData[0].TranslationText || '';
-          
-          // Count footnote markers in the translation text
-          // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
-          const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
-          maxInterpretations = footnoteMatches.length;
-          
-          console.log(`📊 Found ${maxInterpretations} footnote markers in translation for verse ${verseId}`);
+  const decodeHtmlEntities = (text) => {
+    if (typeof text !== "string" || text.length === 0) {
+      return "";
+    }
+
+    if (typeof window !== "undefined" && window.document) {
+      const textarea = window.document.createElement("textarea");
+      textarea.innerHTML = text;
+      return textarea.value;
+    }
+
+    return text
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  };
+
+  const extractInterpretationNumbers = (translationText) => {
+    const decoded = decodeHtmlEntities(translationText);
+
+    if (!decoded) {
+      return [];
+    }
+
+    const matches = decoded.matchAll(
+      /<sup[^>]*f-note[^>]*>\s*(?:<a[^>]*>)?\s*(\d+)\s*(?:<\/a>)?\s*<\/sup>/gi
+    );
+
+    const numbers = Array.from(matches, (match) => parseInt(match[1], 10)).filter(
+      (value) => !Number.isNaN(value) && value > 0
+    );
+
+    return Array.from(new Set(numbers)).sort((a, b) => a - b);
+  };
+
+  const cacheKey = getInterpretationCacheKey(surahId, verseId, language);
+  const now = Date.now();
+
+  const cachedEntry = interpretationCache.get(cacheKey);
+  if (cachedEntry) {
+    if (cachedEntry.data && now - cachedEntry.timestamp < INTERPRETATION_CACHE_DURATION) {
+      return cachedEntry.data;
+    }
+
+    if (cachedEntry.promise) {
+      return cachedEntry.promise;
+    }
+
+    interpretationCache.delete(cacheKey);
+  }
+
+  const fetchPromise = (async () => {
+// For Malayalam, determine the correct number of interpretations from the translation
+    let maxInterpretations = 20;
+    let explicitInterpretationNumbers = [];
+    if (language === 'mal') {
+      try {
+        // Fetch the translation to count footnote markers
+        const translationUrl = `${LEGACY_TFH_BASE}/ayatransl/${surahId}/${verseId}`;
+        const translationResponse = await fetch(translationUrl);
+
+        if (translationResponse.ok) {
+          const translationData = await translationResponse.json();
+
+          if (Array.isArray(translationData) && translationData.length > 0) {
+            const verseNumber = parseInt(verseId, 10);
+            const matchingTranslation =
+              translationData.find((item) => {
+                const from = parseInt(item?.AyaFrom ?? item?.AyaFromAyath, 10);
+                const to = parseInt(item?.AyaTo ?? item?.AyaToAyath ?? item?.AyaFrom, 10);
+                if (Number.isNaN(from) && Number.isNaN(to)) {
+                  return false;
+                }
+                if (!Number.isNaN(from) && !Number.isNaN(to)) {
+                  return verseNumber >= from && verseNumber <= to;
+                }
+                if (!Number.isNaN(from)) {
+                  return verseNumber === from;
+                }
+                if (!Number.isNaN(to)) {
+                  return verseNumber === to;
+                }
+                return false;
+              }) || translationData.find((item) => parseInt(item?.ID, 10) === verseNumber) || translationData[0];
+
+            const translationText = matchingTranslation?.TranslationText || '';
+
+            // Extract interpretation numbers from the translation text
+            explicitInterpretationNumbers = extractInterpretationNumbers(translationText);
+
+            if (explicitInterpretationNumbers.length > 0) {
+              maxInterpretations = explicitInterpretationNumbers.length;
+            } else {
+              // Count footnote markers in the translation text as fallback
+              // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
+              const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
+              maxInterpretations = footnoteMatches.length;
+            }
+
+}
+        }
+      } catch (error) {
+        console.warn(`⚠️ Could not determine interpretation count from translation:`, error.message);
+        maxInterpretations = 20; // Fallback to trying 20
+      }
+    }
+
+    const allInterpretations = [];
+
+    // Fetch interpretations up to the determined count
+    const usingExplicitNumbers = explicitInterpretationNumbers.length > 0;
+    const interpretationNumbersToFetch = usingExplicitNumbers
+      ? explicitInterpretationNumbers
+      : Array.from({ length: maxInterpretations }, (_, index) => index + 1);
+
+    const seenInterpretationNos = new Set();
+
+    if (usingExplicitNumbers) {
+      const fetchResults = await Promise.allSettled(
+        interpretationNumbersToFetch.map(async (interpretationNo) => {
+          const data = await fetchInterpretation(surahId, verseId, interpretationNo, language);
+          return { interpretationNo, data };
+        })
+      );
+
+      fetchResults.forEach((result) => {
+        if (result.status !== "fulfilled") {
+          return;
+        }
+
+        const { interpretationNo, data } = result.value || {};
+        if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
+          const interpretationNumberValue =
+            parseInt(data.InterpretationNo, 10) ||
+            parseInt(data.Interpretation_No, 10) ||
+            parseInt(data.interptn_no, 10) ||
+            interpretationNo;
+
+          if (!seenInterpretationNos.has(interpretationNumberValue)) {
+            seenInterpretationNos.add(interpretationNumberValue);
+            allInterpretations.push({
+              ...data,
+              requestedInterpretationNo: interpretationNo,
+              resolvedInterpretationNo: interpretationNumberValue,
+            });
+          }
+        }
+      });
+    } else {
+      for (const interpretationNo of interpretationNumbersToFetch) {
+        try {
+          const data = await fetchInterpretation(surahId, verseId, interpretationNo, language);
+
+          // If we got valid data with interpretation text, add it
+          if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
+            const interpretationNumberValue =
+              parseInt(data.InterpretationNo, 10) ||
+              parseInt(data.Interpretation_No, 10) ||
+              parseInt(data.interptn_no, 10) ||
+              interpretationNo;
+
+            if (!seenInterpretationNos.has(interpretationNumberValue)) {
+              seenInterpretationNos.add(interpretationNumberValue);
+              allInterpretations.push({
+                ...data,
+                requestedInterpretationNo: interpretationNo,
+                resolvedInterpretationNo: interpretationNumberValue,
+              });
+            }
+            continue;
+          }
+
+          // Empty response means no more interpretations
+          break;
+        } catch (error) {
+          // Error means no more interpretations
+          break;
         }
       }
-    } catch (error) {
-      console.warn(`⚠️ Could not determine interpretation count from translation:`, error.message);
-      maxInterpretations = 20; // Fallback to trying 20
     }
+
+    return allInterpretations;
+  })();
+
+  interpretationCache.set(cacheKey, { promise: fetchPromise });
+
+  try {
+    const result = await fetchPromise;
+    const sortedResult = Array.isArray(result)
+      ? [...result].sort((a, b) => {
+          const aNo =
+            parseInt(a?.resolvedInterpretationNo ?? a?.InterpretationNo ?? a?.Interpretation_No ?? a?.interptn_no, 10) ||
+            parseInt(a?.requestedInterpretationNo, 10) ||
+            0;
+          const bNo =
+            parseInt(b?.resolvedInterpretationNo ?? b?.InterpretationNo ?? b?.Interpretation_No ?? b?.interptn_no, 10) ||
+            parseInt(b?.requestedInterpretationNo, 10) ||
+            0;
+          return aNo - bNo;
+        })
+      : result;
+
+    interpretationCache.set(cacheKey, {
+      data: sortedResult,
+      timestamp: Date.now(),
+    });
+    return sortedResult;
+  } catch (error) {
+    interpretationCache.delete(cacheKey);
+    throw error;
   }
-  
-  const allInterpretations = [];
-  
-  // Fetch interpretations up to the determined count
-  for (let i = 1; i <= maxInterpretations; i++) {
-    try {
-      const data = await fetchInterpretation(surahId, verseId, i, language);
-      
-      // If we got valid data with interpretation text, add it
-      if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
-        console.log(`✅ Found interpretation ${i} for verse ${verseId}`);
-        allInterpretations.push(data);
-      } else {
-        // Empty response means no more interpretations
-        console.log(`⏹️ Stopped at interpretation ${i} (empty response)`);
-        break;
-      }
-    } catch (error) {
-      // Error means no more interpretations
-      console.log(`⏹️ Stopped at interpretation ${i} (error: ${error.message})`);
-      break;
-    }
-  }
-  
-  console.log(`📚 Found ${allInterpretations.length} interpretations for Surah ${surahId}, Verse ${verseId}`);
-  return allInterpretations;
 };
 
 // Fetch quiz questions for specific surah and verse range
@@ -2003,13 +2200,7 @@ export const fetchQuizQuestions = async (surahId, range) => {
     // Fetching quiz questions
 
     const response = await fetch(url);
-    console.log("Response status:", response.status);
-    console.log(
-      "Response headers:",
-      Object.fromEntries(response.headers.entries())
-    );
-
-    if (!response.ok) {
+if (!response.ok) {
       const errorText = await response.text();
       console.error("Error response body:", errorText);
       throw new Error(
@@ -2018,18 +2209,9 @@ export const fetchQuizQuestions = async (surahId, range) => {
     }
 
     const data = await response.json();
-    console.log("=== RAW API RESPONSE ===");
-    console.log("Response data:", data);
-    console.log("Data type:", typeof data);
-    console.log("Is array:", Array.isArray(data));
-
-    if (Array.isArray(data) && data.length > 0) {
-      console.log("First item keys:", Object.keys(data[0]));
-      console.log("First item:", data[0]);
-    } else if (data && typeof data === "object") {
-      console.log("Single object keys:", Object.keys(data));
-      console.log("Single object:", data);
-    }
+if (Array.isArray(data) && data.length > 0) {
+} else if (data && typeof data === "object") {
+}
 
     // Add detailed debugging
     debugApiResponse(data);
@@ -2109,22 +2291,12 @@ export const fetchQuizQuestionsForRange = async (
 // Transform quiz data to expected format based on actual API response
 // Transform quiz data to expected format based on actual API response
 export const transformQuizData = (rawData) => {
-  console.log("=== TRANSFORM QUIZ DATA START ===");
-  console.log("Raw input data:", rawData);
-  console.log("Data type:", typeof rawData);
-  console.log("Is array:", Array.isArray(rawData));
-
-  if (!Array.isArray(rawData)) {
-    console.log("Converting non-array to array");
-    rawData = [rawData];
+if (!Array.isArray(rawData)) {
+rawData = [rawData];
   }
 
   const transformed = rawData.map((item, index) => {
-    console.log(`\n--- Processing Question ${index + 1} ---`);
-    console.log("Raw item:", item);
-    console.log("Item keys:", Object.keys(item));
-
-    // Extract question ID
+// Extract question ID
     const questionId =
       item.id ||
       item.questionId ||
@@ -2155,16 +2327,12 @@ export const transformQuizData = (rawData) => {
       item.correct ||
       "A";
 
-    console.log("Extracted question text:", questionText);
-    console.log("Raw correct answer:", rawCorrectAnswer);
-
-    // Handle different option formats - COMPREHENSIVE APPROACH
+// Handle different option formats - COMPREHENSIVE APPROACH
     let options = [];
 
     // Method 1: Direct options array
     if (item.options && Array.isArray(item.options)) {
-      console.log("Found options array:", item.options);
-      options = item.options.map((opt, optIndex) => ({
+options = item.options.map((opt, optIndex) => ({
         id: opt.id || opt.key || opt.letter || ["A", "B", "C", "D"][optIndex],
         text:
           opt.text ||
@@ -2177,13 +2345,9 @@ export const transformQuizData = (rawData) => {
 
     // Method 2: Individual option fields - COMPREHENSIVE SEARCH
     if (options.length === 0) {
-      console.log("Searching for individual option fields...");
-
-      // Get all possible field names for this item
+// Get all possible field names for this item
       const allFields = Object.keys(item);
-      console.log("All available fields:", allFields);
-
-      // Try to extract options from these fields - More comprehensive field matching
+// Try to extract options from these fields - More comprehensive field matching
       ["A", "B", "C", "D"].forEach((letter) => {
         const possibleFields = [
           // Standard patterns
@@ -2221,9 +2385,7 @@ export const transformQuizData = (rawData) => {
           `Text${letter}`,
         ];
 
-        console.log(`Looking for option ${letter} in fields:`, possibleFields);
-
-        for (const field of possibleFields) {
+for (const field of possibleFields) {
           if (
             item.hasOwnProperty(field) &&
             item[field] !== undefined &&
@@ -2236,11 +2398,7 @@ export const transformQuizData = (rawData) => {
               optionText !== "null" &&
               optionText !== "undefined"
             ) {
-              console.log(
-                `Found option ${letter} in field '${field}':`,
-                optionText
-              );
-              options.push({ id: letter, text: optionText });
+options.push({ id: letter, text: optionText });
               break; // Found this option, move to next letter
             }
           }
@@ -2250,11 +2408,8 @@ export const transformQuizData = (rawData) => {
 
     // Method 3: Check for nested objects
     if (options.length === 0) {
-      console.log("Checking for nested option objects...");
-
-      if (item.choices) {
-        console.log("Found choices object:", item.choices);
-        if (Array.isArray(item.choices)) {
+if (item.choices) {
+if (Array.isArray(item.choices)) {
           options = item.choices.map((choice, idx) => ({
             id: ["A", "B", "C", "D"][idx] || idx.toString(),
             text:
@@ -2269,8 +2424,7 @@ export const transformQuizData = (rawData) => {
       }
 
       if (options.length === 0 && item.alternatives) {
-        console.log("Found alternatives object:", item.alternatives);
-        if (Array.isArray(item.alternatives)) {
+if (Array.isArray(item.alternatives)) {
           options = item.alternatives.map((alt, idx) => ({
             id: ["A", "B", "C", "D"][idx] || idx.toString(),
             text: alt.text || alt.option || alt.value || String(alt),
@@ -2281,8 +2435,7 @@ export const transformQuizData = (rawData) => {
 
     // Method 4: Try to find any field that looks like it contains option text
     if (options.length === 0) {
-      console.log("Trying pattern matching for option fields...");
-      const allFields = Object.keys(item);
+const allFields = Object.keys(item);
 
       // Look for fields that might contain options
       const potentialOptionFields = allFields.filter((field) => {
@@ -2300,9 +2453,7 @@ export const transformQuizData = (rawData) => {
         );
       });
 
-      console.log("Potential option fields found:", potentialOptionFields);
-
-      // Try to map these fields to options
+// Try to map these fields to options
       potentialOptionFields.forEach((field, idx) => {
         if (item[field] && String(item[field]).trim().length > 0) {
           const letter =
@@ -2320,9 +2471,7 @@ export const transformQuizData = (rawData) => {
       });
     }
 
-    console.log(`Final extracted options for question ${index + 1}:`, options);
-
-    // Create fallback only if absolutely no options found
+// Create fallback only if absolutely no options found
     if (options.length === 0) {
       console.error(`NO OPTIONS FOUND for question ${index + 1}!`);
       console.error("Full item data:", JSON.stringify(item, null, 2));
@@ -2339,16 +2488,13 @@ export const transformQuizData = (rawData) => {
         }
       });
 
-      console.log("Found string values that might be options:", stringValues);
-
-      if (stringValues.length >= 2) {
+if (stringValues.length >= 2) {
         // Use the string values as options
         options = stringValues.slice(0, 4).map((item, idx) => ({
           id: ["A", "B", "C", "D"][idx],
           text: item.value,
         }));
-        console.log("Created options from string values:", options);
-      } else {
+} else {
         // Final fallback
         options = [
           { id: "A", text: "Option A (No data found)" },
@@ -2366,10 +2512,7 @@ export const transformQuizData = (rawData) => {
       const answerIndex = parseInt(rawCorrectAnswer) - 1; // Convert 1-based to 0-based
       if (answerIndex >= 0 && answerIndex < options.length) {
         correctAnswer = options[answerIndex].id;
-        console.log(
-          `Converted numeric answer ${rawCorrectAnswer} to letter ${correctAnswer}`
-        );
-      }
+}
     }
 
     // If correct answer is a letter but doesn't match any option ID, try to find it
@@ -2391,8 +2534,7 @@ export const transformQuizData = (rawData) => {
 
       if (matchingOption) {
         correctAnswer = matchingOption.id;
-        console.log(`Found matching option by content: ${correctAnswer}`);
-      } else {
+} else {
         // Default to first option if no match found
         correctAnswer = options[0]?.id || "A";
         console.warn(
@@ -2401,38 +2543,24 @@ export const transformQuizData = (rawData) => {
       }
     }
 
-    console.log("Final correct answer:", correctAnswer);
-
-    const result = {
+const result = {
       id: questionId,
       question: questionText,
       options: options,
       correctAnswer: correctAnswer,
     };
 
-    console.log(`Final transformed question ${index + 1}:`, result);
-    return result;
+return result;
   });
 
-  console.log("=== TRANSFORM QUIZ DATA END ===");
-  console.log("Final transformed data:", transformed);
-  return transformed;
+return transformed;
 };
 
 // Add this helper function to debug API response structure
 export const debugApiResponse = (data) => {
-  console.log("=== API RESPONSE DEBUG ===");
-  console.log("Response type:", typeof data);
-  console.log("Is array:", Array.isArray(data));
-  console.log("Raw response:", data);
-
-  if (Array.isArray(data) && data.length > 0) {
+if (Array.isArray(data) && data.length > 0) {
     const firstItem = data[0];
-    console.log("First item keys:", Object.keys(firstItem));
-    console.log("First item values:", Object.values(firstItem));
-    console.log("First item structure:", firstItem);
-
-    // Look for option-related fields
+// Look for option-related fields
     const optionFields = Object.keys(firstItem).filter(
       (key) =>
         key.toLowerCase().includes("option") ||
@@ -2441,21 +2569,14 @@ export const debugApiResponse = (data) => {
         key.match(/^[A-D]$/) ||
         key.match(/^[a-d]$/)
     );
-    console.log("Potential option fields:", optionFields);
-
-    optionFields.forEach((field) => {
-      console.log(`${field}:`, firstItem[field]);
-    });
+optionFields.forEach((field) => {
+});
   }
-  console.log("=== END DEBUG ===");
-
-  return data;
+return data;
 };
 // Updated validation function with more flexible checking
 export const validateQuizData = (quizData) => {
-  console.log("Validating quiz data:", quizData);
-
-  if (!Array.isArray(quizData)) {
+if (!Array.isArray(quizData)) {
     console.warn("Quiz data is not an array:", quizData);
     return false;
   }
@@ -2466,9 +2587,7 @@ export const validateQuizData = (quizData) => {
   }
 
   const isValid = quizData.every((question, index) => {
-    console.log(`Validating question ${index}:`, question);
-
-    // Check for basic question structure
+// Check for basic question structure
     const hasId = question.id !== undefined && question.id !== null;
     const hasQuestion =
       question.question &&
@@ -2481,15 +2600,7 @@ export const validateQuizData = (quizData) => {
     const hasCorrectAnswer =
       question.correctAnswer && typeof question.correctAnswer === "string";
 
-    console.log(`Question ${index} validation:`, {
-      hasId,
-      hasQuestion,
-      hasOptions,
-      hasCorrectAnswer,
-      optionsCount: question.options ? question.options.length : 0,
-    });
-
-    if (!hasId) console.warn(`Question ${index} missing ID:`, question);
+if (!hasId) console.warn(`Question ${index} missing ID:`, question);
     if (!hasQuestion)
       console.warn(`Question ${index} missing question text:`, question);
     if (!hasOptions)
@@ -2500,8 +2611,7 @@ export const validateQuizData = (quizData) => {
     return hasId && hasQuestion && hasOptions && hasCorrectAnswer;
   });
 
-  console.log("Quiz data validation result:", isValid);
-  return isValid;
+return isValid;
 };
 
 // Fetch quiz questions with data transformation
@@ -2512,13 +2622,9 @@ export const fetchQuizWithSurahInfo = async (surahId, range) => {
       fetchSurahs(),
     ]);
 
-    console.log("Raw quiz data before transformation:", rawQuizData);
-
-    // Transform the quiz data to expected format
+// Transform the quiz data to expected format
     const transformedQuestions = transformQuizData(rawQuizData);
-    console.log("Transformed quiz questions:", transformedQuestions);
-
-    const surahInfo = surahsData.find((s) => s.number === parseInt(surahId));
+const surahInfo = surahsData.find((s) => s.number === parseInt(surahId));
 
     return {
       questions: transformedQuestions,
@@ -2598,47 +2704,24 @@ export const createFallbackQuizData = (surahId) => {
 // Direct API test function to inspect raw response
 export const testQuizAPI = async (surahId = 1, range = "1-7") => {
   const url = `${QUIZ_API}/${surahId}/${range}`;
-  console.log("=== DIRECT API TEST ===");
-  console.log("Testing URL:", url);
-
-  try {
+try {
     const response = await fetch(url);
-    console.log("Response status:", response.status);
-    console.log(
-      "Response headers:",
-      Object.fromEntries(response.headers.entries())
-    );
-
-    const rawText = await response.text();
-    console.log("Raw response text:", rawText);
-
-    let data;
+const rawText = await response.text();
+let data;
     try {
       data = JSON.parse(rawText);
-      console.log("Parsed JSON data:", data);
-      console.log("Data type:", typeof data);
-      console.log("Is array:", Array.isArray(data));
-
-      if (Array.isArray(data) && data.length > 0) {
-        console.log("First item structure:");
-        console.log("Keys:", Object.keys(data[0]));
-        console.log("Values:", Object.values(data[0]));
-        console.log("Full first item:", data[0]);
-
-        // Look specifically for option fields
+if (Array.isArray(data) && data.length > 0) {
+// Look specifically for option fields
         const firstItem = data[0];
-        console.log("\n=== OPTION FIELD ANALYSIS ===");
-        Object.keys(firstItem).forEach((key) => {
+Object.keys(firstItem).forEach((key) => {
           const value = firstItem[key];
-          console.log(`${key}: ${value} (type: ${typeof value})`);
-        });
+});
       }
 
       return data;
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
-      console.log("Response is not valid JSON");
-      return null;
+return null;
     }
   } catch (error) {
     console.error("API test failed:", error);
@@ -2702,7 +2785,7 @@ export const searchQuranContent = async (query, language = "en") => {
     }
 
     const data = await response.json();
-    console.log("Search API response:", data); // Debug log
+// Debug log
 
     // Enhanced results with better formatting
     const results = data.search?.results || [];
@@ -2888,9 +2971,7 @@ export const fetchHomeBanner = async () => {
     }
 
     const data = await response.json();
-    console.log("Home banner data received:", data);
-
-    // Return the data array or empty array if no data
+// Return the data array or empty array if no data
     return data.data || [];
   } catch (error) {
     console.error("Error fetching home banner data:", error);
@@ -2911,9 +2992,7 @@ export const fetchAppSettings = async () => {
     }
 
     const data = await response.json();
-    console.log("App settings data received:", data);
-
-    return data.data || [];
+return data.data || [];
   } catch (error) {
     console.error("Error fetching app settings:", error);
     return [];
@@ -2930,9 +3009,7 @@ export const fetchAiApiConfig = async () => {
     }
 
     const data = await response.json();
-    console.log("AI API config data received:", data);
-
-    // Return inner data if present, otherwise empty object
+// Return inner data if present, otherwise empty object
     return data.data || {};
   } catch (error) {
     console.error("Error fetching AI API config:", error.message);
@@ -2954,9 +3031,7 @@ export const fetchPopularChapters = async (language = "en") => {
     }
 
     const data = await response.json();
-    console.log("Chapters data received:", data);
-
-    // Define popular chapters based on common reading patterns
+// Define popular chapters based on common reading patterns
     const popularChapterIds = [67, 2, 1, 18, 36, 55, 56, 78, 112, 113, 114];
 
     // Filter and map popular chapters
@@ -3000,14 +3075,15 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
 
   // Replace dots with underscores in rule number as per API spec
   const formattedRuleNo = ruleNo?.toString().replace(/\./g, "_") ?? "0";
+  const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
 
   // Build list of candidate endpoints (handles older misspelled route and new route)
   const baseCandidates = Array.from(
     new Set(
       [
         TAJWEED_RULES_API,
-        `${API_BASE_URL}/tajweedrules`,
-        `${API_BASE_URL}/thajweedrules`,
+        `${apiBase}/tajweedrules`,
+        `${apiBase}/thajweedrules`,
         `${LEGACY_TFH_BASE}/tajweedrules`,
         `${LEGACY_TFH_BASE}/thajweedrules`,
       ].filter(Boolean)
@@ -3021,8 +3097,7 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
     const url = formattedRuleNo ? `${baseUrl}/${formattedRuleNo}` : baseUrl;
 
     try {
-      console.log("Fetching Tajweed rules from:", url);
-      const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
 
       lastStatus = response.status;
 
@@ -3043,8 +3118,7 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
       }
 
       const data = await response.json();
-      console.log("Tajweed rules data received:", data);
-      return data;
+return data;
     } catch (error) {
       lastError = error;
       // Continue trying other candidates if available
@@ -3085,16 +3159,14 @@ export const fetchWordMeanings = async (
       ? `${WORD_MEANINGS_API}/${surahId}/${ayahNumber}/${language}`
       : `${WORD_MEANINGS_API}/${surahId}/${ayahNumber}`;
 
-    console.log("Fetching word meanings from:", url);
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Word meanings data received:", data);
-    return data;
+return data;
   } catch (error) {
     console.error("Error fetching word meanings:", error);
     throw error;
@@ -3150,17 +3222,13 @@ export const fetchArabicVerseForTajweed = async (verseKey) => {
 export const fetchMalarticles = async (page = 0, type = "muk") => {
   try {
     const url = `https://old.thafheem.net/thaf-api/malarticles/${page}/${type}`;
-    console.log("Fetching malarticles from URL:", url);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Successfully fetched malarticles data:", data);
-    
-    // API returns array of objects with aid and title
+// API returns array of objects with aid and title
     if (Array.isArray(data)) {
       return data.map((article) => ({
         aid: article.aid,
@@ -3195,17 +3263,13 @@ export const fetchMalarticles = async (page = 0, type = "muk") => {
 export const fetchMalarticleById = async (articleId) => {
   try {
     const url = `https://old.thafheem.net/thaf-api/malarticles/${articleId}/muk`;
-    console.log("Fetching malarticle by ID from URL:", url);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Raw API response for article ID", articleId, ":", data);
-    
-    // API returns array with single object
+// API returns array with single object
     const articleData = Array.isArray(data) ? data[0] : data;
     
     if (!articleData) {
@@ -3247,17 +3311,13 @@ export const fetchMalarticleById = async (articleId) => {
 export const fetchEngarticles = async (page = 0, type = "par") => {
   try {
     const url = `https://thafheem.net/thafheem-api/engarticles/${page}/${type}`;
-    console.log("Fetching engarticles from URL:", url);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Successfully fetched engarticles data:", data);
-    
-    // API returns array of objects with aid and title
+// API returns array of objects with aid and title
     if (Array.isArray(data)) {
       return data.map((article) => ({
         aid: article.aid,
@@ -3285,17 +3345,13 @@ export const fetchEngarticles = async (page = 0, type = "par") => {
 export const fetchEngarticleById = async (articleId) => {
   try {
     const url = `https://thafheem.net/thafheem-api/engarticles/${articleId}/par`;
-    console.log("Fetching engarticle by ID from URL:", url);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Raw API response for article ID", articleId, ":", data);
-    
-    // API returns array with single object
+// API returns array with single object
     const articleData = Array.isArray(data) ? data[0] : data;
     
     if (!articleData) {
@@ -3358,17 +3414,13 @@ export const fetchEngarticleById = async (articleId) => {
 export const fetchArticleById = async (articleId) => {
   try {
     const url = `${ARTICLES_API}/${articleId}/par`;
-    console.log("Fetching article by ID from URL:", url);
-
-    const response = await fetchWithTimeout(url, {}, 8000);
+const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Raw API response for article ID", articleId, ":", data);
-    
-    // API returns array with single object or single object directly
+// API returns array with single object or single object directly
     const articleData = Array.isArray(data) ? data[0] : data;
     
     if (!articleData) {
@@ -3444,14 +3496,11 @@ export const fetchArticlesList = async () => {
     // For now, we'll use a predefined list of article IDs
     const articleIds = [1, 2, 3, 4, 5, 6, 7, 8]; // All available article IDs
     
-    console.log("Fetching articles list for IDs:", articleIds);
-    
-    const articles = await Promise.all(
+const articles = await Promise.all(
       articleIds.map(async (id) => {
         try {
           const article = await fetchArticleById(id);
-          console.log(`Successfully fetched article ${id}:`, article);
-          return {
+return {
             aid: article.id,
             title: article.title
           };
@@ -3465,8 +3514,7 @@ export const fetchArticlesList = async () => {
       })
     );
     
-    console.log("Final articles list:", articles);
-    return articles;
+return articles;
   } catch (error) {
     console.error("Failed to fetch articles list:", error.message);
     
@@ -3481,16 +3529,13 @@ export const fetchArticlesList = async () => {
       { aid: 7, title: "The Promised Messiah" },
       { aid: 8, title: "Additional Article 8" },
     ];
-    console.log("Using fallback data:", fallbackData);
-    return fallbackData;
+return fallbackData;
   }
 };
 
 // Fetch English interpretations using specific footnote endpoints
 export const fetchEnglishInterpretations = async (surahId, verseId) => {
-  console.log(`🔄 [fetchEnglishInterpretations] Fetching English interpretations for Surah ${surahId}, Verse ${verseId}`);
-  
-  try {
+try {
     // For Surah 1, Ayah 5, we know the specific footnote IDs: 177002 and 177003
     // For other verses, we'll need to determine the footnote IDs dynamically
     let footnoteIds = [];
@@ -3502,8 +3547,7 @@ export const fetchEnglishInterpretations = async (surahId, verseId) => {
       // For other verses, we need to determine footnote IDs from the translation text
       // This would require parsing the translation to find footnote references
       // For now, we'll return empty array for non-Al-Fatiha verses
-      console.log(`🔄 [fetchEnglishInterpretations] No specific footnote IDs known for Surah ${surahId}, Verse ${verseId}`);
-      return [];
+return [];
     }
     
     const interpretations = [];
@@ -3512,7 +3556,8 @@ export const fetchEnglishInterpretations = async (surahId, verseId) => {
     for (const footnoteId of footnoteIds) {
       try {
         // Use the correct API endpoint: http://localhost:5000/api/english/footnote/{footnoteId}
-        const response = await fetch(`${API_BASE_URL}/english/footnote/${footnoteId}`);
+        const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+        const response = await fetch(`${apiBase}/english/footnote/${footnoteId}`);
         if (response.ok) {
           const data = await response.json();
           if (data && data.footnote_text) {
@@ -3522,18 +3567,15 @@ export const fetchEnglishInterpretations = async (surahId, verseId) => {
               content: data.footnote_text,
               explanation: data.footnote_text
             });
-            console.log(`✅ [fetchEnglishInterpretations] Fetched footnote ${footnoteId}:`, data.footnote_text.substring(0, 100) + '...');
-          }
+}
         } else {
-          console.log(`⚠️ [fetchEnglishInterpretations] Failed to fetch footnote ${footnoteId}: ${response.status}`);
-        }
+}
       } catch (error) {
         console.error(`❌ [fetchEnglishInterpretations] Error fetching footnote ${footnoteId}:`, error);
       }
     }
     
-    console.log(`📚 [fetchEnglishInterpretations] Found ${interpretations.length} English interpretations`);
-    return interpretations;
+return interpretations;
     
   } catch (error) {
     console.error(`❌ [fetchEnglishInterpretations] Error fetching English interpretations:`, error);

@@ -34,8 +34,7 @@ class RequestDeduplicator {
     
     // Check if request is already pending
     if (this.pendingRequests.has(key)) {
-      console.log(`🔄 Request DEDUPLICATED: ${url}`);
-      return this.pendingRequests.get(key);
+return this.pendingRequests.get(key);
     }
 
     // Create new request promise
@@ -67,9 +66,7 @@ class RequestDeduplicator {
    * @returns {Promise<Response>} Fetch response
    */
   async makeRequest(url, options) {
-    console.log(`🌐 Making NEW request: ${url}`);
-    
-    // Add timeout to prevent hanging requests
+// Add timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
@@ -125,8 +122,7 @@ class RequestDeduplicator {
     this.pendingRequests.clear();
     this.requestTimeouts.clear();
     
-    console.log('🧹 All pending requests cleared');
-  }
+}
 
   /**
    * Check if a request is currently pending
@@ -149,8 +145,7 @@ class RequestDeduplicator {
     const key = this.generateRequestKey(url, options);
     if (this.pendingRequests.has(key)) {
       this.cleanupRequest(key);
-      console.log(`❌ Request cancelled: ${url}`);
-      return true;
+return true;
     }
     return false;
   }

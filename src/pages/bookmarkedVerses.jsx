@@ -68,8 +68,7 @@ const BookVerse = () => {
       );
       
       showSuccess("Bookmark deleted successfully");
-      console.log("Bookmark deleted successfully");
-    } catch (error) {
+} catch (error) {
       console.error("Error deleting bookmark:", error);
       showError("Failed to delete bookmark. Please try again.");
     } finally {

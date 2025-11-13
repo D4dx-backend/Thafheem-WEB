@@ -25,6 +25,12 @@ import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import { VersesSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import { saveLastReading } from "../services/readingProgressService";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
 
 // Lazy load heavy components
 const StickyAudioPlayer = lazy(() => import("../components/StickyAudioPlayer"));
@@ -37,6 +43,16 @@ const QIRATHS = {
 
 const Reading = () => {
   const { surahId } = useParams();
+
+  useEffect(() => {
+    if (surahId) {
+      saveLastReading({
+        surahId,
+        viewType: "reading",
+        path: `/reading/${surahId}`,
+      });
+    }
+  }, [surahId]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
@@ -598,6 +614,13 @@ const Reading = () => {
   // Memoize grouped verses to prevent recalculation on every render
   const versesGroupedByPage = useMemo(() => getVersesGroupedByPage(), [verses, pageRanges]);
 
+  const accessibleSurahName =
+    surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
+
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -609,9 +632,13 @@ const Reading = () => {
             {/* Toggle Buttons moved to global header (Transition component) */}
 
             {/* Surah Title */}
-            <div className="mb-3 sm:mb-4">
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8">
-                {surahInfo?.arabic || "Loading..."}
+            <div className="mb-4 sm:mb-5">
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {calligraphicSurahName}
               </h1>
 
               {/* Bismillah - hide for Al-Fatihah (1) as it's the first ayah, and At-Tawbah (9) */}
@@ -632,14 +659,9 @@ const Reading = () => {
 
         {/* Reading Content */}
         <div className="max-w-xs sm:max-w-2xl lg:max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          {/* Initial Loading State */}
+          {/* Initial Loading State - Shimmer Skeleton */}
           {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Loading...
-              </p>
-            </div>
+            <VersesSkeleton count={5} />
           )}
 
           {/* Error State */}
@@ -667,10 +689,7 @@ const Reading = () => {
               {/* Loading More Indicator */}
               {loadingMore && (
                 <div className="text-center py-4 mb-4">
-                  <div className="inline-flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 dark:border-gray-400"></div>
-                    <span>Loading remaining verses...</span>
-                  </div>
+                  <CompactLoading message="Loading remaining verses..." />
                 </div>
               )}
 
@@ -879,21 +898,14 @@ const Reading = () => {
           audioTypes={audioTypes}
           onAudioTypesChange={(newTypes) => {
             const currentIdx = currentAyahIndex; // Capture current index
-            console.debug('[Reading] onAudioTypesChange called', {
-              prevAudioTypes: audioTypes,
-              newAudioTypes: newTypes,
-              currentIdx,
-              currentAyah
-            });
-            setAudioTypes(newTypes);
+setAudioTypes(newTypes);
             // If audio is currently playing, restart with new audio types
             if (currentAyah && currentIdx >= 0) {
               stopAudio();
               // Pass newTypes directly to avoid closure issue
               setTimeout(() => {
                 setIsPlaying(true);
-                console.debug('[Reading] restarting play with newTypes', newTypes);
-                playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
+playAyahAtIndexWithTypes(currentIdx, 0, newTypes);
               }, 100);
             }
           }}

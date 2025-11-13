@@ -48,6 +48,14 @@ import englishTranslationService from "../services/englishTranslationService";
 import translationCache from "../utils/translationCache";
 import { VersesSkeleton, LoadingWithProgress } from "../components/LoadingSkeleton";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
+import { saveLastReading } from "../services/readingProgressService";
+import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
+
+const URDU_BATCH_SIZE = 20;
 
 const Surah = () => {
   const {
@@ -146,6 +154,18 @@ const Surah = () => {
   // In-memory cache for English per-ayah translation map
   const englishAyahCacheRef = useRef(new Map()); // key: `${surahId}-E` -> Map(ayah->text)
 
+  // Urdu lazy-loading state
+  const [totalUrduVerses, setTotalUrduVerses] = useState(0);
+  const [urduLoadedCount, setUrduLoadedCount] = useState(0);
+  const [isLoadingUrduBatch, setIsLoadingUrduBatch] = useState(false);
+  const loadMoreUrduRef = useRef(null);
+
+  useEffect(() => {
+    if (surahId) {
+      saveLastReading({ surahId, viewType: "surah", path: `/surah/${surahId}` });
+    }
+  }, [surahId]);
+
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
     return num
@@ -154,6 +174,126 @@ const Surah = () => {
       .map((digit) => arabicDigits[digit] || digit)
       .join("");
   };
+
+  const loadUrduBatch = useCallback(
+    async (startVerse, endVerse, replace = false) => {
+      if (!surahId || translationLanguage !== 'ur') return;
+
+      const surahNumber = parseInt(surahId, 10);
+      if (Number.isNaN(surahNumber)) return;
+
+      setIsLoadingUrduBatch(true);
+      try {
+        const verseNumbers = Array.from(
+          { length: endVerse - startVerse + 1 },
+          (_, idx) => startVerse + idx
+        );
+
+        const items = await Promise.all(
+          verseNumbers.map(async (verseNumber) => {
+            const rawTranslation =
+              (await urduTranslationService.getAyahTranslation(
+                surahNumber,
+                verseNumber
+              )) || "";
+
+            const parsedTranslation =
+              urduTranslationService.parseUrduTranslationWithClickableFootnotes(
+                rawTranslation,
+                surahNumber,
+                verseNumber
+              );
+
+            return {
+              number: verseNumber,
+              ArabicText: "",
+              Translation: parsedTranslation,
+              RawTranslation: rawTranslation,
+            };
+          })
+        );
+
+        setAyahData((prev) => (replace ? items : [...prev, ...items]));
+        setUrduLoadedCount(endVerse);
+      } catch (error) {
+        if (replace) {
+          setAyahData([]);
+        }
+        console.error(
+          `Error fetching Urdu translations for ayahs ${startVerse}-${endVerse}:`,
+          error
+        );
+        throw error;
+      } finally {
+        setIsLoadingUrduBatch(false);
+      }
+    },
+    [surahId, translationLanguage]
+  );
+
+  const handleLoadMoreUrdu = useCallback(async () => {
+    if (
+      translationLanguage !== 'ur' ||
+      isLoadingUrduBatch ||
+      urduLoadedCount >= totalUrduVerses
+    ) {
+      return;
+    }
+
+    const nextStart = urduLoadedCount + 1;
+    const nextEnd = Math.min(
+      urduLoadedCount + URDU_BATCH_SIZE,
+      totalUrduVerses
+    );
+
+    try {
+      await loadUrduBatch(nextStart, nextEnd);
+    } catch (error) {
+      showError?.("Failed to load more Urdu ayahs. Please try again.");
+    }
+  }, [
+    isLoadingUrduBatch,
+    loadUrduBatch,
+    totalUrduVerses,
+    showError,
+    urduLoadedCount,
+    translationLanguage,
+  ]);
+
+  useEffect(() => {
+    if (translationLanguage !== 'ur') {
+      return;
+    }
+
+    const target = loadMoreUrduRef.current;
+    if (!target) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0]?.isIntersecting &&
+          !isLoadingUrduBatch &&
+          urduLoadedCount < totalUrduVerses
+        ) {
+          handleLoadMoreUrdu();
+        }
+      },
+      { root: null, rootMargin: '200px', threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    handleLoadMoreUrdu,
+    isLoadingUrduBatch,
+    totalUrduVerses,
+    translationLanguage,
+    urduLoadedCount,
+  ]);
 
   // Ref to store handleTopPlayPause for event listener (defined later)
   const handleTopPlayPauseRef = useRef(null);
@@ -307,6 +447,12 @@ const Surah = () => {
           }
         }
 
+        // Reset Urdu tracking for non-Urdu languages
+        if (translationLanguage !== 'ur') {
+          setTotalUrduVerses(0);
+          setUrduLoadedCount(0);
+        }
+
         // Translation source depends on selected language
         if (translationLanguage === 'ta') {
           // Tamil translations using hybrid service (API-first with SQL.js fallback)
@@ -351,31 +497,16 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'ur') {
-          // Urdu translations using hybrid service (API-first with SQL.js fallback)
+          // Urdu translations with lazy loading batches from API
           try {
-            // Build list of translations per ayah using hybrid service
-            const verseNumbers = Array.from({ length: verseCount }, (_, i) => i + 1);
-            const items = await Promise.all(
-              verseNumbers.map(async (v) => {
-                const rawTranslation = await urduTranslationService.getAyahTranslation(parseInt(surahId), v) || '';
-                
-                // Store both raw and parsed versions
-                const parsedTranslation = urduTranslationService.parseUrduTranslationWithClickableFootnotes(
-                  rawTranslation, 
-                  parseInt(surahId), 
-                  v
-                );
-                
-                return {
-                  number: v,
-                  ArabicText: '',
-                  Translation: parsedTranslation,
-                  RawTranslation: rawTranslation // Store raw version for re-parsing if needed
-                };
-              })
-            );
-            setAyahData(items);
-            
+            setTotalUrduVerses(verseCount);
+            setUrduLoadedCount(0);
+            setAyahData([]);
+
+            if (verseCount > 0) {
+              const initialEnd = Math.min(URDU_BATCH_SIZE, verseCount);
+              await loadUrduBatch(1, initialEnd, true);
+            }
           } catch (error) {
             console.error('Error fetching Urdu translations:', error);
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
@@ -386,10 +517,8 @@ const Surah = () => {
             setAyahData(fallbackAyahData);
           }
         } else if (translationLanguage === 'bn') {
-          // Bangla translations from SQLite database (auto-load, no prompt)
+          // Bangla translations from API
           try {
-            // Ensure DB is initialized; this will mark it as downloaded internally
-            await banglaTranslationService.initDB();
             const banglaTranslations = await banglaTranslationService.getSurahTranslations(parseInt(surahId));
             if (banglaTranslations && banglaTranslations.length > 0) {
               // Parse Bangla translations to make explanation numbers clickable
@@ -506,7 +635,7 @@ const Surah = () => {
     };
 
     loadSurahData();
-  }, [surahId, translationLanguage]);
+  }, [surahId, translationLanguage, loadUrduBatch]);
 
   // Load bookmarked verses for signed-in users
   useEffect(() => {
@@ -634,9 +763,7 @@ const Surah = () => {
 
   const handleInterpretationClick = async (verseNumber) => {
     try {
-      console.log(`🔄 Opening interpretation for verse ${verseNumber} in Surah ${surahId}`);
-
-      // Special handling for Surah 114
+// Special handling for Surah 114
       if (parseInt(surahId) === 114) {
         // Add any special logic for Surah 114 if needed
       }
@@ -644,8 +771,7 @@ const Surah = () => {
       // For English language, we don't need to fetch interpretation count
       // The AyahModal will handle fetching the specific footnotes directly
       if (translationLanguage === 'E') {
-        console.log(`📚 [Surah] Opening English interpretation modal for verse ${verseNumber}`);
-      }
+}
 
       // Open the AyahModal
       setSelectedVerseForInterpretation(verseNumber);
@@ -1451,19 +1577,24 @@ const Surah = () => {
     }
   };
 
-  // Loading state
+  // Loading state - Show shimmer skeleton for better perceived performance
   if (loading) {
     return (
-      <>
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading Surah data...
-            </p>
+      <div className="min-h-screen bg-white dark:bg-gray-900 px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Surah Header Skeleton */}
+          <div className="mb-8">
+            <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-48 mx-auto mb-4 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+            </div>
+            <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-32 mx-auto relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+            </div>
           </div>
+          {/* Verses Skeleton */}
+          <VersesSkeleton count={5} />
         </div>
-      </>
+      </div>
     );
   }
 
@@ -1490,6 +1621,13 @@ const Surah = () => {
       </>
     );
   }
+
+  const accessibleSurahName =
+    surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
 
   return (
     <div>
@@ -1518,8 +1656,12 @@ const Surah = () => {
               )}
 
               {/* Surah Title */}
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-                {surahInfo?.arabic || "Loading..."}
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {calligraphicSurahName}
               </h1>
 
               {/* Tamil Download Button */}
@@ -1537,6 +1679,7 @@ const Surah = () => {
                           ? 'bg-gray-400 text-white cursor-not-allowed'
                           : 'bg-blue-500 hover:bg-blue-600 text-white'
                       }`}
+                      title="Ayah wise view"
                     >
                       {tamilDownloading ? (
                         <div className="flex items-center space-x-2">
@@ -1553,7 +1696,7 @@ const Surah = () => {
 
               {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
               {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 && (
-                <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-4 pt-6 sm:pt-8">
+                <p className="text-xl sm:text-2xl font-arabic text-gray-800 dark:text-white leading-relaxed px-6 pt-8 pb-6 sm:px-8 sm:pt-10 sm:pb-8">
                   <img
                     src={theme === "dark" ? DarkModeBismi : Bismi}
                     alt="Bismillah"
@@ -1568,15 +1711,23 @@ const Surah = () => {
               {/* Ayah/Block selector */}
               {showBlockNavigation && (
                 <div className="flex justify-end mb-4">
-                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Ayah
+                  <div className="flex bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                    <button
+                      className="flex items-center justify-center px-2 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors whitespace-nowrap"
+                      aria-label="Ayah wise view selected"
+                      title="Ayah wise view"
+                    >
+                      <AyahViewIcon className="w-4 h-4" />
+                      <span className="sr-only">Ayah wise</span>
                     </button>
                     <button
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
+                      className="flex items-center justify-center px-2 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
                       onClick={handleNavigateToBlockWise}
+                      aria-label="Switch to block wise view"
+                      title="Switch to block wise view"
                     >
-                      Block
+                      <BlockViewIcon className="w-4 h-4" />
+                      <span className="sr-only">Block wise</span>
                     </button>
                   </div>
                 </div>
@@ -1602,8 +1753,12 @@ const Surah = () => {
 
                 {/* Surah Title */}
                 <div className="relative pb-4 sm:pb-6">
-                  <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900 mb-3 sm:mb-4">
-                    {surahInfo?.arabic || `Surah ${surahId}`}
+                  <h1
+                    className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4 sm:px-6"
+                    style={{ fontFamily: surahNameFontFamily }}
+                    aria-label={accessibleSurahName}
+                  >
+                    {calligraphicSurahName}
                   </h1>
 
                   {/* Tamil Download Button - Desktop */}
@@ -1639,7 +1794,7 @@ const Surah = () => {
                 <div className="mb-3 sm:mb-4 relative">
                   {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
                   {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
-                    <div className="flex flex-col items-center px-2 sm:px-4">
+                    <div className="flex flex-col items-center px-4 sm:px-6 pt-8 pb-6 sm:pt-10 sm:pb-8">
                       <img
                         src={theme === "dark" ? DarkModeBismi : Bismi}
                         alt="Bismillah"
@@ -1653,20 +1808,29 @@ const Surah = () => {
 
                   {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
                   {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                    <div className="absolute top-0 right-4 sm:right-6 lg:right-11 hidden sm:block">
-                      <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                        <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
-                          Ayah wise
+                    <div className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-6 lg:right-11 hidden sm:block">
+                      <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                        <button
+                          className="flex items-center justify-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors whitespace-nowrap"
+                          aria-label="Ayah wise view selected"
+                          title="Ayah wise view"
+                        >
+                          <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Ayah wise</span>
                         </button>
                         <button
-                          className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white text-xs sm:text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors min-h-[40px] sm:min-h-[44px]"
+                          className="flex items-center justify-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
                           onClick={handleNavigateToBlockWise}
+                          aria-label="Switch to block wise view"
+                          title="Switch to block wise view"
                         >
-                          Block wise
+                          <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Block wise</span>
                         </button>
                       </div>
                     </div>
                   )}
+                  
                 </div>
 
                 {/* Desktop Bottom Section */}
@@ -1688,7 +1852,8 @@ const Surah = () => {
                 </p>
               </div>
             ) : !loading && ayahData.length > 0 ? (
-              ayahData.map((verse, index) => {
+              <>
+              {ayahData.map((verse, index) => {
                 // Find corresponding Arabic verse by index (more reliable than verse_key matching)
                 const arabicVerse = arabicVerses[index];
                 const arabicText = arabicVerse?.text_uthmani || "";
@@ -1699,22 +1864,32 @@ const Surah = () => {
                 );
                 const finalArabicText =
                   arabicText || fallbackArabicVerse?.text_uthmani || "";
+                const isPlaying = playingAyah === index + 1;
+                const translationBaseClass = `leading-relaxed px-4 sm:px-6 md:px-8 ${
+                  isPlaying
+                    ? "text-cyan-700 dark:text-cyan-300"
+                    : "text-gray-700 dark:text-white"
+                }`;
 
                 return (
                   <div
                     key={index}
                     id={`verse-${index + 1}`}
                     className="pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg overflow-hidden transition-colors hover:bg-[#e8f2f6] dark:hover:bg-gray-800 active:bg-[#e8f2f6] mx-2 sm:mx-4"
-                    style={playingAyah === index + 1 ? { backgroundColor: 'rgba(76, 175, 80, 0.1)' } : undefined}
                   >
                     {/* Arabic Text */}
                     {/* Arabic Text */}
-                    <div className="text-right mb-1.5 sm:mb-2">
+                    <div className="text-right mb-3 sm:mb-4">
                       <p
-                        className="leading-relaxed dark:text-white text-gray-900 px-4 sm:px-6 md:px-8"
+                        className={`px-4 sm:px-6 md:px-8 ${
+                          isPlaying
+                            ? "text-cyan-700 dark:text-cyan-300"
+                            : "text-gray-900 dark:text-white"
+                        }`}
                         style={{
                           fontFamily: quranFont,
                           fontSize: `${fontSize}px`,
+                          lineHeight: '2.2',
                         }}
                         dir="rtl"
                       >
@@ -1730,10 +1905,10 @@ const Surah = () => {
                     </div>
 
                     {/* Translation */}
-                    <div className="text-left mb-1.5 sm:mb-2">
+                    <div className="text-left mt-2 sm:mt-3 mb-1.5 sm:mb-2">
                       {translationLanguage === 'hi' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-hindi font-normal"
+                          className={`${translationBaseClass} font-hindi font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-hindi-translation={verse.RawTranslation || verse.Translation}
@@ -1743,7 +1918,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ur' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-urdu font-normal"
+                          className={`${translationBaseClass} font-urdu font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-urdu-translation={verse.RawTranslation || verse.Translation}
@@ -1753,7 +1928,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'bn' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-bengali font-normal"
+                          className={`${translationBaseClass} font-bengali font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-bangla-translation={verse.RawTranslation || verse.Translation}
@@ -1763,7 +1938,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'ta' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-tamil font-normal"
+                          className={`${translationBaseClass} font-tamil font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-tamil-translation={verse.RawTranslation || verse.Translation}
@@ -1773,7 +1948,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'E' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
+                          className={`${translationBaseClass} font-poppins font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-english-translation={verse.RawTranslation || verse.Translation}
@@ -1783,7 +1958,7 @@ const Surah = () => {
                         />
                       ) : translationLanguage === 'mal' ? (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-malayalam font-normal"
+                          className={`${translationBaseClass} font-malayalam font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: verse.Translation }}
                           data-malayalam-translation={verse.RawTranslation || verse.Translation}
@@ -1793,7 +1968,7 @@ const Surah = () => {
                         />
                       ) : (
                         <p
-                          className="text-gray-700 dark:text-white leading-relaxed px-4 sm:px-6 md:px-8 font-poppins font-normal"
+                          className={`${translationBaseClass} font-poppins font-normal`}
                           style={{ fontSize: `${translationFontSize}px` }}
                         >
                           {verse.Translation}
@@ -1938,7 +2113,25 @@ const Surah = () => {
                     </div>
                   </div>
                 );
-              })
+              })}
+              {translationLanguage === 'ur' && totalUrduVerses > 0 && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Showing {Math.min(urduLoadedCount, totalUrduVerses)} of {totalUrduVerses} ayahs
+                  </p>
+                  <div
+                    ref={loadMoreUrduRef}
+                    className="w-full flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 h-12"
+                  >
+                    {urduLoadedCount >= totalUrduVerses
+                      ? 'All ayahs loaded'
+                      : isLoadingUrduBatch
+                        ? 'Loading more ayahs…'
+                        : 'Scroll to load more ayahs'}
+                  </div>
+                </div>
+              )}
+              </>
             ) : null}
           </div>
         </div>
@@ -2289,12 +2482,7 @@ const Surah = () => {
             audioTypes={audioTypes}
             onAudioTypesChange={(newTypes) => {
               const currentPlayingAyah = playingAyah; // Capture current ayah
-              console.debug('[Surah] onAudioTypesChange called', {
-                prevAudioTypes: audioTypes,
-                newAudioTypes: newTypes,
-                currentPlayingAyah
-              });
-              setAudioTypes(newTypes);
+setAudioTypes(newTypes);
               // If audio is currently playing, restart with new audio types
               if (currentPlayingAyah) {
                 // Soft restart without unmounting the player
@@ -2302,8 +2490,7 @@ const Surah = () => {
                 setIsSequencePlaying(false);
                 // Use newTypes directly instead of relying on state
                 setTimeout(() => {
-                  console.debug('[Surah] restarting sequence with newTypes', newTypes);
-                  playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
+playAyahSequenceWithTypes(currentPlayingAyah, 0, newTypes);
                 }, 50);
               }
             }}

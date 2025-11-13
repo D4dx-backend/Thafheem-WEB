@@ -151,20 +151,19 @@ const Settings = ({ onClose }) => {
     setContextViewType(normalizedViewType);
     // Save reciter to localStorage
     localStorage.setItem("reciter", reciter);
-    console.log("Settings saved");
-    if (onClose) onClose();
+if (onClose) onClose();
   };
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[99]"
+        className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[200]"
         onClick={onClose}
       ></div>
       
       {/* Settings Panel */}
-      <div className="fixed inset-y-0 right-0 z-[100] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins shadow-2xl">
+      <div className="fixed inset-y-0 right-0 z-[210] flex flex-col w-[342px] bg-white dark:bg-[#2A2C38] font-poppins shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 shadow-md border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-normal text-gray-900 dark:text-white">Settings</h2>

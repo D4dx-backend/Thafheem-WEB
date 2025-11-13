@@ -2,10 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const ensureTrailingSlash = (value) => (value.endsWith('/') ? value : `${value}/`)
+
+const resolveBasePath = () => {
+  const raw = process.env.VITE_BASE_PATH?.trim()
+  if (!raw) return '/'
+  if (raw === '/' || raw === '.') return '/'
+  return ensureTrailingSlash(raw.startsWith('/') ? raw : `/${raw}`)
+}
+
+const basePath = resolveBasePath()
+
 // https://vite.dev/config/
 export default defineConfig({
-  // Only use base path in production, not in development
-  base: process.env.NODE_ENV === 'production' ? '/new_thafheem_web/' : '/',
+  base: basePath,
   plugins: [
     react(),
     tailwindcss(),
@@ -41,14 +51,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/thafheem/, '/thafheem-api'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
+})
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
+})
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
+})
         },
       },
       // Proxy Quran.com API calls
@@ -58,8 +65,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/quran/, '/api/v4'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
+})
         },
       },
       // Proxy Directus CMS API calls
@@ -69,8 +75,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/directus/, ''),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
+})
         },
       },
       // Proxy audio files to bypass CORS
@@ -80,8 +85,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/audio/, '/audio'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('audio proxy error', err);
-          });
+})
         },
       }
     }

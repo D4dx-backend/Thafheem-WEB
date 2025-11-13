@@ -41,7 +41,13 @@ import { useSurahData } from "../hooks/useSurahData";
 import translationCache from "../utils/translationCache";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
 import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
+import englishTranslationService from "../services/englishTranslationService";
+import {
+  getCalligraphicSurahName,
+  surahNameFontFamily,
+} from "../utils/surahNameUtils.js";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -58,6 +64,10 @@ const BlockWise = () => {
   const [isContinuousPlay, setIsContinuousPlay] = useState(false); // Track if continuous playback is active
   const [isPaused, setIsPaused] = useState(false); // Track if audio is paused
   const audioRef = useRef(null); // Audio element reference
+  
+  useEffect(() => {
+    console.log("[BlockWise] audioTypes state updated", audioTypes);
+  }, [audioTypes]);
   
   // State management for API data
   const [blockData, setBlockData] = useState(null);
@@ -78,6 +88,16 @@ const BlockWise = () => {
   // Favorite surah state
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  // English footnote modal state
+  const [showEnglishFootnoteModal, setShowEnglishFootnoteModal] = useState(false);
+  const [englishFootnoteContent, setEnglishFootnoteContent] = useState("");
+  const [englishFootnoteLoading, setEnglishFootnoteLoading] = useState(false);
+  const [englishFootnoteMeta, setEnglishFootnoteMeta] = useState({
+    footnoteId: null,
+    footnoteNumber: null,
+    surah: null,
+    ayah: null,
+  });
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,6 +112,10 @@ const BlockWise = () => {
     viewType: contextViewType,
     setViewType: setContextViewType,
   } = useTheme();
+  const adjustedTranslationFontSize = Math.max(
+    Number(translationFontSize) - 2,
+    10
+  );
   const { surahId } = useParams();
   
   useEffect(() => {
@@ -129,6 +153,14 @@ const BlockWise = () => {
       .split("")
       .map((digit) => arabicDigits[digit] || digit)
       .join("");
+  };
+
+  const normalizeAyahNumber = (value, fallbackValue = null) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+    return fallbackValue;
   };
 
   // Initialize audio element
@@ -177,6 +209,14 @@ const BlockWise = () => {
   const playBlockAudio = (blockId, fromContinuous = false) => {
     if (!audioRef.current) return;
 
+    console.log("[BlockWise] playBlockAudio start", {
+      blockId,
+      fromContinuous,
+      audioTypes,
+      translationLanguage,
+      selectedQirath
+    });
+
     // Check if translation/interpretation audio is selected but language is not Malayalam
     // Only check if not already in continuous mode (to allow resume)
     if (!fromContinuous && translationLanguage !== 'mal') {
@@ -214,19 +254,25 @@ const BlockWise = () => {
     }
 
     const startingAyah = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
-    
+    const normalizedStartingAyah = normalizeAyahNumber(startingAyah, 1);
 
     setIsContinuousPlay(true);
     setPlayingBlock(blockId);
-    setCurrentAyahInBlock(startingAyah);
+    setCurrentAyahInBlock(normalizedStartingAyah);
     setCurrentInterpretationNumber(1); // Reset interpretation number for new block
     setIsPaused(false);
     
+    console.log("[BlockWise] playBlockAudio state set", {
+      playingBlock: blockId,
+      normalizedStartingAyah,
+      currentAudioType: audioTypes?.[0] || 'quran'
+    });
+
     // Dispatch event to update header button
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
     
     // Play the first ayah's audio (will play all selected types in sequence)
-    playAyahAudio(blockId, startingAyah, 0);
+    playAyahAudio(blockId, normalizedStartingAyah, 0);
   };
 
   // Generate audio URL based on audio type
@@ -249,12 +295,29 @@ const BlockWise = () => {
   const playAyahAudioWithTypes = (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!audioRef.current) return;
 
+    const ayahToPlay = normalizeAyahNumber(
+      ayahNumber,
+      normalizeAyahNumber(currentAyahInBlock, 1) || 1
+    );
+
     // Use provided types or fall back to state
     const activeAudioTypes = typesToPlay || audioTypes;
 
+    console.log("[BlockWise] playAyahAudioWithTypes", {
+      blockId,
+      requestedAyah: ayahNumber,
+      ayahToPlay,
+      audioTypeIndex,
+      audioTypes: activeAudioTypes,
+      playbackSpeed,
+      isContinuousPlay,
+      isPaused,
+      playingBlock
+    });
+
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
-      moveToNextAyahOrBlock();
+      moveToNextAyahOrBlock(ayahToPlay, activeAudioTypes);
       return;
     }
 
@@ -262,12 +325,19 @@ const BlockWise = () => {
     audioRef.current.pause();
     
     const currentAudioType = activeAudioTypes[audioTypeIndex];
-    const audioUrl = generateAudioUrl(surahId, ayahNumber, currentAudioType);
+    const audioUrl = generateAudioUrl(surahId, ayahToPlay, currentAudioType);
     if (!audioUrl) {
       // If URL generation fails, skip to next audio type
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, typesToPlay);
       return;
     }
+
+    console.log("[BlockWise] generated audioUrl", {
+      blockId,
+      ayahToPlay,
+      currentAudioType,
+      audioUrl
+    });
     
     // Map audioType to currentAudioType format for display
     const audioTypeMap = {
@@ -278,19 +348,23 @@ const BlockWise = () => {
     const mappedAudioType = audioTypeMap[currentAudioType] || 'qirath';
     
     setCurrentAudioType(mappedAudioType);
-    setCurrentAyahInBlock(ayahNumber);
-    setCurrentInterpretationNumber(1); // Reset interpretation counter
+    setCurrentAyahInBlock(ayahToPlay);
+    // FIXED: Don't reset interpretation number here - it should only reset when moving to a new ayah
+    
+    // CRITICAL FIX: Remove old event handlers before adding new ones to prevent multiple triggers
+    audioRef.current.onended = null;
+    audioRef.current.onerror = null;
     
     // Set up audio event handlers before setting src
     audioRef.current.onended = () => {
       // Play next audio type for this ayah, or move to next ayah if all types done
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     };
     
     audioRef.current.onerror = () => {
       console.error('Error playing audio:', audioUrl);
       // Skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     };
     
     audioRef.current.src = audioUrl;
@@ -299,21 +373,22 @@ const BlockWise = () => {
     audioRef.current.play().catch(err => {
       console.error('Error playing audio:', err.name, err.message, audioUrl);
       // If audio fails, skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex + 1, typesToPlay);
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
     });
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)
-  const playAyahAudio = (blockId, ayahNumber, audioTypeIndex = 0) => {
-    playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex, null);
+  const playAyahAudio = (blockId, ayahNumber, audioTypeIndex = 0, typesOverride = null) => {
+    playAyahAudioWithTypes(blockId, ayahNumber, audioTypeIndex, typesOverride);
   };
 
   // Old functions removed - now handled by playAyahAudio with audioTypes array
 
   // Function to move to the next ayah in the block or the next block
-  const moveToNextAyahOrBlock = () => {
+  const moveToNextAyahOrBlock = (currentAyahOverride = null, activeAudioTypes = null) => {
     
-    if (!playingBlock || !currentAyahInBlock) {
+    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
+    if (!playingBlock || !effectiveCurrentAyah) {
       return;
     }
 
@@ -323,15 +398,34 @@ const BlockWise = () => {
     }
 
     const ayaTo = blockInfo.AyaTo || blockInfo.ayato || blockInfo.to;
-    const nextAyah = currentAyahInBlock + 1;
+    const currentAyahNumber = normalizeAyahNumber(effectiveCurrentAyah, null);
+    const ayaToNumber = normalizeAyahNumber(ayaTo, currentAyahNumber);
 
+    if (currentAyahNumber === null || ayaToNumber === null) {
+      console.warn("[BlockWise] moveToNextAyahOrBlock aborted - invalid ayah numbers", {
+        playingBlock,
+        currentAyahInBlock: effectiveCurrentAyah,
+        ayaTo
+      });
+      return;
+    }
+
+    const nextAyah = currentAyahNumber + 1;
+
+    console.log("[BlockWise] moveToNextAyahOrBlock", {
+      playingBlock,
+      currentAyahNumber,
+      nextAyah,
+      ayaToNumber,
+      isContinuousPlay
+    });
 
     // Check if there are more ayahs in this block
-    if (nextAyah <= ayaTo) {
+    if (nextAyah <= ayaToNumber) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the next ayah in the same block (start with first audio type)
-      playAyahAudio(playingBlock, nextAyah, 0);
+      playAyahAudio(playingBlock, nextAyah, 0, activeAudioTypes);
       } else {
         // Block is finished, move to next block or stop
         if (isContinuousPlay) {
@@ -350,8 +444,9 @@ const BlockWise = () => {
   };
 
   // Function to move to previous ayah in the block or previous block
-  const moveToPreviousAyahOrBlock = () => {
-    if (!playingBlock || !currentAyahInBlock) {
+  const moveToPreviousAyahOrBlock = (currentAyahOverride = null, activeAudioTypes = null) => {
+    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
+    if (!playingBlock || !effectiveCurrentAyah) {
       return;
     }
 
@@ -361,14 +456,33 @@ const BlockWise = () => {
     }
 
     const ayaFrom = blockInfo.AyaFrom || blockInfo.ayafrom || blockInfo.from || 1;
-    const previousAyah = currentAyahInBlock - 1;
+    const currentAyahNumber = normalizeAyahNumber(effectiveCurrentAyah, null);
+    const ayaFromNumber = normalizeAyahNumber(ayaFrom, 1);
 
+    if (currentAyahNumber === null || ayaFromNumber === null) {
+      console.warn("[BlockWise] moveToPreviousAyahOrBlock aborted - invalid ayah numbers", {
+        playingBlock,
+        currentAyahInBlock: effectiveCurrentAyah,
+        ayaFrom
+      });
+      return;
+    }
+
+    const previousAyah = currentAyahNumber - 1;
+
+    console.log("[BlockWise] moveToPreviousAyahOrBlock", {
+      playingBlock,
+      currentAyahNumber,
+      previousAyah,
+      ayaFromNumber,
+      isContinuousPlay
+    });
     // Check if there's a previous ayah in this block
-    if (previousAyah >= ayaFrom) {
+    if (previousAyah >= ayaFromNumber) {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the previous ayah in the same block (start with first audio type)
-      playAyahAudio(playingBlock, previousAyah, 0);
+      playAyahAudio(playingBlock, previousAyah, 0, activeAudioTypes);
     } else {
       // Need to go to previous block or stop
       if (isContinuousPlay) {
@@ -398,7 +512,8 @@ const BlockWise = () => {
     if (currentIndex > 0) {
       const previousBlock = blockRanges[currentIndex - 1];
       const previousBlockId = previousBlock.ID || previousBlock.id;
-      const lastAyah = previousBlock.AyaTo || previousBlock.ayato || previousBlock.to || 1;
+      const lastAyahRaw = previousBlock.AyaTo || previousBlock.ayato || previousBlock.to || 1;
+      const lastAyah = normalizeAyahNumber(lastAyahRaw, 1);
       
       setIsContinuousPlay(true);
       setPlayingBlock(previousBlockId);
@@ -412,7 +527,8 @@ const BlockWise = () => {
       // Already at first block, go to first ayah
       const firstBlock = blockRanges[0];
       const firstBlockId = firstBlock.ID || firstBlock.id;
-      const firstAyah = firstBlock.AyaFrom || firstBlock.ayafrom || firstBlock.from || 1;
+      const firstAyahRaw = firstBlock.AyaFrom || firstBlock.ayafrom || firstBlock.from || 1;
+      const firstAyah = normalizeAyahNumber(firstAyahRaw, 1);
       
       setPlayingBlock(firstBlockId);
       setCurrentAyahInBlock(firstAyah);
@@ -610,6 +726,14 @@ const BlockWise = () => {
     const loadBlockWiseData = async () => {
       if (!surahId || hasFetchedRef.current || surahs.length === 0) return;
       
+      // 🔒 CRITICAL: Check if language supports blockwise before fetching
+      const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+      if (!supportsBlockwise) {
+        console.log(`⚠️ BlockWise: Language '${translationLanguage}' doesn't support blockwise. Skipping fetch.`);
+        setLoading(false);
+        return;
+      }
+      
       // Mark as fetched to prevent duplicate calls in StrictMode
       hasFetchedRef.current = true;
 
@@ -644,13 +768,26 @@ const BlockWise = () => {
         if (ayaRangesResponse && ayaRangesResponse.length > 0) {
           
           const processBlockTranslation = async (block, blockIndex) => {
-            const ayaFrom = block.AyaFrom || block.ayafrom || block.from;
-            const ayaTo = block.AyaTo || block.ayato || block.to;
-            const blockId = block.ID || block.id;
+            const rawAyaFrom = block.AyaFrom || block.ayafrom || block.from;
+            const rawAyaTo = block.AyaTo || block.ayato || block.to;
 
-            if (!ayaFrom || !ayaTo) return;
+            if (rawAyaFrom === undefined || rawAyaFrom === null || rawAyaTo === undefined || rawAyaTo === null) {
+              return;
+            }
 
-            const range = `${ayaFrom}-${ayaTo}`;
+            const normalizedAyaFrom = Number.parseInt(rawAyaFrom, 10);
+            const normalizedAyaTo = Number.parseInt(rawAyaTo, 10);
+            const hasNumericRange = Number.isFinite(normalizedAyaFrom) && Number.isFinite(normalizedAyaTo);
+            const range = hasNumericRange
+              ? `${normalizedAyaFrom}-${normalizedAyaTo}`
+              : `${rawAyaFrom}-${rawAyaTo}`;
+            const blockId =
+              block.ID ||
+              block.id ||
+              range ||
+              `block-${blockIndex}`;
+            const ayaFrom = hasNumericRange ? normalizedAyaFrom : rawAyaFrom;
+            const ayaTo = hasNumericRange ? normalizedAyaTo : rawAyaTo;
 
             try {
               // Mark this specific block as loading
@@ -809,6 +946,17 @@ const BlockWise = () => {
     setBlockRanges([]);
     setLoadingBlocks(new Set());
     hasFetchedRef.current = false;
+    setSelectedInterpretation(null);
+    setShowInterpretation(false);
+    setShowEnglishFootnoteModal(false);
+    setEnglishFootnoteContent("");
+    setEnglishFootnoteLoading(false);
+    setEnglishFootnoteMeta({
+      footnoteId: null,
+      footnoteNumber: null,
+      surah: null,
+      ayah: null,
+    });
   }, [translationLanguage]);
 
   // Load favorite status for the current surah
@@ -829,6 +977,57 @@ const BlockWise = () => {
 
     loadFavoriteStatus();
   }, [user, surahId]);
+
+  // Handle clicks on English footnotes (E translation)
+  useEffect(() => {
+    if (translationLanguage !== 'E') {
+      return;
+    }
+
+    const handleEnglishFootnoteClick = async (event) => {
+      const target = event.target.closest(".english-footnote-link");
+      if (!target) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const footnoteId = target.getAttribute("data-footnote-id");
+      if (!footnoteId) {
+        return;
+      }
+
+      const footnoteNumber = (target.textContent || "").trim() || target.getAttribute("data-footnote-number");
+      const ayahNoAttr = target.getAttribute("data-ayah");
+      const ayahNo = ayahNoAttr ? parseInt(ayahNoAttr, 10) : null;
+
+      setEnglishFootnoteMeta({
+        footnoteId: footnoteId,
+        footnoteNumber: footnoteNumber || null,
+        surah: surahId ? parseInt(surahId, 10) : null,
+        ayah: ayahNo,
+      });
+      setEnglishFootnoteContent("Loading...");
+      setEnglishFootnoteLoading(true);
+      setShowEnglishFootnoteModal(true);
+
+      try {
+        const explanation = await englishTranslationService.getExplanation(parseInt(footnoteId, 10));
+        setEnglishFootnoteContent(explanation || "Explanation not available.");
+      } catch (error) {
+        console.error("Error fetching English footnote explanation:", error);
+        setEnglishFootnoteContent(`Error loading explanation: ${error.message || error}`);
+      } finally {
+        setEnglishFootnoteLoading(false);
+      }
+    };
+
+    document.addEventListener("click", handleEnglishFootnoteClick);
+    return () => {
+      document.removeEventListener("click", handleEnglishFootnoteClick);
+    };
+  }, [translationLanguage, surahId]);
 
   // Handle favorite surah toggle
   const handleFavoriteClick = async (e) => {
@@ -898,10 +1097,10 @@ const BlockWise = () => {
           cursor: pointer !important;
           background-color: #19B5DD !important;
           color: #ffffff !important;
-          font-weight: 500 !important;
+          font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 4px 8px !important;
+          padding: 0 !important;
           margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
@@ -909,11 +1108,13 @@ const BlockWise = () => {
           font-size: 12px !important;
           vertical-align: middle !important;
           line-height: 1 !important;
-          border-radius: 8px !important;
+          border-radius: 9999px !important;
           position: relative !important;
           top: 0 !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
+          min-width: 24px !important;
+          min-height: 24px !important;
+          width: 24px !important;
+          height: 24px !important;
           text-align: center !important;
           transition: all 0.2s ease-in-out !important;
         `;
@@ -953,6 +1154,19 @@ const BlockWise = () => {
     // Add CSS for hover and active effects
     const style = document.createElement('style');
     style.textContent = `
+      .interpretation-link {
+        cursor: pointer !important;
+      }
+      .interpretation-link > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        color: inherit !important;
+        font-weight: inherit !important;
+        text-decoration: none !important;
+      }
       .interpretation-link:hover {
         background-color: #0891b2 !important;
         transform: scale(1.05) !important;
@@ -1001,18 +1215,25 @@ const BlockWise = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Loading state - only show full loading screen for initial data fetch
+  // Loading state - Show shimmer skeleton for better perceived performance
   if (loading && blockRanges.length === 0) {
     return (
       <>
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading Block-wise data...
-            </p>
+        <div className="min-h-screen bg-white dark:bg-gray-900 px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Surah Header Skeleton */}
+            <div className="text-center mb-8">
+              <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-64 mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+              <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-40 mx-auto relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent"></div>
+              </div>
+            </div>
+            {/* Blocks Skeleton */}
+            <BlocksSkeleton count={3} />
           </div>
         </div>
       </>
@@ -1056,6 +1277,13 @@ const BlockWise = () => {
     );
   }
 
+  const accessibleSurahName =
+    blockData?.surahInfo?.arabic || (surahId ? `Surah ${surahId}` : "Surah");
+  const calligraphicSurahName = getCalligraphicSurahName(
+    surahId,
+    accessibleSurahName
+  );
+
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -1069,61 +1297,101 @@ const BlockWise = () => {
 
             {/* Arabic Title */}
             <div className="text-center mb-3 sm:mb-4">
-              <h1 className="text-3xl sm:text-4xl font-arabic dark:text-white text-gray-900">
-                {blockData?.surahInfo?.arabic || "Loading..."}
+              <h1
+                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-5 sm:mb-7 px-4 sm:px-6"
+                style={{ fontFamily: surahNameFontFamily }}
+                aria-label={accessibleSurahName}
+              >
+                {blockData ? calligraphicSurahName : accessibleSurahName}
               </h1>
             </div>
 
-            {/* Bismillah and Controls Container */}
-            <div className="mb-3 sm:mb-4 relative">
-              {/* Bismillah - hide for Al-Fatihah (Surah 1) as it's the first ayah, and At-Tawbah (Surah 9) */}
-              {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
-                <div className="flex flex-col items-center px-2 sm:px-4">
-                  <img
-                    src={theme === "dark" ? DarkModeBismi : Bismi}
-                    alt="Bismi"
-                    className="w-[236px] h-[52.9px] mb-2"
-                  />
-                </div>
-              ) : (
-                // Spacer to preserve layout when Bismillah is hidden (keeps buttons aligned)
-                <div className="h-[52.9px] mb-2" />
-              )}
-
-              {/* Mobile Ayah/Block selector (only for Malayalam and English) */}
-              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="flex justify-end mb-4 sm:hidden">
-                  <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm w-[115px]">
-                    <button
-                      className="px-2 sm:px-3 py-1.5 w-[55px] text-gray-500 rounded-full dark:hover:bg-gray-800 dark:text-white text-xs font-medium hover:text-gray-700 transition-colors"
-                      onClick={handleNavigateToAyahWise}
-                    >
-                      Ayah
-                    </button>
-                    <button className="px-2 sm:px-3 py-1.5 bg-white w-[55px] dark:bg-gray-900 dark:text-white text-gray-900 rounded-full text-xs font-medium shadow transition-colors">
-                      Block
-                    </button>
+             {/* Bismillah and Controls Container */}
+            <div className="mb-3 sm:mb-4">
+              {/* Desktop Layout */}
+              <div className="hidden sm:block">
+                <div className="max-w-[1290px] mx-auto relative flex items-center justify-center px-4 lg:px-8">
+                  {/* Center - Bismillah */}
+                  <div className="flex-shrink-0 px-4 sm:px-6 pt-8 pb-6 sm:pt-10 sm:pb-8">
+                    {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                      <img
+                        src={theme === "dark" ? DarkModeBismi : Bismi}
+                        alt="Bismi"
+                        className="w-[236px] h-[52.9px]"
+                      />
+                    ) : (
+                      <div className="h-[52.9px]" />
+                    )}
                   </div>
+                  
+                  {/* Right - Desktop Buttons (absolute positioned) */}
+                  {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                    <div className="absolute -right-4 md:-right-3 lg:-right-2 xl:-right-1 top-1/2 -translate-y-1/2">
+                      <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                        <button
+                          className="flex items-center justify-center px-3 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors whitespace-nowrap"
+                          onClick={handleNavigateToAyahWise}
+                          aria-label="Switch to ayah wise view"
+                        >
+                          <AyahViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Ayah wise</span>
+                        </button>
+                        <button
+                          className="flex items-center justify-center px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow-sm transition-colors whitespace-nowrap"
+                          aria-label="Block wise view selected"
+                        >
+                          <BlockViewIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="sr-only">Block wise</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Desktop Ayah wise / Block wise buttons (only for Malayalam and English) */}
-              {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                <div className="absolute top-0 right-4 sm:right-6 lg:right-42 hidden sm:block">
-                  <div className="flex gap-1 sm:gap-2 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
-                    <button
-                      className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 text-xs sm:text-sm font-medium transition-colors min-h-[40px] sm:min-h-[44px]"
-                      onClick={handleNavigateToAyahWise}
-                    >
-                      Ayah wise
-                    </button>
-                    <button className="flex items-center px-2 sm:px-3 lg:px-4 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium shadow-sm transition-colors min-h-[40px] sm:min-h-[44px]">
-                      Block wise
-                    </button>
-                  </div>
+              {/* Mobile Layout - Bismillah centered, buttons below */}
+              <div className="sm:hidden">
+                {/* Bismillah */}
+                <div className="flex justify-center">
+                  {parseInt(surahId) !== 1 && parseInt(surahId) !== 9 ? (
+                    <div className="px-4 pt-8 pb-6">
+                      <img
+                        src={theme === "dark" ? DarkModeBismi : Bismi}
+                        alt="Bismi"
+                        className="w-[236px] h-[52.9px]"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-[52.9px]" />
+                  )}
                 </div>
-              )}
+                
+                {/* Mobile Ayah/Block selector */}
+                {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                  <div className="mt-3 flex justify-end px-4">
+                    <div className="flex gap-1 bg-gray-100 dark:bg-[#323A3F] rounded-full p-1 shadow-sm">
+                      <button
+                        className="flex items-center justify-center px-2 py-1.5 text-gray-500 rounded-full dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/40 transition-colors"
+                        onClick={handleNavigateToAyahWise}
+                        aria-label="Switch to ayah wise view"
+                      >
+                        <AyahViewIcon className="w-4 h-4" />
+                        <span className="sr-only">Ayah wise</span>
+                      </button>
+                      <button
+                        className="flex items-center justify-center px-2 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full shadow transition-colors"
+                        aria-label="Block wise view selected"
+                      >
+                        <BlockViewIcon className="w-4 h-4" />
+                        <span className="sr-only">Block wise</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
+
 
             {/* Surah Info moved to global header */}
             {/* Play Audio button moved to header */}
@@ -1140,13 +1408,34 @@ const BlockWise = () => {
               <BlocksSkeleton count={5} />
             ) : blockRanges && blockRanges.length > 0 ? (
               blockRanges.map((block, blockIndex) => {
-                const blockId = block.ID || block.id;
-                const start = block.AyaFrom || block.ayafrom || block.from || 1;
-                const end = block.AyaTo || block.ayato || block.to || start;
+                const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+                const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+                const parsedStart = Number.parseInt(rawStart, 10);
+                const parsedEnd = Number.parseInt(rawEnd, 10);
+                const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+                const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+                const start = hasNumericBounds ? parsedStart : fallbackStart;
+                const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+                const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+                const rangeKey = hasNumericBounds
+                  ? `${start}-${end}`
+                  : `${rawStart}-${rawEnd}`;
+                const blockId =
+                  block.ID ||
+                  block.id ||
+                  rangeKey ||
+                  `block-${blockIndex}`;
                 
                 // Get translation data for this block
                 const translationInfo = blockTranslations[blockId] || null;
                 const translationData = translationInfo?.data;
+                const translationEntries = Array.isArray(translationData)
+                  ? translationData
+                  : Array.isArray(translationData?.translations)
+                    ? translationData.translations
+                    : Array.isArray(translationData?.data)
+                      ? translationData.data
+                      : [];
 
                 // Get Arabic verses for this block
                 const arabicSlice = Array.isArray(arabicVerses)
@@ -1156,14 +1445,14 @@ const BlockWise = () => {
                 return (
                   <div
                     key={`block-${blockId}-${start}-${end}`}
-                    className="rounded-xl mb-3 sm:mb-4 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
+                    className="rounded-xl mb-2 sm:mb-3 border border-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 hover:bg-[#e8f2f6] active:bg-[#e8f2f6] transition-colors"
                   >
                     
 
-                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
+                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-1 sm:pb-1.5">
                       <p
-                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-relaxed text-right text-gray-900 dark:text-white"
-                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl' }}
+                        className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl text-right text-gray-900 dark:text-white"
+                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl', lineHeight: '2.5' }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -1177,7 +1466,7 @@ const BlockWise = () => {
                     </div>
 
                     {/* Translation Text for this block */}
-                    <div className="px-4 sm:px-6 md:px-8 pb-2 sm:pb-3">
+                    <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-2 sm:pb-3">
                       {translationData ? (
                         <div 
                           className={`text-gray-700 dark:text-white leading-relaxed text-left ${
@@ -1188,16 +1477,40 @@ const BlockWise = () => {
                             translationLanguage === 'mal' ? 'font-malayalam' :
                             'font-poppins'
                           }`}
-                          style={{ fontSize: `${translationFontSize}px` }}
+                          style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                         >
                           {/* Render translation text with HTML and clickable interpretation numbers */}
-                          {Array.isArray(translationData) && translationData.length > 0 ? (
-                            translationData.map((item, idx) => {
-                              const translationText = item.TranslationText || item.translationText || item.text || "";
-                              const parsedHtml = parseTranslationWithClickableSup(
-                                translationText,
-                                `${start}-${end}`
-                              );
+                          {translationEntries.length > 0 ? (
+                            translationEntries.map((item, idx) => {
+                              const translationText =
+                                item.TranslationText ||
+                                item.translationText ||
+                                item.translation_text ||
+                                item.text ||
+                                "";
+                              const rawVerseNumber =
+                                item.VerseNo ||
+                                item.Verse_Number ||
+                                item.verse_number ||
+                                item.VerseNumber ||
+                                item.ayah_number ||
+                                item.AyaId ||
+                                item.AyahId ||
+                                (start + idx);
+                              const verseNumber = Number.isFinite(parseInt(rawVerseNumber, 10))
+                                ? parseInt(rawVerseNumber, 10)
+                                : start + idx;
+                              const parsedHtml =
+                                translationLanguage === 'E'
+                                  ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                                      translationText,
+                                      parseInt(surahId, 10),
+                                      verseNumber
+                                    )
+                                  : parseTranslationWithClickableSup(
+                                      translationText,
+                                      `${start}-${end}`
+                                    );
                               
                               return (
                                 <div
@@ -1207,14 +1520,24 @@ const BlockWise = () => {
                                 />
                               );
                             })
-                          ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
+                          ) : translationData?.TranslationText ||
+                            translationData?.translationText ||
+                            translationData?.translation_text ||
+                            translationData?.text ? (
                             <div
                               className="leading-relaxed"
                               dangerouslySetInnerHTML={{
-                                __html: parseTranslationWithClickableSup(
-                                  translationData.TranslationText || translationData.translationText || translationData.text,
-                                  `${start}-${end}`
-                                ),
+                                __html:
+                                  translationLanguage === 'E'
+                                    ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
+                                        parseInt(surahId, 10),
+                                        start
+                                      )
+                                    : parseTranslationWithClickableSup(
+                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
+                                        `${start}-${end}`
+                                      ),
                               }}
                             />
                           ) : (
@@ -1228,11 +1551,14 @@ const BlockWise = () => {
                           Translation not available
                         </p>
                       )}
+                    </div>
 
-                      <div className="flex flex-wrap justify-start gap-1 sm:gap-2 pt-2 sm:pt-3">
+                    {/* Action Icons - Aligned with translation text */}
+                    <div className="px-4 sm:px-6 md:px-8 pt-0.5 pb-1 sm:pb-1.5">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 lg:gap-2">
                         {/* Copy */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={async () => {
                             try {
                               // Get Arabic text
@@ -1249,9 +1575,23 @@ const BlockWise = () => {
                               // Get translation text (strip HTML for clipboard)
                               let translationText = "Loading translation...";
                               if (translationData) {
-                                const rawText = Array.isArray(translationData) && translationData.length > 0
-                                  ? (translationData[0].TranslationText || translationData[0].translationText || translationData[0].text || "")
-                                  : (translationData.TranslationText || translationData.translationText || translationData.text || "");
+                                let rawText = "";
+                                if (translationEntries.length > 0) {
+                                  const firstEntry = translationEntries[0];
+                                  rawText =
+                                    firstEntry.TranslationText ||
+                                    firstEntry.translationText ||
+                                    firstEntry.translation_text ||
+                                    firstEntry.text ||
+                                    "";
+                                } else {
+                                  rawText =
+                                    translationData.TranslationText ||
+                                    translationData.translationText ||
+                                    translationData.translation_text ||
+                                    translationData.text ||
+                                    "";
+                                }
                                 
                                 // Strip HTML tags for clipboard
                                 const tempDiv = document.createElement("div");
@@ -1269,12 +1609,12 @@ const BlockWise = () => {
                           }}
                           title="Copy text"
                         >
-                          <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Play/Pause */}
                         <button
-                          className={`p-1.5 sm:p-2 hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-1.5 hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center ${
                             playingBlock === blockId 
                               ? 'text-cyan-500 dark:text-cyan-400' 
                               : 'text-[#2AA0BF]'
@@ -1316,9 +1656,9 @@ const BlockWise = () => {
                           }
                         >
                           {playingBlock === blockId && !isPaused ? (
-                            <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (
-                          <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
@@ -1326,7 +1666,7 @@ const BlockWise = () => {
                         {/* BookOpen - Interpretation (hidden for Tamil, English, and Malayalam) */}
                         {translationLanguage !== 'ta' && translationLanguage !== 'E' && translationLanguage !== 'mal' && (
                           <button
-                            className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                            className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
                             onClick={(e) => {
                               const targetUrl = `/surah/${surahId}#verse-${start}`;
                               const isModifierPressed = e?.ctrlKey || e?.metaKey;
@@ -1340,13 +1680,13 @@ const BlockWise = () => {
                             }}
                             title="View ayah details"
                           >
-                            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         )}
 
                         {/* Note/Page - Word by Word */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={(e) => {
                             const url = `/word-by-word/${surahId}/${start}`;
                             const isModifierPressed = e?.ctrlKey || e?.metaKey;
@@ -1361,12 +1701,12 @@ const BlockWise = () => {
                           }}
                           title="Word by word"
                         >
-                          <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
 
                         {/* Bookmark */}
                         <button
-                          className={`p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center ${
+                          className={`p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center ${
                             blockBookmarkLoading[`${start}-${end}`]
                               ? "opacity-50 cursor-not-allowed"
                               : ""
@@ -1414,13 +1754,13 @@ const BlockWise = () => {
                           {blockBookmarkLoading[`${start}-${end}`] ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b border-current"></div>
                           ) : (
-                            <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </button>
 
                         {/* Share */}
                         <button
-                          className="p-1.5 sm:p-2 text-[#2AA0BF] hover:text-black hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] flex items-center justify-center"
+                          className="p-1.5 sm:p-1.5 text-[#2AA0BF] hover:text-[#0f5f72] dark:hover:text-cyan-300 transition-colors min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center focus:outline-none"
                           onClick={async () => {
                             try {
                               const shareText = `Surah ${surahId} • Verses ${start}-${end}`;
@@ -1445,7 +1785,7 @@ const BlockWise = () => {
                           }}
                           title="Share block"
                         >
-                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
@@ -1577,6 +1917,69 @@ const BlockWise = () => {
         </div>
       )}
 
+          {/* English Footnote Modal */}
+          {showEnglishFootnoteModal && (
+            <div className="fixed inset-0 flex items-start justify-center z-[9999] pt-32 sm:pt-40 lg:pt-48 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-y-auto">
+              <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      English Explanation
+                    </h2>
+                    {englishFootnoteMeta?.footnoteNumber && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Footnote {englishFootnoteMeta.footnoteNumber}
+                        {englishFootnoteMeta?.ayah
+                          ? ` • Ayah ${englishFootnoteMeta.ayah}`
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowEnglishFootnoteModal(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+                  {englishFootnoteLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Loading explanation...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                      <div
+                        className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
+                        style={{ fontSize: `${translationFontSize}px` }}
+                      >
+                        {englishFootnoteContent}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (
             <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-y-auto">
@@ -1648,19 +2051,35 @@ const BlockWise = () => {
               onAudioTypesChange={(newTypes) => {
                 const currentBlock = playingBlock;
                 const currentAyah = currentAyahInBlock;
-                console.debug('[BlockWise] onAudioTypesChange called', {
-                  prevAudioTypes: audioTypes,
-                  newAudioTypes: newTypes,
+                console.log("[BlockWise] onAudioTypesChange", {
+                  newTypes,
                   currentBlock,
-                  currentAyah
+                  currentAyah,
+                  isContinuousPlay,
+                  isPaused
                 });
-                setAudioTypes(newTypes);
+setAudioTypes(newTypes);
                 // If audio is currently playing, restart with new audio types
                 if (currentBlock && currentAyah) {
-                  stopPlayback();
+                  if (audioRef.current) {
+                    try {
+                      audioRef.current.pause();
+                      audioRef.current.currentTime = 0;
+                    } catch (pauseError) {
+                      console.warn("[BlockWise] Failed to pause audio before restarting with new types", pauseError);
+                    }
+                  }
+                  setIsContinuousPlay(true);
+                  setIsPaused(false);
+                  setPlayingBlock(currentBlock);
+                  setCurrentAyahInBlock(currentAyah);
                   // Pass newTypes directly to avoid closure issue
                   setTimeout(() => {
-                    console.debug('[BlockWise] restarting ayah audio with newTypes', newTypes);
+                    console.log("[BlockWise] restarting playback after audioTypes change", {
+                      currentBlock,
+                      currentAyah,
+                      newTypes
+                    });
                     playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
                   }, 100);
                 }

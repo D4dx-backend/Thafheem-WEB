@@ -41,8 +41,7 @@ class HindiWordByWordService {
         // Try with base path first, then fallback to root path
         let response;
         let dbPath = this.dbPath;
-        console.log(`📥 Fetching Hindi word-by-word database from: ${dbPath}`);
-        response = await fetch(dbPath);
+response = await fetch(dbPath);
         
         if (!response.ok) {
           // Fallback to root path if base path fails (common in development)
@@ -61,9 +60,7 @@ class HindiWordByWordService {
           }
         }
         
-        console.log(`✅ Successfully loaded Hindi word-by-word database from: ${dbPath}`);
-        
-        const buffer = await response.arrayBuffer();
+const buffer = await response.arrayBuffer();
         const db = new SQL.Database(new Uint8Array(buffer));
         
         // Verify database structure
@@ -177,8 +174,7 @@ class HindiWordByWordService {
               language_name: 'English'
             }
           });
-          console.log(`⚠️ Using English fallback for: "${row.WordPhrase}" -> "${wordMeaning}"`);
-          count += 1;
+count += 1;
         } else {
           // Other languages or empty - include with generic label
           words.push({
@@ -221,9 +217,7 @@ class HindiWordByWordService {
         
         const hindiWords = words.filter(w => w.translation.language_name === 'Hindi').length;
         const englishWords = words.filter(w => w.translation.language_name === 'English (Hindi not available)').length;
-        console.log(`✅ Found ${words.length} total words for ${surahId}:${ayahNumber} (${hindiWords} Hindi, ${englishWords} English fallback):`, words.map(w => `${w.text_uthmani} -> ${w.translation.text}`));
-        
-        // Cache the result
+// Cache the result
         this.cache.set(cacheKey, wordByWordData);
         
         return wordByWordData;
@@ -240,9 +234,7 @@ class HindiWordByWordService {
       const surahCount = checkStmt.getAsObject([surahId]);
       checkStmt.free();
       
-      console.log(`📊 Total Hindi words in Surah ${surahId}: ${surahCount.count}`);
-      
-      return null;
+return null;
     } catch (error) {
       console.error(`❌ Error fetching Hindi word-by-word data for ${surahId}:${ayahNumber}:`, error);
       throw error;
@@ -273,9 +265,7 @@ class HindiWordByWordService {
         const arabicData = await response.json();
         
         if (arabicData.verse && arabicData.verse.words) {
-          console.log(`🔄 Combining ${arabicData.verse.words.length} Arabic words with ${hindiData.words.length} Hindi words for ${surahId}:${ayahNumber}`);
-          
-          // Combine Arabic words with Hindi meanings
+// Combine Arabic words with Hindi meanings
           const combinedWords = arabicData.verse.words.map((arabicWord, index) => {
             // Try to find matching Hindi word by position first, then by Arabic text similarity
             let hindiWord = hindiData.words[index];
@@ -323,9 +313,7 @@ class HindiWordByWordService {
   // Fallback method to get English word-by-word data from quran.com API
   async getEnglishFallback(surahId, ayahNumber) {
     try {
-      console.log(`🔄 Using English fallback for ${surahId}:${ayahNumber}`);
-      
-      const verseKey = `${surahId}:${ayahNumber}`;
+const verseKey = `${surahId}:${ayahNumber}`;
       const url = `https://api.quran.com/api/v4/verses/by_key/${verseKey}?words=true&word_fields=verse_key,word_number,location,text_uthmani,text_simple,class_name,line_number,page_number,code_v1,qpc_uthmani_hafs,translation&translation_fields=resource_name,language_name&language=en&translations=131`;
       
       const response = await fetch(url);
@@ -339,8 +327,7 @@ class HindiWordByWordService {
         if (data.verse.translations && data.verse.translations.length > 0) {
           data.verse.translations[0].resource_name = 'English Fallback (Hindi not available)';
         }
-        console.log(`✅ English fallback successful for ${surahId}:${ayahNumber}`);
-        return data.verse;
+return data.verse;
       }
       
       return null;

@@ -166,7 +166,7 @@ const BlockWise = () => {
 ```javascript
 // Check cache statistics
 const stats = getCacheStats();
-console.log('Cache stats:', stats);
+// Cache stats: ${JSON.stringify(stats)}
 // Output: { totalCached: 150, surahCached: 40, cacheHitRate: '26.7%' }
 ```
 

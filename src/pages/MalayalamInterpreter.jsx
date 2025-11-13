@@ -105,30 +105,20 @@ const MalayalamInterpreter = () => {
   }, [params, searchParams]);
 
   const handleNoteClick = async (noteId) => {
-    console.log('=== NOTE CLICK DEBUG ===');
-    console.log('Note ID:', noteId);
-    console.log('Note ID type:', typeof noteId);
-    
-    // Show loading state immediately
+// Show loading state immediately
     setSelectedNote({ id: noteId, content: 'Loading...' });
     setIsNoteOpen(true);
     
     // Try to get fallback content first (for immediate display)
     const fallbackContent = getFallbackNoteContent(noteId);
     if (fallbackContent) {
-      console.log('Using fallback content for:', noteId);
-      setSelectedNote({ id: noteId, content: fallbackContent });
+setSelectedNote({ id: noteId, content: fallbackContent });
     }
     
     try {
       // Try to fetch from API (but don't block the UI)
-      console.log('Fetching note from API...');
-      const noteData = await fetchNoteById(noteId);
-      console.log('Note data received:', noteData);
-      console.log('Note data type:', typeof noteData);
-      console.log('Note data keys:', noteData ? Object.keys(noteData) : 'No data');
-      
-      // Try different possible content fields - prioritize NoteText from API response
+const noteData = await fetchNoteById(noteId);
+// Try different possible content fields - prioritize NoteText from API response
       const content = noteData?.NoteText || 
                      noteData?.content || 
                      noteData?.html || 
@@ -139,11 +129,9 @@ const MalayalamInterpreter = () => {
                      (typeof noteData === 'string' ? noteData : null);
       
       if (content && content !== 'Note content not available') {
-        console.log('Using API content for:', noteId);
-        setSelectedNote({ id: noteId, content });
+setSelectedNote({ id: noteId, content });
       } else {
-        console.log('API content not available, keeping fallback for:', noteId);
-        // Keep the fallback content that was already set
+// Keep the fallback content that was already set
       }
     } catch (err) {
       console.error('Error fetching note:', err);
@@ -180,21 +168,17 @@ const MalayalamInterpreter = () => {
     const idText = (highlightedElement?.innerText || sup?.innerText || a?.innerText || '').trim();
     if (!idText) return;
     
-    console.log('Clicked element text:', idText);
-    
-    // Detect verse pattern like (2:163) or 2:163
+// Detect verse pattern like (2:163) or 2:163
     const verseMatch = idText.match(/^\(?(\d+)\s*[:：]\s*(\d+)\)?$/);
     if (verseMatch) {
       const [, s, v] = verseMatch;
-      console.log('Opening verse modal for:', s, v);
-      setAyahTarget({ surahId: parseInt(s, 10), verseId: parseInt(v, 10) });
+setAyahTarget({ surahId: parseInt(s, 10), verseId: parseInt(v, 10) });
       setShowAyahModal(true);
       return;
     }
     
     // Otherwise treat as note id
-    console.log('Opening note popup for:', idText);
-    handleNoteClick(idText);
+handleNoteClick(idText);
   };
 
   // Style inline note markers like N895 or "3 26:3"

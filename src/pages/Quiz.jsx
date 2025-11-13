@@ -60,21 +60,11 @@ const Quiz = () => {
         setScore(0);
         setQuizCompleted(false);
 
-        console.log("Loading quiz data for:", {
-          surahId: selectedSurah.id,
-          range: selectedRange,
-          isEntireSurah,
-          isEntireThafheem,
-        });
-
-        let quizResponse;
+let quizResponse;
         let rawData;
 
         if (isEntireThafheem) {
-          console.log(
-            "Fetching random questions from entire Thafheem (all surahs)"
-          );
-          rawData = await fetchRandomQuizQuestionsFromAllSurahs(15); // Increased to 15 questions for better variety
+rawData = await fetchRandomQuizQuestionsFromAllSurahs(15); // Increased to 15 questions for better variety
           const transformedQuestions = transformQuizData(rawData);
           quizResponse = {
             questions: transformedQuestions,
@@ -82,14 +72,12 @@ const Quiz = () => {
             totalQuestions: transformedQuestions.length,
           };
         } else if (isEntireSurah) {
-          console.log("Fetching questions for entire surah");
-          quizResponse = await fetchQuizWithSurahInfo(
+quizResponse = await fetchQuizWithSurahInfo(
             selectedSurah.id,
             selectedRange
           );
         } else {
-          console.log("Fetching questions for specific range");
-          const [start, end] = selectedRange.split("-").map(Number);
+const [start, end] = selectedRange.split("-").map(Number);
           rawData = await fetchQuizQuestionsForRange(
             selectedSurah.id,
             start,

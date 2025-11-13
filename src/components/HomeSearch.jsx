@@ -6,6 +6,10 @@ import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
 import ForwardIcon from "../assets/forward.png";
 import { searchQuran, fetchPopularChapters } from "../api/apifunction";
+import {
+  getLastReading,
+  LAST_READING_STORAGE_KEY,
+} from "../services/readingProgressService";
 
 // Icon components (keeping your existing ones)
 const SearchIcon = ({ className }) => (
@@ -53,7 +57,7 @@ const ListIcon = ({ className }) => (
 import { useTheme } from "../context/ThemeContext";
 
 const HomepageSearch = () => {
-  const { theme } = useTheme();
+  const { theme, setViewType } = useTheme();
   const [showPopular, setShowPopular] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -63,10 +67,12 @@ const HomepageSearch = () => {
   const [popularChapters, setPopularChapters] = useState([]);
   const [isLoadingPopular, setIsLoadingPopular] = useState(false);
   const [popularError, setPopularError] = useState(null);
+  const [lastReading, setLastReading] = useState(null);
 
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
   const isDragging = useRef(false);
+  const hasDragged = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
@@ -75,9 +81,31 @@ const HomepageSearch = () => {
     fetchPopularData();
   }, []);
 
+  useEffect(() => {
+    setLastReading(getLastReading());
+
+    const handleStorageUpdate = (event) => {
+      if (event.key && event.key !== LAST_READING_STORAGE_KEY) {
+        return;
+      }
+      setLastReading(getLastReading());
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageUpdate);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleStorageUpdate);
+      }
+    };
+  }, []);
+
   // Mouse/Touch event handlers for drag scrolling
   const handleMouseDown = (e) => {
     isDragging.current = true;
+    hasDragged.current = false;
     startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
     scrollLeft.current = scrollContainerRef.current.scrollLeft;
     scrollContainerRef.current.style.cursor = 'grabbing';
@@ -89,6 +117,9 @@ const HomepageSearch = () => {
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
     const walk = (x - startX.current) * 2; // Multiply by 2 for faster scrolling
+    if (Math.abs(walk) > 6) {
+      hasDragged.current = true;
+    }
     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
@@ -103,6 +134,7 @@ const HomepageSearch = () => {
   // Touch events for mobile
   const handleTouchStart = (e) => {
     isDragging.current = true;
+    hasDragged.current = false;
     startX.current = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
     scrollLeft.current = scrollContainerRef.current.scrollLeft;
   };
@@ -111,6 +143,9 @@ const HomepageSearch = () => {
     if (!isDragging.current) return;
     const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
     const walk = (x - startX.current) * 2;
+    if (Math.abs(walk) > 6) {
+      hasDragged.current = true;
+    }
     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
@@ -202,7 +237,25 @@ const HomepageSearch = () => {
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
     
     if (result.type === 'surah') {
-      const url = `/surah/${result.data.number}`;
+      let surahNumber =
+        result.data?.number ??
+        result.data?.id ??
+        result.data?.chapter_id ??
+        result.data?.code ??
+        null;
+
+      if (typeof surahNumber === "string") {
+        surahNumber = surahNumber.replace(/^0+/, "");
+      }
+
+      if (!surahNumber) {
+        console.warn("Unable to determine surah number from search result:", result);
+        return;
+      }
+
+      const targetSurahId = surahNumber.toString();
+
+      const url = `/surah/${targetSurahId}`;
       if (isModifierPressed) {
         event?.preventDefault();
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -210,8 +263,7 @@ const HomepageSearch = () => {
       }
       navigate(url);
     } else if (result.type === 'verse' || result.type === 'verse_reference') {
-      const surahNumber = result.verse_key.split(':')[0];
-      const verseNumber = result.verse_key.split(':')[1];
+      const [surahNumber, verseNumber] = result.verse_key.split(':');
       const url = `/surah/${surahNumber}`;
       
       if (isModifierPressed) {
@@ -244,6 +296,28 @@ const HomepageSearch = () => {
     navigate("/bookmarkedverses");
   };
 
+  const handleContinueReading = () => {
+    const latestReading = getLastReading();
+    if (!latestReading) {
+      setLastReading(null);
+      return;
+    }
+
+    setLastReading(latestReading);
+
+    if (latestReading.viewType === "blockwise") {
+      setViewType?.("Block Wise");
+    } else if (latestReading.viewType === "surah") {
+      setViewType?.("Ayah Wise");
+    }
+
+    const targetPath =
+      latestReading.path ||
+      (latestReading.surahId ? `/surah/${latestReading.surahId}` : "/reading");
+
+    navigate(targetPath);
+  };
+
   // Close search results when clicking outside
   const handleSearchBlur = () => {
     setTimeout(() => {
@@ -252,21 +326,42 @@ const HomepageSearch = () => {
   };
 
   // Handle chapter button click (prevent drag from triggering click)
-  const handleChapterClick = (chapterId, e) => {
-    // Only navigate if we're not dragging
-    if (!isDragging.current) {
-      const url = `/surah/${chapterId}`;
-      // Check if modifier key is pressed (Ctrl/Cmd)
-      const isModifierPressed = e?.ctrlKey || e?.metaKey;
-      
-      if (isModifierPressed) {
-        e?.preventDefault();
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        navigate(url);
-      }
-      setShowPopular(false);
+  const handleChapterClick = (chapter, e) => {
+    if (hasDragged.current) {
+      hasDragged.current = false;
+      return;
     }
+
+    const chapterId = chapter?.id ?? chapter?.chapter_id;
+    if (!chapterId) {
+      return;
+    }
+
+    const verseKey = chapter?.verseKey || chapter?.verse_key;
+    const verseNumber =
+      chapter?.verseNumber ??
+      chapter?.verse_number ??
+      (typeof verseKey === "string" ? verseKey.split(":")[1] : undefined);
+
+    const url = `/surah/${chapterId}`;
+    const isModifierPressed = e?.ctrlKey || e?.metaKey;
+
+    const navigationState =
+      verseNumber || verseKey
+        ? {
+            ...(verseNumber ? { scrollToVerse: verseNumber } : {}),
+            ...(verseKey ? { highlightVerse: verseKey } : {}),
+          }
+        : undefined;
+
+    if (isModifierPressed) {
+      e?.preventDefault();
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(url, { state: navigationState });
+    }
+    setShowPopular(false);
+    hasDragged.current = false;
   };
 
   return (
@@ -449,12 +544,12 @@ const HomepageSearch = () => {
 
         {/* Popular Content - Enhanced with Drag Scrolling */}
         {showPopular && !showSearchResults && (
-          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-6 w-full max-w-xl sm:max-w-2xl md:max-w-3xl z-50">
+          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-3 sm:p-4 w-full max-w-lg sm:max-w-xl md:max-w-2xl z-50">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-1.5">
                 <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
-                <h2 className="sm:text-[16px] font-normal font-poppins text-gray-500 dark:text-[#95959b]">Popular</h2>
+                <h2 className="sm:text-[15px] font-semibold font-poppins text-gray-600 dark:text-[#95959b]">Popular</h2>
               </div>
               <button
                 onClick={() => setShowPopular(false)}
@@ -465,8 +560,8 @@ const HomepageSearch = () => {
             </div>
 
             {/* Content */}
-            <div>
-              <h3 className="text-lg font-medium font-poppins text-gray-900 mb-4 dark:text-white">
+            <div className="space-y-3">
+              <h3 className="text-base font-medium font-poppins text-gray-900 dark:text-white">
                 Chapters and Verses
               </h3>
 
@@ -488,9 +583,9 @@ const HomepageSearch = () => {
               {/* Popular Chapters with Drag Scrolling */}
               {!isLoadingPopular && !popularError && (
                 <>
-                  <div 
+                  <div
                     ref={scrollContainerRef}
-                    className="flex gap-3 mb-4 overflow-x-auto scrollbar-hide pr-4 border-b border-gray-200 dark:border-gray-700 pb-3 cursor-grab"
+                    className="flex gap-2.5 mb-3 overflow-x-auto scrollbar-hide pr-3 border-b border-gray-200 dark:border-gray-700 pb-2.5 cursor-grab"
                     style={{
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none',
@@ -506,9 +601,10 @@ const HomepageSearch = () => {
                   >
                     {popularChapters.map((chapter, index) => (
                       <button
-                        key={`${chapter.id}-${index}`}
-                        onClick={(e) => handleChapterClick(chapter.id, e)}
-                        className="inline-flex font-poppins items-center space-x-2 px-4 py-3 bg-[#D8D8D8] dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800 hover:bg-gray-200 rounded-lg transition-colors text-sm text-gray-700 flex-shrink-0 min-w-fit shadow-sm pointer-events-auto"
+                        key={`${chapter.id ?? chapter.chapter_id}-${index}`}
+                        type="button"
+                        onClick={(e) => handleChapterClick(chapter, e)}
+                        className="inline-flex font-poppins items-center space-x-2.5 px-3.5 py-2.5 bg-[#D8D8D8] dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800 hover:bg-gray-200 rounded-lg transition-colors text-xs sm:text-sm text-gray-700 flex-shrink-0 min-w-fit shadow pointer-events-auto"
                         style={index === popularChapters.length - 1 ? { marginRight: "1rem" } : {}}
                         title={`${chapter.translated_name || chapter.name} - ${chapter.verses} (${chapter.type})`}
                       >
@@ -520,7 +616,7 @@ const HomepageSearch = () => {
                             {chapter.verses} • {chapter.type}
                           </span>
                         </div>
-                        <ChevronRightIcon className="h-4 w-4 ml-2" />
+                        <ChevronRightIcon className="h-3.5 w-3.5 ml-1.5" />
                       </button>
                     ))}
                   </div>
@@ -530,12 +626,12 @@ const HomepageSearch = () => {
               )}
 
               {/* Listen to Quran Tajwid */}
-              <div className="flex flex-col items-center dark:bg-[#2A2C38] rounded-lg py-4 text-center">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-10 h-8 rounded-full">
+              <div className="flex flex-col items-center dark:bg-[#2A2C38] rounded-lg py-2.5 text-center">
+                <div className="flex items-center space-x-2.5">
+                  <div className="flex items-center justify-center w-9 h-7 rounded-full">
                     <img src={ForwardIcon} alt="Forward" className="w-[85px] h-[18px] object-contain" />
                   </div>
-                  <h4 className="font-medium font-poppins text-black dark:text-white text-base">
+                  <h4 className="font-medium font-poppins text-black dark:text-white text-sm sm:text-base">
                     Listen to Quran Tajwid
                   </h4>
                 </div>
@@ -547,20 +643,26 @@ const HomepageSearch = () => {
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-4xl px-2">
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 w-full">
-          <div className="flex w-full justify-center gap-3 sm:w-auto sm:gap-4">
-            <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
-              <Play className="h-4 w-4 fill-current text-[#3FA6C0]" />
-              <span className="font-medium whitespace-nowrap font-poppins">Continue Reading</span>
-            </button>
+        <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 w-full">
+          <button
+            type="button"
+            onClick={handleContinueReading}
+            disabled={!lastReading}
+            title={
+              lastReading
+                ? "Jump back to your last reading session"
+                : "Start reading any Surah to enable this shortcut"
+            }
+            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] text-[#62C3DC] dark:text-cyan-200 rounded-full shadow-md transition-all duration-200 text-sm hover:bg-[#62C3DC] hover:text-white hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none dark:hover:bg-[#3FA6C0] dark:hover:text-white [&_svg]:transition-colors [&_svg]:duration-200 [&:hover_svg]:text-white"
+          >
+            <Play className="h-4 w-4 text-[#3FA6C0]" />
+            <span className="font-medium whitespace-nowrap font-poppins">Continue Reading</span>
+          </button>
 
-            <button className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm">
-              <ListIcon className="h-4 w-4 text-[#3FA6C0]" />
-              <span className="font-medium whitespace-nowrap font-poppins">Navigate Quran</span>
-            </button>
-          </div>
-
-          <button onClick={handleBookmarkClick} className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0">
+          <button
+            onClick={handleBookmarkClick}
+            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] text-[#62C3DC] dark:text-cyan-200 rounded-full shadow-md transition-all duration-200 text-sm hover:bg-[#62C3DC] hover:text-white hover:shadow-lg flex-shrink-0 dark:hover:bg-[#3FA6C0] dark:hover:text-white [&_svg]:transition-colors [&_svg]:duration-200 [&:hover_svg]:text-white"
+          >
             <BookmarkIcon className="h-4 w-4 text-[#3FA6C0]" />
             <span className="font-medium whitespace-nowrap font-poppins">Bookmarks</span>
           </button>
@@ -572,7 +674,7 @@ const HomepageSearch = () => {
                 fetchPopularData();
               }
             }}
-            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-[#62C3DC] dark:text-cyan-200 text-sm flex-shrink-0"
+            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-[#2A2C38] text-[#62C3DC] dark:text-cyan-200 rounded-full shadow-md transition-all duration-200 text-sm hover:bg-[#62C3DC] hover:text-white hover:shadow-lg flex-shrink-0 dark:hover:bg-[#3FA6C0] dark:hover:text-white [&_svg]:transition-colors [&_svg]:duration-200 [&:hover_svg]:text-white"
           >
             <TrendingUpIcon className="h-4 w-4 text-[#3FA6C0]" />
             <span className="font-medium whitespace-nowrap font-poppins">Popular</span>

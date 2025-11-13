@@ -31,8 +31,7 @@ const LogOut = () => {
 
   const handleCancel = () => {
     setIsOpen(false);
-    console.log('Logout cancelled');
-    navigate(-1); // Go back to previous page
+navigate(-1); // Go back to previous page
   };
 
   const handleLogout = async () => {
@@ -40,8 +39,7 @@ const LogOut = () => {
       setIsLoggingOut(true);
       await signOut(auth);
       setIsOpen(false);
-      console.log('User logged out successfully');
-      navigate('/'); // Redirect to homepage
+navigate('/'); // Redirect to homepage
     } catch (error) {
       console.error('Error logging out:', error);
       setIsLoggingOut(false);

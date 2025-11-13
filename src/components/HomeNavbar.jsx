@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Menu,
   Search,
@@ -51,7 +51,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Transition from "./Transition";
 import SearchConsole from "./SearchConsole";
 import LanguageConsole from "./LanguageConsole";
-import { useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { auth } from "../firebase";
@@ -68,10 +67,18 @@ const HomepageNavbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const [navbarHeight, setNavbarHeight] = useState(0);
+
+  const navRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   const navigate = useNavigate();
   const location = useLocation(); // Get current route
-
+  const isReaderPage =
+    location.pathname.startsWith("/reading") ||
+    location.pathname.startsWith("/surah") ||
+    location.pathname.startsWith("/blockwise");
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
@@ -103,8 +110,7 @@ const HomepageNavbar = () => {
     try {
       setIsSigningOut(true);
       await signOut(auth);
-      console.log("User signed out successfully");
-      navigate("/"); // Redirect to home page after successful logout
+navigate("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -187,6 +193,66 @@ const HomepageNavbar = () => {
     // Navigate to bookmarks page - users can then click on their preferred tab
     navigate("/bookmarkedverses");
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateNavbarHeight = () => {
+      if (navRef.current) {
+        setNavbarHeight(navRef.current.offsetHeight || 0);
+      }
+    };
+
+    updateNavbarHeight();
+    window.addEventListener("resize", updateNavbarHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    lastScrollY.current = window.scrollY;
+    setIsNavbarVisible(true);
+
+    if (!isReaderPage) {
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScroll = window.scrollY;
+      const delta = Math.abs(currentScroll - lastScrollY.current);
+
+      if (delta < 4) {
+        return;
+      }
+
+      let nextVisible = true;
+
+      if (currentScroll < 80) {
+        nextVisible = true;
+      } else if (currentScroll > lastScrollY.current) {
+        nextVisible = false;
+      } else {
+        nextVisible = true;
+      }
+
+      setIsNavbarVisible((prev) => (prev === nextVisible ? prev : nextVisible));
+      lastScrollY.current = currentScroll;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isReaderPage, location.pathname]);
   return (
     <>
       {/* Share Modal */}
@@ -251,15 +317,7 @@ const HomepageNavbar = () => {
       )}
       {/* Search Console Popup */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 dark:bg-black/70"
-            onClick={() => setIsSearchOpen(false)}
-          ></div>
-          <div className="bg-white dark:bg-[#2A2C38] w-full max-w-lg rounded-lg relative z-10 max-h-[90vh] overflow-auto mx-4">
-            <SearchConsole onClose={() => setIsSearchOpen(false)} />
-          </div>
-        </div>
+        <SearchConsole onClose={() => setIsSearchOpen(false)} />
       )}
 
       {/* Language Console Popup */}
@@ -304,8 +362,19 @@ const HomepageNavbar = () => {
         </div>
       )}
 
-      <nav className="bg-white dark:bg-[#2A2C38] w-full sticky top-0 z-[70] shadow-sm">
-        <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2">
+      <nav
+        ref={navRef}
+        className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${
+          isReaderPage ? "shadow-none" : "shadow-sm"
+        } sticky top-0 transition-transform duration-300 ${
+          isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between px-3 sm:px-4 ${
+            isReaderPage ? "py-1 sm:py-1.5" : "py-1.5 sm:py-2"
+          }`}
+        >
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
@@ -317,6 +386,7 @@ const HomepageNavbar = () => {
              rounded-lg transition-colors 
              min-h-[44px] min-w-[44px] justify-center 
              sm:min-h-auto sm:min-w-auto sm:justify-start"
+              title="Open menu"
             >
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
@@ -343,49 +413,55 @@ const HomepageNavbar = () => {
 
             <button
               onClick={() => setIsLanguageOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="Change language"
             >
-              <Languages size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Languages size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? (
-                <Sun size={15} className="sm:w-[18px] sm:h-[18px]" />
+                <Sun size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
               ) : (
-                <Moon size={15} className="sm:w-[18px] sm:h-[18px]" />
+                <Moon size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
               )}
             </button>
 
             <button
               onClick={handleBookmarkClick}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="View bookmarks"
             >
-              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
+              className="flex p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] items-center justify-center"
+              title="Open settings"
             >
-              <Settings size={18} />
+              <Settings size={18} className="transition-colors duration-200" />
             </button>
             {isSettingsOpen && (
               <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
             )}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              title="Search"
             >
-              <Search size={15} className="sm:w-[18px] sm:h-[18px]" />
+              <Search size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
             </button>
             {user ? (
               <button
                 onClick={handleAuthButtonClick}
                 disabled={isSigningOut}
                 className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Sign out"
               >
                 {isSigningOut ? (
                   <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
@@ -397,6 +473,7 @@ const HomepageNavbar = () => {
               <button
                 onClick={handleAuthButtonClick}
                 className="px-1.5 sm:px-4 py-1.5 text-[10px] xs:text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+                title="Sign in"
               >
                 <span className="hidden xs:inline">Sign In</span>
                 <span className="xs:hidden">Sign</span>
@@ -404,13 +481,17 @@ const HomepageNavbar = () => {
             )}
           </div>
         </div>
-        {/* Route-scoped dropdown bar under the navbar (only on reading) */}
-        {(location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
-          <div className="relative z-[60]">
-            <Transition showPageInfo={false} />
-          </div>
-        )}
       </nav>
+
+      {/* Route-scoped dropdown bar under the navbar (only on reading/surah/blockwise) - Made STICKY */}
+      {isReaderPage && (
+        <div
+          className="sticky z-[70] transition-all duration-300"
+          style={{ top: isNavbarVisible ? navbarHeight : 0 }}
+        >
+          <Transition showPageInfo={false} />
+        </div>
+      )}
 
       {/* Sidebar */}
       {isMenuOpen && (

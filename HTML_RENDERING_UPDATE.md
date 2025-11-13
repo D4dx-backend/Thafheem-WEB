@@ -82,7 +82,7 @@ const clickableHtml = BanglaTranslationService.parseBanglaTranslationWithClickab
 ```javascript
 // Get explanation by number
 const explanation = await BanglaTranslationService.getExplanationByNumber(1, 1, '1');
-console.log(explanation); // Specific explanation text
+const explanationText = explanation; // Specific explanation text
 ```
 
 ### Complete Workflow

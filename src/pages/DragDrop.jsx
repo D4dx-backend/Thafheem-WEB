@@ -98,21 +98,12 @@ const DragDropQuiz = () => {
 
       try {
         setLoadingWordMeanings(true);
-        console.log(
-          "Loading word meanings for surah:",
-          currentSurah.id,
-          "ayah:",
-          currentAyah
-        );
-
-        const wordMeanings = await fetchWordMeanings(
+const wordMeanings = await fetchWordMeanings(
           currentSurah.id,
           currentAyah,
           "M"
         ); // M for Malayalam
-        console.log("Fetched word meanings:", wordMeanings);
-
-        if (
+if (
           wordMeanings &&
           Array.isArray(wordMeanings) &&
           wordMeanings.length > 0
@@ -376,7 +367,7 @@ const DragDropQuiz = () => {
             </p>
             <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               <button
-                onClick={() => console.log("Cancel")}
+                onClick={() => {}}
                 className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-600 dark:text-white hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 transition-colors order-2 sm:order-1"
               >
                 Cancel

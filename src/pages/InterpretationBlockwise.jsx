@@ -81,78 +81,38 @@ const InterpretationBlockwise = (props) => {
   // NOTE: Only depends on props, NOT on state variables, to avoid resetting user navigation
   useEffect(() => {
     if (props.surahId && parseInt(props.surahId) !== surahId) {
-      console.log(
-        "📥 Props changed: updating surahId from",
-        surahId,
-        "to",
-        props.surahId
-      );
-      setSurahId(parseInt(props.surahId));
+setSurahId(parseInt(props.surahId));
     }
     if (props.range && props.range !== range) {
-      console.log(
-        "📥 Props changed: updating range from",
-        range,
-        "to",
-        props.range
-      );
-      setRange(props.range);
+setRange(props.range);
     }
     if (props.ipt && parseInt(props.ipt) !== iptNo) {
-      console.log(
-        "📥 Props changed: updating iptNo from",
-        iptNo,
-        "to",
-        props.ipt
-      );
-      setIptNo(parseInt(props.ipt));
+setIptNo(parseInt(props.ipt));
     }
     if (props.lang && props.lang !== lang) {
-      console.log(
-        "📥 Props changed: updating lang from",
-        lang,
-        "to",
-        props.lang
-      );
-      setLang(props.lang);
+setLang(props.lang);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.surahId, props.range, props.ipt, props.lang]);
 
   // Debug useEffect to track state changes
   useEffect(() => {
-    console.log(
-      `🔄 State changed - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`
-    );
-  }, [surahId, range, iptNo, lang]);
+}, [surahId, range, iptNo, lang]);
 
   useEffect(() => {
-    console.log(
-      `🔵 useEffect triggered - surahId: ${surahId}, range: ${range}, interpretation: ${iptNo}, lang: ${lang}`
-    );
-
-    const load = async () => {
+const load = async () => {
       try {
         setLoading(true);
         setError(null);
         setContent([]); // Clear previous content immediately
 
-        console.log(
-          `🔄 Loading interpretation: Surah ${surahId}, Range ${range}, Interpretation ${iptNo}, Language: ${lang}`
-        );
-
-        // Decide between single verse vs range (e.g., "5" vs "1-7")
+// Decide between single verse vs range (e.g., "5" vs "1-7")
         const isSingle = /^\d+$/.test(range);
         const data = isSingle
           ? await fetchInterpretation(surahId, parseInt(range, 10), iptNo, lang)
           : await fetchInterpretationRange(surahId, range, iptNo, lang);
 
-        console.log(
-          `✅ Received interpretation data for ${surahId}:${range}:${iptNo}:`,
-          data
-        );
-
-        // Normalize to array of items with a text/content field
+// Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
 
         // Log interpretation numbers from the actual data
@@ -165,21 +125,9 @@ const InterpretationBlockwise = (props) => {
                 item?.interptn_no
             )
             .filter(Boolean);
-          console.log(
-            `📊 API returned ${items.length} item(s) with interpretation numbers:`,
-            interpretationNos
-          );
-
-          // Show first item structure for debugging
+// Show first item structure for debugging
           if (items[0]) {
-            console.log(`📋 First item structure:`, {
-              ID: items[0].ID,
-              SuraID: items[0].SuraID,
-              InterpretationNo: items[0].InterpretationNo,
-              hasInterpretation: !!items[0].Interpretation,
-              interpretationLength: items[0].Interpretation?.length || 0,
-            });
-          }
+}
         }
 
         // Check if we got empty or invalid data
@@ -195,10 +143,7 @@ const InterpretationBlockwise = (props) => {
 
           // Try to fetch interpretation 1 for this range as fallback
           if (iptNo !== 1) {
-            console.log(
-              `🔄 Trying interpretation 1 for range ${range} as fallback`
-            );
-            setIptNo(1);
+setIptNo(1);
             showError(
               `Interpretation ${iptNo} is not available for verses ${range}. Loading interpretation 1.`
             );
@@ -361,31 +306,9 @@ const InterpretationBlockwise = (props) => {
   };
 
   const handlePrev = async () => {
-    console.log(
-      "🔙 Previous button clicked, current range:",
-      range,
-      "current interpretation:",
-      iptNo
-    );
-    console.log(
-      "🔍 Current state - surahId:",
-      surahId,
-      "range:",
-      range,
-      "iptNo:",
-      iptNo,
-      "lang:",
-      lang
-    );
-
-    // Try a simpler approach: first try to decrement interpretation in current block
+// Try a simpler approach: first try to decrement interpretation in current block
     const prevInterpretation = iptNo - 1;
-    console.log(
-      "🔍 Trying previous interpretation in same block:",
-      prevInterpretation
-    );
-
-    if (prevInterpretation >= 1) {
+if (prevInterpretation >= 1) {
       try {
         // Test if the previous interpretation exists by making a quick API call
         const isSingle = /^\d+$/.test(range);
@@ -414,24 +337,12 @@ const InterpretationBlockwise = (props) => {
           !(items.length === 1 && items[0].Interpretation === "");
 
         if (hasValidData) {
-          console.log(
-            "✅ Previous interpretation exists in same block, moving to:",
-            prevInterpretation
-          );
-          console.log("🔄 Setting iptNo to:", prevInterpretation);
-          setIptNo(prevInterpretation);
+setIptNo(prevInterpretation);
           return;
         } else {
-          console.log(
-            "❌ Previous interpretation does not exist in current block, trying previous verse with same interpretation number"
-          );
-        }
+}
       } catch (err) {
-        console.log(
-          "❌ Error testing previous interpretation, moving to previous block:",
-          err.message
-        );
-      }
+}
     }
 
     // If we reach here, the previous interpretation doesn't exist, so move to previous block
@@ -450,14 +361,7 @@ const InterpretationBlockwise = (props) => {
       }
 
       const prevVerse = v - 1;
-      console.log(
-        "🔙 Moving to previous verse:",
-        prevVerse,
-        "with interpretation",
-        iptNo
-      );
-
-      // Test if the previous verse has the same interpretation number
+// Test if the previous verse has the same interpretation number
       try {
         const testData = await fetchInterpretation(
           surahId,
@@ -475,22 +379,10 @@ const InterpretationBlockwise = (props) => {
           !(items.length === 1 && items[0].Interpretation === "");
 
         if (hasValidData) {
-          console.log(
-            "✅ Previous verse has the same interpretation, moving to:",
-            prevVerse,
-            "with interpretation",
-            iptNo
-          );
-          setRange(String(prevVerse));
+setRange(String(prevVerse));
           setIptNo(iptNo);
         } else {
-          console.log(
-            "❌ Previous verse does not have interpretation",
-            iptNo,
-            ", finding highest available interpretation"
-          );
-
-          // Find the highest available interpretation in the previous verse that is < current interpretation
+// Find the highest available interpretation in the previous verse that is < current interpretation
           let highestInterpretation = 0;
           for (let i = 1; i < iptNo; i++) {
             // Only check up to current interpretation - 1
@@ -512,10 +404,7 @@ const InterpretationBlockwise = (props) => {
 
               if (hasValidData) {
                 highestInterpretation = i;
-                console.log(
-                  `✅ Found interpretation ${i} in previous verse ${prevVerse}`
-                );
-              } else {
+} else {
                 break; // No more interpretations available
               }
             } catch (err) {
@@ -524,24 +413,14 @@ const InterpretationBlockwise = (props) => {
           }
 
           if (highestInterpretation > 0) {
-            console.log(
-              "✅ Previous verse has highest interpretation",
-              highestInterpretation,
-              ", moving to:",
-              prevVerse,
-              "with interpretation",
-              highestInterpretation
-            );
-            setRange(String(prevVerse));
+setRange(String(prevVerse));
             setIptNo(highestInterpretation);
           } else {
-            console.log("❌ Previous verse has no interpretations");
-            showError("No interpretations available for the previous verse");
+showError("No interpretations available for the previous verse");
           }
         }
       } catch (err) {
-        console.log("❌ Error testing previous verse, trying interpretation 1");
-        setRange(String(prevVerse));
+setRange(String(prevVerse));
         setIptNo(1);
       }
     } else if (/^(\d+)-(\d+)$/.test(current)) {
@@ -564,12 +443,7 @@ const InterpretationBlockwise = (props) => {
         const prevRange = `${newA}-${newB}`;
 
         // Test if this previous block has the same interpretation number
-        console.log(
-          "🔍 Testing if previous block has interpretation:",
-          prevRange,
-          iptNo
-        );
-        try {
+try {
           const testData = await fetchInterpretationRange(
             surahId,
             prevRange,
@@ -586,30 +460,11 @@ const InterpretationBlockwise = (props) => {
             !(items.length === 1 && items[0].Interpretation === "");
 
           if (hasValidData) {
-            console.log(
-              "✅ Previous block has the same interpretation, moving to:",
-              prevRange,
-              "with interpretation",
-              iptNo
-            );
-            console.log(
-              "🔄 Setting range to:",
-              prevRange,
-              "and iptNo to:",
-              iptNo
-            );
-            setRange(prevRange);
+setRange(prevRange);
             setIptNo(iptNo);
           } else {
             // Find the highest available interpretation in the previous block that is < current interpretation
-            console.log(
-              "❌ Previous block does not have interpretation",
-              iptNo,
-              ", finding highest available interpretation <",
-              iptNo
-            );
-
-            let highestInterpretation = 0;
+let highestInterpretation = 0;
             for (let i = 1; i < iptNo; i++) {
               // Only check up to current interpretation - 1
               try {
@@ -630,10 +485,7 @@ const InterpretationBlockwise = (props) => {
 
                 if (hasValidData) {
                   highestInterpretation = i;
-                  console.log(
-                    `✅ Found interpretation ${i} in previous block ${prevRange}`
-                  );
-                } else {
+} else {
                   break; // No more interpretations available
                 }
               } catch (err) {
@@ -642,27 +494,10 @@ const InterpretationBlockwise = (props) => {
             }
 
             if (highestInterpretation > 0) {
-              console.log(
-                "✅ Previous block has highest interpretation",
-                highestInterpretation,
-                ", moving to:",
-                prevRange,
-                "with interpretation",
-                highestInterpretation
-              );
-              console.log(
-                "🔄 Setting range to:",
-                prevRange,
-                "and iptNo to:",
-                highestInterpretation
-              );
-              setRange(prevRange);
+setRange(prevRange);
               setIptNo(highestInterpretation);
             } else {
-              console.log(
-                "❌ Previous block has no interpretations, trying individual verses"
-              );
-              // Try individual verses starting from the last verse of the previous block
+// Try individual verses starting from the last verse of the previous block
               let foundValidVerse = false;
               for (let verse = newB; verse >= newA && verse >= 1; verse--) {
                 try {
@@ -694,10 +529,7 @@ const InterpretationBlockwise = (props) => {
 
                       if (verseHasValidData) {
                         highestInterpretation = i;
-                        console.log(
-                          `✅ Found interpretation ${i} in verse ${verse}`
-                        );
-                      } else {
+} else {
                         break; // No more interpretations available
                       }
                     } catch (err) {
@@ -706,26 +538,13 @@ const InterpretationBlockwise = (props) => {
                   }
 
                   if (highestInterpretation > 0) {
-                    console.log(
-                      "✅ Found valid verse:",
-                      verse,
-                      "with highest interpretation",
-                      highestInterpretation
-                    );
-                    console.log(
-                      "🔄 Setting range to:",
-                      String(verse),
-                      "and iptNo to:",
-                      highestInterpretation
-                    );
-                    setRange(String(verse));
+setRange(String(verse));
                     setIptNo(highestInterpretation);
                     foundValidVerse = true;
                     break;
                   }
                 } catch (err) {
-                  console.log("❌ Verse", verse, "has no interpretations");
-                }
+}
               }
 
               if (!foundValidVerse) {
@@ -734,10 +553,7 @@ const InterpretationBlockwise = (props) => {
             }
           }
         } catch (err) {
-          console.log(
-            "❌ Error testing previous block, trying individual verses"
-          );
-          // Fallback: try individual verses
+// Fallback: try individual verses
           let foundValidVerse = false;
           for (let verse = newB; verse >= newA && verse >= 1; verse--) {
             try {
@@ -769,10 +585,7 @@ const InterpretationBlockwise = (props) => {
 
                   if (verseHasValidData) {
                     highestInterpretation = i;
-                    console.log(
-                      `✅ Found interpretation ${i} in verse ${verse}`
-                    );
-                  } else {
+} else {
                     break; // No more interpretations available
                   }
                 } catch (err) {
@@ -781,20 +594,13 @@ const InterpretationBlockwise = (props) => {
               }
 
               if (highestInterpretation > 0) {
-                console.log(
-                  "✅ Found valid verse:",
-                  verse,
-                  "with highest interpretation",
-                  highestInterpretation
-                );
-                setRange(String(verse));
+setRange(String(verse));
                 setIptNo(highestInterpretation);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-              console.log("❌ Verse", verse, "has no interpretations");
-            }
+}
           }
 
           if (!foundValidVerse) {
@@ -819,12 +625,7 @@ const InterpretationBlockwise = (props) => {
           ? await fetchInterpretation(surahId, parseInt(range, 10), i, lang)
           : await fetchInterpretationRange(surahId, range, i, lang);
 
-        console.log(
-          `🔍 Checking interpretation ${i} for ${surahId}:${range}:`,
-          data
-        );
-
-        // Check if we got valid data - use the same validation logic as the main useEffect
+// Check if we got valid data - use the same validation logic as the main useEffect
         const items = Array.isArray(data) ? data : [data];
         const hasValidData =
           items.length > 0 &&
@@ -836,58 +637,23 @@ const InterpretationBlockwise = (props) => {
 
         if (hasValidData) {
           maxInterpretation = i;
-          console.log(
-            `✅ Interpretation ${i} is valid for ${surahId}:${range}`
-          );
-        } else {
+} else {
           // No more interpretations available
-          console.log(
-            `❌ Interpretation ${i} is invalid/empty for ${surahId}:${range}, stopping search`
-          );
-          break;
+break;
         }
       } catch (err) {
         // If we get an error, assume no more interpretations
-        console.log(
-          `⚠️ Error fetching interpretation ${i} for ${surahId}:${range}:`,
-          err.message
-        );
-        break;
+break;
       }
     }
 
-    console.log(
-      `📊 Found ${maxInterpretation} interpretation(s) for ${surahId}:${range}`
-    );
-    return maxInterpretation;
+return maxInterpretation;
   };
 
   const handleNext = async () => {
-    console.log(
-      "▶️ Next button clicked, current range:",
-      range,
-      "current interpretation:",
-      iptNo
-    );
-    console.log(
-      "🔍 Current state - surahId:",
-      surahId,
-      "range:",
-      range,
-      "iptNo:",
-      iptNo,
-      "lang:",
-      lang
-    );
-
-    // Try a simpler approach: first try to increment interpretation in current block
+// Try a simpler approach: first try to increment interpretation in current block
     const nextInterpretation = iptNo + 1;
-    console.log(
-      "🔍 Trying next interpretation in same block:",
-      nextInterpretation
-    );
-
-    try {
+try {
       // Test if the next interpretation exists by making a quick API call
       const isSingle = /^\d+$/.test(range);
       const testData = isSingle
@@ -915,19 +681,10 @@ const InterpretationBlockwise = (props) => {
         !(items.length === 1 && items[0].Interpretation === "");
 
       if (hasValidData) {
-        console.log(
-          "✅ Next interpretation exists in same block, moving to:",
-          nextInterpretation
-        );
-        console.log("🔄 Setting iptNo to:", nextInterpretation);
-        setIptNo(nextInterpretation);
+setIptNo(nextInterpretation);
         return;
       } else {
-        console.log(
-          "❌ Next interpretation does not exist in current block, trying next verse with same interpretation number"
-        );
-
-        // Try the same interpretation number in the next verse/block
+// Try the same interpretation number in the next verse/block
         const current = String(range);
         let nextRange;
 
@@ -969,12 +726,7 @@ const InterpretationBlockwise = (props) => {
 
         if (nextRange) {
           // Test if the next range has the same interpretation number
-          console.log(
-            "🔍 Testing if next range has interpretation:",
-            nextRange,
-            nextInterpretation
-          );
-          try {
+try {
             const isSingle = /^\d+$/.test(nextRange);
             const testData = isSingle
               ? await fetchInterpretation(
@@ -1000,32 +752,17 @@ const InterpretationBlockwise = (props) => {
               !(items.length === 1 && items[0].Interpretation === "");
 
             if (hasValidData) {
-              console.log(
-                "✅ Next range has the same interpretation number, moving to:",
-                nextRange,
-                nextInterpretation
-              );
-              setRange(nextRange);
+setRange(nextRange);
               setIptNo(nextInterpretation);
               return;
             } else {
-              console.log(
-                "❌ Next range does not have the same interpretation, falling back to interpretation 1"
-              );
-            }
+}
           } catch (err) {
-            console.log(
-              "❌ Error testing next range, falling back to interpretation 1"
-            );
-          }
+}
         }
       }
     } catch (err) {
-      console.log(
-        "❌ Error testing next interpretation, moving to next block:",
-        err.message
-      );
-    }
+}
 
     // If we reach here, the next interpretation doesn't exist, so move to next block
 
@@ -1047,12 +784,7 @@ const InterpretationBlockwise = (props) => {
       }
 
       const nextVerse = v + 1;
-      console.log(
-        "▶️ Moving to next verse:",
-        nextVerse,
-        "with interpretation 1"
-      );
-      setRange(String(nextVerse));
+setRange(String(nextVerse));
       setIptNo(1); // Reset to first interpretation
     } else if (/^(\d+)-(\d+)$/.test(current)) {
       // Range: move to next block of same size
@@ -1095,18 +827,10 @@ const InterpretationBlockwise = (props) => {
             !(items.length === 1 && items[0].Interpretation === "");
 
           if (hasValidData) {
-            console.log(
-              "✅ Next block has interpretations, moving to:",
-              nextRange,
-              "with interpretation 1"
-            );
-            setRange(nextRange);
+setRange(nextRange);
             setIptNo(1);
           } else {
-            console.log(
-              "❌ Next block has no interpretations, trying individual verses"
-            );
-            // Try individual verses starting from the first verse of the next block
+// Try individual verses starting from the first verse of the next block
             let foundValidVerse = false;
             for (
               let verse = newA;
@@ -1135,24 +859,13 @@ const InterpretationBlockwise = (props) => {
                   );
 
                 if (verseHasValidData) {
-                  console.log(
-                    "✅ Found valid verse:",
-                    verse,
-                    "with interpretation 1"
-                  );
-                  console.log(
-                    "🔄 Setting range to:",
-                    String(verse),
-                    "and iptNo to: 1"
-                  );
-                  setRange(String(verse));
+setRange(String(verse));
                   setIptNo(1);
                   foundValidVerse = true;
                   break;
                 }
               } catch (err) {
-                console.log("❌ Verse", verse, "has no interpretations");
-              }
+}
             }
 
             if (!foundValidVerse) {
@@ -1184,19 +897,13 @@ const InterpretationBlockwise = (props) => {
                 );
 
               if (verseHasValidData) {
-                console.log(
-                  "✅ Found valid verse:",
-                  verse,
-                  "with interpretation 1"
-                );
-                setRange(String(verse));
+setRange(String(verse));
                 setIptNo(1);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-              console.log("❌ Verse", verse, "has no interpretations");
-            }
+}
           }
 
           if (!foundValidVerse) {
@@ -1614,8 +1321,7 @@ const InterpretationBlockwise = (props) => {
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-        console.log(`📝 Extracted text from fallback field: ${k}`);
-        return processAyahNumbers(v);
+return processAyahNumbers(v);
       }
     }
 
@@ -1687,15 +1393,6 @@ const InterpretationBlockwise = (props) => {
         onPrev={handlePrev}
         onNext={handleNext}
       />
-      {/* Debug info */}
-      {console.log("🔍 Rendering InterpretationNavbar with props:", {
-        interpretationNumber: iptNo,
-        verseRange: range.replace(/-/g, " - "),
-        surahId,
-        range,
-        iptNo,
-      })}
-
       <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-[#2A2C38]">
         {/* Header controls (read-only display) */}
         <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">

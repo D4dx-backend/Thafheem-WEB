@@ -107,16 +107,7 @@ const DemoItems = ({ onClose }) => {
       const firstSurah = page.surahs[0];
       const targetUrl = `/surah/${firstSurah.surahId}#verse-${firstSurah.startVerse}`;
       
-      console.log('Page navigation:', {
-        page: page.name,
-        surah: firstSurah.surahName,
-        surahId: firstSurah.surahId,
-        startVerse: firstSurah.startVerse,
-        endVerse: firstSurah.endVerse,
-        targetUrl
-      });
-      
-      // Navigate to the specific verse range on this page
+// Navigate to the specific verse range on this page
       navigate(targetUrl);
     } else {
       // Fallback navigation

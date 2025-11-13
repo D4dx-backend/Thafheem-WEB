@@ -16,10 +16,8 @@ const EndofProphethoodContent = ({ onPlayAudio, activeSection, showPlayButton = 
       try {
         setLoading(true);
         setError(null);
-        console.log("Loading article with ID:", activeSection.aid);
-        const data = await fetchArticleById(activeSection.aid);
-        console.log("Article data received:", data);
-        setCurrentArticle(data);
+const data = await fetchArticleById(activeSection.aid);
+setCurrentArticle(data);
       } catch (err) {
         console.error("Error loading article:", err);
         setError(err.message);

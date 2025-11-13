@@ -40,8 +40,7 @@ const Sign = () => {
       setLoading(true);
       setError(null);
       const result = await signInWithPopup(auth, googleProvider);
-      console.log("User signed in:", result.user);
-      // Navigation will be handled by useEffect when user state changes
+// Navigation will be handled by useEffect when user state changes
     } catch (error) {
       console.error("Error signing in:", error);
       setError(error.message);
@@ -54,8 +53,7 @@ const Sign = () => {
       setLoading(true);
       setError(null);
       const result = await signInWithPopup(auth, appleProvider);
-      console.log("User signed in with Apple:", result.user);
-      // Navigation will be handled by useEffect when user state changes
+// Navigation will be handled by useEffect when user state changes
     } catch (error) {
       console.error("Error signing in with Apple:", error);
       setError(error.message);

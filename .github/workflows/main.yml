@@ -56,8 +56,3 @@ jobs:
             chown -R thafheem:thafheem .
             find . -type d -exec chmod 755 {} \;
             find . -type f -exec chmod 644 {} \;
-```
-
-### 4. Set your `DEPLOY_PATH` secret to:
-```
-/home/thafheem/public_html/new_thafheem_web

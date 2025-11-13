@@ -3078,9 +3078,11 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
 
   // Build list of candidate endpoints (handles older misspelled route and new route)
+  const remoteBase = LEGACY_TFH_REMOTE_BASE;
   const baseCandidates = Array.from(
     new Set(
       [
+        `${remoteBase}/thajweedrules`,
         TAJWEED_RULES_API,
         `${apiBase}/tajweedrules`,
         `${apiBase}/thajweedrules`,
@@ -3206,6 +3208,44 @@ export const fetchArabicVerseForTajweed = async (verseKey) => {
   } catch (error) {
     console.error("Error fetching Arabic verse for Tajweed:", error);
     return "Arabic text not available";
+  }
+};
+
+export const fetchArabicAudioForTajweed = async (
+  verseKey,
+  recitationId = 7
+) => {
+  if (!verseKey) {
+    return "";
+  }
+
+  try {
+    const response = await fetchWithTimeout(
+      `https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah?ayah=${encodeURIComponent(
+        verseKey
+      )}`,
+      {},
+      5000
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data?.audio_files && data.audio_files.length > 0) {
+      return data.audio_files[0].audio_url || "";
+    }
+
+    if (data?.audio_file?.audio_url) {
+      return data.audio_file.audio_url || "";
+    }
+
+    return "";
+  } catch (error) {
+    console.error("Error fetching Tajweed audio:", error);
+    return "";
   }
 };
 

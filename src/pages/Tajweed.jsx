@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -7,6 +7,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  VolumeX,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -15,14 +16,17 @@ import {
   fetchAllTajweedRules,
   fetchSpecificTajweedRule,
   fetchArabicVerseForTajweed,
+  fetchArabicAudioForTajweed,
 } from "../api/apifunction";
+import { FALLBACK_TAJWEED_MAIN_RULES } from "../data/tajweedFallback";
 
 const Tajweed = () => {
   const [expandedSections, setExpandedSections] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(2);
-  const [totalTime] = useState(18);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [tajweedRules, setTajweedRules] = useState([]);
+  const [introRule, setIntroRule] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingSubRules, setLoadingSubRules] = useState({});
@@ -31,7 +35,99 @@ const Tajweed = () => {
   const [selectedArabicText, setSelectedArabicText] = useState("");
   const [loadingArabicText, setLoadingArabicText] = useState(false);
   const [currentRuleTitle, setCurrentRuleTitle] = useState("");
+  const [exampleReferences, setExampleReferences] = useState([]);
+  const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
+  const [currentVerseKey, setCurrentVerseKey] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [audioError, setAudioError] = useState("");
+  const [isMuted, setIsMuted] = useState(false);
   const { quranFont } = useTheme();
+  const audioRef = useRef(null);
+  const autoPlayOnLoadRef = useRef(false);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) {
+      return;
+    }
+
+    const handleLoadedMetadata = () => {
+      setDuration(audioEl.duration || 0);
+      setAudioLoading(false);
+
+      if (autoPlayOnLoadRef.current) {
+        audioEl
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => setIsPlaying(false));
+        autoPlayOnLoadRef.current = false;
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audioEl.currentTime || 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(audioEl.duration || 0);
+    };
+
+    const handleAudioError = () => {
+      setAudioError("Audio playback failed. Please try again.");
+      setAudioLoading(false);
+      setIsPlaying(false);
+    };
+
+    audioEl.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audioEl.addEventListener("timeupdate", handleTimeUpdate);
+    audioEl.addEventListener("ended", handleEnded);
+    audioEl.addEventListener("error", handleAudioError);
+
+    return () => {
+      audioEl.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audioEl.removeEventListener("timeupdate", handleTimeUpdate);
+      audioEl.removeEventListener("ended", handleEnded);
+      audioEl.removeEventListener("error", handleAudioError);
+    };
+  }, []);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) {
+      return;
+    }
+
+    if (!audioUrl) {
+      audioEl.removeAttribute("src");
+      setDuration(0);
+      setCurrentTime(0);
+      setAudioLoading(false);
+      return;
+    }
+
+    autoPlayOnLoadRef.current = true;
+    setAudioLoading(true);
+    setAudioError("");
+    setIsPlaying(false);
+    setCurrentTime(0);
+    audioEl.src = audioUrl;
+    audioEl.load();
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl || !audioUrl) {
+      return;
+    }
+
+    if (isPlaying) {
+      audioEl.play().catch(() => setIsPlaying(false));
+    } else {
+      audioEl.pause();
+    }
+  }, [isPlaying, audioUrl]);
 
   // Fetch Tajweed rules on component mount
   useEffect(() => {
@@ -39,45 +135,72 @@ const Tajweed = () => {
       try {
         setLoading(true);
         setError(null);
+        setIntroRule(null);
 
         const rulesData = await fetchAllTajweedRules();
-// Check if rulesData is an array, if not, wrap it in an array
         const rulesArray = Array.isArray(rulesData) ? rulesData : [rulesData];
 
-        // Transform the rules data based on actual API response structure
-        // Filter out the introduction (RuleNo: 0) and keep all actual rules
+        const introductionRule = rulesArray.find(
+          (rule) => rule && rule.RuleNo === "0"
+        );
+
+        if (introductionRule) {
+          setIntroRule({
+            title: introductionRule.Rule,
+            content: introductionRule.Ruledesc,
+            examples: introductionRule.Examples || "",
+            hasSubRules: introductionRule.Hassub === 1,
+          });
+        } else {
+          setIntroRule(null);
+        }
+
         const transformedRules = rulesArray
-          .filter((rule) => rule && rule.RuleNo !== "0") // Keep all rules except introduction
-          .map((rule, index) => ({
+          .filter((rule) => rule && rule.RuleNo !== "0")
+          .map((rule) => ({
             id: rule.RuleNo,
             title: rule.Rule,
             content: rule.Ruledesc,
             examples: rule.Examples || "",
-            hasSubRules: rule.Hassub === 1, // Convert to boolean for easier handling
+            hasSubRules: rule.Hassub === 1,
             audioUrl: rule.AudioUrl || "",
-            subRules: [], // Initialize empty sub-rules array
-            subRulesLoaded: false, // Track if sub-rules have been loaded
+            subRules: [],
+            subRulesLoaded: false,
           }));
 
-setTajweedRules(transformedRules);
+        setTajweedRules(transformedRules);
       } catch (err) {
         console.error("Failed to load Tajweed rules:", err);
         setError(err.message);
 
         // Set fallback rules if API fails
-        setTajweedRules([
-          {
-            id: "1.1",
-            title: "ഇഴ്ഹാർ (الإظهار)",
-            content:
-              "നൂൻ സാകിനയ്ക്കും തൻവീനിനും ശേഷം ആറ് അക്ഷരങ്ങൾ വന്നാൽ അവയെ വ്യക്തമായി ഉച്ചരിക്കുന്നതാണ് ഇഴ്ഹാർ. ആ ആറ് അക്ഷരങ്ങൾ: ء، ه، ع، ح، غ، خ",
-            examples: "مِنْ آمَنَ - مِنْ هَادٍ - مِنْ عِلْمٍ",
-            hasSubRules: false,
-            audioUrl: "",
-            subRules: [],
-            subRulesLoaded: false,
-          },
-        ]);
+        const fallbackIntro = FALLBACK_TAJWEED_MAIN_RULES.find(
+          (rule) => rule.RuleNo === "0"
+        );
+
+        if (fallbackIntro) {
+          setIntroRule({
+            title: fallbackIntro.Rule,
+            content: fallbackIntro.Ruledesc,
+            examples: fallbackIntro.Examples || "",
+            hasSubRules: fallbackIntro.Hassub === 1,
+          });
+        }
+
+        const fallbackRules = FALLBACK_TAJWEED_MAIN_RULES.filter(
+          (rule) => rule.RuleNo !== "0"
+        ).map((rule) => ({
+          id: rule.RuleNo,
+          title: rule.Rule,
+          content: rule.Ruledesc,
+          examples: rule.Examples || "",
+          hasSubRules: rule.Hassub === 1,
+          audioUrl: rule.AudioUrl || "",
+          subRules: [],
+          subRulesLoaded: false,
+        }));
+
+        setTajweedRules(fallbackRules);
       } finally {
         setLoading(false);
       }
@@ -167,8 +290,35 @@ const subRulesData = await fetchSpecificTajweedRule(formattedRuleNo);
     }
   };
 
+  const formatMalayalamContent = (text) => {
+    if (!text) return null;
+
+    const paragraphs = text.split(/\n{2,}/);
+
+    return paragraphs.map((paragraph, index) => {
+      const lines = paragraph.split("\n");
+      return (
+        <p
+          key={`intro-paragraph-${index}`}
+          className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mb-3 sm:mb-4 dark:text-white font-malayalam"
+        >
+          {lines.map((line, lineIndex) => (
+            <React.Fragment key={`intro-line-${index}-${lineIndex}`}>
+              {line.trim()}
+              {lineIndex < lines.length - 1 && <br />}
+            </React.Fragment>
+          ))}
+        </p>
+      );
+    });
+  };
+
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    if (!audioUrl || audioLoading) {
+      return;
+    }
+
+    setIsPlaying((prev) => !prev);
   };
 
   const toggleSubRule = async (subRuleId, parentRuleId) => {
@@ -294,8 +444,9 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
   };
 
   const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainingSeconds = Math.floor(safeSeconds % 60);
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
       .toString()
       .padStart(2, "0")}`;
@@ -319,6 +470,25 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
     return englishNumber.toString().replace(/[0-9]/g, (digit) => arabicNumbers[digit]);
   };
 
+  const parseVerseReferences = (examplesText = "") => {
+    if (!examplesText) {
+      return [];
+    }
+
+    const versePattern = /(\d+)\s*:\s*(\d+)/g;
+    const matches = [...examplesText.matchAll(versePattern)];
+
+    if (!matches || matches.length === 0) {
+      return [];
+    }
+
+    return matches.map((match) => ({
+      verseKey: `${match[1]}:${match[2]}`,
+      surahNumber: match[1],
+      ayahNumber: match[2],
+    }));
+  };
+
   // Function to fetch Arabic ayah text
   const fetchArabicAyah = async (verseKey) => {
     try {
@@ -329,90 +499,198 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
     }
   };
 
-  // Function to handle title click and show Arabic text
-  const handleTitleClick = async (examples, ruleTitle = "") => {
-    if (!examples || examples.trim() === "") {
-      setSelectedArabicText("No examples available");
+  const loadAudioForVerse = async (verseKey) => {
+    if (!verseKey) {
+      setAudioUrl("");
+      setAudioError("Audio not available for this example.");
+      setAudioLoading(false);
       return;
     }
 
     try {
+      setAudioLoading(true);
+      setAudioError("");
+      const audioSource = await fetchArabicAudioForTajweed(verseKey);
+
+      if (!audioSource) {
+        setAudioUrl("");
+        setAudioError("Audio not available for this example.");
+        setAudioLoading(false);
+        return;
+      }
+
+      setAudioUrl(audioSource);
+    } catch (error) {
+      console.error("Error loading audio for verse:", error);
+      setAudioUrl("");
+      setAudioError("Audio not available for this example.");
+      setAudioLoading(false);
+    }
+  };
+
+  const loadExampleByIndex = async (references, index) => {
+    if (!Array.isArray(references) || !references[index]) {
+      return;
+    }
+
+    const { verseKey, surahNumber, ayahNumber } = references[index];
+    setLoadingArabicText(true);
+    setCurrentExampleIndex(index);
+    setCurrentVerseKey(verseKey);
+
+    try {
+      const arabicText = await fetchArabicAyah(verseKey);
+      const arabicAyahNumber = convertToArabicNumbers(ayahNumber);
+
+      const metadataParts = [`Surah ${surahNumber}`, `Ayah ${ayahNumber}`];
+      if (references.length > 1) {
+        metadataParts.push(`Example ${index + 1}/${references.length}`);
+      }
+
+      setSelectedArabicText(
+        `${arabicText} ﴿${arabicAyahNumber}﴾\n\n${metadataParts.join(" • ")}`
+      );
+
+      await loadAudioForVerse(verseKey);
+    } catch (error) {
+      console.error("Error loading example:", error);
+      setSelectedArabicText("Arabic text not available");
+      setAudioUrl("");
+      setAudioError("Audio not available for this example.");
+      setAudioLoading(false);
+    } finally {
+      setLoadingArabicText(false);
+    }
+  };
+
+  const handleExampleNavigation = async (direction) => {
+    if (!exampleReferences.length) {
+      return;
+    }
+
+    const nextIndex = currentExampleIndex + direction;
+    if (nextIndex < 0 || nextIndex >= exampleReferences.length) {
+      return;
+    }
+
+    await loadExampleByIndex(exampleReferences, nextIndex);
+  };
+
+  const handleSelectExample = async (index) => {
+    if (index === currentExampleIndex || !exampleReferences[index]) {
+      return;
+    }
+
+    await loadExampleByIndex(exampleReferences, index);
+  };
+
+  const seekAudioBy = (seconds) => {
+    const audioEl = audioRef.current;
+    if (!audioEl || !duration) {
+      return;
+    }
+
+    const nextTime = Math.min(
+      Math.max(audioEl.currentTime + seconds, 0),
+      duration
+    );
+    audioEl.currentTime = nextTime;
+  };
+
+  const handleToggleMute = () => {
+    const audioEl = audioRef.current;
+    if (!audioEl) {
+      return;
+    }
+
+    const nextMuted = !audioEl.muted;
+    audioEl.muted = nextMuted;
+    setIsMuted(nextMuted);
+  };
+
+  const hasExamples = exampleReferences.length > 0;
+  const hasPreviousExample = hasExamples && currentExampleIndex > 0;
+  const hasNextExample =
+    hasExamples && currentExampleIndex < exampleReferences.length - 1;
+  const audioProgress = duration
+    ? Math.min(Math.max((currentTime / duration) * 100, 0), 100)
+    : 0;
+
+  // Function to handle title click and show Arabic text
+  const handleTitleClick = async (examples, ruleTitle = "") => {
+    setCurrentRuleTitle(ruleTitle);
+    setExampleReferences([]);
+    setCurrentExampleIndex(0);
+    setCurrentVerseKey("");
+    setAudioUrl("");
+    setAudioError("");
+    setAudioLoading(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    autoPlayOnLoadRef.current = false;
+
+    if (!examples || examples.trim() === "") {
+      setSelectedArabicText("No examples available");
+      setAudioError("Audio not available for this example.");
+      return;
+    }
+
+    try {
+      const references = parseVerseReferences(examples);
+
+      if (references.length > 0) {
+        setExampleReferences(references);
+        await loadExampleByIndex(references, 0);
+        return;
+      }
+
       setLoadingArabicText(true);
-      setCurrentRuleTitle(ruleTitle);
 
-      // Extract verse references from examples (assuming format like "2:255" or "18:10")
-      // Also handle Arabic text patterns and common formats
-      const versePattern = /(\d+):(\d+)/g;
-      const matches = [...examples.matchAll(versePattern)];
+      const arabicPattern =
+        /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
-      if (matches.length > 0) {
-        // If multiple verse references, fetch the first one
-        const verseKey = `${matches[0][1]}:${matches[0][2]}`;
-        const surahNumber = matches[0][1];
-        const ayahNumber = matches[0][2];
-const arabicText = await fetchArabicAyah(verseKey);
+      if (arabicPattern.test(examples)) {
+        const arabicWords = examples.match(
+          /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+/g
+        );
 
-        // Add ayah number to the Arabic text (convert to Arabic numbers)
-        const arabicAyahNumber = convertToArabicNumbers(ayahNumber);
-        const arabicWithNumber = `${arabicText} ﴿${arabicAyahNumber}﴾`;
-
-        // If multiple verses, add a note
-        if (matches.length > 1) {
-          const additionalVerses = matches
-            .slice(1)
-            .map((match) => `${match[1]}:${match[2]}`)
-            .join(", ");
-          setSelectedArabicText(`${arabicWithNumber}\n\nSurah ${surahNumber}, Ayah ${ayahNumber} (Additional verses: ${additionalVerses})`);
+        if (arabicWords && arabicWords.length > 0) {
+          const cleanedArabicText = arabicWords.join(" ").trim();
+          setSelectedArabicText(cleanedArabicText);
         } else {
-          setSelectedArabicText(`${arabicWithNumber}\n\nSurah ${surahNumber}, Ayah ${ayahNumber}`);
+          setSelectedArabicText(examples);
         }
       } else {
-        // If no verse reference found, check if the examples already contain Arabic text
-        const arabicPattern =
-          /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+        const transliterationPatterns = [
+          { pattern: /min\s+aamana/gi, arabic: "مِنْ آمَنَ" },
+          { pattern: /min\s+haadin/gi, arabic: "مِنْ هَادٍ" },
+          { pattern: /min\s+ilmin/gi, arabic: "مِنْ عِلْمٍ" },
+          { pattern: /bismillah/gi, arabic: "بِسْمِ اللَّهِ" },
+          { pattern: /alhamdulillah/gi, arabic: "الْحَمْدُ لِلَّهِ" },
+        ];
 
-        if (arabicPattern.test(examples)) {
-          // If examples contain Arabic text, clean and display it
-          const arabicWords = examples.match(
-            /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+/g
-          );
-
-          if (arabicWords && arabicWords.length > 0) {
-            // Join all Arabic text found
-            const cleanedArabicText = arabicWords.join(" ").trim();
-            setSelectedArabicText(cleanedArabicText);
-          } else {
-            setSelectedArabicText(examples);
-          }
-        } else {
-          // Try to find common Arabic transliterations and convert them
-          const transliterationPatterns = [
-            { pattern: /min\s+aamana/gi, arabic: "مِنْ آمَنَ" },
-            { pattern: /min\s+haadin/gi, arabic: "مِنْ هَادٍ" },
-            { pattern: /min\s+ilmin/gi, arabic: "مِنْ عِلْمٍ" },
-            { pattern: /bismillah/gi, arabic: "بِسْمِ اللَّهِ" },
-            { pattern: /alhamdulillah/gi, arabic: "الْحَمْدُ لِلَّهِ" },
-          ];
-
-          let foundTransliteration = false;
-          for (const { pattern, arabic } of transliterationPatterns) {
-            if (pattern.test(examples)) {
-              setSelectedArabicText(arabic);
-              foundTransliteration = true;
-              break;
-            }
-          }
-
-          if (!foundTransliteration) {
-            setSelectedArabicText(
-              `Examples: ${examples}\n\n(Click on rule titles with verse references like "2:255" to see Arabic text)`
-            );
+        let foundTransliteration = false;
+        for (const { pattern, arabic } of transliterationPatterns) {
+          if (pattern.test(examples)) {
+            setSelectedArabicText(arabic);
+            foundTransliteration = true;
+            break;
           }
         }
+
+        if (!foundTransliteration) {
+          setSelectedArabicText(
+            `Examples: ${examples}\n\n(Click on rule titles with verse references like "2:255" to see Arabic text)`
+          );
+        }
       }
+
+      setAudioError("Audio not available for this example.");
     } catch (error) {
       console.error("Error handling title click:", error);
       setSelectedArabicText("Error loading Arabic text");
+      setAudioError("Audio not available for this example.");
     } finally {
       setLoadingArabicText(false);
     }
@@ -439,7 +717,7 @@ const arabicText = await fetchArabicAyah(verseKey);
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 sm:gap-3">
             <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-tight font-malayalam">
-              ഖുർആന്‍ പാരായണ ശാസ്ത്രം (علم التجويد)
+              {introRule?.title || "ഖുർആന്‍ പാരായണ ശാസ്ത്രം (علم التجويد)"}
             </h1>
           </div>
         </div>
@@ -464,26 +742,15 @@ const arabicText = await fetchArabicAyah(verseKey);
           <div className="space-y-4 sm:space-y-6">
             {/* Basic Introduction Text */}
             <div className="prose prose-gray max-w-none mb-6 sm:mb-8">
-              <p className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mb-3 sm:mb-4 dark:text-white font-malayalam">
-                അല്ലാഹു മനുഷ്യര്‍ക്ക് നല്‍കിയ ഏറ്റവും വലിയ അനുഗ്രഹമാണ് പരിശുദ്ധ
-                ഖുര്‍ആന്‍. അതിന്റെ പാരായണവും പഠനവും മനനവും ഏറ്റവും മഹത്തായ
-                പ്രതിഫലവും പുണ്യവും ലഭിക്കുന്ന സല്‍കര്‍മങ്ങളില്‍ പെട്ടതാണ്.
-                ഖുര്‍ആന്‍ അവതരിപ്പിക്കപ്പെട്ട ശൈലിയില്‍ തന്നെ അത് പാരായണം
-                ചെയ്യുന്നതാണ് അല്ലാഹു ഇഷ്ടപ്പെടുന്നത്. മലക്ക് ജിബ്‌രീല്‍(അ)
-                മുഹമ്മദ് നബി(സ)ക്കും, അദ്ദേഹം തന്റെ അനുചരന്‍മാര്‍ക്കും അവര്‍
-                തങ്ങളുടെ പിന്‍ഗാമികള്‍ക്കും എന്ന ക്രമത്തില്‍ ഓതിക്കേള്‍പിച്ചതാണ്
-                ആ ശൈലി. 'സാവധാനത്തിലും അക്ഷരസ്ഫുടതയോടും കൂടി നീ ഖുര്‍ആന്‍
-                പാരായണം ചെയ്യുക' എന്ന ഖുര്‍ആന്‍ വാക്യവും, 'ഖുര്‍ആനിനെ നിങ്ങളുടെ
-                ശബ്ദം കൊണ്ട് അലങ്കരിക്കുക' എന്ന നബിവചനവും ഖുര്‍ആന്‍ പാരായണ
-                ശാസ്ത്രത്തിന്റെ അനിവാര്യത വ്യക്തമാക്കുന്നു. അക്ഷരങ്ങളുടെ ഉച്ചാരണ
-                രീതി, വിശേഷണങ്ങള്‍, രാഗം, ദീര്‍ഘം, കനം കുറക്കല്‍, കനപ്പിക്കല്‍,
-                വിരാമം തുടങ്ങിയ കാര്യങ്ങളാണ് അതിലെ പ്രതിപാദ്യം. അവ പഠിക്കലും
-                അതനുസരിച്ച് ഖുര്‍ആന്‍ പാരായണം ചെയ്യലും നിര്‍ബന്ധമാണെന്നാണ്
-                പണ്ഡിതമതം. മൂന്ന് രീതികളാണ് ഖുര്‍ആന്‍ പാരായണത്തിന്
-                നിശ്ചയിച്ചിട്ടുള്ളത്. 1. സാവധാനത്തിലുള്ള പാരായണം (الترتيل) 2.
-                മധ്യനിലക്കുള്ള പാരായണം (التدوير) 3. വേഗതയോടുകൂടിയ പാരായണം
-                (الحدر) ഇവ മൂന്നിലും പാരായണ നിയമങ്ങള്‍ പാലിക്കല്‍ നിര്‍ബന്ധമാണ്.
-              </p>
+              {introRule?.content ? (
+                formatMalayalamContent(introRule.content)
+              ) : (
+                <p className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mb-3 sm:mb-4 dark:text-white font-malayalam">
+                  അല്ലാഹു മനുഷ്യര്‍ക്ക് നല്‍കിയ ഏറ്റവും വലിയ അനുഗ്രഹമാണ് പരിശുദ്ധ
+                  ഖുര്‍ആന്‍. അതിന്റെ പാരായണവും പഠനവും മനനവും ഏറ്റവും മഹത്തായ
+                  പ്രതിഫലവും പുണ്യവും ലഭിക്കുന്ന സല്‍കര്‍മങ്ങളില്‍ പെട്ടതാണ്.
+                </p>
+              )}
             </div>
 
             {/* Dynamically Rendered Tajweed Rules from API */}
@@ -721,7 +988,13 @@ const arabicText = await fetchArabicAyah(verseKey);
                               <div className="w-full flex justify-center items-center gap-2 sm:gap-3 lg:gap-4 px-2 sm:px-4">
                                 {/* Left Navigation Button */}
                                 <button
-                                  className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm flex-shrink-0 self-center"
+                                  onClick={() => handleExampleNavigation(-1)}
+                                  disabled={!hasPreviousExample}
+                                  className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm flex-shrink-0 self-center ${
+                                    hasPreviousExample
+                                      ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
+                                      : "opacity-50 cursor-not-allowed"
+                                  }`}
                                   aria-label="Previous"
                                 >
                                   <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
@@ -755,6 +1028,23 @@ const arabicText = await fetchArabicAyah(verseKey);
                                           {selectedArabicText.split("\n\n")[1]}
                                         </p>
                                       )}
+                                      {hasExamples && (
+                                        <div className="mt-3 flex flex-wrap justify-center gap-2">
+                                          {exampleReferences.map((reference, idx) => (
+                                            <button
+                                              key={reference.verseKey}
+                                              onClick={() => handleSelectExample(idx)}
+                                              className={`px-3 py-1 text-xs sm:text-sm rounded-full border transition-colors ${
+                                                idx === currentExampleIndex
+                                                  ? "bg-[#2AA0BF] text-white border-[#2AA0BF]"
+                                                  : "border-[#2AA0BF]/40 text-[#2AA0BF] hover:bg-[#2AA0BF]/10"
+                                              }`}
+                                            >
+                                              {reference.verseKey}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
                                     <div className="text-center px-4">
@@ -772,7 +1062,13 @@ const arabicText = await fetchArabicAyah(verseKey);
 
                                 {/* Right Navigation Button */}
                                 <button
-                                  className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm flex-shrink-0 self-center"
+                                  onClick={() => handleExampleNavigation(1)}
+                                  disabled={!hasNextExample}
+                                  className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm flex-shrink-0 self-center ${
+                                    hasNextExample
+                                      ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
+                                      : "opacity-50 cursor-not-allowed"
+                                  }`}
                                   aria-label="Next"
                                 >
                                   <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
@@ -786,9 +1082,7 @@ const arabicText = await fetchArabicAyah(verseKey);
                                 <div
                                   className="bg-gradient-to-r from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white h-full rounded-full transition-all duration-300 shadow-sm"
                                   style={{
-                                    width: `${
-                                      (currentTime / totalTime) * 100
-                                    }%`,
+                                  width: `${audioProgress}%`,
                                   }}
                                 ></div>
                               </div>
@@ -798,7 +1092,7 @@ const arabicText = await fetchArabicAyah(verseKey);
                                   {formatTime(currentTime)}
                                 </span>
                                 <span className="font-mono tabular-nums">
-                                  {formatTime(totalTime)}
+                                  {formatTime(duration)}
                                 </span>
                               </div>
                             </div>
@@ -806,22 +1100,43 @@ const arabicText = await fetchArabicAyah(verseKey);
                             {/* Audio Controls */}
                             <div className="flex justify-center items-center gap-3 sm:gap-5 lg:gap-6">
                               <button
-                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
-                                aria-label="Volume"
+                                onClick={handleToggleMute}
+                                disabled={!audioUrl}
+                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
+                                  audioUrl
+                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
+                                    : "opacity-50 cursor-not-allowed"
+                                }`}
+                                aria-label={isMuted ? "Unmute audio" : "Mute audio"}
                               >
-                                <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                                {isMuted ? (
+                                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                                ) : (
+                                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                                )}
                               </button>
 
                               <button
-                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
-                                aria-label="Skip back"
+                                onClick={() => seekAudioBy(-5)}
+                                disabled={!audioUrl || audioLoading}
+                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
+                                  audioUrl && !audioLoading
+                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
+                                    : "opacity-50 cursor-not-allowed"
+                                }`}
+                                aria-label="Rewind 5 seconds"
                               >
                                 <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
                               </button>
 
                               <button
                                 onClick={togglePlay}
-                                className="p-4 sm:p-5 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white rounded-full text-white dark:text-gray-900 transition-all duration-200 transform hover:scale-110 active:scale-100 shadow-xl hover:shadow-2xl"
+                                disabled={!audioUrl || audioLoading || !!audioError}
+                                className={`p-4 sm:p-5 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white rounded-full text-white dark:text-gray-900 transition-all duration-200 transform shadow-xl ${
+                                  audioUrl && !audioLoading && !audioError
+                                    ? "hover:scale-110 active:scale-100 hover:shadow-2xl"
+                                    : "opacity-60 cursor-not-allowed"
+                                }`}
                                 aria-label={isPlaying ? "Pause" : "Play"}
                               >
                                 {isPlaying ? (
@@ -832,12 +1147,30 @@ const arabicText = await fetchArabicAyah(verseKey);
                               </button>
 
                               <button
-                                className="p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 backdrop-blur-sm"
-                                aria-label="Skip forward"
+                                onClick={() => seekAudioBy(5)}
+                                disabled={!audioUrl || audioLoading}
+                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
+                                  audioUrl && !audioLoading
+                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
+                                    : "opacity-50 cursor-not-allowed"
+                                }`}
+                                aria-label="Forward 5 seconds"
                               >
                                 <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
                               </button>
                             </div>
+                            <audio ref={audioRef} preload="auto" className="hidden" />
+                            {audioLoading && (
+                              <div className="mt-4 flex justify-center items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                <div className="h-3 w-3 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
+                                <span>Loading audio...</span>
+                              </div>
+                            )}
+                            {audioError && !audioLoading && (
+                              <p className="mt-4 text-xs text-red-600 dark:text-red-400 text-center">
+                                {audioError}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

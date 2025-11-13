@@ -1283,6 +1283,12 @@ const BlockWise = () => {
     surahId,
     accessibleSurahName
   );
+  const surahIdString = surahId ? String(surahId) : "";
+  const useNormalSurahTitleWeight =
+    surahIdString === "1" || surahIdString === "2";
+  const surahTitleWeightClass = useNormalSurahTitleWeight
+    ? "font-normal"
+    : "font-semibold";
 
   return (
     <>
@@ -1298,7 +1304,7 @@ const BlockWise = () => {
             {/* Arabic Title */}
             <div className="text-center mb-3 sm:mb-4">
               <h1
-                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-5 sm:mb-7 px-4 sm:px-6"
+                className={`text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-5 sm:mb-7 px-4 sm:px-6 ${surahTitleWeightClass}`}
                 style={{ fontFamily: surahNameFontFamily }}
                 aria-label={accessibleSurahName}
               >

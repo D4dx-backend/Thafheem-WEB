@@ -264,7 +264,7 @@ const HomepageSearch = () => {
       navigate(url);
     } else if (result.type === 'verse' || result.type === 'verse_reference') {
       const [surahNumber, verseNumber] = result.verse_key.split(':');
-      const url = `/surah/${surahNumber}`;
+      const url = `/surah/${surahNumber}#verse-${verseNumber}`;
       
       if (isModifierPressed) {
         event?.preventDefault();
@@ -412,14 +412,7 @@ const HomepageSearch = () => {
             placeholder="Search surahs, verses, or try '2:255' for specific verses..."
             className="w-full h-[49px] pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-[#2A2C38] dark:border-gray-600 dark:text-white shadow-sm text-gray-700 placeholder-gray-400 text-base"
           />
-          <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-            <button 
-              type="button"
-              className="text-gray-400 dark:text-white hover:text-cyan-500 transition-colors"
-            >
-              <MicIcon className="h-5 w-5" />
-            </button>
-          </div>
+          {/* Voice search button temporarily removed */}
         </form>
 
         {/* Search Results Dropdown */}

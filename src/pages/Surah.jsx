@@ -1219,10 +1219,30 @@ const Surah = () => {
     };
   }, [showSuccess, showError]);
 
+  const getPlainTextTranslation = (html) => {
+    if (!html) return '';
+
+    if (typeof document === 'undefined') {
+      return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    tempDiv
+      .querySelectorAll('.english-footnote-link, .footnote-link, sup.f-note')
+      .forEach((el) => el.remove());
+
+    return (tempDiv.textContent || tempDiv.innerText || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   const handleCopyVerse = async (arabicText, translation, verseNumber) => {
+    const plainTranslation = getPlainTextTranslation(translation);
     const textToCopy = `${arabicText}
   
-  "${translation}"
+  "${plainTranslation}"
   
   — Quran ${surahId}:${verseNumber}`;
 
@@ -1259,9 +1279,10 @@ const Surah = () => {
   };
 
   const handleShareVerse = async (arabicText, translation, verseNumber) => {
+    const plainTranslation = getPlainTextTranslation(translation);
     const shareText = `${arabicText}
 
-"${translation}"
+"${plainTranslation}"
 
 — Quran ${surahId}:${verseNumber}`;
 
@@ -1628,6 +1649,12 @@ const Surah = () => {
     surahId,
     accessibleSurahName
   );
+  const surahIdString = surahId ? String(surahId) : "";
+  const useNormalSurahTitleWeight =
+    surahIdString === "1" || surahIdString === "2";
+  const surahTitleWeightClass = useNormalSurahTitleWeight
+    ? "font-normal"
+    : "font-semibold";
 
   return (
     <div>
@@ -1657,7 +1684,7 @@ const Surah = () => {
 
               {/* Surah Title */}
               <h1
-                className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4"
+                className={`text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4 ${surahTitleWeightClass}`}
                 style={{ fontFamily: surahNameFontFamily }}
                 aria-label={accessibleSurahName}
               >
@@ -1754,7 +1781,7 @@ const Surah = () => {
                 {/* Surah Title */}
                 <div className="relative pb-4 sm:pb-6">
                   <h1
-                    className="text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4 sm:px-6"
+                    className={`text-4xl sm:text-5xl font-arabic dark:text-white text-gray-900 mb-6 sm:mb-8 px-4 sm:px-6 ${surahTitleWeightClass}`}
                     style={{ fontFamily: surahNameFontFamily }}
                     aria-label={accessibleSurahName}
                   >

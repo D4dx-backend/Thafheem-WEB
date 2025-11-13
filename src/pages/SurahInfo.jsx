@@ -1,13 +1,25 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { fetchCompleteSurahInfo } from "../api/apifunction";
+import { useState, useEffect, useMemo } from "react";
+import { fetchCompleteSurahInfo, fetchNoteById } from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
+import NotePopup from "../components/NotePopup";
 
 const SurahInfo = () => {
   const { surahId } = useParams(); // Get surah ID from URL
+  const { translationLanguage } = useTheme();
   const [surahInfo, setSurahInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [notePopupState, setNotePopupState] = useState({
+    isOpen: false,
+    noteId: null,
+    loading: false,
+    error: null,
+    content: null,
+  });
 
   // Helper function to clean HTML content
   const cleanHtmlContent = (htmlString) => {
@@ -70,7 +82,7 @@ const SurahInfo = () => {
     const loadSurahInfo = async () => {
       try {
         setLoading(true);
-        const data = await fetchCompleteSurahInfo(surahId);
+        const data = await fetchCompleteSurahInfo(surahId, translationLanguage);
         setSurahInfo(data);
       } catch (err) {
         setError(err.message);
@@ -80,7 +92,7 @@ const SurahInfo = () => {
     };
 
     loadSurahInfo();
-  }, [surahId]);
+  }, [surahId, translationLanguage]);
 
   // Loading state
   if (loading) {
@@ -115,11 +127,107 @@ const SurahInfo = () => {
   }
 
   // Parse Thafheem content into sections if available
-  const thafheemSections = surahInfo?.thafheem?.PrefaceText 
+  const getPrefaceParagraphs = useMemo(
+    () => (htmlString) => {
+      if (!htmlString) return [];
+      return htmlString
+        .replace(/\r\n/g, "\n")
+        .replace(/\t+/g, " ")
+        .split(/\n{2,}/)
+        .map((paragraph) => paragraph.trim())
+        .filter(Boolean);
+    },
+    []
+  );
+
+  const parsedThafheemSections = surahInfo?.thafheem?.PrefaceText 
     ? parseContentSections(surahInfo.thafheem.PrefaceText)
     : [];
 
+  const malayalamPrefaceSections = Array.isArray(
+    surahInfo?.thafheem?.PrefaceSections
+  )
+    ? surahInfo.thafheem.PrefaceSections.filter(
+        (section) =>
+          (section?.subtitle && section.subtitle.trim()) ||
+          (section?.text && section.text.trim())
+      )
+    : [];
+
+  const shouldShowMalayalamPrefaceOnly =
+    translationLanguage === "mal" && malayalamPrefaceSections.length > 0;
+
+  const handlePrefaceContentClick = (event) => {
+    if (translationLanguage !== "mal") {
+      return;
+    }
+
+    const clickable = event.target.closest("sup, a");
+    if (!clickable) {
+      return;
+    }
+
+    const rawText = (clickable.innerText || clickable.textContent || "").trim();
+    if (!rawText) {
+      return;
+    }
+
+    let handled = false;
+    const normalized = rawText.replace(/[\s()]+/g, "").toUpperCase();
+
+    if (/^N\d+$/.test(normalized)) {
+      handled = true;
+      openNotePopup(normalized);
+    } else {
+      const verseMatch = rawText.match(/(\d+)\s*[:：]\s*(\d+)/);
+      if (verseMatch) {
+        const surahRef = parseInt(verseMatch[1], 10);
+        const ayahRef = parseInt(verseMatch[2], 10);
+        if (Number.isFinite(surahRef) && Number.isFinite(ayahRef)) {
+          handled = true;
+          navigate(`/reading/${surahRef}?verse=${ayahRef}`);
+        }
+      }
+    }
+
+    if (handled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  const openNotePopup = async (noteId) => {
+    setNotePopupState({
+      isOpen: true,
+      noteId,
+      loading: true,
+      error: null,
+      content: null,
+    });
+
+    try {
+      const data = await fetchNoteById(noteId);
+      setNotePopupState((prev) => ({
+        ...prev,
+        loading: false,
+        content:
+          (data && (data.NoteText || data.html || data.content || data.text)) ||
+          data ||
+          "Note content unavailable.",
+      }));
+    } catch (fetchError) {
+      setNotePopupState((prev) => ({
+        ...prev,
+        loading: false,
+        error:
+          fetchError?.message ||
+          "Unable to load this note at the moment. Please try again.",
+      }));
+    }
+  };
+
   return (
+    <>
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white px-3 sm:px-4 lg:px-6 py-4 dark:bg-gray-900">
@@ -190,8 +298,58 @@ const SurahInfo = () => {
 
         {/* Dynamic Content */}
         <div className="font-poppins">
+          {/* Malayalam Thafheem Preface */}
+          {shouldShowMalayalamPrefaceOnly && (
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
+                Thafheem Preface (Malayalam)
+              </h3>
+              {translationLanguage === "mal" && (
+                <style>
+                  {`
+                    .surah-preface-content sup.f-noteno,
+                    .surah-preface-content a.crs {
+                      color: #2AA0BF !important;
+                      cursor: pointer !important;
+                      text-decoration: none !important;
+                    }
+
+                    .surah-preface-content sup.f-noteno:hover,
+                    .surah-preface-content a.crs:hover {
+                      text-decoration: underline !important;
+                    }
+                  `}
+                </style>
+              )}
+              <div
+                className="text-gray-700 leading-relaxed dark:text-white text-sm sm:text-base lg:text-lg px-1 sm:px-0 space-y-4 surah-preface-content"
+                onClick={handlePrefaceContentClick}
+              >
+                {malayalamPrefaceSections.map((section, index) => {
+                  const paragraphs = getPrefaceParagraphs(section.text);
+                  return (
+                    <div key={index} className="space-y-3">
+                      {section.subtitle ? (
+                        <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-cyan-500">
+                          {section.subtitle}
+                        </h4>
+                      ) : null}
+                      {paragraphs.map((paragraph, pIndex) => (
+                        <p
+                          key={pIndex}
+                          className="mb-2 sm:mb-3"
+                          dangerouslySetInnerHTML={{ __html: paragraph }}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Overview from Quran.com API */}
-          {surahInfo?.detailed?.short_text && (
+          {!shouldShowMalayalamPrefaceOnly && surahInfo?.detailed?.short_text && (
             <div className="mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
                 Overview
@@ -203,7 +361,7 @@ const SurahInfo = () => {
           )}
 
           {/* Detailed Information from Quran.com API */}
-          {surahInfo?.detailed?.text && (
+          {!shouldShowMalayalamPrefaceOnly && surahInfo?.detailed?.text && (
             <div className="mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
                 Detailed Information
@@ -219,13 +377,13 @@ const SurahInfo = () => {
           )}
 
           {/* Thafheem Commentary - Properly parsed sections */}
-          {thafheemSections.length > 0 && (
+          {parsedThafheemSections.length > 0 && (
             <div className="mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
                 Thafheem Commentary
               </h3>
               <div className="space-y-6">
-                {thafheemSections.map((section, index) => (
+                {parsedThafheemSections.map((section, index) => (
                   <div key={index} className="mb-6">
                     <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-cyan-500 mb-2 sm:mb-3">
                       {section.title}
@@ -244,7 +402,7 @@ const SurahInfo = () => {
           )}
 
           {/* Fallback content with basic info */}
-          {!surahInfo?.detailed?.text && thafheemSections.length === 0 && (
+          {!surahInfo?.detailed?.text && parsedThafheemSections.length === 0 && !shouldShowMalayalamPrefaceOnly && (
             <div className="mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
                 Basic Information
@@ -283,6 +441,18 @@ const SurahInfo = () => {
         </div>
       </div>
     </div>
+
+    <NotePopup
+      isOpen={notePopupState.isOpen}
+      noteId={notePopupState.noteId}
+      noteContent={notePopupState.content}
+      loading={notePopupState.loading}
+      error={notePopupState.error}
+      onClose={() =>
+        setNotePopupState((prev) => ({ ...prev, isOpen: false }))
+      }
+    />
+    </>
   );
 };
 

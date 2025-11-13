@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PAGE_RANGES_API } from "../api/apis";
-import { listSurahNames } from "../api/apifunction";
+import { listSurahNames, fetchPageRanges } from "../api/apifunction";
 
 const DemoItems = ({ onClose }) => {
   const [pageSearch, setPageSearch] = useState("");
@@ -19,17 +18,15 @@ const DemoItems = ({ onClose }) => {
         setError(null);
 
         // Fetch page ranges and surah names concurrently
-        const [pageRangesResponse, surahNamesResponse] = await Promise.all([
-          fetch(PAGE_RANGES_API),
-          listSurahNames()
+        const [pageRangesData, surahNamesResponse] = await Promise.all([
+          fetchPageRanges(),
+          listSurahNames(),
         ]);
 
-        if (!pageRangesResponse.ok) {
-          throw new Error(`HTTP error! status: ${pageRangesResponse.status}`);
+        if (!Array.isArray(pageRangesData) || pageRangesData.length === 0) {
+          throw new Error("Page ranges are currently unavailable.");
         }
 
-        const pageRanges = await pageRangesResponse.json();
-        
         // Create surah names mapping
         const surahNamesMap = {};
         surahNamesResponse.forEach((surah) => {
@@ -39,7 +36,7 @@ const DemoItems = ({ onClose }) => {
 
         // Process page ranges to create page list
         const pageMap = {};
-        pageRanges.forEach((range) => {
+        pageRangesData.forEach((range) => {
           const pageId = range.PageId;
           if (!pageMap[pageId]) {
             pageMap[pageId] = {
@@ -49,20 +46,22 @@ const DemoItems = ({ onClose }) => {
               surahs: [],
               startSurah: surahNamesMap[range.SuraId] || `Surah ${range.SuraId}`,
               startVerse: range.ayafrom,
-              endVerse: range.ayato
+              endVerse: range.ayato,
             };
           }
-          
+
           // Add surah info to this page
           const surahInfo = {
             surahId: range.SuraId,
             surahName: surahNamesMap[range.SuraId] || `Surah ${range.SuraId}`,
             startVerse: range.ayafrom,
-            endVerse: range.ayato
+            endVerse: range.ayato,
           };
-          
+
           // Check if this surah is already added to this page
-          const existingSurah = pageMap[pageId].surahs.find(s => s.surahId === range.SuraId);
+          const existingSurah = pageMap[pageId].surahs.find(
+            (s) => s.surahId === range.SuraId
+          );
           if (!existingSurah) {
             pageMap[pageId].surahs.push(surahInfo);
           }
@@ -71,11 +70,10 @@ const DemoItems = ({ onClose }) => {
         // Convert to array and sort by page number
         const pageList = Object.values(pageMap).sort((a, b) => a.number - b.number);
         setPages(pageList);
-
       } catch (err) {
         setError(err.message);
         console.error("Error loading page data:", err);
-        
+
         // Fallback to hardcoded data if API fails
         const fallbackPages = Array.from({ length: 604 }, (_, index) => ({
           id: index + 1,
@@ -106,14 +104,14 @@ const DemoItems = ({ onClose }) => {
     if (page.surahs && page.surahs.length > 0) {
       const firstSurah = page.surahs[0];
       const targetUrl = `/surah/${firstSurah.surahId}#verse-${firstSurah.startVerse}`;
-      
-// Navigate to the specific verse range on this page
+
+      // Navigate to the specific verse range on this page
       navigate(targetUrl);
     } else {
       // Fallback navigation
       navigate(`/surah/1`);
     }
-    
+
     // Close the navigation modal
     if (onClose) {
       onClose();
@@ -135,9 +133,7 @@ const DemoItems = ({ onClose }) => {
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="px-4 text-xs text-red-500">{error}</div>
-        )}
+        {error && <div className="px-4 text-xs text-red-500">{error}</div>}
 
         {/* Page List */}
         <div className="flex-1 overflow-y-auto px-4 pb-3">
@@ -161,19 +157,16 @@ const DemoItems = ({ onClose }) => {
                   </div>
                   {page.surahs && page.surahs.length > 0 && (
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {page.surahs.length > 1 
-                        ? `${page.surahs.length} surahs` 
-                        : `Verse ${page.surahs[0].startVerse}-${page.surahs[0].endVerse}`
-                      }
+                      {page.surahs.length > 1
+                        ? `${page.surahs.length} surahs`
+                        : `Verse ${page.surahs[0].startVerse}-${page.surahs[0].endVerse}`}
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-4">
-              No page found
-            </p>
+            <p className="text-sm text-gray-400 text-center py-4">No page found</p>
           )}
         </div>
       </div>

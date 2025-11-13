@@ -1,5 +1,4 @@
 name: Deploy React App to Server
-
 on:
   push:
     branches:
@@ -9,37 +8,41 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-
+          
       - name: Install dependencies
         run: npm ci
-
+        
       - name: Build React app
         run: npm run build
         env:
           CI: false
-
+          VITE_BASE_PATH: /new_thafheem_web/
+          
+      - name: Create deployment archive
+        run: |
+          cd dist
+          tar -czf ../deploy.tar.gz .
+          cd ..
+          
       - name: Deploy to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/*"
-          target: ${{ secrets.DEPLOY_PATH }}
-          strip_components: 1
-          rm: true
-
-      - name: Set Permissions
+          source: "deploy.tar.gz"
+          target: "/home/thafheem/"
+          
+      - name: Extract and Set Permissions
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -47,6 +50,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            chown -R thafheem:thafheem *
+            rm -rf ./*
+            tar -xzf /home/thafheem/deploy.tar.gz -C .
+            rm /home/thafheem/deploy.tar.gz
+            chown -R thafheem:thafheem .
             find . -type d -exec chmod 755 {} \;
             find . -type f -exec chmod 644 {} \;
+```
+
+### 4. Set your `DEPLOY_PATH` secret to:
+```
+/home/thafheem/public_html/new_thafheem_web

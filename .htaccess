@@ -2,22 +2,21 @@
   RewriteEngine On
   RewriteBase /new_thafheem_web/
   
-  # Don't rewrite existing files or directories
+  # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-l
   
-  # Rewrite everything else to index.html (SPA fallback)
+  # Rewrite everything else to index.html
   RewriteRule . /new_thafheem_web/index.html [L]
 </IfModule>
 
-# Correct MIME types
+# Set correct MIME types
 AddType application/javascript .js .mjs
-AddType text/css              .css
-AddType application/json      .json
+AddType text/css .css
+AddType application/json .json
 
-# Optional: CORS for static assets (fonts, JS, etc.)
-# This is NOT the API CORS – just assets.
+# Enable CORS for assets
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|mjs|css|json|woff|woff2|ttf|svg|ico)$">
     Header set Access-Control-Allow-Origin "*"

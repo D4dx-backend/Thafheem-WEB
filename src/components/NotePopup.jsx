@@ -3,12 +3,12 @@ import { X, Copy, Share2 } from 'lucide-react';
 
 const determineContainerWidth = (plainTextLength = 0) => {
   if (plainTextLength <= 400) {
-    return "max-w-xl";
+    return "sm:max-w-xl";
   }
   if (plainTextLength <= 1200) {
-    return "max-w-3xl";
+    return "sm:max-w-3xl";
   }
-  return "max-w-5xl";
+  return "sm:max-w-5xl";
 };
 
 const NotePopup = ({
@@ -136,7 +136,7 @@ const NotePopup = ({
         `}
       </style>
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4">
-      <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-[90vw] ${containerWidthClass} max-h-[90vh] overflow-hidden transition-all duration-200`}>
+      <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] overflow-hidden transition-all duration-200`}>
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">

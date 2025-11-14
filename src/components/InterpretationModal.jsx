@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { X } from "lucide-react";
 import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange, fetchAllInterpretations } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
@@ -8,6 +8,30 @@ import banglaTranslationService from "../services/banglaTranslationService";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "./Toast";
+
+const determineModalWidthClass = (plainTextLength = 0) => {
+  if (plainTextLength <= 400) {
+    return "sm:max-w-xl";
+  }
+  if (plainTextLength <= 1200) {
+    return "sm:max-w-3xl";
+  }
+  if (plainTextLength <= 2500) {
+    return "sm:max-w-4xl";
+  }
+  return "sm:max-w-5xl";
+};
+
+const extractPlainText = (content) => {
+  if (content == null) return "";
+  if (typeof content !== "string") return String(content);
+  if (typeof window !== "undefined") {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = content;
+    return tempDiv.textContent || tempDiv.innerText || "";
+  }
+  return content.replace(/<[^>]+>/g, " ");
+};
 
 const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onClose }) => {
   const { translationFontSize, translationLanguage } = useTheme();
@@ -235,11 +259,25 @@ return v;
     return `<p class="text-gray-500 italic">No interpretation content available</p>`;
   };
 
+  const modalContentLength = useMemo(() => {
+    if (!interpretationData) return 0;
+    const items = Array.isArray(interpretationData)
+      ? interpretationData
+      : [interpretationData];
+    return items.reduce((longest, item) => {
+      const interpretationText = extractInterpretationText(item);
+      const plainText = extractPlainText(interpretationText);
+      return Math.max(longest, plainText.trim().length);
+    }, 0);
+  }, [interpretationData]);
+
+  const modalWidthClass = determineModalWidthClass(modalContentLength);
+
   // Loading state
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+        <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -270,7 +308,7 @@ return v;
   if (error) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+        <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -307,7 +345,7 @@ return v;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+      <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -50,6 +50,12 @@ const WordByWord = ({
   const [showAyahModal, setShowAyahModal] = useState(false);
   const { toasts, removeToast, showSuccess, showError } = useToast();
 
+  const isModalContext = typeof onClose === "function";
+  const containerSizeClasses = isModalContext
+    ? "w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-w-[95vw] max-h-[90vh]"
+    : "w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh]";
+  const containerClassName = `bg-white dark:bg-gray-900 rounded-lg shadow-xl ${containerSizeClasses} flex flex-col overflow-hidden`;
+
   useEffect(() => {
     const loadWordData = async () => {
       if (!currentVerseId || !currentSurahId) return;
@@ -202,7 +208,7 @@ const WordByWord = ({
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className={containerClassName}>
         <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
           <WordNavbar
             surahId={currentSurahId}
@@ -232,7 +238,7 @@ const WordByWord = ({
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+      <div className={containerClassName}>
         <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
           <WordNavbar
             surahId={currentSurahId}
@@ -267,7 +273,7 @@ const WordByWord = ({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden">
+    <div className={containerClassName}>
       <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
         <WordNavbar
           surahId={currentSurahId}

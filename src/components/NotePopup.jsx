@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
 import { X, Copy, Share2 } from 'lucide-react';
 
-const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
+const determineContainerWidth = (plainTextLength = 0) => {
+  if (plainTextLength <= 400) {
+    return "sm:max-w-xl";
+  }
+  if (plainTextLength <= 1200) {
+    return "sm:max-w-3xl";
+  }
+  return "sm:max-w-5xl";
+};
+
+const NotePopup = ({
+  isOpen,
+  onClose,
+  noteId,
+  noteContent,
+  loading = false,
+  error = null,
+}) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
@@ -96,6 +113,9 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
     }
   };
 
+  const plainText = extractPlainText(noteContent);
+  const containerWidthClass = determineContainerWidth(plainText.length);
+
   return (
     <>
       <style>
@@ -115,20 +135,28 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
           }
         `}
       </style>
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999]">
-      <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl 
-                      w-[90vw] max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4">
+      <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] overflow-hidden transition-all duration-200`}>
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-medium text-[#2AA0BF]">Note {noteId}</h2>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+            >
+              Back
+            </button>
+            <h2 className="text-lg font-medium text-[#2AA0BF]">Note {noteId}</h2>
+          </div>
           <div className="flex items-center space-x-2">
             <button 
               onClick={handleCopy}
+              disabled={loading || !noteContent}
               className={`p-2 transition-all duration-200 relative ${
                 copySuccess 
                   ? 'text-green-600 dark:text-green-400 scale-110' 
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  : `text-gray-400 ${loading || !noteContent ? 'opacity-40 cursor-not-allowed' : 'hover:text-gray-600 dark:hover:text-gray-300'}`
               }`}
               title="Copy note content"
             >
@@ -141,7 +169,8 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
             </button>
             <button 
               onClick={handleShare}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              disabled={loading || !noteContent}
+              className={`p-2 text-gray-400 ${loading || !noteContent ? 'opacity-40 cursor-not-allowed' : 'hover:text-gray-600 dark:hover:text-gray-300'} transition-colors`}
               title="Share note content"
             >
               <Share2 size={18} />
@@ -158,32 +187,49 @@ const NotePopup = ({ isOpen, onClose, noteId, noteContent }) => {
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[80vh]">
-          {/* Success Message Banner */}
-          {showSuccessMessage && (
-            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center space-x-2 animate-fade-in">
-              <div className="text-green-600 dark:text-green-400">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+          {loading && (
+            <div className="flex items-center justify-center py-6">
+              <div className="text-gray-600 dark:text-gray-300 text-sm">
+                Loading note…
               </div>
-              <span className="text-green-800 dark:text-green-200 font-medium">
-                Note content copied to clipboard successfully!
-              </span>
             </div>
           )}
-          
-          {typeof noteContent === 'string' ? (
-            <div
-              className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white"
-              dangerouslySetInnerHTML={{ __html: noteContent }}
-            />
-          ) : (
-            <div 
-              className="text-gray-800 dark:text-white leading-relaxed text-justify"
-              style={{ fontFamily: "serif" }}
-            >
-              {noteContent}
+
+          {!loading && error && (
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300">
+              {error}
             </div>
+          )}
+
+          {!loading && !error && (
+            <>
+              {showSuccessMessage && (
+                <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center space-x-2 animate-fade-in">
+                  <div className="text-green-600 dark:text-green-400">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-green-800 dark:text-green-200 font-medium">
+                    Note content copied to clipboard successfully!
+                  </span>
+                </div>
+              )}
+              
+              {typeof noteContent === 'string' ? (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white"
+                  dangerouslySetInnerHTML={{ __html: noteContent }}
+                />
+              ) : (
+                <div 
+                  className="text-gray-800 dark:text-white leading-relaxed text-justify"
+                  style={{ fontFamily: "serif" }}
+                >
+                  {noteContent}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

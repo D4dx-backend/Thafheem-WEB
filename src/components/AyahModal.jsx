@@ -898,15 +898,13 @@ return validFootnotes.map((footnote, index) => ({
       {/* WordByWord Modal */}
       {showWordByWord && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
-          <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="overflow-y-auto flex-1">
-              <WordByWord
-                selectedVerse={currentVerseId}
-                surahId={activeSurahId}
-                onClose={handleWordByWordClose}
-                onNavigate={setCurrentVerseId}
-              />
-            </div>
+           <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto sm:max-w-6xl max-w-[95vw]">
+            <WordByWord
+              selectedVerse={currentVerseId}
+              surahId={activeSurahId}
+              onClose={handleWordByWordClose}
+              onNavigate={setCurrentVerseId}
+            />
           </div>
         </div>
       )}

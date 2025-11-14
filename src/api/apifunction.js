@@ -33,6 +33,58 @@ const apiAvailabilityState = {
   tajweedApiUnavailable: false,
 };
 
+const thafheemPrefaceCache = new Map();
+
+const normalizeUrlSegment = (segment, { leading = false, trailing = false } = {}) => {
+  if (segment == null) return "";
+  let normalized = segment.toString().trim();
+  if (!normalized) return "";
+  if (leading) {
+    normalized = normalized.replace(/^\/+/, "");
+  }
+  if (trailing) {
+    normalized = normalized.replace(/\/+$/, "");
+  }
+  return normalized;
+};
+
+const buildPrefaceUrl = (base, suraId, languageCode = "") => {
+  const cleanBase = normalizeUrlSegment(base, { trailing: true });
+  const cleanLanguage = normalizeUrlSegment(languageCode, {
+    leading: true,
+    trailing: true,
+  });
+
+  const basePath = `${cleanBase}/preface/${suraId}`;
+  return cleanLanguage ? `${basePath}/${cleanLanguage}` : basePath;
+};
+
+const expandPrefaceLanguageVariants = (languageCode) => {
+  const baseCode = normalizeUrlSegment(languageCode, { leading: true, trailing: true });
+
+  if (!baseCode) {
+    return [""];
+  }
+
+  const variants = [];
+  const lower = baseCode.toLowerCase();
+  const upper = baseCode.toUpperCase();
+
+  if (!variants.includes(baseCode)) {
+    variants.push(baseCode);
+  }
+
+  if (!variants.includes(lower)) {
+    variants.push(lower);
+  }
+
+  if (!variants.includes(upper)) {
+    variants.push(upper);
+  }
+
+  return variants;
+};
+
 // Helper function to log warnings only once per session
 const logWarningOnce = (key, message, ...args) => {
   if (!apiAvailabilityState.warningsLogged.has(key)) {
@@ -1564,18 +1616,83 @@ export const getSurahPages = async (surahId) => {
 
 // Add these functions to your existing apifunction.js file
 
+const normalizeThafheemPrefaceLanguage = (language) => {
+  const raw = (language ?? "").toString().trim().toLowerCase();
+
+  if (["mal", "ml", "m", "malayalam", "മലയാളം"].includes(raw)) {
+    return "M";
+  }
+
+  if (["e", "en", "eng", "english"].includes(raw)) {
+    return "E";
+  }
+
+  return "E";
+};
+
+const normalizeSurahInfoLanguages = (language) => {
+  const raw = (language ?? "").toString().trim().toLowerCase();
+
+  const quranLanguageMap = {
+    e: "en",
+    en: "en",
+    eng: "en",
+    english: "en",
+    mal: "en",
+    ml: "en",
+    m: "en",
+    malayalam: "en",
+    "മലയാളം": "en",
+    bn: "bn",
+    bangla: "bn",
+    ta: "ta",
+    tamil: "ta",
+    ur: "ur",
+    urdu: "ur",
+    hi: "hi",
+    hindi: "hi",
+  };
+
+  const quranLanguage = quranLanguageMap[raw] || "en";
+  const prefaceLanguage = normalizeThafheemPrefaceLanguage(language);
+
+  return {
+    quranLanguage,
+    prefaceLanguage,
+  };
+};
+
 // Fetch basic chapter info from Quran.com API
 export const fetchCompleteSurahInfo = async (surahId, language = "en") => {
   try {
+    const { quranLanguage, prefaceLanguage } =
+      normalizeSurahInfoLanguages(language);
+
+    console.log("[SurahInfo] fetch languages", {
+      surahId,
+      requested: language,
+      quranLanguage,
+      prefaceLanguage,
+    });
+
     const [basicChapter, detailedInfo, thafheemInfo, surahsData] =
       await Promise.all([
-        fetchBasicChapterData(surahId, language),
-        fetchChapterInfo(surahId, language).catch(() => null),
-        fetchThafheemPreface(surahId).catch(() => null),
+        fetchBasicChapterData(surahId, quranLanguage),
+        fetchChapterInfo(surahId, quranLanguage).catch(() => null),
+        fetchThafheemPreface(surahId, prefaceLanguage).catch(() => null),
         fetchSurahs().then((surahs) =>
           surahs.find((s) => s.number === parseInt(surahId))
         ),
       ]);
+
+    console.log("[SurahInfo] fetch result summary", {
+      surahId,
+      hasThafheemPreface: Boolean(thafheemInfo?.PrefaceText),
+      prefacePreview: thafheemInfo?.PrefaceText
+        ? `${thafheemInfo.PrefaceText.slice(0, 80)}...`
+        : null,
+      prefaceSubTitle: thafheemInfo?.PrefaceSubTitle,
+    });
 
     return {
       basic: basicChapter,
@@ -1628,27 +1745,157 @@ export const fetchChapterInfo = async (chapterId, language = "en") => {
   return data.chapter_info;
 };
 
-export const fetchThafheemPreface = async (suraId) => {
-  try {
-    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
-    const response = await fetch(`${apiBase}/preface/${suraId}`);
+export const fetchThafheemPreface = async (suraId, language = "E") => {
+  const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+  const preferredLanguage = normalizeThafheemPrefaceLanguage(language);
+  const languageFallbackOrder =
+    preferredLanguage === "E" ? ["E"] : [preferredLanguage, "E"];
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Ensure data exists and is an array
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      throw new Error("No preface data found");
-    }
-
-    return data[0]; // Return first element
-  } catch (error) {
-    console.error("Error fetching Thafheem preface:", error.message);
-    return null; // Return null or fallback data
+  const cacheKey = `${suraId}|${preferredLanguage}`;
+  if (thafheemPrefaceCache.has(cacheKey)) {
+    const cached = thafheemPrefaceCache.get(cacheKey);
+    console.log("[ThafheemPreface] cache hit", {
+      suraId,
+      preferredLanguage,
+      cached,
+    });
+    return cached;
   }
+
+  const baseCandidates = Array.from(
+    new Set(
+      [LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE, apiBase].filter(Boolean)
+    )
+  );
+
+  const triedUrls = new Set();
+
+  const tryFetch = async (url, logLabel) => {
+    if (triedUrls.has(url)) {
+      return null;
+    }
+    triedUrls.add(url);
+
+    try {
+      const response = await fetchWithTimeout(url, {}, 8000);
+
+      if (response.status === 404) {
+        console.log("[ThafheemPreface] 404", {
+          suraId,
+          url,
+          logLabel,
+        });
+        return { notFound: true };
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("No preface data found");
+      }
+
+      const result = data[0];
+      const sections = data.map((entry, index) => {
+        const subtitle = entry?.PrefaceSubTitle?.toString().trim() || "";
+        const text = entry?.PrefaceText?.toString().trim() || "";
+
+        return {
+          order: index,
+          subtitle,
+          text,
+        };
+      });
+
+      const combinedPrefaceText = sections
+        .map((section) => {
+          if (!section.subtitle && !section.text) {
+            return "";
+          }
+
+          if (section.subtitle && section.text) {
+            return `<h2>${section.subtitle}</h2>\n${section.text}`;
+          }
+
+          if (section.subtitle) {
+            return `<h2>${section.subtitle}</h2>`;
+          }
+
+          return section.text;
+        })
+        .filter(Boolean)
+        .join("\n\n");
+
+      const enrichedResult = {
+        ...result,
+        PrefaceText: combinedPrefaceText || result?.PrefaceText || "",
+        PrefaceSections: sections,
+        PrefaceEntries: data,
+      };
+
+      console.log("[ThafheemPreface] success", {
+        suraId,
+        url,
+        logLabel,
+        language,
+        resultPreview: enrichedResult?.PrefaceText
+          ? `${enrichedResult.PrefaceText.slice(0, 80)}...`
+          : null,
+      });
+      return { data: enrichedResult };
+    } catch (error) {
+      console.warn(
+        `Thafheem preface (${logLabel}) failed for Surah ${suraId}:`,
+        error.message
+      );
+      return null;
+    }
+  };
+
+  for (const base of baseCandidates) {
+    for (const langCode of languageFallbackOrder) {
+      const languageVariants = expandPrefaceLanguageVariants(langCode);
+
+      for (const variant of languageVariants) {
+        const url = buildPrefaceUrl(base, suraId, variant);
+        const logLabel = variant ? `lang=${variant}` : "lang=default";
+        console.log("[ThafheemPreface] trying", {
+          suraId,
+          base,
+          variant,
+          url,
+        });
+        const result = await tryFetch(url, logLabel);
+
+        if (result?.data) {
+          thafheemPrefaceCache.set(cacheKey, result.data);
+          return result.data;
+        }
+
+        // If this exact variant is not found, try the next variant/base
+        if (result?.notFound) {
+          continue;
+        }
+      }
+    }
+
+    // Fallback to legacy endpoint without language suffix
+    const legacyUrl = buildPrefaceUrl(base, suraId);
+    const legacyResult = await tryFetch(legacyUrl, "legacy");
+    if (legacyResult?.data) {
+      thafheemPrefaceCache.set(cacheKey, legacyResult.data);
+      return legacyResult.data;
+    }
+  }
+
+  console.error(
+    `Error fetching Thafheem preface: all attempts failed for Surah ${suraId}`
+  );
+  thafheemPrefaceCache.set(cacheKey, null);
+  return null;
 };
 
 

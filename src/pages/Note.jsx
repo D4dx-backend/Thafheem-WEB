@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NotePopup from "../components/NotePopup";
 import { fetchNoteById } from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
 
 const Note = () => {
   const { id } = useParams();
@@ -9,6 +10,7 @@ const Note = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [content, setContent] = useState(null);
+  const { translationLanguage } = useTheme();
 
   useEffect(() => {
     let mounted = true;

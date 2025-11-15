@@ -27,9 +27,6 @@ jobs:
           CI: false
           VITE_BASE_PATH: /new_thafheem_web/
           
-      - name: Copy .htaccess to dist
-        run: cp .htaccess dist/.htaccess
-          
       - name: Create deployment archive
         run: |
           cd dist

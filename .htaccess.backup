@@ -2,22 +2,12 @@
   RewriteEngine On
   RewriteBase /new_thafheem_web/
   
-  # API Proxy Rules - Must come BEFORE SPA fallback to avoid ad blockers
-  # Malayalam API proxy
-  RewriteRule ^api/thafheem/(.*)$ https://thafheem.net/thafheem-api/$1 [P,L]
-  
-  # Quran.com API proxy
-  RewriteRule ^api/quran/(.*)$ https://api.quran.com/api/v4/$1 [P,L]
-  
-  # Directus API proxy
-  RewriteRule ^api/directus/(.*)$ https://directus.d4dx.co/$1 [P,L]
-  
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-l
   
-  # Rewrite everything else to index.html (SPA fallback)
+  # Rewrite everything else to index.html
   RewriteRule . /new_thafheem_web/index.html [L]
 </IfModule>
 

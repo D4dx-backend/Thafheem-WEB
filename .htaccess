@@ -1,16 +1,19 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  
+  # API Proxy Rules - Must come BEFORE RewriteBase to avoid ad blockers
+  # Match full path including base directory
+  RewriteCond %{REQUEST_URI} ^/new_thafheem_web/api/thafheem/(.*)$
+  RewriteRule .* https://thafheem.net/thafheem-api/%1 [P,L]
+  
+  RewriteCond %{REQUEST_URI} ^/new_thafheem_web/api/quran/(.*)$
+  RewriteRule .* https://api.quran.com/api/v4/%1 [P,L]
+  
+  RewriteCond %{REQUEST_URI} ^/new_thafheem_web/api/directus/(.*)$
+  RewriteRule .* https://directus.d4dx.co/%1 [P,L]
+  
+  # Now set base for SPA routing
   RewriteBase /new_thafheem_web/
-  
-  # API Proxy Rules - Must come BEFORE SPA fallback to avoid ad blockers
-  # Malayalam API proxy
-  RewriteRule ^api/thafheem/(.*)$ https://thafheem.net/thafheem-api/$1 [P,L]
-  
-  # Quran.com API proxy
-  RewriteRule ^api/quran/(.*)$ https://api.quran.com/api/v4/$1 [P,L]
-  
-  # Directus API proxy
-  RewriteRule ^api/directus/(.*)$ https://directus.d4dx.co/$1 [P,L]
   
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f

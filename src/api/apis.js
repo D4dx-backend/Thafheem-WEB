@@ -23,8 +23,27 @@ export const QURAN_API_BASE = isDevelopment ? '/api/quran' : 'https://api.quran.
 export const DIRECTUS_BASE_URL = isDevelopment ? '/api/directus' : 'https://directus.d4dx.co';
 
 const legacyEnvBase = normalizeBaseUrl(import.meta.env.VITE_LEGACY_TFH_BASE_URL);
-const DEFAULT_LEGACY_BASE = '/api/thafheem';
 const REMOTE_LEGACY_BASE = 'https://thafheem.net/thafheem-api';
+
+const resolveDefaultLegacyBase = () => {
+  if (isDevelopment) return '/api/thafheem';
+
+  try {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname || '';
+      if (host.includes('thafheem')) {
+        return REMOTE_LEGACY_BASE;
+      }
+    }
+  } catch (err) {
+    console.warn('Unable to detect host for legacy base resolution:', err);
+  }
+
+  // Fallback to remote API when host cannot be determined
+  return REMOTE_LEGACY_BASE;
+};
+
+const DEFAULT_LEGACY_BASE = resolveDefaultLegacyBase();
 
 // Legacy Thafheem public API (Malayalam + blockwise + pageranges)
 export const LEGACY_TFH_BASE = legacyEnvBase || DEFAULT_LEGACY_BASE;

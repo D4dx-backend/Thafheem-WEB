@@ -3018,6 +3018,251 @@ export const searchSurahsByName = async (query) => {
   }
 };
 
+const MAL_ENG_SEARCH_ENDPOINTS = Array.from(
+  new Set(
+    [
+      LEGACY_TFH_BASE ? `${LEGACY_TFH_BASE}/malengsearch` : null,
+      LEGACY_TFH_REMOTE_BASE ? `${LEGACY_TFH_REMOTE_BASE}/malengsearch` : null,
+    ].filter(Boolean)
+  )
+);
+
+const MAL_ENG_TYPE_MAP = {
+  translation: 1,
+  interpret: 2,
+  interpretation: 2,
+};
+
+const MAL_ENG_LANGUAGE_MAP = {
+  e: "E",
+  en: "E",
+  eng: "E",
+  english: "E",
+  m: "M",
+  ml: "M",
+  mal: "M",
+  malayalam: "M",
+};
+
+const MAL_ENG_DEFAULT_LIMIT = 30;
+
+const resolveMalEngTypeCode = (type) => {
+  if (typeof type === "number") {
+    return type === 2 ? 2 : 1;
+  }
+  const normalized = type?.toString().trim().toLowerCase();
+  if (!normalized) {
+    return 1;
+  }
+  return MAL_ENG_TYPE_MAP[normalized] || 1;
+};
+
+const resolveMalEngLanguageCode = (language) => {
+  if (typeof language === "number") {
+    return language === 2 ? "M" : "E";
+  }
+  const normalized = language?.toString().trim().toLowerCase();
+  if (!normalized) {
+    return "E";
+  }
+  return MAL_ENG_LANGUAGE_MAP[normalized] || "E";
+};
+
+const normalizeMalEngResults = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+  return [];
+};
+
+export const searchMalEngTranslations = async ({
+  query,
+  language = "E",
+  type = "translation",
+  limit = MAL_ENG_DEFAULT_LIMIT,
+} = {}) => {
+  const trimmedQuery = query?.toString().trim();
+  if (!trimmedQuery) {
+    return [];
+  }
+
+  const safeLimit =
+    typeof limit === "number" && Number.isFinite(limit) && limit > 0
+      ? Math.min(limit, 50)
+      : MAL_ENG_DEFAULT_LIMIT;
+
+  const typeCode = resolveMalEngTypeCode(type);
+  const languageCode = resolveMalEngLanguageCode(language);
+  const encodedQuery = encodeURIComponent(trimmedQuery);
+  let lastError = null;
+
+  for (const baseUrl of MAL_ENG_SEARCH_ENDPOINTS) {
+    const url = `${baseUrl}/${typeCode}/${encodedQuery}/${languageCode}`;
+    try {
+      const response = await fetchWithTimeout(url, {}, 10000);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const payload = await response.json();
+      const results = normalizeMalEngResults(payload);
+      return safeLimit ? results.slice(0, safeLimit) : results;
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+
+  console.error("Error searching legacy translations:", lastError);
+  if (lastError) {
+    throw lastError;
+  }
+  throw new Error("Failed to fetch legacy search results");
+};
+
+const ARABIC_PHRASE_SEARCH_ENDPOINTS = Array.from(
+  new Set(
+    [
+      LEGACY_TFH_BASE ? `${LEGACY_TFH_BASE}/phrasesearch` : null,
+      LEGACY_TFH_REMOTE_BASE ? `${LEGACY_TFH_REMOTE_BASE}/phrasesearch` : null,
+    ].filter(Boolean)
+  )
+);
+
+export const searchArabicPhrases = async (query, limit = 40) => {
+  const trimmedQuery = query?.toString().trim();
+  if (!trimmedQuery) {
+    return [];
+  }
+
+  const safeLimit =
+    typeof limit === "number" && Number.isFinite(limit) && limit > 0
+      ? Math.min(limit, 100)
+      : 40;
+
+  const encodedQuery = encodeURIComponent(trimmedQuery);
+  let lastError = null;
+
+  for (const baseUrl of ARABIC_PHRASE_SEARCH_ENDPOINTS) {
+    const url = `${baseUrl}/${encodedQuery}`;
+    try {
+      const response = await fetchWithTimeout(url, {}, 10000);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const payload = await response.json();
+      if (Array.isArray(payload)) {
+        return safeLimit ? payload.slice(0, safeLimit) : payload;
+      }
+      if (Array.isArray(payload?.data)) {
+        const data = payload.data;
+        return safeLimit ? data.slice(0, safeLimit) : data;
+      }
+      return [];
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+
+  console.error("Error searching Arabic phrase data:", lastError);
+  if (lastError) {
+    throw lastError;
+  }
+  throw new Error("Failed to fetch Arabic phrase search results");
+};
+
+const QURAN_SUBJECT_ENDPOINTS = Array.from(
+  new Set(
+    [
+      LEGACY_TFH_BASE ? `${LEGACY_TFH_BASE}/qtsubjects` : null,
+      LEGACY_TFH_REMOTE_BASE ? `${LEGACY_TFH_REMOTE_BASE}/qtsubjects` : null,
+    ].filter(Boolean)
+  )
+);
+
+export const fetchQuranSubjects = async ({ category = 1, language = "E" } = {}) => {
+  const typeCode =
+    typeof category === "number" && Number.isFinite(category) && category === 2
+      ? 2
+      : 1;
+  const langCode =
+    typeof language === "string" && language.trim().toUpperCase() === "M"
+      ? "M"
+      : "E";
+
+  let lastError = null;
+
+  for (const baseUrl of QURAN_SUBJECT_ENDPOINTS) {
+    const url = `${baseUrl}/${typeCode}/${langCode}`;
+    try {
+      const response = await fetchWithTimeout(url, {}, 10000);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const payload = await response.json();
+      if (Array.isArray(payload)) {
+        return payload;
+      }
+      if (Array.isArray(payload?.data)) {
+        return payload.data;
+      }
+      return [];
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+
+  console.error("Error fetching Quran subjects:", lastError);
+  if (lastError) {
+    throw lastError;
+  }
+  throw new Error("Failed to fetch Quran subjects");
+};
+
+const GLOSSARY_ENDPOINTS = Array.from(
+  new Set(
+    [
+      LEGACY_TFH_BASE ? `${LEGACY_TFH_BASE}/glossery` : null,
+      LEGACY_TFH_REMOTE_BASE ? `${LEGACY_TFH_REMOTE_BASE}/glossery` : null,
+    ].filter(Boolean)
+  )
+);
+
+export const fetchGlossaryEntries = async (limit = 0) => {
+  let lastError = null;
+
+  for (const baseUrl of GLOSSARY_ENDPOINTS) {
+    try {
+      const response = await fetchWithTimeout(baseUrl, {}, 10000);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const payload = await response.json();
+      if (Array.isArray(payload)) {
+        return limit > 0 ? payload.slice(0, limit) : payload;
+      }
+      if (Array.isArray(payload?.data)) {
+        const data = payload.data;
+        return limit > 0 ? data.slice(0, limit) : data;
+      }
+      return [];
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+
+  console.error("Error fetching glossary entries:", lastError);
+  if (lastError) {
+    throw lastError;
+  }
+  throw new Error("Failed to fetch glossary entries");
+};
+
 // Search verses content using Quran.com API
 export const searchQuranContent = async (query, language = "en") => {
   try {

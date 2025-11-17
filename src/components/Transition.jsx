@@ -358,7 +358,7 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-[#2A2C38] shadow-md dark:shadow-lg">
+    <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 -mt-px border-t-0 w-full shadow-md dark:shadow-lg">
       <div className="px-2 sm:px-4 py-1">
         <div className="max-w-none w-full mx-0 py-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 min-h-[48px]">

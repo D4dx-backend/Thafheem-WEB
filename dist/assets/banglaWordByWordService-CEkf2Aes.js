@@ -1,1 +1,0 @@
-import a from"./banglaTranslationService-YNxNt4Bt.js";import"./index-DJ-cZXxg.js";import"./apiService-D9UdsyGX.js";class o{async getWordByWordData(r,e){return a.getWordByWordData(r,e)}async getWordByWordDataWithArabic(r,e){return a.getWordByWordData(r,e)}async isAvailable(){return a.isAvailable()}clearCache(){a.clearCache()}}const n=new o;export{n as default};

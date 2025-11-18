@@ -1,0 +1,1 @@
+import a from"./banglaTranslationService-CRMal1nz.js";import"./index-B7u_SSOz.js";import"./apiService-CSIDMmbA.js";class o{async getWordByWordData(r,e){return a.getWordByWordData(r,e)}async getWordByWordDataWithArabic(r,e){return a.getWordByWordData(r,e)}async isAvailable(){return a.isAvailable()}clearCache(){a.clearCache()}}const n=new o;export{n as default};

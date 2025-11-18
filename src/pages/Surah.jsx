@@ -397,10 +397,14 @@ const Surah = () => {
 
   // Fetch ayah data and surah info
   useEffect(() => {
+    let isMounted = true;
+    let abortController = new AbortController();
+
     const loadSurahData = async () => {
       if (!surahId) return;
 
       try {
+        if (!isMounted) return;
         setLoading(true);
         setError(null);
 
@@ -415,6 +419,9 @@ const Surah = () => {
           fetchArabicVerses(parseInt(surahId)),
           fetchPageRanges(),
         ]);
+
+        // Check if component is still mounted before proceeding
+        if (!isMounted) return;
 
         // Get the correct verse count from page ranges API
         const getVerseCountFromPageRanges = (surahId, pageRanges) => {
@@ -447,6 +454,9 @@ const Surah = () => {
           }
         }
 
+        // Check if component is still mounted before setting state
+        if (!isMounted) return;
+
         // Reset Urdu tracking for non-Urdu languages
         if (translationLanguage !== 'ur') {
           setTotalUrduVerses(0);
@@ -458,6 +468,7 @@ const Surah = () => {
           // Tamil translations using hybrid service (API-first with SQL.js fallback)
           try {
             const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
+            if (!isMounted) return;
             if (tamilTranslations && tamilTranslations.length > 0) {
               setAyahData(tamilTranslations);
             } else {
@@ -469,7 +480,11 @@ const Surah = () => {
               setAyahData(fallbackAyahData);
             }
           } catch (error) {
-            console.error('Error fetching Tamil translations:', error);
+            if (!isMounted) return;
+            // Only log error if it's not an abort error
+            if (error.name !== 'AbortError') {
+              console.error('Error fetching Tamil translations:', error);
+            }
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
               ArabicText: '',
@@ -481,6 +496,7 @@ const Surah = () => {
           // Hindi translations using hybrid service (API-first with SQL.js fallback)
           try {
             const hindiTranslations = await hindiTranslationService.getSurahTranslations(parseInt(surahId));
+            if (!isMounted) return;
             if (hindiTranslations && hindiTranslations.length > 0) {
               setAyahData(hindiTranslations);
             } else {
@@ -488,7 +504,10 @@ const Surah = () => {
               setAyahData([]);
             }
           } catch (error) {
-            console.error('Error fetching Hindi translations:', error);
+            if (!isMounted) return;
+            if (error.name !== 'AbortError') {
+              console.error('Error fetching Hindi translations:', error);
+            }
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
               ArabicText: '',
@@ -499,6 +518,7 @@ const Surah = () => {
         } else if (translationLanguage === 'ur') {
           // Urdu translations with lazy loading batches from API
           try {
+            if (!isMounted) return;
             setTotalUrduVerses(verseCount);
             setUrduLoadedCount(0);
             setAyahData([]);
@@ -506,9 +526,13 @@ const Surah = () => {
             if (verseCount > 0) {
               const initialEnd = Math.min(URDU_BATCH_SIZE, verseCount);
               await loadUrduBatch(1, initialEnd, true);
+              if (!isMounted) return;
             }
           } catch (error) {
-            console.error('Error fetching Urdu translations:', error);
+            if (!isMounted) return;
+            if (error.name !== 'AbortError') {
+              console.error('Error fetching Urdu translations:', error);
+            }
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
               ArabicText: '',
@@ -520,6 +544,7 @@ const Surah = () => {
           // Bangla translations from API
           try {
             const banglaTranslations = await banglaTranslationService.getSurahTranslations(parseInt(surahId));
+            if (!isMounted) return;
             if (banglaTranslations && banglaTranslations.length > 0) {
               // Parse Bangla translations to make explanation numbers clickable
               const parsedTranslations = banglaTranslations.map(verse => ({
@@ -540,7 +565,10 @@ const Surah = () => {
               setAyahData(fallbackAyahData);
             }
           } catch (error) {
-            console.error('Error fetching Bangla translations:', error);
+            if (!isMounted) return;
+            if (error.name !== 'AbortError') {
+              console.error('Error fetching Bangla translations:', error);
+            }
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
               ArabicText: '',
@@ -552,6 +580,7 @@ const Surah = () => {
           // English translations using database-only service
           try {
             const englishTranslations = await englishTranslationService.getSurahTranslations(parseInt(surahId));
+            if (!isMounted) return;
             if (englishTranslations && englishTranslations.length > 0) {
               // Parse English translations to make footnotes clickable
               // Note: Interpretation counts will be fetched on-demand when user clicks interpretation button
@@ -574,7 +603,10 @@ const Surah = () => {
               setAyahData(fallbackAyahData);
             }
           } catch (error) {
-            console.error('Error fetching English translations:', error);
+            if (!isMounted) return;
+            if (error.name !== 'AbortError') {
+              console.error('Error fetching English translations:', error);
+            }
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
               ArabicText: '',
@@ -584,6 +616,7 @@ const Surah = () => {
           }
         } else {
           const ayahResponse = await fetchAyahAudioTranslations(parseInt(surahId));
+          if (!isMounted) return;
           if (!ayahResponse || !Array.isArray(ayahResponse) || ayahResponse.length === 0) {
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
@@ -603,6 +636,8 @@ const Surah = () => {
             setAyahData(formattedAyahData);
           }
         }
+
+        if (!isMounted) return;
 
         setArabicVerses(arabicResponse || []);
 
@@ -627,14 +662,25 @@ const Surah = () => {
               }
         );
       } catch (err) {
-        setError(err.message);
-        console.error("Error fetching surah data:", err);
+        // Only handle error if component is still mounted and it's not an abort error
+        if (isMounted && err.name !== 'AbortError') {
+          setError(err.message);
+          console.error("Error fetching surah data:", err);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadSurahData();
+
+    // Cleanup function to cancel in-flight requests
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [surahId, translationLanguage, loadUrduBatch]);
 
   // Load bookmarked verses for signed-in users

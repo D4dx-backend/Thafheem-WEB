@@ -22,6 +22,7 @@ import {
   WORD_MEANINGS_API,
   TAJWEED_RULES_API,
   API_BASE_PATH,
+  MALAYALAM_QURANAYA_API,
 } from "./apis";
 import { API_BASE_PATH as CONFIG_API_BASE_PATH } from "../config/apiConfig.js";
 import { getFallbackTajweedData } from "../data/tajweedFallback";
@@ -132,7 +133,11 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
 };
 
 // (duplicate import block removed)
-export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 2) => {
+// In-memory cache for faster repeated access (complements IndexedDB cache)
+const inMemoryTranslationCache = new Map();
+const IN_MEMORY_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
+
+export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 1) => {
   // Malayalam uses legacy base; others use new backend
   const isMalayalam = !language || language === 'mal';
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
@@ -141,8 +146,16 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
     : [apiBase];
   const langSuffix = isMalayalam ? '' : `/${language}`;
 
-  // Increase timeout for block translations (15 seconds)
-  const timeout = 15000;
+  // Check in-memory cache first (faster than IndexedDB for recent requests)
+  const cacheKey = `${surahId}_${range}_${language || 'mal'}`;
+  const cached = inMemoryTranslationCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < IN_MEMORY_CACHE_MAX_AGE) {
+    return cached.data;
+  }
+
+  // Optimized timeout: 6 seconds for faster failure detection and better first-load experience
+  // Still sufficient for slow connections, but fails faster to allow retry or fallback
+  const timeout = 6000;
 
   let lastError = null;
 
@@ -153,10 +166,30 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await fetchWithTimeout(url, {}, timeout);
+        
+        // Check if response is HTML (likely an error page)
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+        }
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        
+        // Store in in-memory cache for faster subsequent access
+        inMemoryTranslationCache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+        
+        // Limit cache size to prevent memory issues (keep last 100 entries)
+        if (inMemoryTranslationCache.size > 100) {
+          const firstKey = inMemoryTranslationCache.keys().next().value;
+          inMemoryTranslationCache.delete(firstKey);
+        }
+        
         return data;
       } catch (error) {
         lastError = error;
@@ -202,8 +235,9 @@ export const fetchSurahs = async () => {
     
     if (!shouldSkipThafheemAPI) {
       try {
-        // Fetch both surah names and page ranges to get accurate ayah counts
-        surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 8000);
+        // Increased timeout to 15 seconds for Thafheem API (server may be slow)
+        // This gives more time for the server to respond, especially under load
+        surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
         
         // Check if response is HTML (likely 404 error page)
         const contentType = surahResponse.headers.get('content-type');
@@ -221,11 +255,21 @@ export const fetchSurahs = async () => {
       } catch (apiError) {
         // If API fails, fall through to Quran.com fallback below
         apiAvailabilityState.thafheemApiUnavailable = true;
-        logWarningOnce(
-          'surahs-api-unavailable',
-          '⚠️ Thafheem API unavailable, using fallback.',
-          apiError.message
-        );
+        
+        // Only log warning if it's not a timeout (timeouts are expected if server is slow)
+        // Suppress warnings in development if React Strict Mode is causing double-invocation
+        const isTimeout = apiError.message?.includes('timeout') || apiError.message?.includes('Request timeout');
+        const isDevMode = import.meta.env.DEV;
+        
+        if (!isTimeout || !isDevMode) {
+          logWarningOnce(
+            'surahs-api-unavailable',
+            isTimeout 
+              ? '⏱️ Thafheem API is slow (>15s), using fallback. This may indicate server load or network issues.'
+              : '⚠️ Thafheem API unavailable, using fallback.',
+            apiError.message
+          );
+        }
         surahResponse = null;
       }
     }
@@ -1129,8 +1173,8 @@ export const fetchSurahs = async () => {
  */
 export const listSurahNames = async () => {
   try {
-
-    const response = await fetchWithTimeout(SURA_NAMES_API, {}, 8000);
+    // Increased timeout to 15 seconds to match fetchSurahs
+    const response = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -1143,11 +1187,14 @@ export const listSurahNames = async () => {
     return result;
   } catch (error) {
     apiAvailabilityState.thafheemApiUnavailable = true;
-    logWarningOnce(
-      'surah-names-api-unavailable',
-      '⚠️ Thafheem API unavailable for surah names, using fallback',
-      error.message
-    );
+    // Suppress timeout warnings - they're expected when API is slow
+    if (!error.message?.includes('timeout')) {
+      logWarningOnce(
+        'surah-names-api-unavailable',
+        '⚠️ Thafheem API unavailable for surah names, using fallback',
+        error.message
+      );
+    }
     
     // Try Quran.com API as fallback
     try {
@@ -1225,12 +1272,9 @@ export const listSurahVerseIndex = async () => {
 // Fetch page ranges with fallback
 export const fetchPageRanges = async () => {
   try {
-    // Avoid CORS by skipping external /all requests when using absolute URLs
-    if (/^https?:\/\//i.test(PAGE_RANGES_API)) {
-      return [];
-    }
-    // Try fetching all ranges via dev proxy (rewritten by Vite)
-    const response = await fetchWithTimeout(`${PAGE_RANGES_API}/all`, {}, 8000);
+    // Try fetching all ranges (Vite rewrites relative URLs in dev; prod hits legacy API)
+    // Increased timeout to 12 seconds for slow network connections
+    const response = await fetchWithTimeout(`${PAGE_RANGES_API}/all`, {}, 12000);
     
     // Double-check content type before parsing (fetchWithTimeout should catch this, but be safe)
     const contentType = response.headers.get('content-type');
@@ -1252,11 +1296,20 @@ export const fetchPageRanges = async () => {
           '⚠️ Page ranges API returned HTML (likely CORS/404), using empty array'
         );
       } else {
-        logWarningOnce(
-          'page-ranges-api-unavailable',
-          '⚠️ Page ranges API unavailable:',
-          error.message
-        );
+        // Silently fail - page ranges are non-critical and the app works without them
+        // Suppress timeout warnings (expected behavior when API is slow)
+        if (error.message?.includes('timeout')) {
+          // Silently handle timeout - no logging needed
+          return [];
+        }
+        // Only log non-timeout errors in development (which might indicate a real issue)
+        if (import.meta.env.DEV) {
+          logWarningOnce(
+            'page-ranges-api-unavailable',
+            '⚠️ Page ranges API unavailable (non-critical, app will continue):',
+            error.message
+          );
+        }
       }
     // Return empty array when API is unavailable
     return [];
@@ -1933,20 +1986,70 @@ export const fetchAyaRanges = async (surahId, language = 'mal') => {
   const { type, value } = normalizeAyaRangeLanguage(language);
 
   if (type === 'legacy') {
-    const response = await fetch(`${LEGACY_TFH_BASE}/ayaranges/${surahId}`);
+    const response = await fetchWithTimeout(`${LEGACY_TFH_BASE}/ayaranges/${surahId}`, {}, 10000);
+    
+    // Check if response is HTML (likely an error page)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return await response.json();
+    
+    // Try to parse JSON, but catch HTML responses that don't have correct content-type
+    try {
+      const text = await response.text();
+      // Check if response text starts with HTML
+      if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
+        throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+      }
+      return JSON.parse(text);
+    } catch (parseError) {
+      if (parseError.message?.includes('HTML')) {
+        throw parseError;
+      }
+      throw new Error(`Failed to parse JSON response: ${parseError.message}`);
+    }
   }
 
   const apiLanguage = value;
   const url = `${API_BASE_PATH}/${apiLanguage}/ayaranges/${surahId}`;
-  const response = await fetchWithTimeout(url, {}, 10000);
+  
+  // Use longer timeout for English as it may take longer to query the database
+  const timeout = (apiLanguage.toLowerCase() === 'english' || apiLanguage.toLowerCase() === 'e') ? 30000 : 10000;
+  
+  console.log(`[fetchAyaRanges] Fetching ayaranges for surah ${surahId}, language: ${apiLanguage}, timeout: ${timeout}ms, URL: ${url}`);
+  
+  const response = await fetchWithTimeout(url, {}, timeout);
+  
+  // Check if response is HTML (likely an error page)
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('text/html')) {
+    throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+  }
+  
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  return await response.json();
+  
+  // Try to parse JSON, but catch HTML responses that don't have correct content-type
+  try {
+    const text = await response.text();
+    // Check if response text starts with HTML
+    if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
+      throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+    }
+    const data = JSON.parse(text);
+    console.log(`[fetchAyaRanges] Successfully fetched ${data?.length || 0} ayaranges for surah ${surahId}, language: ${apiLanguage}`);
+    return data;
+  } catch (parseError) {
+    if (parseError.message?.includes('HTML')) {
+      throw parseError;
+    }
+    throw new Error(`Failed to parse JSON response: ${parseError.message}`);
+  }
 };
 
 // Fetch translation for a specific ayah range
@@ -2224,43 +2327,6 @@ export const fetchAllInterpretations = async (
   verseId,
   language = "E"
 ) => {
-  const decodeHtmlEntities = (text) => {
-    if (typeof text !== "string" || text.length === 0) {
-      return "";
-    }
-
-    if (typeof window !== "undefined" && window.document) {
-      const textarea = window.document.createElement("textarea");
-      textarea.innerHTML = text;
-      return textarea.value;
-    }
-
-    return text
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&amp;/g, "&")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
-  };
-
-  const extractInterpretationNumbers = (translationText) => {
-    const decoded = decodeHtmlEntities(translationText);
-
-    if (!decoded) {
-      return [];
-    }
-
-    const matches = decoded.matchAll(
-      /<sup[^>]*f-note[^>]*>\s*(?:<a[^>]*>)?\s*(\d+)\s*(?:<\/a>)?\s*<\/sup>/gi
-    );
-
-    const numbers = Array.from(matches, (match) => parseInt(match[1], 10)).filter(
-      (value) => !Number.isNaN(value) && value > 0
-    );
-
-    return Array.from(new Set(numbers)).sort((a, b) => a - b);
-  };
-
   const cacheKey = getInterpretationCacheKey(surahId, verseId, language);
   const now = Date.now();
 
@@ -2277,61 +2343,87 @@ export const fetchAllInterpretations = async (
     interpretationCache.delete(cacheKey);
   }
 
+  const isMalayalamLanguage = String(language ?? "").toLowerCase() === "mal";
+
   const fetchPromise = (async () => {
-// For Malayalam, determine the correct number of interpretations from the translation
-    let maxInterpretations = 20;
-    let explicitInterpretationNumbers = [];
-    if (language === 'mal') {
+    if (isMalayalamLanguage) {
+      const normalizeSegment = (value) => {
+        if (value == null) return "";
+        const parsed = parseInt(value, 10);
+        if (!Number.isNaN(parsed)) {
+          return parsed;
+        }
+        const str = String(value).trim();
+        return str.length > 0 ? str : "";
+      };
+
+      const surahSegment = normalizeSegment(surahId);
+      const verseSegment = normalizeSegment(verseId);
+      if (!surahSegment || !verseSegment) {
+        throw new Error("Invalid surah or verse id for Malayalam interpretation fetch");
+      }
+
+      const malayalamUrl = `${MALAYALAM_QURANAYA_API}/${surahSegment}:${verseSegment}`;
+
       try {
-        // Fetch the translation to count footnote markers
-        const translationUrl = `${LEGACY_TFH_BASE}/ayatransl/${surahId}/${verseId}`;
-        const translationResponse = await fetch(translationUrl);
+        const response = await fetchWithTimeout(malayalamUrl, {}, 8000);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-        if (translationResponse.ok) {
-          const translationData = await translationResponse.json();
+        const payload = await response.json();
+        const items = Array.isArray(payload) ? payload : payload ? [payload] : [];
 
-          if (Array.isArray(translationData) && translationData.length > 0) {
-            const verseNumber = parseInt(verseId, 10);
-            const matchingTranslation =
-              translationData.find((item) => {
-                const from = parseInt(item?.AyaFrom ?? item?.AyaFromAyath, 10);
-                const to = parseInt(item?.AyaTo ?? item?.AyaToAyath ?? item?.AyaFrom, 10);
-                if (Number.isNaN(from) && Number.isNaN(to)) {
-                  return false;
-                }
-                if (!Number.isNaN(from) && !Number.isNaN(to)) {
-                  return verseNumber >= from && verseNumber <= to;
-                }
-                if (!Number.isNaN(from)) {
-                  return verseNumber === from;
-                }
-                if (!Number.isNaN(to)) {
-                  return verseNumber === to;
-                }
-                return false;
-              }) || translationData.find((item) => parseInt(item?.ID, 10) === verseNumber) || translationData[0];
-
-            const translationText = matchingTranslation?.TranslationText || '';
-
-            // Extract interpretation numbers from the translation text
-            explicitInterpretationNumbers = extractInterpretationNumbers(translationText);
-
-            if (explicitInterpretationNumbers.length > 0) {
-              maxInterpretations = explicitInterpretationNumbers.length;
-            } else {
-              // Count footnote markers in the translation text as fallback
-              // They appear as <sup class="f-note"><a>1</a></sup>, <sup class="f-note"><a>2</a></sup>, etc.
-              const footnoteMatches = translationText.match(/<sup[^>]*f-note[^>]*>.*?<\/sup>/g) || [];
-              maxInterpretations = footnoteMatches.length;
+        return items
+          .map((item, index) => {
+            if (!item || typeof item !== "object") {
+              return null;
             }
 
-}
-        }
+            const interpretationText =
+              item.AudioIntrerptn ||
+              item.Interpretation ||
+              item.interpretation ||
+              item.AudioText ||
+              "";
+
+            if (typeof interpretationText !== "string" || interpretationText.trim().length === 0) {
+              return null;
+            }
+
+            const rawInterpretationNo =
+              item.InterpretationNo ??
+              item.Interpretation_No ??
+              item.interptn_no ??
+              item.contiayano ??
+              item.ayaid ??
+              item.Ayaid ??
+              index + 1;
+
+            const interpretationNo =
+              rawInterpretationNo != null && rawInterpretationNo !== ""
+                ? String(rawInterpretationNo)
+                : String(index + 1);
+
+            const resolvedNo = parseInt(interpretationNo, 10) || index + 1;
+
+            return {
+              ...item,
+              Interpretation: interpretationText,
+              InterpretationNo: interpretationNo,
+              resolvedInterpretationNo: resolvedNo,
+              requestedInterpretationNo: resolvedNo,
+            };
+          })
+          .filter(Boolean);
       } catch (error) {
-        console.warn(`⚠️ Could not determine interpretation count from translation:`, error.message);
-        maxInterpretations = 20; // Fallback to trying 20
+        console.warn("Malayalam interpretation fetch failed:", error.message);
+        throw error;
       }
     }
+
+    let maxInterpretations = 20;
+    let explicitInterpretationNumbers = [];
 
     const allInterpretations = [];
 
@@ -2357,6 +2449,7 @@ export const fetchAllInterpretations = async (
         }
 
         const { interpretationNo, data } = result.value || {};
+        // Only include interpretations that have actual content
         if (data && data.Interpretation && data.Interpretation.trim().length > 0) {
           const interpretationNumberValue =
             parseInt(data.InterpretationNo, 10) ||
@@ -2364,7 +2457,13 @@ export const fetchAllInterpretations = async (
             parseInt(data.interptn_no, 10) ||
             interpretationNo;
 
-          if (!seenInterpretationNos.has(interpretationNumberValue)) {
+          // Only add if we haven't seen this interpretation number before
+          // When using explicit numbers, ensure the requested number corresponds to a footnote marker
+          const shouldInclude = usingExplicitNumbers 
+            ? explicitInterpretationNumbers.includes(interpretationNo)
+            : true;
+          
+          if (shouldInclude && !seenInterpretationNos.has(interpretationNumberValue)) {
             seenInterpretationNos.add(interpretationNumberValue);
             allInterpretations.push({
               ...data,
@@ -2375,6 +2474,10 @@ export const fetchAllInterpretations = async (
         }
       });
     } else {
+      // Sequential fetching: try interpretations 1, 2, 3... until we get empty responses
+      let consecutiveEmptyCount = 0;
+      const maxConsecutiveEmpty = 2; // Stop after 2 consecutive empty responses
+      
       for (const interpretationNo of interpretationNumbersToFetch) {
         try {
           const data = await fetchInterpretation(surahId, verseId, interpretationNo, language);
@@ -2387,6 +2490,7 @@ export const fetchAllInterpretations = async (
               parseInt(data.interptn_no, 10) ||
               interpretationNo;
 
+            // Only add if we haven't seen this interpretation number before
             if (!seenInterpretationNos.has(interpretationNumberValue)) {
               seenInterpretationNos.add(interpretationNumberValue);
               allInterpretations.push({
@@ -2395,14 +2499,39 @@ export const fetchAllInterpretations = async (
                 resolvedInterpretationNo: interpretationNumberValue,
               });
             }
+            consecutiveEmptyCount = 0; // Reset counter on successful fetch
             continue;
           }
 
-          // Empty response means no more interpretations
-          break;
+          // Empty response - increment counter
+          consecutiveEmptyCount++;
+          if (consecutiveEmptyCount >= maxConsecutiveEmpty) {
+            // Stop after consecutive empty responses
+            break;
+          }
         } catch (error) {
-          // Error means no more interpretations
-          break;
+          // Check if this is a "not found" type error (404, 525, etc.)
+          // HTTP 525 (Cloudflare error) or 404 means interpretation doesn't exist - stop immediately
+          const errorMessage = error.message || String(error);
+          const isNotFoundError = errorMessage.includes('525') || 
+                                  errorMessage.includes('404') ||
+                                  errorMessage.includes('status: 525') ||
+                                  errorMessage.includes('status: 404') ||
+                                  errorMessage.includes('HTTP error! status: 525') ||
+                                  errorMessage.includes('HTTP error! status: 404');
+          
+          if (isNotFoundError) {
+            // Stop immediately on 404/525 errors - interpretation doesn't exist
+            // Don't try more interpretations
+            break;
+          }
+          
+          // For other errors, increment counter and continue
+          consecutiveEmptyCount++;
+          if (consecutiveEmptyCount >= maxConsecutiveEmpty) {
+            // Stop after consecutive errors/empty responses
+            break;
+          }
         }
       }
     }
@@ -3842,7 +3971,7 @@ const response = await fetchWithTimeout(url, {}, 8000);
 // Fetch list of English articles
 export const fetchEngarticles = async (page = 0, type = "par") => {
   try {
-    const url = `https://thafheem.net/thafheem-api/engarticles/${page}/${type}`;
+    const url = `${LEGACY_TFH_BASE}/engarticles/${page}/${type}`;
 const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -3876,7 +4005,7 @@ const response = await fetchWithTimeout(url, {}, 8000);
 // Fetch single English article by ID
 export const fetchEngarticleById = async (articleId) => {
   try {
-    const url = `https://thafheem.net/thafheem-api/engarticles/${articleId}/par`;
+    const url = `${LEGACY_TFH_BASE}/engarticles/${articleId}/par`;
 const response = await fetchWithTimeout(url, {}, 8000);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

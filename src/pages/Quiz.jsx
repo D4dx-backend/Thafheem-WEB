@@ -364,7 +364,7 @@ const [start, end] = selectedRange.split("-").map(Number);
                         value={selectedRange}
                         onChange={(e) => setSelectedRange(e.target.value)}
                         disabled={isEntireThafheem}
-                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 text-xs sm:text-sm bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:placeholder:text-white dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-xs sm:text-sm bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:placeholder:text-white dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
 

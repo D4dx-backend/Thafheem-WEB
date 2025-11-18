@@ -43,7 +43,9 @@ class TranslationCache {
    * @returns {string} Cache key
    */
   generateCacheKey(surahId, range, language = 'E') {
-    return `translation_${surahId}_${range}_${language}`;
+    // Normalize language code (mal, E, etc.)
+    const normalizedLang = language?.toLowerCase() || 'E';
+    return `translation_${surahId}_${range}_${normalizedLang}`;
   }
 
   /**

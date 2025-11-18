@@ -280,12 +280,15 @@ const BlockWise = () => {
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahId).padStart(3, "0");
     
+    // Use proxy path in development to avoid CORS issues
+    const baseUrl = import.meta.env.DEV ? '/api/audio' : 'https://old.thafheem.net/audio';
+    
     if (type === 'quran') {
-      return `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+      return `${baseUrl}/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
     } else if (type === 'translation') {
-      return `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
+      return `${baseUrl}/translation/T${surahCode}_${ayahCode}.ogg`;
     } else if (type === 'interpretation') {
-      return `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
+      return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}.ogg`;
     }
     return null;
   };
@@ -793,36 +796,30 @@ const BlockWise = () => {
               // Mark this specific block as loading
               setLoadingBlocks(prev => new Set([...prev, blockId]));
 
-              // Check cache first for English translations
+              // Check cache first for all languages (including Malayalam)
               let translationData;
-              if (translationLanguage === 'E') {
-                translationData = await translationCache.getCachedTranslation(
-                  parseInt(surahId),
-                  range,
-                  'E'
-                );
-                
-                if (!translationData) {
-                  // Cache miss - fetch from API
-                  translationData = await fetchAyaTranslation(
-                    parseInt(surahId),
-                    range,
-                    'E'
-                  );
-                  // Cache the result for future use
-                  await translationCache.setCachedTranslation(
-                    parseInt(surahId),
-                    range,
-                    translationData,
-                    'E'
-                  );
-                }
-              } else {
-                // For non-English translations, use original API call
+              const currentLang = translationLanguage || 'mal';
+              
+              // Try to get from cache first
+              translationData = await translationCache.getCachedTranslation(
+                parseInt(surahId),
+                range,
+                currentLang
+              );
+              
+              if (!translationData) {
+                // Cache miss - fetch from API
                 translationData = await fetchAyaTranslation(
                   parseInt(surahId),
                   range,
-                  translationLanguage || 'mal'
+                  currentLang
+                );
+                // Cache the result for future use (works for all languages including Malayalam)
+                await translationCache.setCachedTranslation(
+                  parseInt(surahId),
+                  range,
+                  translationData,
+                  currentLang
                 );
               }
 
@@ -861,8 +858,9 @@ const BlockWise = () => {
             }
           };
 
-          // REQUEST THROTTLING: Limit concurrent requests to prevent server overload
-          const MAX_CONCURRENT_REQUESTS = 3;
+          // REQUEST THROTTLING: Increased concurrent requests for faster first load
+          // Higher limit for better performance on first load, but still prevents server overload
+          const MAX_CONCURRENT_REQUESTS = 5;
           const requestQueue = [];
           let activeRequests = 0;
           
@@ -895,9 +893,9 @@ const BlockWise = () => {
           
           // VIEWPORT-BASED LOADING: Load visible blocks first, then background
           const prioritizeBlocks = (blocks) => {
-            // First 2 blocks are likely visible (above the fold)
-            const visibleBlocks = blocks.slice(0, 2);
-            const backgroundBlocks = blocks.slice(2);
+            // First 3 blocks are likely visible (increased from 2 for better initial experience)
+            const visibleBlocks = blocks.slice(0, 3);
+            const backgroundBlocks = blocks.slice(3);
             
             return { visibleBlocks, backgroundBlocks };
           };
@@ -905,18 +903,17 @@ const BlockWise = () => {
           const { visibleBlocks, backgroundBlocks } = prioritizeBlocks(ayaRangesResponse);
           
           // Load visible blocks first (high priority) - no throttling for initial load
+          // These load in parallel for fastest first render
           const visiblePromises = visibleBlocks.map((block, index) => processBlockTranslation(block, index));
           
-          // Load background blocks with throttling and staggered delays (low priority)
-          setTimeout(() => {
-            // Process background blocks with throttling and staggered delays
-            backgroundBlocks.forEach((block, index) => {
-              // Stagger requests: 200ms delay between starting each batch
-              setTimeout(() => {
-                processWithThrottle(block, index + visibleBlocks.length);
-              }, 200 * Math.floor(index / MAX_CONCURRENT_REQUESTS));
-            });
-          }, 500); // 500ms delay before starting background loading
+          // Load background blocks immediately after visible blocks start (reduced delay)
+          // Start background loading as soon as visible blocks are initiated (no delay)
+          backgroundBlocks.forEach((block, index) => {
+            // Minimal stagger: 50ms between batches (reduced from 200ms) for faster loading
+            setTimeout(() => {
+              processWithThrottle(block, index + visibleBlocks.length);
+            }, 50 * Math.floor(index / MAX_CONCURRENT_REQUESTS));
+          });
           
           // Monitor visible loading completion
           Promise.allSettled(visiblePromises).then((results) => {
@@ -924,7 +921,16 @@ const BlockWise = () => {
           });
         }
       } catch (err) {
-        setError(err.message);
+        // Provide user-friendly error messages
+        let errorMessage = err.message;
+        if (err.message?.includes('timeout') || err.message?.includes('Request timeout')) {
+          errorMessage = `The server is taking longer than expected to respond. Please try again in a moment. If the problem persists, the English blockwise data may be temporarily unavailable.`;
+        } else if (err.message?.includes('Failed to fetch') || err.message?.includes('Network error')) {
+          errorMessage = `Unable to connect to the server. Please check your internet connection and try again.`;
+        } else if (err.message?.includes('HTTP error')) {
+          errorMessage = `Server error: ${err.message}. Please try again later.`;
+        }
+        setError(errorMessage);
         console.error("Error fetching block-wise data:", err);
         hasFetchedRef.current = false; // Reset on error to allow retry
       } finally {
@@ -942,9 +948,28 @@ const BlockWise = () => {
 
   // When language changes, clear current block data to force re-render with new language
   useEffect(() => {
+    // Mark all existing blocks as loading immediately to prevent "Translation not available" flash
+    if (blockRanges.length > 0) {
+      const allBlockIds = new Set(
+        blockRanges.map((block) => {
+          const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+          const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+          const parsedStart = Number.parseInt(rawStart, 10);
+          const parsedEnd = Number.parseInt(rawEnd, 10);
+          const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+          const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+          const start = hasNumericBounds ? parsedStart : fallbackStart;
+          const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+          const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+          const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
+          return block.ID || block.id || rangeKey || `block-${blockRanges.indexOf(block)}`;
+        })
+      );
+      setLoadingBlocks(allBlockIds);
+    }
+    
     setBlockTranslations({});
-    setBlockRanges([]);
-    setLoadingBlocks(new Set());
+    // Don't clear blockRanges - keep them so blocks still render with loading state
     hasFetchedRef.current = false;
     setSelectedInterpretation(null);
     setShowInterpretation(false);
@@ -1095,13 +1120,11 @@ const BlockWise = () => {
         // Style as rounded badge with cyan background
         sup.style.cssText = `
           cursor: pointer !important;
-          background-color: #19B5DD !important;
-          color: #ffffff !important;
+          background-color: rgb(41 169 199) !important;
+          color: rgb(255, 255, 255) !important;
           font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 0 !important;
-          margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -1110,13 +1133,17 @@ const BlockWise = () => {
           line-height: 1 !important;
           border-radius: 9999px !important;
           position: relative !important;
-          top: 0 !important;
-          min-width: 24px !important;
-          min-height: 24px !important;
-          width: 24px !important;
-          height: 24px !important;
+          top: 0px !important;
+          min-width: 20px !important;
+          min-height: 19px !important;
           text-align: center !important;
-          transition: all 0.2s ease-in-out !important;
+          transition: 0.2s ease-in-out !important;
+          padding-top: 3px !important;
+          margin-right: 4px;
+          margin-left: -1px;
+          margin-top: -15px;
+          padding-left: 2px !important;
+          padding-right: 2px !important;
         `;
         sup.setAttribute("data-interpretation", number);
         sup.setAttribute("data-range", blockRange);
@@ -1458,7 +1485,12 @@ const BlockWise = () => {
                     <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-1 sm:pb-1.5">
                       <p
                         className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl text-right text-gray-900 dark:text-white"
-                        style={{ fontFamily: `'${quranFont}', serif`, direction: 'rtl', lineHeight: '2.5' }}
+                        style={{
+                          fontFamily: quranFont ? `'${quranFont}', serif` : '"Amiri Quran", serif',
+                          direction: 'rtl',
+                          lineHeight: '2.7',
+                          fontSize: '23px',
+                        }}
                       >
                         {arabicSlice.length > 0
                           ? arabicSlice
@@ -1522,6 +1554,7 @@ const BlockWise = () => {
                                 <div
                                   key={`translation-${blockId}-${idx}`}
                                   className="leading-relaxed"
+                                  style={{ fontSize: '17px' }}
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
@@ -1532,6 +1565,7 @@ const BlockWise = () => {
                             translationData?.text ? (
                             <div
                               className="leading-relaxed"
+                              style={{ fontSize: '17px' }}
                               dangerouslySetInnerHTML={{
                                 __html:
                                   translationLanguage === 'E'

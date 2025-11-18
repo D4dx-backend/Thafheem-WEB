@@ -77,7 +77,7 @@ const Verse = ({ onClose }) => {
           placeholder="Verse"
           value={verseSearch}
           onChange={(e) => setVerseSearch(e.target.value)}
-          className="w-24 px-4 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-20 px-3 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
 

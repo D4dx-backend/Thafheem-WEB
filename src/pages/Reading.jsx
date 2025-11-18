@@ -98,11 +98,19 @@ const Reading = () => {
     } else if (type === 'translation') {
       // Translation audio format: https://old.thafheem.net/audio/translation/T{surahId_3digit}_{ayahId_3digit}.ogg
       // Example: https://old.thafheem.net/audio/translation/T002_004.ogg
-      audioUrl = `https://old.thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+      if (import.meta.env.DEV) {
+        audioUrl = `/api/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+      } else {
+        audioUrl = `https://old.thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+      }
     } else if (type === 'interpretation') {
       // Interpretation audio format: https://old.thafheem.net/audio/interpretation/I{surahId_3digit}_{ayahId_3digit}.ogg
       // Example: https://old.thafheem.net/audio/interpretation/I002_004.ogg
-      audioUrl = `https://old.thafheem.net/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
+      if (import.meta.env.DEV) {
+        audioUrl = `/api/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
+      } else {
+        audioUrl = `https://old.thafheem.net/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
+      }
     }
     
     return audioUrl;

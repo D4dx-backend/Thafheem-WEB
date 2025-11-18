@@ -663,13 +663,11 @@ const BlockWise = () => {
         // Style as rounded badge with cyan background
         sup.style.cssText = `
           cursor: pointer !important;
-          background-color: #19B5DD !important;
-          color: #ffffff !important;
+          background-color: rgb(41 169 199) !important;
+          color: rgb(255, 255, 255) !important;
           font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 0 !important;
-          margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -678,13 +676,17 @@ const BlockWise = () => {
           line-height: 1 !important;
           border-radius: 9999px !important;
           position: relative !important;
-          top: 0 !important;
-          min-width: 24px !important;
-          min-height: 24px !important;
-          width: 24px !important;
-          height: 24px !important;
+          top: 0px !important;
+          min-width: 20px !important;
+          min-height: 19px !important;
           text-align: center !important;
-          transition: all 0.2s ease-in-out !important;
+          transition: 0.2s ease-in-out !important;
+          padding-top: 3px !important;
+          margin-right: 4px;
+          margin-left: -1px;
+          margin-top: -15px;
+          padding-left: 2px !important;
+          padding-right: 2px !important;
         `;
         sup.setAttribute("data-interpretation", number);
         sup.setAttribute("data-range", blockRange);
@@ -1013,13 +1015,18 @@ const BlockWise = () => {
                       {arabicSlice.length > 0 ? (
                         <div
                           className="flex flex-col gap-8 text-lg sm:text-xl md:text-[1.45rem] lg:text-[1.6rem] xl:text-[1.7rem] text-gray-900 dark:text-white px-4 sm:px-6"
-                          style={{ fontFamily: `'${quranFont}', serif` }}
+                          style={{
+                            fontFamily: quranFont ? `'${quranFont}', serif` : '"Amiri Quran", serif',
+                            direction: 'rtl',
+                            lineHeight: '2.7',
+                            fontSize: '23px',
+                          }}
                           dir="rtl"
                         >
                           {arabicSlice.map((verse, idx) => (
                             <p
                               key={`arabic-verse-${blockId}-${start + idx}`}
-                              className="text-right leading-[3.2rem] sm:leading-[3.6rem]"
+                              className="text-right"
                             >
                               {verse.text_uthmani}
                               <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
@@ -1031,7 +1038,12 @@ const BlockWise = () => {
                       ) : (
                         <p
                           className="text-lg sm:text-lg md:text-xl lg:text-2xl xl:text-xl leading-loose text-center text-gray-900 dark:text-white px-4 sm:px-6"
-                          style={{ fontFamily: `'${quranFont}', serif` }}
+                          style={{
+                            fontFamily: quranFont ? `'${quranFont}', serif` : '"Amiri Quran", serif',
+                            direction: 'rtl',
+                            lineHeight: '2.7',
+                            fontSize: '23px',
+                          }}
                         >
                           Loading Arabic text...
                         </p>
@@ -1062,6 +1074,7 @@ const BlockWise = () => {
                                 <div
                                   key={`translation-${blockId}-${idx}`}
                                   className="text-justify leading-relaxed"
+                                  style={{ fontSize: '17px' }}
                                   dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                 />
                               );
@@ -1069,6 +1082,7 @@ const BlockWise = () => {
                           ) : translationData.TranslationText || translationData.translationText || translationData.text ? (
                             <div
                               className="text-justify leading-relaxed"
+                              style={{ fontSize: '17px' }}
                               dangerouslySetInnerHTML={{
                                 __html: parseTranslationWithClickableSup(
                                   translationData.TranslationText || translationData.translationText || translationData.text,

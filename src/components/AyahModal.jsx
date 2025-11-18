@@ -620,6 +620,10 @@ return validFootnotes.map((footnote, index) => ({
     );
   }
 
+  const isEnglishTranslation =
+    typeof translationLanguage === "string" &&
+    ["e", "en"].includes(translationLanguage.toLowerCase());
+
   const accessibleSurahName =
     surahInfo?.arabic || (activeSurahId ? `Surah ${activeSurahId}` : "Surah");
   const calligraphicSurahName = getCalligraphicSurahName(
@@ -680,7 +684,7 @@ return validFootnotes.map((footnote, index) => ({
           )}
 
           {/* Translation */}
-          {verseData && (
+          {verseData && !isEnglishTranslation && (
             <div className="mb-4 sm:mb-6">
               {translationLanguage === 'bn' ? (
                 <div
@@ -804,7 +808,7 @@ return validFootnotes.map((footnote, index) => ({
                         index + 1
                       : translationLanguage === "ur"
                       ? interpretation.explanation_no || index + 1
-                      : translationLanguage === "E"
+                      : isEnglishTranslation
                       ? interpretation.interptn_no ||
                         interpretation.number ||
                         index + 1
@@ -827,11 +831,7 @@ return validFootnotes.map((footnote, index) => ({
                           Explanation {explanationNumber}:
                         </div>
                       )}
-                      {translationLanguage === "E" && (
-                        <div className="mb-2 text-sm font-medium text-cyan-600 dark:text-cyan-400">
-                          Interpretation {explanationNumber}:
-                        </div>
-                      )}
+                      {isEnglishTranslation && null}
                       <div
                         className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base"
                         style={{ fontSize: `${translationFontSize}px` }}

@@ -560,8 +560,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   if (loading) {
     return createPortal(
       <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-        <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-[#2A2C38] rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" />
+        <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
           <AyathNavbar
             surahId={activeSurahId}
             verseId={currentVerseId}
@@ -592,8 +592,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   if (error) {
     return createPortal(
       <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative w-full sm:w-auto sm:min-w-[600px] max-w-4xl flex flex-col bg-white dark:bg-[#2A2C38] rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full sm:w-auto sm:min-w-[600px] max-w-4xl flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
           <AyathNavbar
             surahId={activeSurahId}
             verseId={currentVerseId}
@@ -643,12 +643,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-2xl transform transition-all duration-300 overflow-hidden animate-slideUp sm:animate-fadeIn">
+      <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
 
         {/* Mobile Drag Handle */}
         <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800" onClick={onClose}>

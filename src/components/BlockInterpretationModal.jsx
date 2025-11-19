@@ -692,6 +692,45 @@ const BlockInterpretationModal = ({
     <>
       <style>
         {`
+        /* Entry animations */
+        @keyframes backdropFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes modalSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes modalSlideDown {
+          from {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+        }
+        .animate-backdrop-fade-in {
+          animation: backdropFadeIn 0.2s ease-out;
+        }
+        .animate-modal-slide-up {
+          animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .animate-modal-slide-down {
+          animation: modalSlideDown 0.2s ease-in;
+        }
+        
         /* Specific styling for note and verse markers in interpretation content */
         .interpretation-content sup[data-type="note"], 
         .interpretation-content a[data-type="note"],
@@ -741,9 +780,8 @@ const BlockInterpretationModal = ({
 
         {/* Modal Content */}
         <div
-          className={`relative w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden ${
-            isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
-          }`}
+          className={`relative w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden ${isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
+            }`}
         >
           {/* Drag Handle (Mobile) */}
           <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={handleClose}>

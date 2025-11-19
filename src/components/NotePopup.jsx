@@ -124,6 +124,24 @@ const NotePopup = ({
     <>
       <style>
         {`
+          @keyframes backdropFadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
+          }
+          @keyframes modalSlideUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px) scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
           @keyframes fade-in {
             from {
               opacity: 0;
@@ -134,13 +152,19 @@ const NotePopup = ({
               transform: translateY(0);
             }
           }
+          .animate-backdrop-fade-in {
+            animation: backdropFadeIn 0.2s ease-out;
+          }
+          .animate-modal-slide-up {
+            animation: modalSlideUp 0.3s ease-out;
+          }
           .animate-fade-in {
             animation: fade-in 0.3s ease-out;
           }
         `}
       </style>
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4">
-        <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] overflow-hidden transition-all duration-200`}>
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4 animate-backdrop-fade-in">
+        <div className={`bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] overflow-hidden transition-all duration-200 animate-modal-slide-up border border-gray-200 dark:border-gray-700`}>
 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -158,8 +182,8 @@ const NotePopup = ({
                 onClick={handleCopy}
                 disabled={loading || !noteContent}
                 className={`p-2 transition-all duration-200 relative ${copySuccess
-                    ? 'text-green-600 dark:text-green-400 scale-110'
-                    : `text-gray-400 ${loading || !noteContent ? 'opacity-40 cursor-not-allowed' : 'hover:text-gray-600 dark:hover:text-gray-300'}`
+                  ? 'text-green-600 dark:text-green-400 scale-110'
+                  : `text-gray-400 ${loading || !noteContent ? 'opacity-40 cursor-not-allowed' : 'hover:text-gray-600 dark:hover:text-gray-300'}`
                   }`}
                 title="Copy note content"
               >

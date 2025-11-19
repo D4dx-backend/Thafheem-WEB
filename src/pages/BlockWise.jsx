@@ -1371,7 +1371,7 @@ const BlockWise = () => {
             </div>
           </div>
 
-          <div className="container-responsive py-6 sm:py-8 space-y-4 sm:space-y-6">
+          <div className={`container-responsive py-6 sm:py-8 space-y-4 sm:space-y-6 ${currentAyahInBlock ? 'pb-32 sm:pb-36' : ''}`}>
 
             {/* Render blocks based on aya ranges */}
             {loading && blockRanges.length === 0 ? (
@@ -2008,87 +2008,87 @@ const BlockWise = () => {
               <ArrowUp className="w-6 h-6" />
             </button>
           )}
-
-          {/* Sticky Audio Player */}
-          {currentAyahInBlock && (
-            <StickyAudioPlayer
-              audioElement={audioRef.current}
-              isPlaying={isContinuousPlay && audioRef.current && !audioRef.current.paused}
-              currentAyah={currentAyahInBlock}
-              totalAyahs={blockRanges.reduce((acc, block) => {
-                const end = block.AyaTo || block.ayato || block.to || 0;
-                const start = block.AyaFrom || block.ayafrom || block.from || 0;
-                return acc + (end - start + 1);
-              }, 0)}
-              surahInfo={blockData?.surahInfo}
-              onPlayPause={handlePlayAudio}
-              onStop={stopPlayback}
-              onSkipBack={() => {
-                // Go to previous ayah
-                moveToPreviousAyahOrBlock();
-              }}
-              onSkipForward={() => {
-                // Go to next ayah
-                moveToNextAyahOrBlock();
-              }}
-              onClose={null}
-              selectedQari={selectedQirath}
-              onQariChange={(newQari) => {
-                setSelectedQirath(newQari);
-                // If audio is currently playing, restart with new reciter
-                if (playingBlock && currentAyahInBlock) {
-                  stopPlayback();
-                  setTimeout(() => {
-                    playBlockAudio(playingBlock);
-                  }, 100);
-                }
-              }}
-              translationLanguage={translationLanguage}
-              audioTypes={audioTypes}
-              onAudioTypesChange={(newTypes) => {
-                const currentBlock = playingBlock;
-                const currentAyah = currentAyahInBlock;
-                console.log("[BlockWise] onAudioTypesChange", {
-                  newTypes,
-                  currentBlock,
-                  currentAyah,
-                  isContinuousPlay,
-                  isPaused
-                });
-                setAudioTypes(newTypes);
-                // If audio is currently playing, restart with new audio types
-                if (currentBlock && currentAyah) {
-                  if (audioRef.current) {
-                    try {
-                      audioRef.current.pause();
-                      audioRef.current.currentTime = 0;
-                    } catch (pauseError) {
-                      console.warn("[BlockWise] Failed to pause audio before restarting with new types", pauseError);
-                    }
-                  }
-                  setIsContinuousPlay(true);
-                  setIsPaused(false);
-                  setPlayingBlock(currentBlock);
-                  setCurrentAyahInBlock(currentAyah);
-                  // Pass newTypes directly to avoid closure issue
-                  setTimeout(() => {
-                    console.log("[BlockWise] restarting playback after audioTypes change", {
-                      currentBlock,
-                      currentAyah,
-                      newTypes
-                    });
-                    playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
-                  }, 100);
-                }
-              }}
-              playbackSpeed={playbackSpeed}
-              onPlaybackSpeedChange={(newSpeed) => {
-                setPlaybackSpeed(newSpeed);
-              }}
-            />
-          )}
         </div>
       </div>
+
+      {/* Sticky Audio Player */}
+      {currentAyahInBlock && (
+        <StickyAudioPlayer
+          audioElement={audioRef.current}
+          isPlaying={isContinuousPlay && audioRef.current && !audioRef.current.paused}
+          currentAyah={currentAyahInBlock}
+          totalAyahs={blockRanges.reduce((acc, block) => {
+            const end = block.AyaTo || block.ayato || block.to || 0;
+            const start = block.AyaFrom || block.ayafrom || block.from || 0;
+            return acc + (end - start + 1);
+          }, 0)}
+          surahInfo={blockData?.surahInfo}
+          onPlayPause={handlePlayAudio}
+          onStop={stopPlayback}
+          onSkipBack={() => {
+            // Go to previous ayah
+            moveToPreviousAyahOrBlock();
+          }}
+          onSkipForward={() => {
+            // Go to next ayah
+            moveToNextAyahOrBlock();
+          }}
+          onClose={null}
+          selectedQari={selectedQirath}
+          onQariChange={(newQari) => {
+            setSelectedQirath(newQari);
+            // If audio is currently playing, restart with new reciter
+            if (playingBlock && currentAyahInBlock) {
+              stopPlayback();
+              setTimeout(() => {
+                playBlockAudio(playingBlock);
+              }, 100);
+            }
+          }}
+          translationLanguage={translationLanguage}
+          audioTypes={audioTypes}
+          onAudioTypesChange={(newTypes) => {
+            const currentBlock = playingBlock;
+            const currentAyah = currentAyahInBlock;
+            console.log("[BlockWise] onAudioTypesChange", {
+              newTypes,
+              currentBlock,
+              currentAyah,
+              isContinuousPlay,
+              isPaused
+            });
+            setAudioTypes(newTypes);
+            // If audio is currently playing, restart with new audio types
+            if (currentBlock && currentAyah) {
+              if (audioRef.current) {
+                try {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                } catch (pauseError) {
+                  console.warn("[BlockWise] Failed to pause audio before restarting with new types", pauseError);
+                }
+              }
+              setIsContinuousPlay(true);
+              setIsPaused(false);
+              setPlayingBlock(currentBlock);
+              setCurrentAyahInBlock(currentAyah);
+              // Pass newTypes directly to avoid closure issue
+              setTimeout(() => {
+                console.log("[BlockWise] restarting playback after audioTypes change", {
+                  currentBlock,
+                  currentAyah,
+                  newTypes
+                });
+                playAyahAudioWithTypes(currentBlock, currentAyah, 0, newTypes);
+              }, 100);
+            }
+          }}
+          playbackSpeed={playbackSpeed}
+          onPlaybackSpeedChange={(newSpeed) => {
+            setPlaybackSpeed(newSpeed);
+          }}
+        />
+      )}
     </>
   );
 };

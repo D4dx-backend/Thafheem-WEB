@@ -83,7 +83,7 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
       if (onClose) {
         onClose();
       }
-    }, 300); // Match animation duration
+    }, 200); // Match animation duration
   };
 
   const modalRoot = document.getElementById("modal-root") || document.body;
@@ -92,12 +92,14 @@ const LanguageConsole = ({ onClose, onLanguageSelect, selectedLanguage = 'Englis
     <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center font-poppins">
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       />
 
       {/* Modal Content */}
-      <div className={`relative w-full sm:w-[550px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ${isClosing ? 'translate-y-full sm:translate-y-10 opacity-0' : 'animate-slideUp sm:animate-fadeIn'}`}>
+      <div className={`relative w-full sm:w-[550px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden ${
+        isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
+      }`}>
 
         {/* Drag Handle (Mobile) */}
         <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={handleClose}>

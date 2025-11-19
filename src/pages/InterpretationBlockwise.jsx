@@ -34,10 +34,10 @@ const InterpretationBlockwise = (props) => {
     return {
       surahId: parseInt(
         props.surahId ||
-          searchParams.get("surahId") ||
-          state.surahId ||
-          routeParams.surahId ||
-          1
+        searchParams.get("surahId") ||
+        state.surahId ||
+        routeParams.surahId ||
+        1
       ),
       range: props.range || searchParams.get("range") || state.range || "1-7",
       ipt: parseInt(props.ipt || searchParams.get("ipt") || state.ipt || 1),
@@ -81,38 +81,38 @@ const InterpretationBlockwise = (props) => {
   // NOTE: Only depends on props, NOT on state variables, to avoid resetting user navigation
   useEffect(() => {
     if (props.surahId && parseInt(props.surahId) !== surahId) {
-setSurahId(parseInt(props.surahId));
+      setSurahId(parseInt(props.surahId));
     }
     if (props.range && props.range !== range) {
-setRange(props.range);
+      setRange(props.range);
     }
     if (props.ipt && parseInt(props.ipt) !== iptNo) {
-setIptNo(parseInt(props.ipt));
+      setIptNo(parseInt(props.ipt));
     }
     if (props.lang && props.lang !== lang) {
-setLang(props.lang);
+      setLang(props.lang);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.surahId, props.range, props.ipt, props.lang]);
 
   // Debug useEffect to track state changes
   useEffect(() => {
-}, [surahId, range, iptNo, lang]);
+  }, [surahId, range, iptNo, lang]);
 
   useEffect(() => {
-const load = async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setError(null);
         setContent([]); // Clear previous content immediately
 
-// Decide between single verse vs range (e.g., "5" vs "1-7")
+        // Decide between single verse vs range (e.g., "5" vs "1-7")
         const isSingle = /^\d+$/.test(range);
         const data = isSingle
           ? await fetchInterpretation(surahId, parseInt(range, 10), iptNo, lang)
           : await fetchInterpretationRange(surahId, range, iptNo, lang);
 
-// Normalize to array of items with a text/content field
+        // Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
 
         // Log interpretation numbers from the actual data
@@ -125,9 +125,9 @@ const load = async () => {
                 item?.interptn_no
             )
             .filter(Boolean);
-// Show first item structure for debugging
+          // Show first item structure for debugging
           if (items[0]) {
-}
+          }
         }
 
         // Check if we got empty or invalid data
@@ -143,7 +143,7 @@ const load = async () => {
 
           // Try to fetch interpretation 1 for this range as fallback
           if (iptNo !== 1) {
-setIptNo(1);
+            setIptNo(1);
             showError(
               `Interpretation ${iptNo} is not available for verses ${range}. Loading interpretation 1.`
             );
@@ -306,25 +306,25 @@ setIptNo(1);
   };
 
   const handlePrev = async () => {
-// Try a simpler approach: first try to decrement interpretation in current block
+    // Try a simpler approach: first try to decrement interpretation in current block
     const prevInterpretation = iptNo - 1;
-if (prevInterpretation >= 1) {
+    if (prevInterpretation >= 1) {
       try {
         // Test if the previous interpretation exists by making a quick API call
         const isSingle = /^\d+$/.test(range);
         const testData = isSingle
           ? await fetchInterpretation(
-              surahId,
-              parseInt(range, 10),
-              prevInterpretation,
-              lang
-            )
+            surahId,
+            parseInt(range, 10),
+            prevInterpretation,
+            lang
+          )
           : await fetchInterpretationRange(
-              surahId,
-              range,
-              prevInterpretation,
-              lang
-            );
+            surahId,
+            range,
+            prevInterpretation,
+            lang
+          );
 
         // Check if we got valid data
         const items = Array.isArray(testData) ? testData : [testData];
@@ -337,12 +337,12 @@ if (prevInterpretation >= 1) {
           !(items.length === 1 && items[0].Interpretation === "");
 
         if (hasValidData) {
-setIptNo(prevInterpretation);
+          setIptNo(prevInterpretation);
           return;
         } else {
-}
+        }
       } catch (err) {
-}
+      }
     }
 
     // If we reach here, the previous interpretation doesn't exist, so move to previous block
@@ -361,7 +361,7 @@ setIptNo(prevInterpretation);
       }
 
       const prevVerse = v - 1;
-// Test if the previous verse has the same interpretation number
+      // Test if the previous verse has the same interpretation number
       try {
         const testData = await fetchInterpretation(
           surahId,
@@ -379,10 +379,10 @@ setIptNo(prevInterpretation);
           !(items.length === 1 && items[0].Interpretation === "");
 
         if (hasValidData) {
-setRange(String(prevVerse));
+          setRange(String(prevVerse));
           setIptNo(iptNo);
         } else {
-// Find the highest available interpretation in the previous verse that is < current interpretation
+          // Find the highest available interpretation in the previous verse that is < current interpretation
           let highestInterpretation = 0;
           for (let i = 1; i < iptNo; i++) {
             // Only check up to current interpretation - 1
@@ -404,7 +404,7 @@ setRange(String(prevVerse));
 
               if (hasValidData) {
                 highestInterpretation = i;
-} else {
+              } else {
                 break; // No more interpretations available
               }
             } catch (err) {
@@ -413,14 +413,14 @@ setRange(String(prevVerse));
           }
 
           if (highestInterpretation > 0) {
-setRange(String(prevVerse));
+            setRange(String(prevVerse));
             setIptNo(highestInterpretation);
           } else {
-showError("No interpretations available for the previous verse");
+            showError("No interpretations available for the previous verse");
           }
         }
       } catch (err) {
-setRange(String(prevVerse));
+        setRange(String(prevVerse));
         setIptNo(1);
       }
     } else if (/^(\d+)-(\d+)$/.test(current)) {
@@ -443,7 +443,7 @@ setRange(String(prevVerse));
         const prevRange = `${newA}-${newB}`;
 
         // Test if this previous block has the same interpretation number
-try {
+        try {
           const testData = await fetchInterpretationRange(
             surahId,
             prevRange,
@@ -460,11 +460,11 @@ try {
             !(items.length === 1 && items[0].Interpretation === "");
 
           if (hasValidData) {
-setRange(prevRange);
+            setRange(prevRange);
             setIptNo(iptNo);
           } else {
             // Find the highest available interpretation in the previous block that is < current interpretation
-let highestInterpretation = 0;
+            let highestInterpretation = 0;
             for (let i = 1; i < iptNo; i++) {
               // Only check up to current interpretation - 1
               try {
@@ -485,7 +485,7 @@ let highestInterpretation = 0;
 
                 if (hasValidData) {
                   highestInterpretation = i;
-} else {
+                } else {
                   break; // No more interpretations available
                 }
               } catch (err) {
@@ -494,10 +494,10 @@ let highestInterpretation = 0;
             }
 
             if (highestInterpretation > 0) {
-setRange(prevRange);
+              setRange(prevRange);
               setIptNo(highestInterpretation);
             } else {
-// Try individual verses starting from the last verse of the previous block
+              // Try individual verses starting from the last verse of the previous block
               let foundValidVerse = false;
               for (let verse = newB; verse >= newA && verse >= 1; verse--) {
                 try {
@@ -529,7 +529,7 @@ setRange(prevRange);
 
                       if (verseHasValidData) {
                         highestInterpretation = i;
-} else {
+                      } else {
                         break; // No more interpretations available
                       }
                     } catch (err) {
@@ -538,13 +538,13 @@ setRange(prevRange);
                   }
 
                   if (highestInterpretation > 0) {
-setRange(String(verse));
+                    setRange(String(verse));
                     setIptNo(highestInterpretation);
                     foundValidVerse = true;
                     break;
                   }
                 } catch (err) {
-}
+                }
               }
 
               if (!foundValidVerse) {
@@ -553,7 +553,7 @@ setRange(String(verse));
             }
           }
         } catch (err) {
-// Fallback: try individual verses
+          // Fallback: try individual verses
           let foundValidVerse = false;
           for (let verse = newB; verse >= newA && verse >= 1; verse--) {
             try {
@@ -585,7 +585,7 @@ setRange(String(verse));
 
                   if (verseHasValidData) {
                     highestInterpretation = i;
-} else {
+                  } else {
                     break; // No more interpretations available
                   }
                 } catch (err) {
@@ -594,13 +594,13 @@ setRange(String(verse));
               }
 
               if (highestInterpretation > 0) {
-setRange(String(verse));
+                setRange(String(verse));
                 setIptNo(highestInterpretation);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-}
+            }
           }
 
           if (!foundValidVerse) {
@@ -625,7 +625,7 @@ setRange(String(verse));
           ? await fetchInterpretation(surahId, parseInt(range, 10), i, lang)
           : await fetchInterpretationRange(surahId, range, i, lang);
 
-// Check if we got valid data - use the same validation logic as the main useEffect
+        // Check if we got valid data - use the same validation logic as the main useEffect
         const items = Array.isArray(data) ? data : [data];
         const hasValidData =
           items.length > 0 &&
@@ -637,38 +637,38 @@ setRange(String(verse));
 
         if (hasValidData) {
           maxInterpretation = i;
-} else {
+        } else {
           // No more interpretations available
-break;
+          break;
         }
       } catch (err) {
         // If we get an error, assume no more interpretations
-break;
+        break;
       }
     }
 
-return maxInterpretation;
+    return maxInterpretation;
   };
 
   const handleNext = async () => {
-// Try a simpler approach: first try to increment interpretation in current block
+    // Try a simpler approach: first try to increment interpretation in current block
     const nextInterpretation = iptNo + 1;
-try {
+    try {
       // Test if the next interpretation exists by making a quick API call
       const isSingle = /^\d+$/.test(range);
       const testData = isSingle
         ? await fetchInterpretation(
-            surahId,
-            parseInt(range, 10),
-            nextInterpretation,
-            lang
-          )
+          surahId,
+          parseInt(range, 10),
+          nextInterpretation,
+          lang
+        )
         : await fetchInterpretationRange(
-            surahId,
-            range,
-            nextInterpretation,
-            lang
-          );
+          surahId,
+          range,
+          nextInterpretation,
+          lang
+        );
 
       // Check if we got valid data
       const items = Array.isArray(testData) ? testData : [testData];
@@ -681,10 +681,10 @@ try {
         !(items.length === 1 && items[0].Interpretation === "");
 
       if (hasValidData) {
-setIptNo(nextInterpretation);
+        setIptNo(nextInterpretation);
         return;
       } else {
-// Try the same interpretation number in the next verse/block
+        // Try the same interpretation number in the next verse/block
         const current = String(range);
         let nextRange;
 
@@ -726,21 +726,21 @@ setIptNo(nextInterpretation);
 
         if (nextRange) {
           // Test if the next range has the same interpretation number
-try {
+          try {
             const isSingle = /^\d+$/.test(nextRange);
             const testData = isSingle
               ? await fetchInterpretation(
-                  surahId,
-                  parseInt(nextRange, 10),
-                  nextInterpretation,
-                  lang
-                )
+                surahId,
+                parseInt(nextRange, 10),
+                nextInterpretation,
+                lang
+              )
               : await fetchInterpretationRange(
-                  surahId,
-                  nextRange,
-                  nextInterpretation,
-                  lang
-                );
+                surahId,
+                nextRange,
+                nextInterpretation,
+                lang
+              );
 
             const items = Array.isArray(testData) ? testData : [testData];
             const hasValidData =
@@ -752,17 +752,17 @@ try {
               !(items.length === 1 && items[0].Interpretation === "");
 
             if (hasValidData) {
-setRange(nextRange);
+              setRange(nextRange);
               setIptNo(nextInterpretation);
               return;
             } else {
-}
+            }
           } catch (err) {
-}
+          }
         }
       }
     } catch (err) {
-}
+    }
 
     // If we reach here, the next interpretation doesn't exist, so move to next block
 
@@ -784,7 +784,7 @@ setRange(nextRange);
       }
 
       const nextVerse = v + 1;
-setRange(String(nextVerse));
+      setRange(String(nextVerse));
       setIptNo(1); // Reset to first interpretation
     } else if (/^(\d+)-(\d+)$/.test(current)) {
       // Range: move to next block of same size
@@ -827,10 +827,10 @@ setRange(String(nextVerse));
             !(items.length === 1 && items[0].Interpretation === "");
 
           if (hasValidData) {
-setRange(nextRange);
+            setRange(nextRange);
             setIptNo(1);
           } else {
-// Try individual verses starting from the first verse of the next block
+            // Try individual verses starting from the first verse of the next block
             let foundValidVerse = false;
             for (
               let verse = newA;
@@ -859,13 +859,13 @@ setRange(nextRange);
                   );
 
                 if (verseHasValidData) {
-setRange(String(verse));
+                  setRange(String(verse));
                   setIptNo(1);
                   foundValidVerse = true;
                   break;
                 }
               } catch (err) {
-}
+              }
             }
 
             if (!foundValidVerse) {
@@ -897,13 +897,13 @@ setRange(String(verse));
                 );
 
               if (verseHasValidData) {
-setRange(String(verse));
+                setRange(String(verse));
                 setIptNo(1);
                 foundValidVerse = true;
                 break;
               }
             } catch (err) {
-}
+            }
           }
 
           if (!foundValidVerse) {
@@ -962,10 +962,10 @@ setRange(String(verse));
     // Extract the first verse from the range for word-by-word view
     const firstVerse = /^\d+/.exec(String(range))?.[0] || "1";
     const url = `/word-by-word/${surahId}/${firstVerse}`;
-    
+
     // Check if modifier key is pressed (Ctrl/Cmd)
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
-    
+
     if (isModifierPressed) {
       // Open in new tab
       event?.preventDefault();
@@ -1321,7 +1321,7 @@ setRange(String(verse));
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-return processAyahNumbers(v);
+        return processAyahNumbers(v);
       }
     }
 
@@ -1392,8 +1392,9 @@ return processAyahNumbers(v);
         onPickRange={handlePickRange}
         onPrev={handlePrev}
         onNext={handleNext}
+        isModal={props.isModal}
       />
-      <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-[#2A2C38]">
+      <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900">
         {/* Header controls (read-only display) */}
         <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
           <span className="text-gray-600 dark:text-gray-300">
@@ -1430,9 +1431,8 @@ return processAyahNumbers(v);
         <div className="space-y-6" key={`block-${surahId}-${range}-${iptNo}`}>
           {content.map((item, idx) => (
             <div
-              key={`${surahId}-${range}-${iptNo}-${
-                item?.ID || item?.id || idx
-              }`}
+              key={`${surahId}-${range}-${iptNo}-${item?.ID || item?.id || idx
+                }`}
               className="bg-gray-50 p-6 rounded-lg border-l-4 dark:bg-[#2A2C38] dark:border-[#2A2C38] border-white"
             >
               <div
@@ -1444,11 +1444,11 @@ return processAyahNumbers(v);
                   position: "relative",
                   zIndex: 1,
                   fontFamily: lang === 'hi' ? 'NotoSansDevanagari, sans-serif' :
-                             lang === 'ur' ? 'JameelNoori, sans-serif' :
-                             lang === 'bn' ? 'SutonnyMJ, sans-serif' :
-                             lang === 'ta' ? 'Bamini, sans-serif' :
-                             lang === 'mal' ? 'NotoSansMalayalam, sans-serif' :
-                             'Poppins, sans-serif',
+                    lang === 'ur' ? 'JameelNoori, sans-serif' :
+                      lang === 'bn' ? 'SutonnyMJ, sans-serif' :
+                        lang === 'ta' ? 'Bamini, sans-serif' :
+                          lang === 'mal' ? 'NotoSansMalayalam, sans-serif' :
+                            'Poppins, sans-serif',
                 }}
                 dangerouslySetInnerHTML={{ __html: extractText(item) }}
               />

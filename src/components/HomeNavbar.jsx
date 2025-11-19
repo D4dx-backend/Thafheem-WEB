@@ -110,7 +110,7 @@ const HomepageNavbar = () => {
     try {
       setIsSigningOut(true);
       await signOut(auth);
-navigate("/"); // Redirect to home page after successful logout
+      navigate("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -322,63 +322,52 @@ navigate("/"); // Redirect to home page after successful logout
 
       {/* Language Console Popup */}
       {isLanguageOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 dark:bg-black/70"
-            onClick={() => setIsLanguageOpen(false)}
-          ></div>
-          <div className="relative z-10 max-h-[90vh] overflow-auto">
-            <div className="p-4">
-              <LanguageConsole 
-                onClose={() => setIsLanguageOpen(false)} 
-                selectedLanguage={
-                  translationLanguage === 'E' ? 'English' : 
-                  translationLanguage === 'ta' ? 'Tamil' : 
-                  translationLanguage === 'hi' ? 'Hindi' : 
-                  translationLanguage === 'ur' ? 'Urdu' : 
-                  translationLanguage === 'bn' ? 'Bangla' : 
-                  'Malayalam'
-                }
-                onLanguageSelect={(lang) => {
-                  // Map UI selection to API language codes
-                  let code = 'mal'; // default to Malayalam
-                  if (lang.code?.toLowerCase() === 'en') {
-                    code = 'E';
-                  } else if (lang.code?.toLowerCase() === 'ta') {
-                    code = 'ta';
-                  } else if (lang.code?.toLowerCase() === 'hi') {
-                    code = 'hi';
-                  } else if (lang.code?.toLowerCase() === 'ur') {
-                    code = 'ur';
-                  } else if (lang.code?.toLowerCase() === 'bn') {
-                    code = 'bn';
-                  }
-                  setTranslationLanguage(code);
-                  setIsLanguageOpen(false);
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        <LanguageConsole
+          onClose={() => setIsLanguageOpen(false)}
+          selectedLanguage={
+            translationLanguage === 'E' ? 'English' :
+              translationLanguage === 'ta' ? 'Tamil' :
+                translationLanguage === 'hi' ? 'Hindi' :
+                  translationLanguage === 'ur' ? 'Urdu' :
+                    translationLanguage === 'bn' ? 'Bangla' :
+                      'Malayalam'
+          }
+          onLanguageSelect={(lang) => {
+            // Map UI selection to API language codes
+            let code = 'mal'; // default to Malayalam
+            if (lang.code?.toLowerCase() === 'en') {
+              code = 'E';
+            } else if (lang.code?.toLowerCase() === 'ta') {
+              code = 'ta';
+            } else if (lang.code?.toLowerCase() === 'hi') {
+              code = 'hi';
+            } else if (lang.code?.toLowerCase() === 'ur') {
+              code = 'ur';
+            } else if (lang.code?.toLowerCase() === 'bn') {
+              code = 'bn';
+            }
+            setTranslationLanguage(code);
+            setIsLanguageOpen(false);
+          }}
+        />
       )}
 
       <nav
         ref={navRef}
-        className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${
-          isReaderPage ? "shadow-none" : "shadow-sm"
-        } sticky top-0 transition-transform duration-300 ${
-          isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
-        }`}
+        className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${isReaderPage ? "shadow-none" : "shadow-sm"
+          } sticky top-0 transition-transform duration-300 ${isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
+          }`}
       >
         <div
-          className={`flex items-center justify-between px-3 sm:px-4 ${
-            isReaderPage ? "py-1 sm:py-1.5" : "py-1.5 sm:py-2"
-          }`}
+          className={`flex items-center justify-between px-3 sm:px-4 ${isReaderPage ? "py-1 sm:py-1.5" : "py-1.5 sm:py-2"
+            }`}
         >
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
               onClick={toggleMenu}
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
               className="flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
              text-gray-600 dark:text-gray-300 
              hover:text-gray-800 dark:hover:text-white 
@@ -386,7 +375,7 @@ navigate("/"); // Redirect to home page after successful logout
              rounded-lg transition-colors 
              min-h-[44px] min-w-[44px] justify-center 
              sm:min-h-auto sm:min-w-auto sm:justify-start"
-              title="Open menu"
+              title={isMenuOpen ? "Close menu" : "Open menu"}
             >
               <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
@@ -413,6 +402,7 @@ navigate("/"); // Redirect to home page after successful logout
 
             <button
               onClick={() => setIsLanguageOpen(true)}
+              aria-label="Change language"
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
               title="Change language"
             >
@@ -421,6 +411,7 @@ navigate("/"); // Redirect to home page after successful logout
 
             <button
               onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
               title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
@@ -433,6 +424,7 @@ navigate("/"); // Redirect to home page after successful logout
 
             <button
               onClick={handleBookmarkClick}
+              aria-label="View bookmarks"
               className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
               title="View bookmarks"
             >
@@ -441,6 +433,7 @@ navigate("/"); // Redirect to home page after successful logout
 
             <button
               onClick={() => setIsSettingsOpen(true)}
+              aria-label="Open settings"
               className="flex p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] items-center justify-center"
               title="Open settings"
             >
@@ -553,20 +546,18 @@ navigate("/"); // Redirect to home page after successful logout
                           setIsMenuOpen(false);
                         }
                       }}
-                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${
-                        isMainActive
+                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${isMainActive
                           ? "bg-[#ebeef0] dark:bg-gray-900 text-black dark:text-white"
                           : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-gray-900"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <IconComponent
                           size={18}
-                          className={`flex-shrink-0 ${
-                            isMainActive
+                          className={`flex-shrink-0 ${isMainActive
                               ? "text-black dark:text-white "
                               : "text-[#d9d9d9] dark:text-gray-400"
-                          }`}
+                            }`}
                         />
                         <span className="text-sm sm:text-sm leading-tight">
                           {item.label}
@@ -609,11 +600,10 @@ navigate("/"); // Redirect to home page after successful logout
                                   setIsMenuOpen(false);
                                 }
                               }}
-                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
-                                isSubActive
+                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${isSubActive
                                   ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
                                   : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
-                              }`}
+                                }`}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>
                               <span className="leading-tight">
@@ -640,19 +630,17 @@ navigate("/"); // Redirect to home page after successful logout
                       navigate(item.path);
                       setIsMenuOpen(false);
                     }}
-                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors text-left min-h-[48px] ${
-                      isDangerActive
+                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors text-left min-h-[48px] ${isDangerActive
                         ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                         : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    }`}
+                      }`}
                   >
                     <IconComponent
                       size={18}
-                      className={`flex-shrink-0 ${
-                        isDangerActive
+                      className={`flex-shrink-0 ${isDangerActive
                           ? "text-red-600 dark:text-red-400"
                           : "text-red-600 dark:text-red-400"
-                      }`}
+                        }`}
                     />
                     <span className="text-sm leading-tight">{item.label}</span>
                   </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import AyathNavbar from "./AyathNavbar";
 import WordByWord from "../pages/WordByWord";
@@ -86,28 +87,28 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         // For Malayalam, use fetchAllInterpretations to get all interpretations for the verse
         const interpretationPromise = translationLanguage === 'mal'
           ? fetchAllInterpretations(activeSurahId, verseNumberForRequest, 'mal')
-              .then(interpretations => interpretations || [])
-              .catch(error => {
-                console.error('❌ Error fetching Malayalam interpretations:', error);
-                return [];
-              })
-          : translationLanguage === 'ta' 
-          ? (() => {
-    return tamilTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest)
-                .then(translation => translation ? [{ 
-                  interpretation: translation, 
+            .then(interpretations => interpretations || [])
+            .catch(error => {
+              console.error('❌ Error fetching Malayalam interpretations:', error);
+              return [];
+            })
+          : translationLanguage === 'ta'
+            ? (() => {
+              return tamilTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest)
+                .then(translation => translation ? [{
+                  interpretation: translation,
                   AudioIntrerptn: translation,
                   text: translation,
-                  content: translation 
+                  content: translation
                 }] : [])
                 .catch(() => []);
             })()
-          : translationLanguage === 'hi'
-            ? (() => {
-    return hindiTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
+            : translationLanguage === 'hi'
+              ? (() => {
+                return hindiTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
                   .then(explanations => {
-    const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
-                      interpretation: exp.explanation, 
+                    const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({
+                      interpretation: exp.explanation,
                       AudioIntrerptn: exp.explanation,
                       text: exp.explanation,
                       content: exp.explanation,
@@ -122,123 +123,123 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     return [];
                   });
               })()
-          : translationLanguage === 'ur'
-            ? (() => {
-    return urduTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
-                  .then(explanations => explanations && explanations.length > 0 ? explanations.map(exp => ({ 
-                    interpretation: exp.explanation, 
-                    AudioIntrerptn: exp.explanation,
-                    text: exp.explanation,
-                    content: exp.explanation,
-                    explanation_no: exp.explanation_no
-                  })) : [])
-                  .catch(() => []);
-              })()
-          : translationLanguage === 'bn'
-            ? (() => {
-    return banglaTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
-                  .then(explanations => {
-    const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({ 
-                      interpretation: exp.explanation, 
+              : translationLanguage === 'ur'
+                ? (() => {
+                  return urduTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
+                    .then(explanations => explanations && explanations.length > 0 ? explanations.map(exp => ({
+                      interpretation: exp.explanation,
                       AudioIntrerptn: exp.explanation,
                       text: exp.explanation,
                       content: exp.explanation,
-                      explanation_no_BNG: exp.explanation_no_BNG,
-                      explanation_no_EN: exp.explanation_no_EN
-                    })) : [];
-
-                    return mappedExplanations;
-                  })
-                  .catch(error => {
-                    console.error('❌ Error fetching Bangla explanations in AyahModal:', error);
-                    return [];
-                  });
-              })()
-            : translationLanguage === 'E'
-              ? (async () => {
-                  try {
-                    const translation = await englishTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest);
-
-                    if (!translation) return [];
-
-                    const footnoteIds = [];
-                    const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
-                    let match;
-
-                    while ((match = footnoteRegex.exec(translation)) !== null) {
-                      const footnoteId = match[1];
-                      footnoteIds.push(footnoteId);
-                    }
-
-if (footnoteIds.length === 0) return [];
-
-                    const footnotePromises = footnoteIds.map((footnoteId) => {
-                      return fetch(`${API_BASE_PATH}/english/footnote/${footnoteId}`)
-                        .then(response => {
-                          if (response.ok) {
-                            return response.json().then(data => ({
-                              footnote_id: footnoteId,
-                              text: data.footnote_text,
-                              content: data.footnote_text,
-                              explanation: data.footnote_text
-                            }));
-                          }
-                          return null;
-                        })
-                        .catch(error => {
-                          console.error(`❌ Error fetching footnote ${footnoteId}:`, error);
-                          return null;
-                        });
-                    });
-
-                    const footnotes = await Promise.all(footnotePromises);
-                    const validFootnotes = footnotes.filter(f => f !== null);
-
-return validFootnotes.map((footnote, index) => ({
-                      interpretation: footnote.text,
-                      AudioIntrerptn: footnote.text,
-                      text: footnote.text,
-                      content: footnote.text,
-                      interptn_no: footnote.footnote_id || (index + 1)
-                    }));
-                  } catch (error) {
-                    console.error(`❌ [AyahModal] Error fetching English translation for verse ${verseNumberForRequest}:`, error);
-                    return [];
-                  }
+                      explanation_no: exp.explanation_no
+                    })) : [])
+                    .catch(() => []);
                 })()
-              : (async () => {
-                  try {
-                    if (translationLanguage === 'mal') {
-                      const allInterpretations = await fetchAllInterpretations(
-                        activeSurahId,
-                        verseNumberForRequest,
-                        'mal'
-                      );
-                      return allInterpretations;
-                    }
+                : translationLanguage === 'bn'
+                  ? (() => {
+                    return banglaTranslationService.getAllExplanations(activeSurahId, verseNumberForRequest)
+                      .then(explanations => {
+                        const mappedExplanations = explanations && explanations.length > 0 ? explanations.map(exp => ({
+                          interpretation: exp.explanation,
+                          AudioIntrerptn: exp.explanation,
+                          text: exp.explanation,
+                          content: exp.explanation,
+                          explanation_no_BNG: exp.explanation_no_BNG,
+                          explanation_no_EN: exp.explanation_no_EN
+                        })) : [];
 
-                    return await fetchInterpretation(
-                      activeSurahId,
-                      verseNumberForRequest,
-                      1,
-                      translationLanguage
-                    );
-                  } catch (error) {
-                    if (activeSurahId === 114) {
-                      return null;
-                    }
-                    return null;
-                  }
-                })();
+                        return mappedExplanations;
+                      })
+                      .catch(error => {
+                        console.error('❌ Error fetching Bangla explanations in AyahModal:', error);
+                        return [];
+                      });
+                  })()
+                  : translationLanguage === 'E'
+                    ? (async () => {
+                      try {
+                        const translation = await englishTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest);
 
-        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' || translationLanguage === 'E') 
-          ? Promise.resolve(null) 
+                        if (!translation) return [];
+
+                        const footnoteIds = [];
+                        const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
+                        let match;
+
+                        while ((match = footnoteRegex.exec(translation)) !== null) {
+                          const footnoteId = match[1];
+                          footnoteIds.push(footnoteId);
+                        }
+
+                        if (footnoteIds.length === 0) return [];
+
+                        const footnotePromises = footnoteIds.map((footnoteId) => {
+                          return fetch(`${API_BASE_PATH}/english/footnote/${footnoteId}`)
+                            .then(response => {
+                              if (response.ok) {
+                                return response.json().then(data => ({
+                                  footnote_id: footnoteId,
+                                  text: data.footnote_text,
+                                  content: data.footnote_text,
+                                  explanation: data.footnote_text
+                                }));
+                              }
+                              return null;
+                            })
+                            .catch(error => {
+                              console.error(`❌ Error fetching footnote ${footnoteId}:`, error);
+                              return null;
+                            });
+                        });
+
+                        const footnotes = await Promise.all(footnotePromises);
+                        const validFootnotes = footnotes.filter(f => f !== null);
+
+                        return validFootnotes.map((footnote, index) => ({
+                          interpretation: footnote.text,
+                          AudioIntrerptn: footnote.text,
+                          text: footnote.text,
+                          content: footnote.text,
+                          interptn_no: footnote.footnote_id || (index + 1)
+                        }));
+                      } catch (error) {
+                        console.error(`❌ [AyahModal] Error fetching English translation for verse ${verseNumberForRequest}:`, error);
+                        return [];
+                      }
+                    })()
+                    : (async () => {
+                      try {
+                        if (translationLanguage === 'mal') {
+                          const allInterpretations = await fetchAllInterpretations(
+                            activeSurahId,
+                            verseNumberForRequest,
+                            'mal'
+                          );
+                          return allInterpretations;
+                        }
+
+                        return await fetchInterpretation(
+                          activeSurahId,
+                          verseNumberForRequest,
+                          1,
+                          translationLanguage
+                        );
+                      } catch (error) {
+                        if (activeSurahId === 114) {
+                          return null;
+                        }
+                        return null;
+                      }
+                    })();
+
+        const translationPromise = (translationLanguage === 'ta' || translationLanguage === 'hi' || translationLanguage === 'bn' || translationLanguage === 'E')
+          ? Promise.resolve(null)
           : fetchAyahAudioTranslations(activeSurahId, verseNumberForRequest);
 
         const now = Date.now();
         const getSurahsData = async () => {
           if (surahsCache && (now - surahsCacheTime) < CACHE_DURATION) {
-    return surahsCache;
+            return surahsCache;
           }
 
           const data = await fetchSurahs();
@@ -273,10 +274,10 @@ return validFootnotes.map((footnote, index) => ({
           (v) => v.verse_key === `${activeSurahId}:${verseNumberForRequest}`
         );
 
-        const translationVerse = translationData 
+        const translationVerse = translationData
           ? (Array.isArray(translationData)
-              ? translationData.find((t) => t.contiayano === verseNumberForRequest)
-              : translationData)
+            ? translationData.find((t) => t.contiayano === verseNumberForRequest)
+            : translationData)
           : null;
 
         let englishTranslation = "";
@@ -285,9 +286,9 @@ return validFootnotes.map((footnote, index) => ({
             englishTranslation = await englishTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest);
             englishTranslation = englishTranslation
               ? englishTranslation
-                  .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-                  .replace(/\s+/g, " ")
-                  .trim()
+                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
               : "";
           } catch (error) {
             console.error('Error fetching English translation:', error);
@@ -300,14 +301,14 @@ return validFootnotes.map((footnote, index) => ({
         setVerseData({
           number: verseNumberForRequest,
           arabic: arabicVerse?.text_uthmani || "",
-          translation: translationLanguage === 'E' 
+          translation: translationLanguage === 'E'
             ? englishTranslation
             : (translationVerse?.AudioText
-                ? translationVerse.AudioText
-                    .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-                    .replace(/\s+/g, " ")
-                    .trim()
-                : ""),
+              ? translationVerse.AudioText
+                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+              : ""),
           verseKey: `${activeSurahId}:${verseNumberForRequest}`,
         });
 
@@ -366,8 +367,8 @@ return validFootnotes.map((footnote, index) => ({
         if (explanationNumber && surahNo && ayahNo) {
           try {
             const explanation = await banglaTranslationService.getExplanationByNumber(
-              parseInt(surahNo), 
-              parseInt(ayahNo), 
+              parseInt(surahNo),
+              parseInt(ayahNo),
               explanationNumber
             );
 
@@ -407,8 +408,8 @@ return validFootnotes.map((footnote, index) => ({
         if (explanationNumber && surahNo && ayahNo) {
           try {
             const explanation = await hindiTranslationService.getExplanationByNumber(
-              parseInt(surahNo), 
-              parseInt(ayahNo), 
+              parseInt(surahNo),
+              parseInt(ayahNo),
               explanationNumber
             );
 
@@ -544,7 +545,7 @@ return validFootnotes.map((footnote, index) => ({
       const originalStyle = window.getComputedStyle(document.body).overflow;
       // Prevent scrolling
       document.body.style.overflow = 'hidden';
-      
+
       // Restore on cleanup
       return () => {
         document.body.style.overflow = originalStyle;
@@ -552,11 +553,15 @@ return validFootnotes.map((footnote, index) => ({
     }
   }, [showWordByWord]);
 
+  // Portal target
+  const modalRoot = document.getElementById('modal-root') || document.body;
+
   // Loading state
   if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+    return createPortal(
+      <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-[#2A2C38] rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
           <AyathNavbar
             surahId={activeSurahId}
             verseId={currentVerseId}
@@ -569,7 +574,7 @@ return validFootnotes.map((footnote, index) => ({
             selectedQari={selectedQari}
             onQariChange={setSelectedQari}
           />
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center min-h-[300px]">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
               <p className="text-gray-600 dark:text-gray-400">
@@ -578,15 +583,17 @@ return validFootnotes.map((footnote, index) => ({
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      modalRoot
     );
   }
 
   // Error state
   if (error) {
-    return (
-      <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+    return createPortal(
+      <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full sm:w-auto sm:min-w-[600px] max-w-4xl flex flex-col bg-white dark:bg-[#2A2C38] rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn">
           <AyathNavbar
             surahId={activeSurahId}
             verseId={currentVerseId}
@@ -599,7 +606,7 @@ return validFootnotes.map((footnote, index) => ({
             selectedQari={selectedQari}
             onQariChange={setSelectedQari}
           />
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center min-h-[300px] p-6">
             <div className="text-center">
               <p className="text-red-500 dark:text-red-400 text-lg mb-2">
                 Failed to load verse data
@@ -616,7 +623,8 @@ return validFootnotes.map((footnote, index) => ({
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      modalRoot
     );
   }
 
@@ -631,9 +639,22 @@ return validFootnotes.map((footnote, index) => ({
     accessibleSurahName
   );
 
-  return (
-    <div className="fixed inset-0 flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full sm:w-auto sm:min-w-[600px] lg:min-w-[800px] max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-2xl transform transition-all duration-300 overflow-hidden animate-slideUp sm:animate-fadeIn">
+
+        {/* Mobile Drag Handle */}
+        <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800" onClick={onClose}>
+          <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+        </div>
+
         <AyathNavbar
           surahId={activeSurahId}
           verseId={currentVerseId}
@@ -648,21 +669,20 @@ return validFootnotes.map((footnote, index) => ({
         />
 
         {/* Scrollable Content */}
-        <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 overflow-y-auto flex-1 bg-gray-50/50 dark:bg-gray-900/50">
           {/* Verse Info Header */}
-          <div className="mb-4 sm:mb-6">
-            <div className="flex items-center justify-between mb-3">
+          <div className="mb-4 sm:mb-6 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-3 gap-2">
               <h3
-                className="text-xl sm:text-2xl font-medium text-gray-600 dark:text-gray-300"
+                className="text-2xl sm:text-3xl font-medium text-gray-800 dark:text-gray-200"
                 style={{
                   fontFamily: surahNameFontFamily,
-                  fontSize: `${fontSize}px`,
                 }}
                 aria-label={accessibleSurahName}
               >
                 {calligraphicSurahName}
               </h3>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
                 Verse {currentVerseId} of {totalVerses}
               </span>
             </div>
@@ -670,13 +690,14 @@ return validFootnotes.map((footnote, index) => ({
 
           {/* Arabic Text */}
           {verseData && (
-            <div className="text-right mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-600 pb-3 sm:pb-4">
+            <div className="text-right mb-6 sm:mb-8 border-b border-gray-200 dark:border-gray-700 pb-6">
               <h1
-                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl dark:text-white text-gray-900 leading-loose px-2 sm:px-0"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl dark:text-white text-gray-900 leading-[2.2] px-2 sm:px-0"
                 style={{
                   fontFamily: quranFont,
                   fontSize: `${fontSize}px`,
                 }}
+                dir="rtl"
               >
                 {verseData.arabic}
               </h1>
@@ -685,52 +706,53 @@ return validFootnotes.map((footnote, index) => ({
 
           {/* Translation */}
           {verseData && !isEnglishTranslation && (
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-6 sm:mb-8">
               {translationLanguage === 'bn' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-bengali sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.8] font-bengali dark:text-gray-200 px-2 sm:px-0 prose dark:prose-invert max-w-none"
                   style={{ fontSize: `${translationFontSize}px` }}
-                  dangerouslySetInnerHTML={{ 
+                  dangerouslySetInnerHTML={{
                     __html: banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
-                      verseData.translation, 
-                      activeSurahId, 
+                      verseData.translation,
+                      activeSurahId,
                       currentVerseId
                     )
                   }}
                 />
               ) : translationLanguage === 'hi' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-hindi sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.8] font-hindi dark:text-gray-200 px-2 sm:px-0 prose dark:prose-invert max-w-none"
                   style={{ fontSize: `${translationFontSize}px` }}
-                  dangerouslySetInnerHTML={{ 
+                  dangerouslySetInnerHTML={{
                     __html: hindiTranslationService.parseHindiTranslationWithClickableExplanations(
-                      verseData.translation, 
-                      activeSurahId, 
+                      verseData.translation,
+                      activeSurahId,
                       currentVerseId
                     )
                   }}
                 />
               ) : translationLanguage === 'ur' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-urdu sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.8] font-urdu dark:text-gray-200 px-2 sm:px-0 text-right prose dark:prose-invert max-w-none"
                   style={{ fontSize: `${translationFontSize}px` }}
-                  dangerouslySetInnerHTML={{ 
+                  dir="rtl"
+                  dangerouslySetInnerHTML={{
                     __html: urduTranslationService.parseUrduTranslationWithClickableFootnotes(
-                      verseData.translation, 
-                      activeSurahId, 
+                      verseData.translation,
+                      activeSurahId,
                       currentVerseId
                     )
                   }}
                 />
               ) : translationLanguage === 'ta' ? (
                 <div
-                  className="text-gray-700 leading-[1.6] font-tamil sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.8] font-tamil dark:text-gray-200 px-2 sm:px-0 prose dark:prose-invert max-w-none"
                   style={{ fontSize: `${translationFontSize}px` }}
                   dangerouslySetInnerHTML={{ __html: verseData.translation }}
                 />
               ) : (
                 <p
-                  className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white px-2 sm:px-0"
+                  className="text-gray-700 leading-[1.8] font-poppins dark:text-gray-200 px-2 sm:px-0"
                   style={{ fontSize: `${translationFontSize}px` }}
                 >
                   {verseData.translation}
@@ -743,13 +765,14 @@ return validFootnotes.map((footnote, index) => ({
           {(() => {
 
             if (interpretationData && interpretationData.length > 0) {
-  }
+            }
             return null;
           })()}
           {interpretationData && interpretationData.length > 0 && (
             <div className="mb-6 sm:mb-8">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {/* Tafheem-ul-Quran (Interpretation): */}
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-primary dark:text-primary-light mb-4 flex items-center gap-2">
+                <span className="w-8 h-[1px] bg-primary dark:bg-primary-light"></span>
+                Tafheem-ul-Quran
               </h4>
               {translationLanguage === "mal" && (
                 <style>
@@ -757,9 +780,15 @@ return validFootnotes.map((footnote, index) => ({
                     .ayah-interpretation-content sup.f-intprno,
                     .ayah-interpretation-content sup.f-noteno,
                     .ayah-interpretation-content a.crs {
-                      color: #2AA0BF !important;
+                      color: #0F766E !important;
                       cursor: pointer !important;
                       text-decoration: none !important;
+                      font-weight: bold;
+                    }
+                    .dark .ayah-interpretation-content sup.f-intprno,
+                    .dark .ayah-interpretation-content sup.f-noteno,
+                    .dark .ayah-interpretation-content a.crs {
+                      color: #14B8A6 !important;
                     }
 
                     .ayah-interpretation-content sup.f-intprno:hover,
@@ -771,7 +800,7 @@ return validFootnotes.map((footnote, index) => ({
                 </style>
               )}
               <div
-                className="space-y-3 ayah-interpretation-content"
+                className="space-y-4 ayah-interpretation-content"
                 onClick={handleInterpretationContentClick}
               >
                 {interpretationData.map((interpretation, index) => {
@@ -800,40 +829,40 @@ return validFootnotes.map((footnote, index) => ({
                   const explanationNumber =
                     translationLanguage === "hi"
                       ? interpretation.explanation_no_BN ||
-                        interpretation.explanation_no_EN ||
-                        index + 1
+                      interpretation.explanation_no_EN ||
+                      index + 1
                       : translationLanguage === "bn"
-                      ? interpretation.explanation_no_BNG ||
+                        ? interpretation.explanation_no_BNG ||
                         interpretation.explanation_no_EN ||
                         index + 1
-                      : translationLanguage === "ur"
-                      ? interpretation.explanation_no || index + 1
-                      : isEnglishTranslation
-                      ? interpretation.interptn_no ||
-                        interpretation.number ||
-                        index + 1
-                      : interpretation.resolvedInterpretationNo ||
-                        interpretation.InterpretationNo ||
-                        interpretation.Interpretation_No ||
-                        interpretation.interptn_no ||
-                        interpretation.number ||
-                        interpretation.requestedInterpretationNo ||
-                        index + 1;
+                        : translationLanguage === "ur"
+                          ? interpretation.explanation_no || index + 1
+                          : isEnglishTranslation
+                            ? interpretation.interptn_no ||
+                            interpretation.number ||
+                            index + 1
+                            : interpretation.resolvedInterpretationNo ||
+                            interpretation.InterpretationNo ||
+                            interpretation.Interpretation_No ||
+                            interpretation.interptn_no ||
+                            interpretation.number ||
+                            interpretation.requestedInterpretationNo ||
+                            index + 1;
 
                   return (
                     <div
                       key={index}
-                      className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 sm:p-4"
+                      className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700"
                     >
                       {(translationLanguage === "hi" ||
                         translationLanguage === "ur") && (
-                        <div className="mb-2 text-sm font-medium text-cyan-600 dark:text-cyan-400">
-                          Explanation {explanationNumber}:
-                        </div>
-                      )}
+                          <div className="mb-3 text-sm font-bold text-primary dark:text-primary-light">
+                            Explanation {explanationNumber}:
+                          </div>
+                        )}
                       {isEnglishTranslation && null}
                       <div
-                        className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-xs sm:text-sm lg:text-base"
+                        className="text-gray-700 leading-[1.8] font-poppins dark:text-gray-300 text-sm sm:text-base"
                         style={{ fontSize: `${translationFontSize}px` }}
                         dangerouslySetInnerHTML={{ __html: interpretationHtml }}
                       />
@@ -847,15 +876,16 @@ return validFootnotes.map((footnote, index) => ({
           {/* No interpretation message */}
           {(!interpretationData || interpretationData.length === 0) && (
             <div className="mb-6 sm:mb-8">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Tafheem-ul-Quran (Interpretation):
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+                Interpretation
               </h4>
-              <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3 sm:p-4">
-                <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <p className="text-gray-500 dark:text-gray-400 text-sm italic flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
                   {(() => {
-    return activeSurahId === 114 
-                      ? "Interpretation data is not available for Surah An-Nas (114). This surah may not have interpretation content in the current database."
-                      : "No interpretation available for this verse. The interpretation API may be temporarily unavailable.";
+                    return activeSurahId === 114
+                      ? "Interpretation data is not available for Surah An-Nas (114)."
+                      : "No interpretation available for this verse.";
                   })()}
                 </p>
               </div>
@@ -864,41 +894,36 @@ return validFootnotes.map((footnote, index) => ({
         </div>
 
         {/* Fixed Bottom Navigation Buttons */}
-        <div className="flex justify-between gap-3 sm:gap-0 p-3 sm:p-4 bg-white dark:bg-gray-900">
+        <div className="flex justify-between gap-3 p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={handlePreviousAyah}
             disabled={currentVerseId <= 1}
-            className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-              currentVerseId <= 1
-                ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
-                : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl border transition-all duration-200 group ${currentVerseId <= 1
+              ? "bg-gray-50 text-gray-400 border-gray-100 dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700 cursor-not-allowed"
+              : "bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary hover:bg-primary/5 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:border-primary-light dark:hover:text-primary-light"
+              }`}
           >
-            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-xs sm:text-sm font-medium">
-              Previous Ayah
-            </span>
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Prev</span>
           </button>
 
           <button
             onClick={handleNextAyah}
             disabled={currentVerseId >= totalVerses}
-            className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg border transition-colors group min-h-[44px] ${
-              currentVerseId >= totalVerses
-                ? "text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600"
-                : "text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-500"
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl border transition-all duration-200 group ${currentVerseId >= totalVerses
+              ? "bg-gray-50 text-gray-400 border-gray-100 dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700 cursor-not-allowed"
+              : "bg-primary text-white border-primary hover:bg-primary-dark shadow-lg shadow-primary/20 dark:bg-primary dark:border-primary dark:hover:bg-primary-dark"
+              }`}
           >
-            <span className="text-xs sm:text-sm font-medium">Next Ayah</span>
-            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Next Ayah</span>
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>
 
-      {/* WordByWord Modal */}
-      {showWordByWord && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
-           <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto sm:max-w-6xl max-w-[95vw]">
+      {showWordByWord && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-[100000] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
+          <div className="bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto sm:max-w-6xl max-w-[95vw]">
             <WordByWord
               selectedVerse={currentVerseId}
               surahId={activeSurahId}
@@ -906,12 +931,14 @@ return validFootnotes.map((footnote, index) => ({
               onNavigate={setCurrentVerseId}
             />
           </div>
-        </div>
+        </div>,
+        modalRoot
       )}
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-    </div>
+    </div>,
+    modalRoot
   );
 };
 

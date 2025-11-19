@@ -20,6 +20,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom']
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    force: true
+  },
   server: {
     port: 5173,
     strictPort: true,
@@ -28,7 +35,8 @@ export default defineConfig({
       protocol: 'ws',
       host: 'localhost',
       port: 5173,
-      clientPort: 5173
+      clientPort: 5173,
+      timeout: 5000
     },
     // Only apply cache headers in production, not in development
     // Cache headers can interfere with HMR WebSocket connections

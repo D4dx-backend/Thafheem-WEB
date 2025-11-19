@@ -5,7 +5,6 @@ class TamilWordByWordService {
   constructor() {
     // Database file served from public directory
     this.dbPath = '/quran_tamil.db';
-    this.cache = new Map();
     this.dbPromise = null;
     this.isDownloaded = false;
   }
@@ -80,13 +79,6 @@ class TamilWordByWordService {
 
   // Get Tamil word-by-word data for a specific surah and ayah
   async getWordByWordData(surahId, ayahNumber) {
-    const cacheKey = `wordbyword-${surahId}-${ayahNumber}`;
-    
-    // Check cache first
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
     try {
       const db = await this.initDB();
       
@@ -136,9 +128,6 @@ class TamilWordByWordService {
             resource_name: 'Local Tamil Database'
           }]
         };
-        
-        // Cache the result
-        this.cache.set(cacheKey, wordByWordData);
         
         return wordByWordData;
       }
@@ -250,19 +239,6 @@ class TamilWordByWordService {
   // Check if database is downloaded
   isDatabaseDownloaded() {
     return this.isDownloaded;
-  }
-
-  // Clear cache
-  clearCache() {
-    this.cache.clear();
-  }
-
-  // Get cache statistics
-  getCacheStats() {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
   }
 }
 

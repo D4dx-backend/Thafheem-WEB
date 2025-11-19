@@ -71,7 +71,7 @@ const WordNavbar = ({
       const userId = BookmarkService.getEffectiveUserId(user);
       const surahName = surahInfo?.name || `Surah ${surahId}`;
       const verseText = wordData?.text_uthmani || wordData?.translations?.[0]?.text || '';
-      
+
       await BookmarkService.addBookmark(
         userId,
         surahId,
@@ -80,7 +80,7 @@ const WordNavbar = ({
         surahName,
         verseText
       );
-      
+
       // Show success toast
       if (showSuccess) {
         showSuccess(`Word-by-word content bookmarked successfully!`);
@@ -102,14 +102,14 @@ const WordNavbar = ({
       const surahName = surahInfo?.name || `Surah ${surahId}`;
       const verseText = wordData?.text_uthmani || wordData?.translations?.[0]?.text || '';
       const translation = wordData?.translations?.[0]?.text || '';
-      
+
       // Create shareable content
       let shareText = `Word by Word - ${surahName}, Verse ${selectedVerse}\n\n`;
       shareText += `Arabic: ${verseText}\n\n`;
       if (translation) {
         shareText += `Translation: ${translation}\n\n`;
       }
-      
+
       // Add word-by-word breakdown if available
       if (wordData?.words && wordData.words.length > 0) {
         shareText += `Word Breakdown:\n`;
@@ -123,10 +123,10 @@ const WordNavbar = ({
         }
         shareText += '\n';
       }
-      
+
       shareText += `Shared from Thafheem - Word by Word Study`;
       const shareUrl = window.location.href;
-      
+
       if (navigator.share) {
         await navigator.share({
           title: `Word by Word - ${surahName}, Verse ${selectedVerse}`,
@@ -136,7 +136,7 @@ const WordNavbar = ({
       } else {
         // Fallback: copy to clipboard
         const shareMessage = `${shareText}\n\nView full content: ${shareUrl}`;
-        
+
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(shareMessage);
           alert('Word-by-word content copied to clipboard for sharing');
@@ -219,7 +219,7 @@ const WordNavbar = ({
       <button
         className="absolute top-2 right-2 sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors bg-white dark:bg-gray-600 shadow-sm z-10"
         title="Close"
-        onClick={() => navigate(-1)}
+        onClick={() => onClose ? onClose() : navigate(-1)}
       >
         <X className="w-4 h-4 text-gray-600 dark:text-white" />
       </button>
@@ -247,11 +247,10 @@ const WordNavbar = ({
                 {surahs.map((surah) => (
                   <div
                     key={surah.number}
-                    className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${
-                      surah.number === parseInt(surahId)
+                    className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${surah.number === parseInt(surahId)
                         ? "bg-gray-100 dark:bg-gray-700"
                         : ""
-                    }`}
+                      }`}
                     onClick={() => handleSurahSelect(surah)}
                   >
                     {surah.number} - {surah.name}
@@ -277,9 +276,8 @@ const WordNavbar = ({
                 {generateVerseNumbers().map((verse) => (
                   <div
                     key={verse}
-                    className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${
-                      parseInt(selectedVerse) === verse ? 'bg-gray-100 dark:bg-gray-700' : ''
-                    }`}
+                    className={`px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white ${parseInt(selectedVerse) === verse ? 'bg-gray-100 dark:bg-gray-700' : ''
+                      }`}
                     onClick={() => handleVerseSelect(verse)}
                   >
                     {verse}
@@ -306,11 +304,10 @@ const WordNavbar = ({
           <button
             onClick={handleBookmark}
             disabled={isBookmarking}
-            className={`p-2 rounded-lg transition-colors ${
-              isBookmarking
+            className={`p-2 rounded-lg transition-colors ${isBookmarking
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
+              }`}
             title={isBookmarking ? "Saving..." : "Bookmark this verse"}
           >
             <Bookmark className="w-4 sm:w-5 h-4 sm:h-5" />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import {
   fetchInterpretationRange,
@@ -45,6 +46,23 @@ const BlockInterpretationModal = ({
   const [currentInterpretationNo, setCurrentInterpretationNo] =
     useState(interpretationNo);
   const [currentLanguage, setCurrentLanguage] = useState(language);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Body scroll lock when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Handle close with animation
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 200);
+  };
 
   // Load surah name and options
   useEffect(() => {
@@ -93,7 +111,7 @@ const BlockInterpretationModal = ({
 
   // Load interpretation content
   useEffect(() => {
-    
+
     const loadInterpretation = async () => {
       if (!currentSurahId || !currentRange) return;
 
@@ -102,7 +120,7 @@ const BlockInterpretationModal = ({
         setError(null);
         setContent([]);
 
-// For Malayalam, Hindi and Urdu, use their respective services/APIs
+        // For Malayalam, Hindi and Urdu, use their respective services/APIs
         let data;
         if (currentLanguage === 'mal') {
           const isSingle = /^\d+$/.test(currentRange);
@@ -175,36 +193,36 @@ const BlockInterpretationModal = ({
           const isSingle = /^\d+$/.test(currentRange);
           data = isSingle
             ? await fetchInterpretation(
-                currentSurahId,
-                parseInt(currentRange, 10),
-                currentInterpretationNo,
-                currentLanguage
-              )
+              currentSurahId,
+              parseInt(currentRange, 10),
+              currentInterpretationNo,
+              currentLanguage
+            )
             : await fetchInterpretationRange(
-                currentSurahId,
-                currentRange,
-                currentInterpretationNo,
-                currentLanguage
-              );
+              currentSurahId,
+              currentRange,
+              currentInterpretationNo,
+              currentLanguage
+            );
         }
 
-// Normalize to array of items with a text/content field
+        // Normalize to array of items with a text/content field
         const items = Array.isArray(data) ? data : [data];
-        
+
         // Log interpretation numbers from the actual data
         if (items.length > 0) {
           const interpretationNos = items.map(item => item?.InterpretationNo || item?.interpretationNo || item?.interptn_no).filter(Boolean);
-// Show first item structure for debugging
+          // Show first item structure for debugging
           if (items[0]) {
-}
+          }
         }
-        
+
         // Check if we got empty or invalid data
-        if (items.length === 0 || 
-            (items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) ||
-            (items.length === 1 && items[0].Interpretation === '')) {
+        if (items.length === 0 ||
+          (items.length === 1 && (!items[0] || Object.keys(items[0]).length === 0)) ||
+          (items.length === 1 && items[0].Interpretation === '')) {
           console.warn(`⚠️ No interpretation ${currentInterpretationNo} available for range ${currentRange}`);
-          
+
           // Try to fetch interpretation 1 for this range as fallback
           if (currentInterpretationNo !== 1) {
             setCurrentInterpretationNo(1);
@@ -221,7 +239,7 @@ const BlockInterpretationModal = ({
         }
       } catch (err) {
         console.error(`❌ Failed to load interpretation ${currentInterpretationNo}:`, err);
-        
+
         let errorMessage = "Failed to load interpretation";
         if (err.message?.includes("500")) {
           errorMessage = `Server error loading interpretation ${currentInterpretationNo}. Please try again later.`;
@@ -490,10 +508,10 @@ const BlockInterpretationModal = ({
   };
 
   const handlePrev = () => {
-    
+
     // Navigate to previous verse range/block (keeping same interpretation number)
     const current = String(currentRange);
-    
+
     // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
       // Single ayah: decrement to previous ayah
@@ -503,7 +521,7 @@ const BlockInterpretationModal = ({
         return;
       }
       const newVerse = v - 1;
-setCurrentRange(String(newVerse));
+      setCurrentRange(String(newVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
       // Range: move to previous block of same size
       const match = current.match(/^(\d+)-(\d+)$/);
@@ -512,12 +530,12 @@ setCurrentRange(String(newVerse));
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
-        
+
         if (a <= 1) {
           alert('Already at the first block');
           return;
         }
-        
+
         const newA = Math.max(1, a - len);
         const newB = newA + len - 1;
         setCurrentRange(`${newA}-${newB}`);
@@ -526,22 +544,22 @@ setCurrentRange(String(newVerse));
   };
 
   const handleNext = () => {
-    
+
     // Navigate to next verse range/block (keeping same interpretation number)
     const current = String(currentRange);
-    
+
     // Check if range is a single ayah (e.g., "5") or a range (e.g., "1-7")
     if (/^\d+$/.test(current)) {
       // Single ayah: increment to next ayah
       const v = parseInt(current, 10);
-      
+
       // Check if we're at the last verse of the surah
       const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
       if (v >= maxVerse) {
         alert('Already at the last verse of this surah');
         return;
       }
-      
+
       const nextVerse = v + 1;
       setCurrentRange(String(nextVerse));
     } else if (/^(\d+)-(\d+)$/.test(current)) {
@@ -552,14 +570,14 @@ setCurrentRange(String(newVerse));
         const a = parseInt(aStr, 10);
         const b = parseInt(bStr, 10);
         const len = b - a + 1;
-        
+
         // Check if we're at the last block
         const maxVerse = rangeOptions.length > 0 ? parseInt(rangeOptions[rangeOptions.length - 1], 10) : 286;
         if (b >= maxVerse) {
           alert('Already at the last block of this surah');
           return;
         }
-        
+
         const newA = a + len;
         const newB = Math.min(maxVerse, newA + len - 1);
         setCurrentRange(`${newA}-${newB}`);
@@ -626,7 +644,7 @@ setCurrentRange(String(newVerse));
   const extractText = (item) => {
     if (item == null) return "";
     if (typeof item === "string") return item;
-    
+
     // Common possible fields (check both lowercase and capitalized versions)
     const preferredKeys = [
       "interpret_text",
@@ -647,7 +665,7 @@ setCurrentRange(String(newVerse));
       "description",
       "Description",
     ];
-    
+
     // Try each preferred key
     for (const key of preferredKeys) {
       if (typeof item[key] === "string" && item[key].trim().length > 0) {
@@ -655,20 +673,22 @@ setCurrentRange(String(newVerse));
         return item[key];
       }
     }
-    
+
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-return v;
+        return v;
       }
     }
-    
+
     // If we still have nothing, log the structure and return empty message
     console.warn(`⚠️ No valid interpretation text found in item:`, item);
     return `<p class="text-gray-500 italic">No interpretation content available for interpretation ${currentInterpretationNo}</p>`;
   };
 
-  return (
+  const modalRoot = document.getElementById("modal-root") || document.body;
+
+  return createPortal(
     <>
       <style>
         {`
@@ -712,42 +732,63 @@ return v;
         `}
       </style>
 
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[99999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-hidden">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
+          onClick={handleClose}
+        />
+
+        {/* Modal Content */}
+        <div
+          className={`relative w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden ${
+            isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
+          }`}
+        >
+          {/* Drag Handle (Mobile) */}
+          <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={handleClose}>
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          </div>
           {/* Interpretation Navbar */}
           <div className="flex-shrink-0 z-10 bg-white dark:bg-gray-900">
-          <InterpretationNavbar
-            interpretationNumber={currentInterpretationNo}
-            surahName={surahDisplayName}
-            verseRange={currentRange.replace(/-/g, " - ")}
-            onClose={onClose}
-            onBookmark={handleBookmark}
-            onShare={handleShare}
-            onWordByWord={handleWordByWord}
-            bookmarking={isBookmarking}
-            surahOptions={surahOptions}
-            rangeOptions={rangeOptions}
-            onPickSurah={handlePickSurah}
-            onPickRange={handlePickRange}
-            onPrev={handlePrev}
-            onNext={handleNext}
-          />
+            <InterpretationNavbar
+              interpretationNumber={currentInterpretationNo}
+              surahName={surahDisplayName}
+              verseRange={currentRange.replace(/-/g, " - ")}
+              onClose={handleClose}
+              onBookmark={handleBookmark}
+              onShare={handleShare}
+              onWordByWord={handleWordByWord}
+              bookmarking={isBookmarking}
+              surahOptions={surahOptions}
+              rangeOptions={rangeOptions}
+              onPickSurah={handlePickSurah}
+              onPickRange={handlePickRange}
+              onPrev={handlePrev}
+              onNext={handleNext}
+              isModal={true}
+            />
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8 min-h-0">
             {loading && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Loading interpretation...
-                </p>
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Loading interpretation...
+                  </p>
+                </div>
               </div>
             )}
 
             {error && (
               <div className="text-center py-8">
-                <p className="text-red-500 dark:text-red-400 text-lg mb-4">
+                <p className="text-red-500 dark:text-red-400 text-lg mb-2">
+                  Failed to load interpretation
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {error}
                 </p>
                 <button
@@ -765,23 +806,15 @@ return v;
               </div>
             )}
 
-            {/* Header controls (read-only display) */}
-            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-              <span className="text-gray-600 dark:text-gray-300">Surah: {currentSurahId}</span>
-              <span className="font-bold text-cyan-600 dark:text-cyan-400 text-base">• Range: {currentRange}</span>
-              <span className="text-gray-600 dark:text-gray-300">• Interpretation: {currentInterpretationNo}</span>
-              <span className="text-gray-600 dark:text-gray-300">• Lang: {currentLanguage}</span>
-            </div>
-
             {/* Interpretation Content */}
-            <div className="space-y-6" key={`block-${currentSurahId}-${currentRange}-${currentInterpretationNo}`}>
+            <div className="font-poppins space-y-6 sm:space-y-8" key={`block-${currentSurahId}-${currentRange}-${currentInterpretationNo}`}>
               {content.map((item, idx) => (
                 <div
                   key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
-                  className="bg-gray-50 p-6 rounded-lg border-l-4 dark:bg-[#2A2C38] dark:border-[#2A2C38] border-white"
+                  className="mb-6 sm:mb-8"
                 >
                   <div
-                    className="interpretation-content text-gray-800 dark:text-white leading-relaxed text-justify whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none"
+                    className="interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none"
                     ref={(el) => (contentRefs.current[idx] = el)}
                     onClick={handleContentClick}
                     style={{
@@ -796,18 +829,18 @@ return v;
             </div>
           </div>
 
-    {/* Word-by-Word Modal from Interpretation */}
-    {showWordByWord && (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[100000] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
-        <WordByWord
-          selectedVerse={wordByWordVerse}
-          surahId={currentSurahId}
-          onClose={() => setShowWordByWord(false)}
-          onNavigate={setWordByWordVerse}
-          onSurahChange={() => {}}
-        />
-      </div>
-    )}
+          {/* Word-by-Word Modal from Interpretation */}
+          {showWordByWord && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[100000] pt-24 sm:pt-28 lg:pt-32 p-4 overflow-hidden">
+              <WordByWord
+                selectedVerse={wordByWordVerse}
+                surahId={currentSurahId}
+                onClose={() => setShowWordByWord(false)}
+                onNavigate={setWordByWordVerse}
+                onSurahChange={() => { }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -829,7 +862,8 @@ return v;
           language={currentLanguage}
         />
       )}
-    </>
+    </>,
+    modalRoot
   );
 };
 

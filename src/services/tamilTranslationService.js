@@ -1,4 +1,4 @@
-import { USE_API, API_BASE_PATH, CACHE_ENABLED, CACHE_TTL } from '../config/apiConfig.js';
+import { USE_API, API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
 
 class TamilTranslationService {
@@ -6,9 +6,6 @@ class TamilTranslationService {
     this.language = 'tamil';
     this.useApi = USE_API !== false;
     this.apiBasePath = API_BASE_PATH;
-    this.cacheEnabled = CACHE_ENABLED;
-    this.cacheTtl = CACHE_TTL;
-    this.cache = new Map();
     this.pendingRequests = new Map();
   }
 

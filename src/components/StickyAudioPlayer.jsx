@@ -207,124 +207,137 @@ const StickyAudioPlayer = ({
   }, [isPlaying, currentAyah, totalAyahs, selectedQari, translationLanguage, audioTypes, playbackSpeed]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#2A2C38] border-t border-gray-200 dark:border-gray-700 shadow-lg z-50">
-      {/* Title/Label */}
-      <div className="px-4 pt-2 pb-1">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Audio play
-        </p>
-      </div>
-
-      {/* Main Container with Progress and Controls */}
-      <div className="px-4 pb-3">
-        {/* Progress Bar */}
-        <div className="relative cursor-pointer mb-3" onClick={handleProgressClick}>
-          <div className="w-full h-0.5 bg-gray-300 dark:bg-gray-600 rounded-full">
-            <div
-              className="h-0.5 bg-cyan-500 dark:bg-cyan-400 rounded-full transition-all duration-200"
-              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-            />
-          </div>
-          {/* Progress Handle */}
-          <div
-            className="absolute top-1/2 w-2 h-2 bg-cyan-500 dark:bg-cyan-400 rounded-full transform -translate-y-1/2 cursor-pointer"
-            style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-          />
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-white to-gray-50 dark:from-[#1a1c24] dark:to-[#2A2C38] border-t border-gray-200 dark:border-gray-700 shadow-2xl z-50">
+      <div className="max-w-[1024px] mx-auto">
+        {/* Title/Label */}
+        <div className="px-3 sm:px-6 pt-2 pb-1">
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wide uppercase">
+            Audio play
+          </p>
         </div>
 
-        {/* Controls Row */}
-        <div className="flex items-center justify-between">
-          {/* Left - Current Time */}
-          <div className="text-xs font-mono text-gray-800 dark:text-gray-200 w-14">
-            {formatTime(currentTime)}
+        {/* Main Container with Progress and Controls */}
+        <div className="px-3 sm:px-6 pb-4">
+          {/* Progress Bar */}
+          <div className="relative cursor-pointer mb-4 group" onClick={handleProgressClick}>
+            <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-1 bg-gradient-to-r from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-400 rounded-full transition-all duration-300"
+                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+              />
+            </div>
+            {/* Progress Handle */}
+            <div
+              className="absolute top-1/2 w-3 h-3 bg-white dark:bg-gray-200 border-2 border-cyan-500 dark:border-cyan-400 rounded-full transform -translate-y-1/2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+            />
           </div>
 
-          {/* Center - Controls */}
-          <div className="flex items-center space-x-2">
-            {/* Settings Button */}
-            <div className="relative settings-menu">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSettingsModal(!showSettingsModal);
-                }}
-                className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30 settings-button"
-                aria-label="Settings"
-              >
-                <Settings size={16} />
-              </button>
+          {/* Controls Row */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            {/* Left - Current Time */}
+            <div className="text-xs sm:text-sm font-semibold font-mono text-gray-700 dark:text-gray-300 min-w-[45px] sm:min-w-[50px]">
+              {formatTime(currentTime)}
             </div>
 
-            {/* Volume Button */}
-            <div className="relative">
-              <button
-                onClick={toggleMute}
-                onMouseEnter={() => setShowVolumeSlider(true)}
-                onMouseLeave={() => setShowVolumeSlider(false)}
-                className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30"
-              >
-                {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-              </button>
-              
-              {/* Volume Slider */}
-              {showVolumeSlider && (
-                <div 
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 z-10"
+            {/* Center - Controls */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Settings Button */}
+              <div className="relative settings-menu">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSettingsModal(!showSettingsModal);
+                  }}
+                  className="p-2 sm:p-2.5 text-gray-600 hover:text-cyan-500 dark:text-gray-400 dark:hover:text-cyan-400 transition-all rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 settings-button"
+                  aria-label="Settings"
+                  title="Settings"
+                >
+                  <Settings size={18} className="sm:w-5 sm:h-5" />
+                </button>
+              </div>
+
+              {/* Volume Button */}
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={toggleMute}
                   onMouseEnter={() => setShowVolumeSlider(true)}
                   onMouseLeave={() => setShowVolumeSlider(false)}
+                  className="p-2 sm:p-2.5 text-gray-600 hover:text-cyan-500 dark:text-gray-400 dark:hover:text-cyan-400 transition-all rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  title={isMuted ? "Unmute" : "Mute"}
                 >
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
-                    className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-cyan-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
-                  />
-                </div>
-              )}
+                  {isMuted || volume === 0 ? <VolumeX size={18} className="sm:w-5 sm:h-5" /> : <Volume2 size={18} className="sm:w-5 sm:h-5" />}
+                </button>
+                
+                {/* Volume Slider */}
+                {showVolumeSlider && (
+                  <div 
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-white dark:bg-[#2A2C38] border border-gray-200 dark:border-gray-600 rounded-xl shadow-2xl p-4 z-10"
+                    onMouseEnter={() => setShowVolumeSlider(true)}
+                    onMouseLeave={() => setShowVolumeSlider(false)}
+                  >
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-cyan-400 [&::-webkit-slider-thumb]:to-cyan-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-gradient-to-br [&::-moz-range-thumb]:from-cyan-400 [&::-moz-range-thumb]:to-cyan-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:shadow-md"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Previous Button */}
+              <button
+                onClick={onSkipBack}
+                className="p-2 sm:p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                aria-label="Previous"
+                title="Previous"
+              >
+                <SkipBack size={18} className="sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors" />
+              </button>
+
+              {/* Play/Pause Button */}
+              <button
+                onClick={() => {
+                  console.log("[StickyAudioPlayer] PlayPause clicked", { isPlaying });
+                  onPlayPause();
+                }}
+                className="p-3 sm:p-3.5 bg-gradient-to-br from-cyan-500 to-cyan-600 dark:from-cyan-500 dark:to-cyan-400 text-white rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                aria-label={isPlaying ? "Pause" : "Play"}
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? <Pause size={20} className="sm:w-6 sm:h-6" fill="currentColor" /> : <Play size={20} className="sm:w-6 sm:h-6" fill="currentColor" />}
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={onSkipForward}
+                className="p-2 sm:p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                aria-label="Next"
+                title="Next"
+              >
+                <SkipForward size={18} className="sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors" />
+              </button>
+
+              {/* Close Button */}
+              <button
+                onClick={onClose || onStop}
+                className="p-2 sm:p-2.5 text-gray-600 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-all rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label="Close"
+                title="Close"
+              >
+                <X size={18} className="sm:w-5 sm:h-5" />
+              </button>
             </div>
 
-            {/* Previous Button */}
-            <button
-              onClick={onSkipBack}
-              className="p-1.5 rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center"
-            >
-              <SkipBack size={16} className="text-cyan-500 dark:text-cyan-400" />
-            </button>
-
-            {/* Play/Pause Button */}
-            <button
-              onClick={() => {
-                console.log("[StickyAudioPlayer] PlayPause clicked", { isPlaying });
-                onPlayPause();
-              }}
-              className="p-2 bg-cyan-500 dark:bg-cyan-400 text-white dark:text-black rounded-full transition-colors shadow-md hover:shadow-lg hover:bg-cyan-600 dark:hover:bg-cyan-300"
-            >
-              {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-            </button>
-
-            {/* Next Button */}
-            <button
-              onClick={onSkipForward}
-              className="p-1.5 rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center"
-            >
-              <SkipForward size={16} className="text-cyan-500 dark:text-cyan-400" />
-            </button>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose || onStop}
-              className="p-1.5 text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-900/30"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Right - Duration */}
-          <div className="text-xs font-mono text-gray-800 dark:text-gray-200 w-14 text-right">
-            {formatTime(duration)}
+            {/* Right - Duration */}
+            <div className="text-xs sm:text-sm font-semibold font-mono text-gray-700 dark:text-gray-300 min-w-[45px] sm:min-w-[50px] text-right">
+              {formatTime(duration)}
+            </div>
           </div>
         </div>
       </div>

@@ -7,7 +7,6 @@ class HindiWordByWordService {
     // Use BASE_URL from Vite config to handle base path correctly
     const baseUrl = import.meta.env.BASE_URL || '/';
     this.dbPath = `${baseUrl}quran_hindi.db`.replace(/\/+/g, '/'); // Normalize slashes
-    this.cache = new Map();
     this.dbPromise = null;
     this.isDownloaded = false;
   }
@@ -100,13 +99,6 @@ const buffer = await response.arrayBuffer();
 
   // Get Hindi word-by-word data for a specific surah and ayah
   async getWordByWordData(surahId, ayahNumber) {
-    const cacheKey = `wordbyword-${surahId}-${ayahNumber}`;
-    
-    // Check cache first
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
     try {
       const db = await this.initDB();
       
@@ -217,8 +209,6 @@ count += 1;
         
         const hindiWords = words.filter(w => w.translation.language_name === 'Hindi').length;
         const englishWords = words.filter(w => w.translation.language_name === 'English (Hindi not available)').length;
-// Cache the result
-        this.cache.set(cacheKey, wordByWordData);
         
         return wordByWordData;
       }
@@ -351,19 +341,6 @@ return data.verse;
   // Check if database is downloaded
   isDatabaseDownloaded() {
     return this.isDownloaded;
-  }
-
-  // Clear cache
-  clearCache() {
-    this.cache.clear();
-  }
-
-  // Get cache statistics
-  getCacheStats() {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
   }
 }
 

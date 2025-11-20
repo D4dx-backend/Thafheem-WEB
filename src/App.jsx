@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
+import { SurahViewCacheProvider } from "./context/SurahViewCacheContext";
 
 // Always load critical components immediately
 import HomepageNavbar from "./components/HomeNavbar";
@@ -59,60 +60,74 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router basename={basename}>
+        <SurahViewCacheProvider>
+          <Router basename={basename}>
+          {/* Skip to main content link for accessibility */}
+          <a 
+            href="#main-content" 
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[1000] 
+                       bg-cyan-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg
+                       focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2"
+          >
+            Skip to content
+          </a>
+          
           <HomepageNavbar />
           <Suspense fallback={<LazyLoadFallback message="Loading page..." />}>
-            <Routes>
-              <Route path="/" element={<Home />} /> {/* Surah/Home */}
-              <Route path="/juz" element={<Juz />} />
-              <Route path="/juz/:juzId" element={<Juz />} />
-              <Route path="/sign" element={<Sign />} />
-              <Route path="/surah/:surahId" element={<Surah />} />
-              <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
-              <Route path="/reading/:surahId?" element={<Reading />} />
-              <Route path="/blockwise/:surahId" element={<BlockWise />} />
-              <Route path="/bookmarkblock" element={<BookmarkBlock />} />
-              <Route path="/bookmarkedverses" element={<BookVerse />} />
-              <Route path="/favoritesurahs" element={<FavoriteSurahs />} />
-              <Route
-                path="/bookinterpretations"
-                element={<BookInterpretations />}
-              />
-              <Route
-                path="/malayalaminterpretations"
-                element={<MalayalamInterpreter />}
-              />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/play" element={<PlayAudio />} />
-              <Route path="/tablecontents" element={<TableContents />} />
-              <Route path="/maududi" element={<Maududi />} />
-              <Route path="/whatsnew" element={<WhatsNew />} />
-              <Route path="/digitisation" element={<Digitisation />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/authorpreface" element={<AuthorPreface />} />
-              <Route path="/englishtranslate" element={<EnglishTranslate />} />
-              <Route path="/quiz" element={<Quiz />} />
-              <Route path="/dragdrop" element={<DragDrop />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/deleteaccount" element={<DeleteAccount />} />
-              <Route path="/logout" element={<LogOut />} />
-              <Route path="/conclusion" element={<Conclusion />} />
-              <Route path="/tajweed" element={<Tajweed />} />
-              <Route path="/quranstudy" element={<QuranStudy />} />
-              <Route path="/end" element={<EndofProphethood />} />
-              <Route
-                path="/word-by-word/:surahId/:verseId"
-                element={<WordByWordPage />}
-              />
-              <Route
-                path="/interpretation-blockwise"
-                element={<InterpretationBlockwise />}
-              />
-              <Route path="/note/:id" element={<Note />} />
-            </Routes>
+            <main id="main-content">
+              <Routes>
+                <Route path="/" element={<Home />} /> {/* Surah/Home */}
+                <Route path="/juz" element={<Juz />} />
+                <Route path="/juz/:juzId" element={<Juz />} />
+                <Route path="/sign" element={<Sign />} />
+                <Route path="/surah/:surahId" element={<Surah />} />
+                <Route path="/surahinfo/:surahId" element={<SurahInfo />} />
+                <Route path="/reading/:surahId?" element={<Reading />} />
+                <Route path="/blockwise/:surahId" element={<BlockWise />} />
+                <Route path="/bookmarkblock" element={<BookmarkBlock />} />
+                <Route path="/bookmarkedverses" element={<BookVerse />} />
+                <Route path="/favoritesurahs" element={<FavoriteSurahs />} />
+                <Route
+                  path="/bookinterpretations"
+                  element={<BookInterpretations />}
+                />
+                <Route
+                  path="/malayalaminterpretations"
+                  element={<MalayalamInterpreter />}
+                />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/play" element={<PlayAudio />} />
+                <Route path="/tablecontents" element={<TableContents />} />
+                <Route path="/maududi" element={<Maududi />} />
+                <Route path="/whatsnew" element={<WhatsNew />} />
+                <Route path="/digitisation" element={<Digitisation />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/authorpreface" element={<AuthorPreface />} />
+                <Route path="/englishtranslate" element={<EnglishTranslate />} />
+                <Route path="/quiz" element={<Quiz />} />
+                <Route path="/dragdrop" element={<DragDrop />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/deleteaccount" element={<DeleteAccount />} />
+                <Route path="/logout" element={<LogOut />} />
+                <Route path="/conclusion" element={<Conclusion />} />
+                <Route path="/tajweed" element={<Tajweed />} />
+                <Route path="/quranstudy" element={<QuranStudy />} />
+                <Route path="/end" element={<EndofProphethood />} />
+                <Route
+                  path="/word-by-word/:surahId/:verseId"
+                  element={<WordByWordPage />}
+                />
+                <Route
+                  path="/interpretation-blockwise"
+                  element={<InterpretationBlockwise />}
+                />
+                <Route path="/note/:id" element={<Note />} />
+              </Routes>
+            </main>
           </Suspense>
           <Footer />
-        </Router>
+          </Router>
+        </SurahViewCacheProvider>
       </AuthProvider>
     </ThemeProvider>
   );

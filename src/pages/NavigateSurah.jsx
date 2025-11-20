@@ -44,7 +44,7 @@ const MadinaIcon = ({ className }) => (
 const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const [activeTab, setActiveTab] = useState('Surah');
   const navigate = useNavigate();
-  
+
   // Use cached surah data hook to get type information
   const { surahs, loading } = useSurahData();
 
@@ -172,7 +172,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Map surahs to include id for compatibility
-    const mappedSurahs = surahs.length > 0 
+    const mappedSurahs = surahs.length > 0
       ? surahs.map(s => ({ ...s, id: s.number }))
       : fallbackSurahs;
 
@@ -187,7 +187,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       // Navigate to the surah page
       const surahId = surah.id || surah.number;
       navigate(`/surah/${surahId}`);
-      
+
       // Call the onSurahSelect callback if provided
       if (onSurahSelect) {
         onSurahSelect({
@@ -198,7 +198,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
           english: surah.english || surah.name,
         });
       }
-      
+
       // Close the navigation modal
       if (onClose) {
         onClose();
@@ -206,37 +206,37 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     };
 
     return (
-      <div className="flex flex-col h-full dark:bg-[#2A2C38] font-poppins">
+      <div className="flex flex-col h-full font-poppins">
         {/* Search Bar */}
-        <div className="p-3">
+        <div className="px-5 pt-3 pb-4">
           <input
             type="text"
             placeholder="Search Surah"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 text-sm text-gray-600 dark:bg-black dark:text-white bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
 
         {/* Surah List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-3 ">
+        <div className="flex-1 overflow-y-auto px-5 pb-3">
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-4">Loading surahs...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading surahs...</p>
           ) : filteredSurahs.length > 0 ? (
             <ol className="list-decimal list-outside space-y-2 pl-6">
               {filteredSurahs.map((surah) => {
                 // Determine icon based on surah type, default to Makki if undefined
                 const surahIcon = surah.type === 'Makki' ? (
-                  <KaabaIcon className="h-4 w-4 text-[#3FA5C0]" />
+                  <KaabaIcon className="h-4 w-4 text-primary" />
                 ) : surah.type === 'Madani' ? (
-                  <MadinaIcon className="h-4 w-4 text-[#3FA5C0]" />
+                  <MadinaIcon className="h-4 w-4 text-primary" />
                 ) : null;
-                
+
                 return (
                   <li
                     key={surah.id || surah.number}
                     onClick={() => handleSurahClick(surah)}
-                    className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+                    className="cursor-pointer text-gray-800 dark:text-white hover:text-primary dark:hover:text-primary-light transition-colors py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg"
                   >
                     <div className="flex items-center">
                       <span className="flex-1 min-w-0 pr-2">{surah.english || surah.name}</span>
@@ -251,7 +251,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
               })}
             </ol>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
               No surahs found
             </p>
           )}
@@ -269,63 +269,76 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       case 'Juz':
         return <JuzNavigate />;
       case 'Page':
-        return <DemoItems/>;
+        return <DemoItems />;
       default:
         return null;
     }
   };
 
 
-return (
-  <div className="bg-white rounded-lg dark:bg-[#2A2C38] shadow-lg w-[320px] h-screen flex flex-col">
-    {/* Header with tabs + Close Icon */}
-    <div className="flex items-center justify-between bg-[#F8F9FA] dark:bg-black rounded-full p-1 m-2 w-[260px]">
-
-
-    <div className="flex items-center font-poppins">
-  {tabs.map((tab, idx) => (
-    <React.Fragment key={tab}>
-      <button
-        onClick={() => setActiveTab(tab)}
-        className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-          activeTab === tab
-            ? "bg-gray-200 text-black dark:bg-[#2A2C38] dark:text-white"
-            : "text-black dark:text-white hover:text-gray-600"
-        }`}
-      >
-        {tab}
-      </button>
-
-      {/* Slim Divider */}
-      {idx < tabs.length - 1 && (
-        <span className="mx-1 text-gray-400 text-xs">|</span>
-      )}
-    </React.Fragment>
-  ))}
-</div>
-
-
-<button
+  return (
+    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
-        className="p-1 rounded-full  transition ml-5 bg-[#F8F9FA] dark:bg-[#2A2C38]"
-      >
-        <X className="h-5 w-5 text-gray-600 dark:text-white" />
-      </button>
-   
-    </div>
+      />
 
-    {/* Content */}
-    <div className="flex-1 overflow-y-auto px-2">
-      {renderTabContent()}
-    </div>
+      {/* Modal Content */}
+      <div className="relative w-full sm:w-[480px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden">
 
-    {/* Footer tip */}
-    <div className="px-4 py-2 text-xs text-gray-400 border-t dark:bg-[#2A2C38] border-gray-100 bg-gray-50">
-      Tip: try navigating with{" "}
-      <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Ctrl k</kbd>
+        {/* Drag Handle (Mobile) */}
+        <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={onClose}>
+          <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
+
+        {/* Header with tabs + Close Icon */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1 font-poppins">
+            {tabs.map((tab, idx) => (
+              <React.Fragment key={tab}>
+                <button
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab === tab
+                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                >
+                  {tab}
+                </button>
+
+                {/* Slim Divider */}
+                {idx < tabs.length - 1 && (
+                  <span className="mx-1 text-gray-300 dark:text-gray-600 text-xs">|</span>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 dark:text-gray-400"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {renderTabContent()}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Tip: try navigating with{" "}
+            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs">Ctrl K</kbd>
+          </p>
+        </div>
+
+      </div>
     </div>
-  </div>
-);
+  );
 
 };
 

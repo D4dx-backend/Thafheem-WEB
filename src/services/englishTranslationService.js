@@ -376,13 +376,62 @@ class EnglishTranslationService {
    * @param {number} ayahNo - Ayah number
    * @returns {string} HTML with clickable footnotes
    */
-  parseEnglishTranslationWithClickableFootnotes(htmlContent, surahNo, ayahNo) {
+  parseEnglishTranslationWithClickableFootnotes(htmlContent, surahNo, ayahNo, blockRange = null) {
     if (!htmlContent) return "";
     
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlContent;
     
-    // Find all <sup> tags with foot_note attributes
+    // First, handle interpretation numbers (for blockwise view) - these are sup tags with just numbers
+    // These should be clickable to open interpretations, not footnotes
+    const interpretationSupTags = tempDiv.querySelectorAll("sup:not([foot_note])");
+    interpretationSupTags.forEach((sup) => {
+      const number = sup.textContent.trim();
+      // Check if it's a number (interpretation number) and not already processed
+      if (/^\d+$/.test(number) && !sup.hasAttribute('data-footnote-id')) {
+        // This is an interpretation number, make it clickable
+        sup.style.cssText = `
+          cursor: pointer !important;
+          background-color: rgb(41 169 199) !important;
+          color: rgb(255, 255, 255) !important;
+          font-weight: 600 !important;
+          text-decoration: none !important;
+          border: none !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-size: 12px !important;
+          vertical-align: middle !important;
+          line-height: 1 !important;
+          border-radius: 9999px !important;
+          position: relative !important;
+          z-index: 10 !important;
+          top: 0px !important;
+          min-width: 20px !important;
+          min-height: 19px !important;
+          text-align: center !important;
+          transition: 0.2s ease-in-out !important;
+          padding-top: 3px !important;
+          margin-right: 4px;
+          margin-left: -1px;
+          margin-top: -15px;
+          padding-left: 2px !important;
+          padding-right: 2px !important;
+        `;
+        sup.setAttribute("data-interpretation", number);
+        if (blockRange) {
+          sup.setAttribute("data-range", blockRange);
+        } else {
+          // For single verse, use verse number as range
+          sup.setAttribute("data-range", `${ayahNo}-${ayahNo}`);
+        }
+        sup.setAttribute("data-lang", "E");
+        sup.setAttribute("title", `Click to view interpretation ${number}`);
+        sup.className = "interpretation-link";
+      }
+    });
+    
+    // Find all <sup> tags with foot_note attributes (these are footnotes, not interpretations)
     const footnoteElements = tempDiv.querySelectorAll("sup[foot_note]");
     
     footnoteElements.forEach((element) => {

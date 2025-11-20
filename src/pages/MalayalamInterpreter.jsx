@@ -378,6 +378,7 @@ handleNoteClick(idText);
       interpretationNumber={iptNo} 
       surahName={`${surahId}- Surah`} 
       verseRange={range.replace(/-/g, " - ")}
+      language={lang}
       onWordByWord={() => {}} 
     />
       <div className="w-full  mx-auto p-3 sm:p-4 lg:p-6 bg-white dark:bg-[#2A2C38] max-w-[1073px] ">

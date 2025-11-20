@@ -110,7 +110,7 @@ const HomepageNavbar = () => {
     try {
       setIsSigningOut(true);
       await signOut(auth);
-navigate("/"); // Redirect to home page after successful logout
+      navigate("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -322,85 +322,76 @@ navigate("/"); // Redirect to home page after successful logout
 
       {/* Language Console Popup */}
       {isLanguageOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 dark:bg-black/70"
-            onClick={() => setIsLanguageOpen(false)}
-          ></div>
-          <div className="relative z-10 max-h-[90vh] overflow-auto">
-            <div className="p-4">
-              <LanguageConsole 
-                onClose={() => setIsLanguageOpen(false)} 
-                selectedLanguage={
-                  translationLanguage === 'E' ? 'English' : 
-                  translationLanguage === 'ta' ? 'Tamil' : 
-                  translationLanguage === 'hi' ? 'Hindi' : 
-                  translationLanguage === 'ur' ? 'Urdu' : 
-                  translationLanguage === 'bn' ? 'Bangla' : 
-                  'Malayalam'
-                }
-                onLanguageSelect={(lang) => {
-                  // Map UI selection to API language codes
-                  let code = 'mal'; // default to Malayalam
-                  if (lang.code?.toLowerCase() === 'en') {
-                    code = 'E';
-                  } else if (lang.code?.toLowerCase() === 'ta') {
-                    code = 'ta';
-                  } else if (lang.code?.toLowerCase() === 'hi') {
-                    code = 'hi';
-                  } else if (lang.code?.toLowerCase() === 'ur') {
-                    code = 'ur';
-                  } else if (lang.code?.toLowerCase() === 'bn') {
-                    code = 'bn';
-                  }
-                  setTranslationLanguage(code);
-                  setIsLanguageOpen(false);
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        <LanguageConsole
+          onClose={() => setIsLanguageOpen(false)}
+          selectedLanguage={
+            translationLanguage === 'E' ? 'English' :
+              translationLanguage === 'ta' ? 'Tamil' :
+                translationLanguage === 'hi' ? 'Hindi' :
+                  translationLanguage === 'ur' ? 'Urdu' :
+                    translationLanguage === 'bn' ? 'Bangla' :
+                      'Malayalam'
+          }
+          onLanguageSelect={(lang) => {
+            // Map UI selection to API language codes
+            let code = 'mal'; // default to Malayalam
+            if (lang.code?.toLowerCase() === 'en') {
+              code = 'E';
+            } else if (lang.code?.toLowerCase() === 'ta') {
+              code = 'ta';
+            } else if (lang.code?.toLowerCase() === 'hi') {
+              code = 'hi';
+            } else if (lang.code?.toLowerCase() === 'ur') {
+              code = 'ur';
+            } else if (lang.code?.toLowerCase() === 'bn') {
+              code = 'bn';
+            }
+            setTranslationLanguage(code);
+            setIsLanguageOpen(false);
+          }}
+        />
       )}
 
       <nav
         ref={navRef}
-        className={`bg-white dark:bg-[#2A2C38] w-full z-[80] ${
-          isReaderPage ? "shadow-none" : "shadow-sm"
-        } sticky top-0 transition-transform duration-300 ${
-          isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
-        }`}
+        className={`bg-white/95 dark:bg-[#2A2C38]/95 backdrop-blur-md w-full z-[80] border-b border-gray-200/50 dark:border-gray-700/50 ${isReaderPage ? "shadow-none" : "shadow-lg shadow-gray-200/50 dark:shadow-black/20"
+          } sticky top-0 transition-all duration-300 ${isReaderPage && !isNavbarVisible ? "-translate-y-full" : ""
+          }`}
       >
         <div
-          className={`flex items-center justify-between px-3 sm:px-4 ${
-            isReaderPage ? "py-1 sm:py-1.5" : "py-1.5 sm:py-2"
-          }`}
+          className={`flex items-center justify-between px-3 sm:px-4 ${isReaderPage ? "py-2 sm:py-2.5" : "py-2.5 sm:py-3"
+            }`}
         >
           {/* Left side */}
           <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
             <button
               onClick={toggleMenu}
-              className="flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
-             text-gray-600 dark:text-gray-300 
-             hover:text-gray-800 dark:hover:text-white 
-             hover:bg-gray-100 dark:hover:bg-gray-800 
-             rounded-lg transition-colors 
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              className="group relative flex items-center space-x-2 p-2 sm:px-3 sm:py-2 
+             text-gray-700 dark:text-gray-200 
+             hover:text-[#2596be] dark:hover:text-[#62C3DC] 
+             hover:bg-gradient-to-br hover:from-cyan-50 hover:to-blue-50 
+             dark:hover:bg-gradient-to-br dark:hover:from-gray-800 dark:hover:to-gray-700 
+             rounded-xl transition-all duration-300 ease-out
              min-h-[44px] min-w-[44px] justify-center 
-             sm:min-h-auto sm:min-w-auto sm:justify-start"
-              title="Open menu"
+             sm:min-h-auto sm:min-w-auto sm:justify-start
+             hover:shadow-md hover:scale-105 active:scale-95"
+              title={isMenuOpen ? "Close menu" : "Open menu"}
             >
-              <Menu size={18} className="sm:w-5 sm:h-5" />
+              <Menu size={18} className="sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
 
             {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"
                 aria-label="Go to home page"
               >
                 <img
                   src={theme === 'dark' ? logoWhite : logoBlack}
                   alt="Thafheem ul Quran"
-                  className="h-7 sm:h-8 w-auto select-none"
+                  className="h-7 sm:h-8 w-auto select-none drop-shadow-sm"
                   draggable="false"
                 />
               </button>
@@ -408,75 +399,133 @@ navigate("/"); // Redirect to home page after successful logout
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-1 sm:gap-2 mr-1 sm:mr-4">
-            {/* Sign In/Sign Out Button */}
-
+          <div className="flex items-center gap-1.5 sm:gap-2 mr-1 sm:mr-4">
+            {/* Language Button */}
             <button
               onClick={() => setIsLanguageOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              aria-label="Change language"
+              className="group relative p-2 sm:p-2.5 text-gray-700 dark:text-gray-200 
+                hover:text-white hover:bg-gradient-to-br hover:from-[#62C3DC] hover:to-[#3FA6C0] 
+                dark:hover:from-[#3FA6C0] dark:hover:to-[#2596be] 
+                rounded-xl transition-all duration-300 ease-out
+                min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] 
+                flex items-center justify-center
+                hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-110 active:scale-95"
               title="Change language"
             >
-              <Languages size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
+              <Languages size={15} className="sm:w-[18px] sm:h-[18px] transition-all duration-300 group-hover:rotate-12" />
             </button>
 
+            {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="group relative p-2 sm:p-2.5 text-gray-700 dark:text-gray-200 
+                hover:text-white hover:bg-gradient-to-br hover:from-[#62C3DC] hover:to-[#3FA6C0] 
+                dark:hover:from-[#3FA6C0] dark:hover:to-[#2596be] 
+                rounded-xl transition-all duration-300 ease-out
+                min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] 
+                flex items-center justify-center
+                hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-110 active:scale-95"
               title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? (
-                <Sun size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
+                <Sun size={15} className="sm:w-[18px] sm:h-[18px] transition-all duration-300 group-hover:rotate-180" />
               ) : (
-                <Moon size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
+                <Moon size={15} className="sm:w-[18px] sm:h-[18px] transition-all duration-300 group-hover:-rotate-12" />
               )}
             </button>
 
-            <button
-              onClick={handleBookmarkClick}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
-              title="View bookmarks"
-            >
-              <Bookmark size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
-            </button>
+            {/* Bookmark Button - Only show when user is logged in */}
+            {user && (
+              <button
+                onClick={handleBookmarkClick}
+                aria-label="View bookmarks"
+                className="group relative p-2 sm:p-2.5 text-gray-700 dark:text-gray-200 
+                  hover:text-white hover:bg-gradient-to-br hover:from-[#62C3DC] hover:to-[#3FA6C0] 
+                  dark:hover:from-[#3FA6C0] dark:hover:to-[#2596be] 
+                  rounded-xl transition-all duration-300 ease-out
+                  min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] 
+                  flex items-center justify-center
+                  hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-110 active:scale-95"
+                title="View bookmarks"
+              >
+                <Bookmark size={15} className="sm:w-[18px] sm:h-[18px] transition-all duration-300 group-hover:scale-110 group-hover:fill-current" />
+              </button>
+            )}
 
+            {/* Settings Button */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="flex p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] items-center justify-center"
+              aria-label="Open settings"
+              className="group relative p-2 sm:p-2.5 text-gray-700 dark:text-gray-200 
+                hover:text-white hover:bg-gradient-to-br hover:from-[#62C3DC] hover:to-[#3FA6C0] 
+                dark:hover:from-[#3FA6C0] dark:hover:to-[#2596be] 
+                rounded-xl transition-all duration-300 ease-out
+                min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] 
+                flex items-center justify-center
+                hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-110 active:scale-95"
               title="Open settings"
             >
-              <Settings size={18} className="transition-colors duration-200" />
+              <Settings size={18} className="transition-all duration-300 group-hover:rotate-90" />
             </button>
             {isSettingsOpen && (
               <SettingsDrawer onClose={() => setIsSettingsOpen(false)} />
             )}
+
+            {/* Search Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-[#62C3DC] dark:hover:bg-[#3FA6C0] rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              className="group relative p-2 sm:p-2.5 text-gray-700 dark:text-gray-200 
+                hover:text-white hover:bg-gradient-to-br hover:from-[#62C3DC] hover:to-[#3FA6C0] 
+                dark:hover:from-[#3FA6C0] dark:hover:to-[#2596be] 
+                rounded-xl transition-all duration-300 ease-out
+                min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] 
+                flex items-center justify-center
+                hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-110 active:scale-95"
               title="Search"
             >
-              <Search size={15} className="sm:w-[18px] sm:h-[18px] transition-colors duration-200" />
+              <Search size={15} className="sm:w-[18px] sm:h-[18px] transition-all duration-300 group-hover:scale-110" />
             </button>
+
+            {/* Auth Button */}
             {user ? (
               <button
                 onClick={handleAuthButtonClick}
                 disabled={isSigningOut}
-                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 
+                  rounded-full text-red-500 
+                  hover:bg-gradient-to-br hover:from-red-50 hover:to-red-100 
+                  dark:hover:from-red-900/40 dark:hover:to-red-800/40 
+                  transition-all duration-300 ease-out
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  hover:shadow-lg hover:shadow-red-500/30 hover:scale-110 active:scale-95"
                 title="Sign out"
               >
                 {isSigningOut ? (
                   <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-0.5" />
                 )}
               </button>
             ) : (
               <button
                 onClick={handleAuthButtonClick}
-                className="px-1.5 sm:px-4 py-1.5 text-[10px] xs:text-xs sm:text-sm bg-white dark:bg-gray-800 text-[#2596be] border border-[#2596be] hover:bg-[#2596be] hover:text-white rounded-full transition-colors font-medium whitespace-nowrap"
+                className="group relative px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] xs:text-xs sm:text-sm 
+                  bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 
+                  text-[#2596be] dark:text-[#62C3DC] 
+                  border-2 border-[#2596be] dark:border-[#62C3DC] 
+                  hover:bg-gradient-to-r hover:from-[#2596be] hover:to-[#1e7a9a] 
+                  hover:text-white hover:border-transparent
+                  rounded-full transition-all duration-300 ease-out
+                  font-semibold whitespace-nowrap
+                  hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95
+                  overflow-hidden"
                 title="Sign in"
               >
-                <span className="hidden xs:inline">Sign In</span>
-                <span className="xs:hidden">Sign</span>
+                <span className="relative z-10 hidden xs:inline">Sign In</span>
+                <span className="relative z-10 xs:hidden">Sign</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#62C3DC] to-[#2596be] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             )}
           </div>
@@ -553,20 +602,18 @@ navigate("/"); // Redirect to home page after successful logout
                           setIsMenuOpen(false);
                         }
                       }}
-                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${
-                        isMainActive
-                          ? "bg-[#ebeef0] dark:bg-gray-900 text-black dark:text-white"
-                          : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-gray-900"
-                      }`}
+                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${isMainActive
+                        ? "bg-[#ebeef0] dark:bg-gray-900 text-black dark:text-white"
+                        : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-gray-900"
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <IconComponent
                           size={18}
-                          className={`flex-shrink-0 ${
-                            isMainActive
-                              ? "text-black dark:text-white "
-                              : "text-[#d9d9d9] dark:text-gray-400"
-                          }`}
+                          className={`flex-shrink-0 ${isMainActive
+                            ? "text-black dark:text-white "
+                            : "text-[#d9d9d9] dark:text-gray-400"
+                            }`}
                         />
                         <span className="text-sm sm:text-sm leading-tight">
                           {item.label}
@@ -609,11 +656,10 @@ navigate("/"); // Redirect to home page after successful logout
                                   setIsMenuOpen(false);
                                 }
                               }}
-                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${
-                                isSubActive
-                                  ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
-                                  : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
-                              }`}
+                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${isSubActive
+                                ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
+                                : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
+                                }`}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>
                               <span className="leading-tight">
@@ -640,19 +686,17 @@ navigate("/"); // Redirect to home page after successful logout
                       navigate(item.path);
                       setIsMenuOpen(false);
                     }}
-                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors text-left min-h-[48px] ${
-                      isDangerActive
-                        ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                        : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    }`}
+                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors text-left min-h-[48px] ${isDangerActive
+                      ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                      : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                      }`}
                   >
                     <IconComponent
                       size={18}
-                      className={`flex-shrink-0 ${
-                        isDangerActive
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
+                      className={`flex-shrink-0 ${isDangerActive
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-red-600 dark:text-red-400"
+                        }`}
                     />
                     <span className="text-sm leading-tight">{item.label}</span>
                   </button>

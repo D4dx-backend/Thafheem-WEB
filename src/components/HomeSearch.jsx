@@ -81,6 +81,22 @@ const HomepageSearch = () => {
     fetchPopularData();
   }, []);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showPopular || showSearchResults) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px'; // Prevent layout shift
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [showPopular, showSearchResults]);
+
   useEffect(() => {
     setLastReading(getLastReading());
 
@@ -417,38 +433,48 @@ const HomepageSearch = () => {
 
         {/* Search Results Dropdown */}
         {showSearchResults && (
-          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 w-full max-w-xl sm:max-w-2xl md:max-w-3xl z-50 max-h-96 overflow-y-auto">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium font-poppins text-gray-900 dark:text-white">
-                  Search Results
-                </h3>
-                <button
-                  onClick={() => setShowSearchResults(false)}
-                  className="text-gray-500 dark:text-white hover:text-gray-700 transition-colors"
-                >
-                  <XIcon className="h-5 w-5" />
-                </button>
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 backdrop-blur-sm"
+              onClick={() => setShowSearchResults(false)}
+            />
+            
+            {/* Modal */}
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-xl sm:max-w-2xl md:max-w-3xl z-50 max-h-[85vh] flex flex-col">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium font-poppins text-gray-900 dark:text-white">
+                    Search Results
+                  </h3>
+                  <button
+                    onClick={() => setShowSearchResults(false)}
+                    className="text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <XIcon className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
-              {isSearching && (
-                <div className="text-center py-4">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2">Searching...</p>
-                </div>
-              )}
+              <div className="overflow-y-auto flex-1 p-4">
+                {isSearching && (
+                  <div className="text-center py-4">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">Searching...</p>
+                  </div>
+                )}
 
-              {searchError && (
-                <div className="text-center py-4">
-                  <p className="text-red-500 dark:text-red-400">{searchError}</p>
-                </div>
-              )}
+                {searchError && (
+                  <div className="text-center py-4">
+                    <p className="text-red-500 dark:text-red-400">{searchError}</p>
+                  </div>
+                )}
 
-              {!isSearching && !searchError && searchResults.length === 0 && searchQuery.length >= 2 && (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 dark:text-gray-400">No results found</p>
-                </div>
-              )}
+                {!isSearching && !searchError && searchResults.length === 0 && searchQuery.length >= 2 && (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 dark:text-gray-400">No results found</p>
+                  </div>
+                )}
 
               {!isSearching && searchResults.length > 0 && (
                 <div className="space-y-3">
@@ -533,27 +559,36 @@ const HomepageSearch = () => {
               )}
             </div>
           </div>
+          </>
         )}
 
         {/* Popular Content - Enhanced with Drag Scrolling */}
         {showPopular && !showSearchResults && (
-          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-3 sm:p-4 w-full max-w-lg sm:max-w-xl md:max-w-2xl z-50">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-1.5">
-                <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 backdrop-blur-sm"
+              onClick={() => setShowPopular(false)}
+            />
+            
+            {/* Modal */}
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-lg sm:max-w-xl md:max-w-2xl z-50 max-h-[85vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-1.5">
+                  <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
                 <h2 className="sm:text-[15px] font-semibold font-poppins text-gray-600 dark:text-[#95959b]">Popular</h2>
               </div>
               <button
                 onClick={() => setShowPopular(false)}
-                className="text-[#323A3F] dark:text-white transition-colors"
+                className="text-[#323A3F] dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-lg"
               >
                 <XIcon className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="space-y-3">
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1 p-3 sm:p-4 space-y-3">
               <h3 className="text-base font-medium font-poppins text-gray-900 dark:text-white">
                 Chapters and Verses
               </h3>
@@ -631,6 +666,7 @@ const HomepageSearch = () => {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
 

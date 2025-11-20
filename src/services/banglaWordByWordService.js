@@ -12,11 +12,8 @@ class BanglaWordByWordService {
   async isAvailable() {
     return banglaTranslationService.isAvailable();
   }
-
-  clearCache() {
-    banglaTranslationService.clearCache();
-  }
 }
 
-export default new BanglaWordByWordService();
+const banglaWordByWordService = new BanglaWordByWordService();
+export default banglaWordByWordService;
 

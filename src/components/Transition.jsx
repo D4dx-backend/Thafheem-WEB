@@ -377,7 +377,7 @@ const Transition = ({ showPageInfo = false }) => {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-1 z-10">
+                  <div className="absolute top-full left-0 mt-1 z-[120]">
                     <NavigateSurah
                       onSurahSelect={handleSurahSelect}
                       onClose={() => setIsDropdownOpen(false)}

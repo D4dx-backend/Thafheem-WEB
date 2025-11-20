@@ -99,9 +99,36 @@ const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+  // Normalize headers to ensure consistent handling
+  const headers = new Headers();
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => headers.append(key, value));
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => headers.append(key, value));
+    } else {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          headers.append(key, value);
+        }
+      });
+    }
+  }
+
+  // Ensure legacy API expects JSON responses; fallback to permissive accept header
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json, text/plain, */*');
+  }
+
+  // Helps some legacy endpoints detect AJAX requests (mirrors browser defaults)
+  if (!headers.has('X-Requested-With')) {
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
+      headers,
       signal: controller.signal,
       mode: 'cors', // Explicitly set CORS mode
     });

@@ -118,8 +118,8 @@ class ApiService {
   }
 
   // Get all translations for a surah
-  async getSurahTranslations(language, surah) {
-    return this.makeRequest(`/${language}/surah/${surah}`);
+  async getSurahTranslations(language, surah, params = {}) {
+    return this.makeRequest(`/${language}/surah/${surah}`, params);
   }
 
   // Get interpretation/explanation for specific ayah

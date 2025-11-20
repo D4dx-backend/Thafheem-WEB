@@ -56,6 +56,7 @@ import {
 } from "../utils/surahNameUtils.js";
 
 const URDU_BATCH_SIZE = 20;
+const TAMIL_PAGE_SIZE = 25;
 
 const Surah = () => {
   const {
@@ -150,6 +151,7 @@ const Surah = () => {
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
   const audioRefForCleanup = useRef(null); // Track audio for cleanup
+  const isComponentMountedRef = useRef(true);
 
   // In-memory cache for English per-ayah translation map
   const englishAyahCacheRef = useRef(new Map()); // key: `${surahId}-E` -> Map(ayah->text)
@@ -159,6 +161,8 @@ const Surah = () => {
   const [urduLoadedCount, setUrduLoadedCount] = useState(0);
   const [isLoadingUrduBatch, setIsLoadingUrduBatch] = useState(false);
   const loadMoreUrduRef = useRef(null);
+  const [tamilPagination, setTamilPagination] = useState(null);
+  const [isLoadingTamilPage, setIsLoadingTamilPage] = useState(false);
 
   useEffect(() => {
     if (surahId) {
@@ -258,6 +262,77 @@ const Surah = () => {
     showError,
     urduLoadedCount,
     translationLanguage,
+  ]);
+
+  const fetchTamilTranslationsPage = useCallback(
+    async ({ page = 1, replace = false, trackLoading = true } = {}) => {
+      if (!surahId || translationLanguage !== 'ta') return null;
+
+      const surahNumber = parseInt(surahId, 10);
+      if (Number.isNaN(surahNumber)) return null;
+
+      if (trackLoading) {
+        setIsLoadingTamilPage(true);
+      }
+
+      try {
+        const response = await tamilTranslationService.getSurahTranslations(surahNumber, {
+          page,
+          limit: TAMIL_PAGE_SIZE,
+        });
+
+        const items = Array.isArray(response?.translations) ? response.translations : [];
+        const paginationMeta = response?.pagination || null;
+
+        if (isComponentMountedRef.current) {
+          if (replace) {
+            setAyahData(items);
+          } else if (items.length > 0) {
+            setAyahData((prev) => [...prev, ...items]);
+          }
+
+          setTamilPagination(paginationMeta);
+        }
+        return { items, pagination: paginationMeta };
+      } catch (error) {
+        if (replace && isComponentMountedRef.current) {
+          setAyahData([]);
+          setTamilPagination(null);
+        }
+        throw error;
+      } finally {
+        if (trackLoading && isComponentMountedRef.current) {
+          setIsLoadingTamilPage(false);
+        }
+      }
+    },
+    [surahId, translationLanguage]
+  );
+
+  const handleLoadMoreTamil = useCallback(async () => {
+    if (
+      translationLanguage !== 'ta' ||
+      isLoadingTamilPage ||
+      !tamilPagination ||
+      !tamilPagination.hasNext
+    ) {
+      return;
+    }
+
+    const nextPage = (tamilPagination.page || 1) + 1;
+
+    try {
+      await fetchTamilTranslationsPage({ page: nextPage, replace: false });
+    } catch (error) {
+      console.error('Error loading more Tamil translations:', error);
+      showError?.('Failed to load more Tamil ayahs. Please try again.');
+    }
+  }, [
+    translationLanguage,
+    tamilPagination,
+    isLoadingTamilPage,
+    fetchTamilTranslationsPage,
+    showError,
   ]);
 
   useEffect(() => {
@@ -465,23 +540,23 @@ const Surah = () => {
 
         // Translation source depends on selected language
         if (translationLanguage === 'ta') {
-          // Tamil translations using hybrid service (API-first with SQL.js fallback)
+          // Tamil translations using paginated API
           try {
-            const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
+            setTamilPagination(null);
+            const tamilResult = await fetchTamilTranslationsPage({ page: 1, replace: true, trackLoading: false });
             if (!isMounted) return;
-            if (tamilTranslations && tamilTranslations.length > 0) {
-              setAyahData(tamilTranslations);
-            } else {
+            const tamilTranslations = tamilResult?.items || [];
+            if (!tamilTranslations.length) {
               const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
                 number: index + 1,
                 ArabicText: '',
                 Translation: `Tamil translation not available for verse ${index + 1}`,
               }));
               setAyahData(fallbackAyahData);
+              setTamilPagination(null);
             }
           } catch (error) {
             if (!isMounted) return;
-            // Only log error if it's not an abort error
             if (error.name !== 'AbortError') {
               console.error('Error fetching Tamil translations:', error);
             }
@@ -491,6 +566,7 @@ const Surah = () => {
               Translation: `Tamil translation service unavailable. Please try again later.`,
             }));
             setAyahData(fallbackAyahData);
+            setTamilPagination(null);
           }
         } else if (translationLanguage === 'hi') {
           // Hindi translations using hybrid service (API-first with SQL.js fallback)
@@ -681,7 +757,7 @@ const Surah = () => {
       isMounted = false;
       abortController.abort();
     };
-  }, [surahId, translationLanguage, loadUrduBatch]);
+  }, [surahId, translationLanguage, loadUrduBatch, fetchTamilTranslationsPage]);
 
   // Load bookmarked verses for signed-in users
   useEffect(() => {
@@ -1401,7 +1477,9 @@ const Surah = () => {
 
   // Stop audio when navigating away from this page (unmount)
   useEffect(() => {
+    isComponentMountedRef.current = true;
     return () => {
+      isComponentMountedRef.current = false;
       try {
         stopCurrentAudio();
       } catch (e) {}
@@ -1593,9 +1671,14 @@ const Surah = () => {
           }
           
           // Now fetch Tamil translations since database is downloaded
-          const tamilTranslations = await tamilTranslationService.getSurahTranslations(parseInt(surahId));
-          if (tamilTranslations && tamilTranslations.length > 0) {
+          const tamilResult = await tamilTranslationService.getSurahTranslations(parseInt(surahId), {
+            page: 1,
+            limit: TAMIL_PAGE_SIZE,
+          });
+          const tamilTranslations = Array.isArray(tamilResult?.translations) ? tamilResult.translations : [];
+          if (tamilTranslations.length > 0) {
             setAyahData(tamilTranslations);
+            setTamilPagination(tamilResult?.pagination || null);
           } else {
             const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
               number: index + 1,
@@ -1603,6 +1686,7 @@ const Surah = () => {
               Translation: `Tamil translation not available for verse ${index + 1}`,
             }));
             setAyahData(fallbackAyahData);
+            setTamilPagination(null);
           }
           
           setArabicVerses(arabicResponse || []);
@@ -2202,6 +2286,25 @@ const Surah = () => {
                         ? 'Loading more ayahs…'
                         : 'Scroll to load more ayahs'}
                   </div>
+                </div>
+              )}
+              {translationLanguage === 'ta' && tamilPagination?.totalItems > 0 && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Showing {ayahData.length} of {tamilPagination.totalItems} ayahs
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreTamil}
+                    disabled={isLoadingTamilPage || !tamilPagination.hasNext}
+                    className="px-4 py-2 text-sm rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-300 hover:border-cyan-400 dark:hover:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {tamilPagination.hasNext
+                      ? isLoadingTamilPage
+                        ? 'Loading more ayahs…'
+                        : 'Load more ayahs'
+                      : 'All ayahs loaded'}
+                  </button>
                 </div>
               )}
               </>

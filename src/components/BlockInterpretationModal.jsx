@@ -1334,9 +1334,36 @@ const BlockInterpretationModal = ({
 
         {/* Modal Content */}
         <div
-          className={`relative w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden ${isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
+          className={`relative w-full ${
+            currentLanguage === 'E' || currentLanguage === 'en'
+              ? 'sm:w-auto sm:max-w-2xl' // Smaller max-width for English
+              : 'sm:w-auto sm:max-w-4xl xl:max-w-[1073px]'
+          } ${
+            currentLanguage === 'E' || currentLanguage === 'en'
+              ? 'sm:max-h-[95vh]' // Max height only, allow auto-sizing for smaller content
+              : 'max-h-[85vh] sm:max-h-[90vh]'
+          } bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl ${
+            currentLanguage === 'E' || currentLanguage === 'en'
+              ? 'flex flex-col' // Keep flex for layout but allow natural height
+              : 'flex flex-col'
+          } animate-slideUp sm:animate-fadeIn ${
+            currentLanguage === 'E' || currentLanguage === 'en'
+              ? '' // No overflow hidden, let content determine height
+              : 'overflow-hidden'
+          } ${isClosing ? 'animate-slideDown sm:animate-fadeOut' : ''
             }`}
           onClick={(e) => e.stopPropagation()} // Prevent backdrop click when clicking inside modal
+          style={{
+            ...(currentLanguage === 'E' || currentLanguage === 'en'
+              ? {
+                  // Auto-size based on content for English
+                  maxWidth: '42rem', // Smaller max width (672px)
+                  minWidth: 'min(90vw, 20rem)', // Ensure minimum readability
+                  height: 'auto', // Natural height based on content
+                  maxHeight: '95vh', // But cap at viewport height
+                }
+              : {})
+          }}
         >
           {/* Drag Handle (Mobile) */}
           <div 
@@ -1379,7 +1406,20 @@ const BlockInterpretationModal = ({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8 min-h-0">
+          <div 
+            className={`${
+              currentLanguage === 'E' || currentLanguage === 'en'
+                ? 'overflow-y-auto' // Natural height for English, scroll if needed
+                : 'flex-1 overflow-y-auto'
+            } px-4 sm:px-6 py-6 sm:py-8 ${currentLanguage === 'E' || currentLanguage === 'en' ? '' : 'min-h-0'}`}
+            style={{
+              ...(currentLanguage === 'E' || currentLanguage === 'en'
+                ? {
+                    maxHeight: 'calc(95vh - 120px)', // Account for header height
+                  }
+                : {})
+            }}
+          >
             {loading && (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">

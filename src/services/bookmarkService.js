@@ -309,6 +309,16 @@ class BookmarkService {
         ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
         : [];
     }
+    
+    // In development, skip API call if we're using local proxy (to avoid console noise)
+    // The proxy might not have these endpoints available
+    if (import.meta.env.DEV && THAFHEEM_API_BASE.startsWith('/api/thafheem')) {
+      const all = this.getLocalBookmarks(userId);
+      return Array.isArray(all)
+        ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
+        : [];
+    }
+    
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/bookmarks?userId=${userId}&bkType=${bookmarkType}`, {
         method: 'GET',
@@ -318,7 +328,8 @@ class BookmarkService {
       });
 
       if (!response.ok) {
-const all = this.getLocalBookmarks(userId);
+        // Silently fall back to localStorage for expected errors (404, 401) in development
+        const all = this.getLocalBookmarks(userId);
         return Array.isArray(all)
           ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
           : [];
@@ -336,7 +347,10 @@ const all = this.getLocalBookmarks(userId);
       
       return [];
     } catch (error) {
-      console.error('Error fetching bookmarks, using localStorage fallback:', error);
+      // Only log unexpected errors (not network errors in development)
+      if (import.meta.env.PROD || (!error.message?.includes('Failed to fetch') && !error.message?.includes('NetworkError'))) {
+        console.error('Error fetching bookmarks, using localStorage fallback:', error);
+      }
       const all = this.getLocalBookmarks(userId);
       return Array.isArray(all)
         ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
@@ -545,6 +559,13 @@ const localBookmarks = this.getLocalBookmarks(userId);
     if (!USE_API) {
       return this.getLocalFavoriteSurahs(userId);
     }
+    
+    // In development, skip API call if we're using local proxy (to avoid console noise)
+    // The proxy might not have these endpoints available
+    if (import.meta.env.DEV && THAFHEEM_API_BASE.startsWith('/api/thafheem')) {
+      return this.getLocalFavoriteSurahs(userId);
+    }
+    
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/favorites?userId=${userId}`, {
         method: 'GET',
@@ -554,13 +575,17 @@ const localBookmarks = this.getLocalBookmarks(userId);
       });
 
       if (!response.ok) {
-return this.getLocalFavoriteSurahs(userId);
+        // Silently fall back to localStorage for expected errors (404, 401) in development
+        return this.getLocalFavoriteSurahs(userId);
       }
 
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error('Error fetching favorites, using localStorage fallback:', error);
+      // Only log unexpected errors (not network errors in development)
+      if (import.meta.env.PROD || (!error.message?.includes('Failed to fetch') && !error.message?.includes('NetworkError'))) {
+        console.error('Error fetching favorites, using localStorage fallback:', error);
+      }
       return this.getLocalFavoriteSurahs(userId);
     }
   }
@@ -575,6 +600,12 @@ return this.getLocalFavoriteSurahs(userId);
       createdAt: new Date().toISOString()
     };
 
+    // In development, skip API call if we're using local proxy (to avoid console noise)
+    if (import.meta.env.DEV && THAFHEEM_API_BASE.startsWith('/api/thafheem')) {
+      this.addLocalFavoriteSurah(userId, favoriteData);
+      return favoriteData;
+    }
+
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/favorites`, {
         method: 'POST',
@@ -585,14 +616,17 @@ return this.getLocalFavoriteSurahs(userId);
       });
 
       if (!response.ok) {
-this.addLocalFavoriteSurah(userId, favoriteData);
+        this.addLocalFavoriteSurah(userId, favoriteData);
         return favoriteData;
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error adding favorite, using localStorage fallback:', error);
+      // Only log unexpected errors (not network errors in development)
+      if (import.meta.env.PROD || (!error.message?.includes('Failed to fetch') && !error.message?.includes('NetworkError'))) {
+        console.error('Error adding favorite, using localStorage fallback:', error);
+      }
       this.addLocalFavoriteSurah(userId, favoriteData);
       return favoriteData;
     }
@@ -600,6 +634,12 @@ this.addLocalFavoriteSurah(userId, favoriteData);
 
   // Delete favorite surah
   static async deleteFavoriteSurah(userId, surahId) {
+    // In development, skip API call if we're using local proxy (to avoid console noise)
+    if (import.meta.env.DEV && THAFHEEM_API_BASE.startsWith('/api/thafheem')) {
+      this.removeLocalFavoriteSurah(userId, surahId);
+      return { success: true };
+    }
+    
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/favorites/${userId}/${surahId}`, {
         method: 'DELETE',
@@ -609,13 +649,16 @@ this.addLocalFavoriteSurah(userId, favoriteData);
       });
 
       if (!response.ok) {
-this.removeLocalFavoriteSurah(userId, surahId);
+        this.removeLocalFavoriteSurah(userId, surahId);
         return { success: true };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Error deleting favorite, using localStorage fallback:', error);
+      // Only log unexpected errors (not network errors in development)
+      if (import.meta.env.PROD || (!error.message?.includes('Failed to fetch') && !error.message?.includes('NetworkError'))) {
+        console.error('Error deleting favorite, using localStorage fallback:', error);
+      }
       this.removeLocalFavoriteSurah(userId, surahId);
       return { success: true };
     }

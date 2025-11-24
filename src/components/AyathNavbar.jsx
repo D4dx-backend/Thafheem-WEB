@@ -7,7 +7,6 @@ import {
   Share2,
   X,
   NotepadText,
-  List,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchSurahs } from "../api/apifunction";
@@ -25,6 +24,7 @@ const AyathNavbar = ({
   onClose,
   onWordByWordClick,
   verseData, // Add verseData prop to get verse text for bookmarking
+  interpretationData, // Add interpretationData prop to get interpretation text for copying
   selectedQari,
   onQariChange,
 }) => {
@@ -35,6 +35,7 @@ const AyathNavbar = ({
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -104,6 +105,172 @@ const AyathNavbar = ({
       // Just update the verse in the current modal
 }
     setVerseDropdownOpen(false);
+  };
+
+  // Helper function to extract plain text from HTML
+  const extractPlainText = (content) => {
+    if (content == null) return "";
+    if (typeof content !== "string") return String(content);
+    if (typeof window !== "undefined") {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
+      return tempDiv.textContent || tempDiv.innerText || "";
+    }
+    return content.replace(/<[^>]+>/g, " ");
+  };
+
+  // Helper function to extract interpretation text from data item
+  const extractInterpretationText = (item) => {
+    if (!item || typeof item !== "object") return "";
+
+    // For Malayalam, check AudioIntrerptn first (from quranaya endpoint)
+    // Then check the mapped Interpretation field
+    const preferredKeys = [
+      "AudioIntrerptn",  // Malayalam quranaya endpoint field (check first)
+      "Interpretation",  // Mapped field from apifunction
+      "interpretation",
+      "AudioText",       // Also from quranaya endpoint
+      "interpret_text",
+      "InterpretText",
+      "Interpret_Text",
+      "text",
+      "Text",
+      "content",
+      "Content",
+      "meaning",
+      "Meaning",
+      "body",
+      "Body",
+      "desc",
+      "Desc",
+      "description",
+      "Description",
+    ];
+
+    // Try each preferred key
+    for (const key of preferredKeys) {
+      if (typeof item[key] === "string" && item[key].trim().length > 0) {
+        return item[key];
+      }
+    }
+
+    // Fallback: find any string field with substantial content
+    // Lower the threshold for Malayalam data which might have shorter fields
+    for (const [k, v] of Object.entries(item)) {
+      if (typeof v === "string" && v.trim().length > 10) {
+        // Skip common non-content fields
+        if (!["InterpretationNo", "Interpretation_No", "interptn_no", "contiayano", "ayaid", "Ayaid", "suraid", "pageid", "QAudioUrl", "TransUrl", "InterPtnUrl", "ASuraName"].includes(k)) {
+          return v;
+        }
+      }
+    }
+
+    return "";
+  };
+
+  const handleCopy = async () => {
+    if (!verseData && !interpretationData) {
+      showError("No data available to copy");
+      return;
+    }
+
+    try {
+      // Build text to copy: Arabic text, translation, and interpretation
+      const parts = [];
+      
+      // Add Arabic text
+      if (verseData?.arabic) {
+        parts.push(verseData.arabic);
+      }
+      
+      // Add translation
+      if (verseData?.translation) {
+        parts.push(verseData.translation);
+      }
+
+      // Add interpretation(s)
+      if (interpretationData) {
+        const interpretationTexts = [];
+        
+        if (Array.isArray(interpretationData)) {
+          interpretationData.forEach((item, index) => {
+            // Handle string items directly
+            if (typeof item === "string" && item.trim().length > 0) {
+              const plainText = extractPlainText(item);
+              if (plainText.trim()) {
+                const prefix = interpretationData.length > 1 
+                  ? `Interpretation ${index + 1}:\n` 
+                  : "Interpretation:\n";
+                interpretationTexts.push(prefix + plainText.trim());
+              }
+            } else if (item && typeof item === "object") {
+              const interpretationText = extractInterpretationText(item);
+              if (interpretationText) {
+                const plainText = extractPlainText(interpretationText);
+                if (plainText.trim()) {
+                  // Add interpretation number if multiple interpretations
+                  const prefix = interpretationData.length > 1 
+                    ? `Interpretation ${index + 1}:\n` 
+                    : "Interpretation:\n";
+                  interpretationTexts.push(prefix + plainText.trim());
+                }
+              }
+            }
+          });
+        } else if (typeof interpretationData === "string") {
+          // Handle string interpretation data directly
+          const plainText = extractPlainText(interpretationData);
+          if (plainText.trim()) {
+            interpretationTexts.push("Interpretation:\n" + plainText.trim());
+          }
+        } else if (typeof interpretationData === "object") {
+          const interpretationText = extractInterpretationText(interpretationData);
+          if (interpretationText) {
+            const plainText = extractPlainText(interpretationText);
+            if (plainText.trim()) {
+              interpretationTexts.push("Interpretation:\n" + plainText.trim());
+            }
+          }
+        }
+
+        if (interpretationTexts.length > 0) {
+          parts.push(interpretationTexts.join("\n\n"));
+        } else {
+          // Debug: log if interpretation data exists but no text was extracted
+          console.warn("Interpretation data exists but no text extracted:", interpretationData);
+        }
+      }
+
+      // If no content, try to create a basic text
+      if (parts.length === 0) {
+        const surahName = surahInfo?.name || surahInfo?.arabic || `Surah ${surahId}`;
+        parts.push(`${surahName}, Verse ${verseId}`);
+      }
+
+      const textToCopy = parts.join("\n\n---\n\n");
+
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+
+      setCopied(true);
+      showSuccess("Verse and interpretation copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy verse:", error);
+      showError("Failed to copy verse. Please try again.");
+    }
   };
 
   const handleBookmark = async () => {
@@ -253,10 +420,15 @@ const AyathNavbar = ({
 
         <div className="flex items-center space-x-1 sm:space-x-2">
           <button
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg  transition-colors"
+            onClick={handleCopy}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative"
             title="Copy"
           >
-            <NotepadText className="w-4 sm:w-5 h-4 sm:h-5 dark:text-white text-gray-600" />
+            {copied ? (
+              <span className="text-green-500 font-bold text-xs">Copied!</span>
+            ) : (
+              <NotepadText className="w-4 sm:w-5 h-4 sm:h-5 dark:text-white text-gray-600" />
+            )}
           </button>
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -275,17 +447,6 @@ const AyathNavbar = ({
                 }`}
               />
             )}
-          </button>
-          <button
-            className="relative group p-2 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
-            title="Word by Word"
-            aria-label="Word by Word"
-            onClick={() => onWordByWordClick && onWordByWordClick(verseId)}
-          >
-            <List className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-white dark:text-gray-900 z-50">
-              Word by Word
-            </span>
           </button>
           <button
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

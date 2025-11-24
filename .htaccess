@@ -2,6 +2,11 @@
   RewriteEngine On
   RewriteBase /new_thafheem_web/
   
+  # Proxy API requests to old.thafheem.net to avoid CORS
+  # This requires mod_proxy and mod_proxy_http to be enabled
+  RewriteCond %{REQUEST_URI} ^/new_thafheem_web/api/old-thaf-api/(.*)$
+  RewriteRule ^api/old-thaf-api/(.*)$ https://old.thafheem.net/thaf-api/$1 [P,L]
+  
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

@@ -4,7 +4,6 @@ import logo from "../assets/logo.png";
 import logoWhite from "../assets/logo-white.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
-import ForwardIcon from "../assets/forward.png";
 import { searchQuran, fetchPopularChapters } from "../api/apifunction";
 import {
   getLastReading,
@@ -436,12 +435,12 @@ const HomepageSearch = () => {
           <>
             {/* Backdrop */}
             <div 
-              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[300] backdrop-blur-sm"
               onClick={() => setShowSearchResults(false)}
             />
             
             {/* Modal */}
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-xl sm:max-w-2xl md:max-w-3xl z-50 max-h-[85vh] flex flex-col">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-xl sm:max-w-2xl md:max-w-3xl z-[310] max-h-[85vh] flex flex-col">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium font-poppins text-gray-900 dark:text-white">
@@ -567,12 +566,12 @@ const HomepageSearch = () => {
           <>
             {/* Backdrop */}
             <div 
-              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[300] backdrop-blur-sm"
               onClick={() => setShowPopular(false)}
             />
             
             {/* Modal */}
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-lg sm:max-w-xl md:max-w-2xl z-50 max-h-[85vh] flex flex-col">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-lg sm:max-w-xl md:max-w-2xl z-[310] max-h-[85vh] flex flex-col">
               {/* Header */}
               <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-1.5">
@@ -653,17 +652,6 @@ const HomepageSearch = () => {
                 </>
               )}
 
-              {/* Listen to Quran Tajwid */}
-              <div className="flex flex-col items-center dark:bg-[#2A2C38] rounded-lg py-2.5 text-center">
-                <div className="flex items-center space-x-2.5">
-                  <div className="flex items-center justify-center w-9 h-7 rounded-full">
-                    <img src={ForwardIcon} alt="Forward" className="w-[85px] h-[18px] object-contain" />
-                  </div>
-                  <h4 className="font-medium font-poppins text-black dark:text-white text-sm sm:text-base">
-                    Listen to Quran Tajwid
-                  </h4>
-                </div>
-              </div>
             </div>
           </div>
           </>

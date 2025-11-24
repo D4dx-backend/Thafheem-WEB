@@ -148,33 +148,14 @@ const HomepageNavbar = () => {
     { icon: BookA, label: "English Translation", path: "/englishtranslate" },
     { icon: Book, label: "Introduction", path: "/authorpreface" },
     { icon: LaptopMinimal, label: "Digitisation", path: "/digitisation" },
-    {
-      icon: BookUser,
-      label: "Thafeem ul Quran",
-      hasArrow: true,
-      hasSubmenu: true,
-      submenuItems: [
-        { label: "Ayah wise", action: "setAyahWise" },
-        { label: "Block wise", action: "setBlockWise" },
-        { label: "Qur'an Study - Preface", path: "/quranstudy" },
-        { label: "End of Prophethood", path: "/end" },
-        { label: "Conclusion", path: "/conclusion" },
-      ],
-    },
-    { icon: BookOpen, label: "Thafeem", path: "/thafeem" },
     { icon: BookType, label: "Tajwid", path: "/tajweed" },
     { icon: BookOpenCheck, label: "Quiz", path: "/quiz" },
     { icon: LetterText, label: "Drag & drop", path: "/dragdrop" },
     { icon: Sparkles, label: "What's New", path: "/whatsnew" },
-    { icon: Settings, label: "Settings", path: "/settings" },
-    { icon: Bug, label: "Raise a bug", path: "/raisebug" },
     { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp },
-    { icon: CircleAlert, label: "About Author", path: "/aboutauthor" },
     { icon: User, label: "About Us", path: "/about" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
-    { icon: MessageSquare, label: "Feedback", path: "/feedback" },
     { icon: Shield, label: "Privacy", path: "/privacy" },
-    { icon: HelpCircle, label: "Help", path: "/help" },
   ];
 
   const dangerMenuItems = [
@@ -511,21 +492,24 @@ const HomepageNavbar = () => {
             ) : (
               <button
                 onClick={handleAuthButtonClick}
-                className="group relative px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] xs:text-xs sm:text-sm 
-                  bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 
+                className="group relative px-3 py-1.5 xs:px-4 sm:px-5 xs:py-2 sm:py-2.5 text-[9px] xs:text-xs sm:text-sm 
+                  bg-white dark:bg-[#2A2C38] 
                   text-[#2596be] dark:text-[#62C3DC] 
-                  border-2 border-[#2596be] dark:border-[#62C3DC] 
+                  border border-[#2596be]/30 dark:border-[#62C3DC]/30 
                   hover:bg-gradient-to-r hover:from-[#2596be] hover:to-[#1e7a9a] 
-                  hover:text-white hover:border-transparent
-                  rounded-full transition-all duration-300 ease-out
-                  font-semibold whitespace-nowrap
-                  hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95
-                  overflow-hidden"
+                  hover:text-white hover:border-[#2596be]
+                  rounded-xl transition-all duration-300 ease-out
+                  font-medium whitespace-nowrap
+                  shadow-sm hover:shadow-md hover:shadow-cyan-500/20 
+                  hover:scale-[1.02] active:scale-[0.98]
+                  overflow-hidden min-h-[32px] xs:min-h-[36px] sm:min-h-[40px] 
+                  flex items-center justify-center
+                  backdrop-blur-sm"
                 title="Sign in"
               >
-                <span className="relative z-10 hidden xs:inline">Sign In</span>
-                <span className="relative z-10 xs:hidden">Sign</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#62C3DC] to-[#2596be] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10 hidden xs:inline font-semibold text-sm sm:text-base">Sign In</span>
+                <span className="relative z-10 xs:hidden text-[9px] font-semibold">Sign</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#62C3DC] to-[#2596be] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
               </button>
             )}
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   BookOpen,
@@ -85,6 +85,8 @@ const BlockWise = () => {
   const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
+  const [blockReloadToken, setBlockReloadToken] = useState(0);
+  const [autoRetryAttempted, setAutoRetryAttempted] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   // Favorite surah state
   const [isFavorited, setIsFavorited] = useState(false);
@@ -120,6 +122,8 @@ const BlockWise = () => {
   const { surahId } = useParams();
   const { getBlockViewCache, setBlockViewCache } = useSurahViewCache();
   const hydratedBlockCacheRef = useRef(false);
+  const previousLanguageRef = useRef(translationLanguage);
+  const previousSurahRef = useRef(surahId);
 
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -148,6 +152,31 @@ const BlockWise = () => {
   // Use cached surah data
   const { surahs } = useSurahData();
 
+  const buildBlockIdSet = useCallback((ranges = []) => {
+    if (!Array.isArray(ranges) || ranges.length === 0) {
+      return new Set();
+    }
+
+    return new Set(
+      ranges.map((block, index) => {
+        const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+        const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+        const parsedStart = Number.parseInt(rawStart, 10);
+        const parsedEnd = Number.parseInt(rawEnd, 10);
+        const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+        const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+        const start = hasNumericBounds ? parsedStart : fallbackStart;
+        const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+        const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+        const rangeKey = hasNumericBounds
+          ? `${start}-${end}`
+          : `${rawStart}-${rawEnd}`;
+
+        return block.ID || block.id || rangeKey || `block-${index}`;
+      })
+    );
+  }, []);
+
   // Function to convert Western numerals to Arabic-Indic numerals
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -165,6 +194,29 @@ const BlockWise = () => {
     }
     return fallbackValue;
   };
+
+  const triggerBlockwiseReload = useCallback(
+    (reason = "manual") => {
+      if (!surahId) {
+        return;
+      }
+
+      console.log(`[BlockWise] Triggering blockwise reload (${reason})`);
+      hasFetchedRef.current = false;
+
+      const nextLoadingSet = buildBlockIdSet(blockRanges);
+      setLoadingBlocks(nextLoadingSet);
+      setBlockTranslations({});
+      setError(null);
+
+      if (reason === "manual") {
+        setAutoRetryAttempted(false);
+      }
+
+      setBlockReloadToken((prev) => prev + 1);
+    },
+    [surahId, blockRanges, buildBlockIdSet]
+  );
 
   // Initialize audio element
   useEffect(() => {
@@ -732,6 +784,10 @@ const BlockWise = () => {
   }, [surahId, translationLanguage]);
 
   useEffect(() => {
+    setAutoRetryAttempted(false);
+  }, [surahId]);
+
+  useEffect(() => {
     if (!surahId) {
       return;
     }
@@ -965,7 +1021,7 @@ const BlockWise = () => {
     return () => {
       hasFetchedRef.current = false;
     };
-  }, [surahId, surahs, translationLanguage]);
+  }, [surahId, surahs, translationLanguage, blockReloadToken]);
 
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -1006,30 +1062,55 @@ const BlockWise = () => {
     setBlockViewCache,
   ]);
 
-  // When language changes, clear current block data to force re-render with new language
   useEffect(() => {
-    // Mark all existing blocks as loading immediately to prevent "Translation not available" flash
+    const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+    const hasBlocks = Array.isArray(blockRanges) && blockRanges.length > 0;
+    const isStillLoading = loading || (loadingBlocks && loadingBlocks.size > 0);
+    const translationCount = blockTranslations ? Object.keys(blockTranslations).length : 0;
+
+    if (
+      !surahId ||
+      !supportsBlockwise ||
+      !hasBlocks ||
+      isStillLoading ||
+      translationCount > 0 ||
+      autoRetryAttempted
+    ) {
+      return;
+    }
+
+    setAutoRetryAttempted(true);
+    triggerBlockwiseReload("auto");
+  }, [
+    surahId,
+    translationLanguage,
+    blockRanges,
+    blockTranslations,
+    loading,
+    loadingBlocks,
+    autoRetryAttempted,
+    triggerBlockwiseReload,
+  ]);
+
+  // Reset translations only when language or surah actually changes.
+  useEffect(() => {
+    const languageChanged = previousLanguageRef.current !== translationLanguage;
+    const surahChanged = previousSurahRef.current !== surahId;
+
+    if (!languageChanged && !surahChanged) {
+      return;
+    }
+
+    previousLanguageRef.current = translationLanguage;
+    previousSurahRef.current = surahId;
+
     if (blockRanges.length > 0) {
-      const allBlockIds = new Set(
-        blockRanges.map((block) => {
-          const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
-          const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
-          const parsedStart = Number.parseInt(rawStart, 10);
-          const parsedEnd = Number.parseInt(rawEnd, 10);
-          const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
-          const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
-          const start = hasNumericBounds ? parsedStart : fallbackStart;
-          const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
-          const end = hasNumericBounds ? parsedEnd : fallbackEnd;
-          const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
-          return block.ID || block.id || rangeKey || `block-${blockRanges.indexOf(block)}`;
-        })
-      );
-      setLoadingBlocks(allBlockIds);
+      setLoadingBlocks(buildBlockIdSet(blockRanges));
+    } else {
+      setLoadingBlocks(new Set());
     }
 
     setBlockTranslations({});
-    // Don't clear blockRanges - keep them so blocks still render with loading state
     hasFetchedRef.current = false;
     setSelectedInterpretation(null);
     setShowInterpretation(false);
@@ -1042,7 +1123,8 @@ const BlockWise = () => {
       surah: null,
       ayah: null,
     });
-  }, [translationLanguage]);
+    setAutoRetryAttempted(false);
+  }, [translationLanguage, surahId, blockRanges, buildBlockIdSet]);
 
   // Load favorite status for the current surah
   useEffect(() => {
@@ -1082,9 +1164,10 @@ const BlockWise = () => {
         event.stopPropagation();
         
         const footnoteId = target.getAttribute("data-footnote-id");
-        // For English interpretations, use the displayed number (textContent), NOT the footnote ID
-        // The displayed number (like "1", "2", "3") is the interpretation number
-        const displayedNumber = (target.textContent || "").trim();
+        const displayedNumberAttr =
+          target.getAttribute("data-interpretation-number") ||
+          target.getAttribute("data-footnote-number");
+        const displayedNumber = displayedNumberAttr || (target.textContent || "").trim();
         const interpretationNumber = displayedNumber && /^\d+$/.test(displayedNumber)
           ? parseInt(displayedNumber, 10)
           : 1;
@@ -1154,7 +1237,7 @@ const BlockWise = () => {
         return;
       }
 
-      const footnoteNumber = (target.textContent || "").trim() || target.getAttribute("data-footnote-number");
+      const footnoteNumber = target.getAttribute("data-footnote-number") || (target.textContent || "").trim();
       const ayahNoAttr = target.getAttribute("data-ayah");
       const ayahNo = ayahNoAttr ? parseInt(ayahNoAttr, 10) : null;
 
@@ -1330,6 +1413,8 @@ const BlockWise = () => {
         // Pass current language into dataset so handler can use it
         sup.setAttribute("data-lang", translationLanguage === 'E' ? 'en' : 'mal');
         sup.setAttribute("title", `Click to view interpretation ${number}`);
+        sup.setAttribute("aria-label", `Interpretation ${number}`);
+        sup.setAttribute("data-interpretation-label", number);
         sup.className = "interpretation-link";
       }
     });
@@ -1347,9 +1432,10 @@ const BlockWise = () => {
       if (!target && translationLanguage === 'E') {
         const footnoteTarget = e.target.closest(".english-footnote-link");
         if (footnoteTarget) {
-          // Get the interpretation number from textContent (the displayed number like "1", "2", "3")
-          // NOT from data-footnote-id (which is the footnote ID like "177718")
-          const displayedNumber = footnoteTarget.textContent?.trim() || "";
+          const displayedNumberAttr =
+            footnoteTarget.getAttribute("data-interpretation-number") ||
+            footnoteTarget.getAttribute("data-footnote-number");
+          const displayedNumber = displayedNumberAttr || footnoteTarget.textContent?.trim() || "";
           const interpretationNumber = displayedNumber && /^\d+$/.test(displayedNumber) 
             ? parseInt(displayedNumber, 10) 
             : 1;
@@ -1549,6 +1635,16 @@ const BlockWise = () => {
   const surahTitleWeightClass = useNormalSurahTitleWeight
     ? "font-normal"
     : "font-semibold";
+  const translationsLoadedCount = blockTranslations
+    ? Object.keys(blockTranslations).length
+    : 0;
+  const showManualRetryBanner =
+    !loading &&
+    Array.isArray(blockRanges) &&
+    blockRanges.length > 0 &&
+    (loadingBlocks?.size ?? 0) === 0 &&
+    translationsLoadedCount === 0 &&
+    autoRetryAttempted;
 
   return (
     <>
@@ -1592,16 +1688,30 @@ const BlockWise = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
 
-                  {/* View Toggle - Centered */}
-                  <div className="w-full flex justify-center mt-2">
-                    {(translationLanguage === 'mal' || translationLanguage === 'E') && (
-                      <ToggleGroup
-                        options={["Ayah Wise", "Block Wise"]}
-                        value="Block Wise"
-                        onChange={(val) => setContextViewType(val)}
-                      />
-                    )}
+              <div className="w-full flex justify-center mb-4 sm:mb-6">
+                {(translationLanguage === 'mal' || translationLanguage === 'E') && (
+                  <ToggleGroup
+                    options={["Ayah Wise", "Block Wise"]}
+                    value="Block Wise"
+                    onChange={(val) => setContextViewType(val)}
+                  />
+                )}
+              </div>
+
+              {showManualRetryBanner && (
+                <div className="w-full flex justify-center mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+                    <span>We couldn't load the blockwise translation. Please retry.</span>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full bg-amber-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-amber-700 transition-colors"
+                      onClick={() => triggerBlockwiseReload("manual")}
+                    >
+                      Retry now
+                    </button>
                   </div>
                 </div>
               )}

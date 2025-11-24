@@ -420,14 +420,20 @@ class EnglishTranslationService {
         `;
         sup.setAttribute("data-interpretation", number);
         if (blockRange) {
-          sup.setAttribute("data-range", blockRange);
+        sup.setAttribute("data-range", blockRange);
         } else {
           // For single verse, use verse number as range
           sup.setAttribute("data-range", `${ayahNo}-${ayahNo}`);
         }
         sup.setAttribute("data-lang", "E");
         sup.setAttribute("title", `Click to view interpretation ${number}`);
+        sup.setAttribute("aria-label", `Interpretation ${number}`);
+        sup.setAttribute("data-interpretation-label", number);
+        sup.setAttribute("data-interpretation-number", number);
         sup.className = "interpretation-link";
+        if (blockRange) {
+          sup.textContent = "i";
+        }
       }
     });
     
@@ -445,8 +451,11 @@ class EnglishTranslationService {
         button.setAttribute("data-footnote-id", footnoteId);
         button.setAttribute("data-surah", surahNo);
         button.setAttribute("data-ayah", ayahNo);
+        button.setAttribute("data-footnote-number", footnoteNumber);
+        button.setAttribute("data-interpretation-number", footnoteNumber);
+        button.setAttribute("data-interpretation", footnoteNumber);
         button.setAttribute("title", `Click to view explanation ${footnoteNumber}`);
-        button.textContent = footnoteNumber;
+        button.textContent = blockRange ? "i" : footnoteNumber;
         
         // Apply clickable button styling
         button.style.cssText = `
@@ -500,8 +509,11 @@ class EnglishTranslationService {
       button.setAttribute("data-footnote-id", num);
       button.setAttribute("data-surah", surahNo);
       button.setAttribute("data-ayah", ayahNo);
+      button.setAttribute("data-footnote-number", num);
+      button.setAttribute("data-interpretation-number", num);
+      button.setAttribute("data-interpretation", num);
       button.setAttribute("title", `Click to view explanation ${num}`);
-      button.textContent = num;
+      button.textContent = blockRange ? "i" : num;
       button.style.cssText = `
         cursor: pointer !important;
         background-color: #19B5DD !important;
@@ -553,8 +565,11 @@ class EnglishTranslationService {
             span.setAttribute('data-footnote-id', num);
             span.setAttribute('data-surah', surahNo);
             span.setAttribute('data-ayah', ayahNo);
+            span.setAttribute('data-footnote-number', num);
+            span.setAttribute('data-interpretation-number', num);
+            span.setAttribute('data-interpretation', num);
             span.setAttribute('title', `Click to view explanation ${num}`);
-            span.textContent = num;
+            span.textContent = blockRange ? "i" : num;
             span.style.cssText = `
               cursor: pointer !important;
               background-color: #19B5DD !important;

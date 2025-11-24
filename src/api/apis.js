@@ -56,4 +56,5 @@ export const WORD_MEANINGS_API = `${LEGACY_TFH_BASE}/wordmeanings`;
 export const MALARTICLES_API = isDevelopment ? '/api/old-thaf-api/malarticles' : "https://old.thafheem.net/thaf-api/malarticles";
 export const ENGARTICLES_API = isDevelopment ? '/api/old-thaf-api/engarticles' : "https://old.thafheem.net/thaf-api/engarticles";
 export const ARTICLES_API = isDevelopment ? '/api/old-thaf-api/articles' : "https://old.thafheem.net/thaf-api/articles";
-export const MALAYALAM_QURANAYA_API = isDevelopment ? '/api/old-thaf-api/quranaya' : "https://old.thafheem.net/thaf-api/quranaya";
+// Use proxy path which works in both dev (via Vite) and production (via Apache .htaccess)
+export const MALAYALAM_QURANAYA_API = '/api/old-thaf-api/quranaya';

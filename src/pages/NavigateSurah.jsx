@@ -265,11 +265,11 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
       case 'Surah':
         return <NavigateSurahList />;
       case 'Verse':
-        return <Verse />;
+        return <Verse onClose={onClose} />;
       case 'Juz':
-        return <JuzNavigate />;
+        return <JuzNavigate onClose={onClose} />;
       case 'Page':
-        return <DemoItems />;
+        return <DemoItems onClose={onClose} />;
       default:
         return null;
     }

@@ -1,5 +1,6 @@
 import { ChevronDown, BookOpen, Notebook, Info, Play, Pause, Heart, LibraryBig } from "lucide-react"; // swapped icons
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import NavigateSurah from "../pages/NavigateSurah";
 import { fetchPageRanges } from "../api/apifunction";
@@ -48,6 +49,7 @@ const MadinaIcon = ({ className }) => (
 const Transition = ({ showPageInfo = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const dropdownContentRef = useRef(null);
   const [selectedSurah, setSelectedSurah] = useState({
     id: 2,
     name: "Al-Baqarah",
@@ -73,11 +75,21 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   const [activeView, setActiveView] = useState("book"); // "book" or "notebook"
+  const [portalRoot, setPortalRoot] = useState(null);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      setPortalRoot(document.body);
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      const clickedButton = dropdownRef.current?.contains(event.target);
+      const clickedDropdown = dropdownContentRef.current?.contains(event.target);
+
+      if (isDropdownOpen && !clickedButton && !clickedDropdown) {
         setIsDropdownOpen(false);
       }
     };
@@ -227,7 +239,10 @@ const Transition = ({ showPageInfo = false }) => {
     }
   };
 
-  const handleFavoriteClick = async () => {
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!user) {
       window.dispatchEvent(new CustomEvent('showToast', { 
         detail: { type: 'warning', message: 'Please sign in to add favorites' } 
@@ -241,7 +256,7 @@ const Transition = ({ showPageInfo = false }) => {
     setFavoriteLoading(true);
     try {
       if (isFavorited) {
-        await BookmarkService.removeFavoriteSurah(user.uid, effectiveId);
+        await BookmarkService.deleteFavoriteSurah(user.uid, effectiveId);
         setIsFavorited(false);
         window.dispatchEvent(new CustomEvent('showToast', { 
           detail: { type: 'info', message: 'Surah removed from favorites' } 
@@ -283,10 +298,10 @@ const Transition = ({ showPageInfo = false }) => {
       : "flex items-center justify-center h-9 w-9 rounded-full text-[#2AA0BF] dark:text-[#2AA0BF] bg-gray-50 dark:bg-gray-800/70 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors relative";
     const favoriteButtonClasses = isDesktop
       ? `flex items-center justify-center transition-colors min-h-[44px] px-1.5 ${
-          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"
         } ${isFavorited ? "text-red-500" : "text-[#2AA0BF] dark:text-[#2AA0BF]"}`
       : `flex items-center justify-center h-9 w-9 rounded-full transition-colors ${
-          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+          favoriteLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"
         } ${isFavorited ? "text-red-500 bg-red-50 dark:bg-red-900/40" : "text-[#2AA0BF] dark:text-[#2AA0BF] bg-gray-50 dark:bg-gray-800/70"} dark:hover:bg-red-900/50`;
     const iconSizeClasses = isDesktop ? "w-4 h-4 sm:w-5 sm:h-5" : "w-4 h-4";
     const playIconWrapperClasses = isDesktop
@@ -376,14 +391,17 @@ const Transition = ({ showPageInfo = false }) => {
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 </button>
 
-                {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-1 z-[120]">
-                    <NavigateSurah
-                      onSurahSelect={handleSurahSelect}
-                      onClose={() => setIsDropdownOpen(false)}
-                    />
-                  </div>
-                )}
+                {isDropdownOpen && portalRoot &&
+                  createPortal(
+                    <div ref={dropdownContentRef} className="fixed inset-0 z-[99990]">
+                      <NavigateSurah
+                        onSurahSelect={handleSurahSelect}
+                        onClose={() => setIsDropdownOpen(false)}
+                      />
+                    </div>,
+                    portalRoot
+                  )
+                }
               </div>
             </div>
 

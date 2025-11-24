@@ -2390,6 +2390,7 @@ export const fetchAllInterpretations = async (
         throw new Error("Invalid surah or verse id for Malayalam interpretation fetch");
       }
 
+      // Use quranaya endpoint for Malayalam interpretations (via proxy to avoid CORS)
       const malayalamUrl = `${MALAYALAM_QURANAYA_API}/${surahSegment}:${verseSegment}`;
 
       try {

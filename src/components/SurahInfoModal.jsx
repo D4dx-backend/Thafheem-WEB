@@ -391,7 +391,7 @@ const SurahInfoModal = ({ surahId, onClose }) => {
                   </div>
                 )}
 
-                {parsedThafheemSections.length > 0 && (
+                {!shouldShowMalayalamPrefaceOnly && parsedThafheemSections.length > 0 && (
                   <div className="mb-6 sm:mb-8">
                     <h3 className="text-lg sm:text-xl font-semibold text-cyan-600 mb-3 sm:mb-4">Thafheem Commentary</h3>
                     <div className="space-y-6">

@@ -1981,12 +1981,13 @@ Read more: ${shareUrl}`;
                   (av) => av.verse_key === `${surahId}:${index + 1}`
                 );
                 const finalArabicText = arabicText || fallbackArabicVerse?.text_uthmani || "";
-                const isPlaying = playingAyah === index + 1;
+                const isCurrentAyah = playingAyah === index + 1;
+                const isPlaying = isCurrentAyah && isSequencePlaying;
 
                 // Card Styling
                 const cardClasses = `
                     relative group rounded-2xl transition-all duration-300 overflow-hidden
-                    ${isPlaying
+                    ${isCurrentAyah
                     ? 'bg-teal-50/50 dark:bg-teal-900/10 border-teal-200 dark:border-teal-800 shadow-md ring-1 ring-teal-100 dark:ring-teal-900'
                     : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600'
                   }
@@ -2003,7 +2004,7 @@ Read more: ${shareUrl}`;
                       {/* Arabic Text */}
                       <div className="w-full mb-6 sm:mb-8 text-right" dir="rtl">
                         <p
-                          className={`leading-[2.2] ${isPlaying ? 'text-primary dark:text-primary-light' : 'text-gray-800 dark:text-gray-100'}`}
+                          className={`leading-[2.2] ${isCurrentAyah ? 'text-primary dark:text-primary-light' : 'text-gray-800 dark:text-gray-100'}`}
                           style={{
                             fontFamily: quranFont,
                             fontSize: `${fontSize}px`,
@@ -2018,12 +2019,21 @@ Read more: ${shareUrl}`;
 
                       {/* Translation */}
                       <div className="w-full text-left mb-6 relative">
-                        <div className={`prose dark:prose-invert max-w-none ${isPlaying ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
+                        <div className={`prose dark:prose-invert max-w-none ${isCurrentAyah ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
                           {translationLanguage === 'hi' ? (
                             <div
+                              data-hindi-translation={verse.Translation}
+                              data-surah={surahId}
+                              data-ayah={verse.number || index + 1}
                               className="font-hindi leading-relaxed"
                               style={{ fontSize: `${translationFontSize}px` }}
-                              dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                              dangerouslySetInnerHTML={{ 
+                                __html: hindiTranslationService.parseHindiTranslationWithClickableExplanations(
+                                  verse.Translation || '',
+                                  parseInt(surahId),
+                                  verse.number || index + 1
+                                )
+                              }}
                             />
                           ) : translationLanguage === 'ur' ? (
                             <div
@@ -2070,7 +2080,7 @@ Read more: ${shareUrl}`;
                             className={`icon-btn ${isPlaying ? 'text-primary bg-primary/10' : ''}`}
                             title={isPlaying ? "Pause" : "Play"}
                           >
-                            {isPlaying && audioEl && !audioEl.paused ? (
+                            {isPlaying ? (
                               <div className="flex gap-0.5 h-3 items-end">
                                 <span className="w-0.5 h-full bg-current animate-[pulse_0.6s_ease-in-out_infinite]"></span>
                                 <span className="w-0.5 h-2/3 bg-current animate-[pulse_0.8s_ease-in-out_infinite_0.1s]"></span>

@@ -1,4 +1,4 @@
-import { Heart, Mail, Github, Twitter, Facebook, Instagram } from 'lucide-react';
+import { Heart, Mail, Facebook, Instagram, Youtube, PlayCircle, Apple } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
@@ -13,10 +13,76 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-    { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
-    { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-    { icon: Github, href: 'https://github.com', label: 'GitHub' },
+    {
+      icon: Instagram,
+      href: 'https://instagram.com/thafheemulquran_app',
+      label: 'Instagram',
+    },
+    {
+      icon: Facebook,
+      href: 'https://facebook.com/ThafheemulQuran',
+      label: 'Facebook',
+    },
+    {
+      icon: Youtube,
+      href: 'https://youtube.com/@thafheemulquranapp',
+      label: 'YouTube',
+    },
+  ];
+
+  const storeButtons = [
+    {
+      name: 'Google Play',
+      subtitle: 'Get it on',
+      href: 'https://play.google.com/store/apps/details?id=com.d4media.thafheem',
+      badgeClass:
+        'bg-gradient-to-r from-[#1fc4a6] via-[#27b0ff] to-[#8f63ff] text-white hover:shadow-cyan-400/30',
+      textClass: 'text-white',
+      icon: (
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M33 32.6C29.3 36.3 27 42.8 27 51.9v408.3c0 9.1 2.3 15.6 6 19.3l1.9 1.9 229.6-229.6v-.8L33 32.6z"
+            fill="#27b0ff"
+          />
+          <path
+            d="m357.1 178.2-92.7 92.7v.8l92.7 92.7 42.6-24.3c12.2-6.9 19.6-17.5 19.6-29.5V231.9c0-12-7.4-22.6-19.6-29.5l-42.6-24.2z"
+            fill="#1fc4a6"
+          />
+          <path
+            d="M288 272.1 33 496.5c7.4 7.4 19.4 8.3 33 1.1l291.1-166.5z"
+            fill="#8f63ff"
+          />
+          <path
+            d="M357.1 338.1 357.1 338.1 357.1 338.1 357.1 338.1 357.1 338.1 445 288c18-11.4 18-29.9 0-41.3l-87.9-50.1-92.7 92.7z"
+            fill="#ff9c3f"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: 'App Store',
+      subtitle: 'Download on the',
+      href: 'https://apps.apple.com/in/app/thafheem-ul-quran/id1292572556',
+      badgeClass:
+        'bg-white text-gray-900 dark:bg-white/10 dark:text-white hover:shadow-slate-300/40',
+      textClass: 'text-gray-900 dark:text-white',
+      icon: (
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M349.1 46.7c-25.2 1.5-54.9 18.3-72.7 39.9-15.9 19.3-29.7 48.6-24.4 77.1 27.6 2.2 56.1-15.5 73-37.5 16.9-22.1 29.1-51.9 24.1-79.5zm91.4 247.5c-1.1-1.1-66-36.7-66-108.7 0-58.2 44.6-84.7 46.6-85.9-25.4-37.3-64.4-42.5-78.1-43.2-33-3.3-64.1 19.1-80.4 19.1-16.1 0-43.2-18.6-70.9-18.1-36.6.6-70.4 21.1-89.2 54-38 65.9-9.7 162.6 27.6 215.8 18.3 26 39.8 55 68.6 54 27.4-1.1 37.8-17.4 70.9-17.4 33.1 0 42.3 17.4 70.9 16.9 29.3-.6 47.8-26.6 66-52.6 20.8-31 29.4-61 30-62.4z"
+            fill="currentColor"
+          />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -67,7 +133,7 @@ const Footer = () => {
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
               Connect With Us
             </h4>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               {socialLinks.map((social, index) => {
                 const Icon = social.icon;
                 return (
@@ -91,6 +157,29 @@ const Footer = () => {
               <Mail className="w-4 h-4" />
               <span>support@thafheem.net</span>
             </a>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              {storeButtons.map((store) => (
+                <a
+                  key={store.name}
+                  href={store.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group flex items-center justify-center gap-3 px-5 py-3 rounded-2xl shadow-lg transition-all duration-300 w-full sm:w-auto ${store.badgeClass} hover:-translate-y-0.5`}
+                >
+                  <div className="flex items-center justify-center p-2 rounded-xl bg-white/10 backdrop-blur-sm motion-safe:animate-pulse group-hover:animate-none transition-transform duration-500 group-hover:scale-110">
+                    {store.icon}
+                  </div>
+                  <div className="text-left leading-tight">
+                    <p className={`text-[11px] uppercase tracking-[0.2em] ${store.textClass} opacity-80`}>
+                      {store.subtitle}
+                    </p>
+                    <p className={`text-base font-semibold ${store.textClass}`}>
+                      {store.name}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 

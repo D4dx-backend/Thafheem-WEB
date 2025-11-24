@@ -376,8 +376,8 @@ const SurahInfo = () => {
             </div>
           )}
 
-          {/* Thafheem Commentary - Properly parsed sections */}
-          {parsedThafheemSections.length > 0 && (
+          {/* Thafheem Commentary - Properly parsed sections (hidden for Malayalam to avoid duplication) */}
+          {!shouldShowMalayalamPrefaceOnly && parsedThafheemSections.length > 0 && (
             <div className="mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
                 Thafheem Commentary

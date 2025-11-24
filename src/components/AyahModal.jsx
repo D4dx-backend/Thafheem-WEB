@@ -571,6 +571,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
             verseData={verseData}
+            interpretationData={interpretationData}
             selectedQari={selectedQari}
             onQariChange={setSelectedQari}
           />
@@ -603,6 +604,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             onClose={onClose}
             onWordByWordClick={handleWordByWordClick}
             verseData={verseData}
+            interpretationData={interpretationData}
             selectedQari={selectedQari}
             onQariChange={setSelectedQari}
           />

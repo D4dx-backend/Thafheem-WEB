@@ -125,6 +125,17 @@ const BlockWise = () => {
       .join("");
   };
 
+  const stripArabicVerseMarker = (text) => {
+    if (!text) return "";
+    return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
+  };
+
+  const formatArabicVerseWithNumber = (text, ayahNumber) => {
+    const cleaned = stripArabicVerseMarker(text);
+    const display = cleaned || text || "";
+    return `${display} ﴿${toArabicNumber(ayahNumber)}﴾`;
+  };
+
   // Initialize audio element
   useEffect(() => {
     if (!audioRef.current) {
@@ -1029,17 +1040,23 @@ const BlockWise = () => {
                           }}
                           dir="rtl"
                         >
-                          {arabicSlice.map((verse, idx) => (
-                            <p
-                              key={`arabic-verse-${blockId}-${start + idx}`}
-                              className="text-right"
-                            >
-                              {verse.text_uthmani}
-                              <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
-                                ﴿{toArabicNumber(start + idx)}﴾
-                              </span>
-                            </p>
-                          ))}
+                          {arabicSlice.map((verse, idx) => {
+                            const displayText =
+                              stripArabicVerseMarker(verse.text_uthmani) ||
+                              verse.text_uthmani ||
+                              "";
+                            return (
+                              <p
+                                key={`arabic-verse-${blockId}-${start + idx}`}
+                                className="text-right"
+                              >
+                                {displayText}
+                                <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
+                                  ﴿{toArabicNumber(start + idx)}﴾
+                                </span>
+                              </p>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p
@@ -1121,9 +1138,11 @@ const BlockWise = () => {
                               const arabicText =
                                 arabicSlice.length > 0
                                   ? arabicSlice
-                                      .map(
-                                        (verse, idx) =>
-                                          `${verse.text_uthmani} ﴿${start + idx}﴾`
+                                      .map((verse, idx) =>
+                                        formatArabicVerseWithNumber(
+                                          verse.text_uthmani,
+                                          start + idx
+                                        )
                                       )
                                       .join(" ")
                                   : "Loading Arabic text...";

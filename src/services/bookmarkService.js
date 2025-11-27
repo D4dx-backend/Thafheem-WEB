@@ -251,7 +251,7 @@
 
 // export default BookmarkService;
 
-import { USE_API } from '../config/apiConfig.js'
+// Removed USE_API - all services now use API only
 
 // Use Vite proxy during development to avoid CORS; fall back to env/production URL otherwise
 const THAFHEEM_API_BASE = import.meta.env.DEV
@@ -302,13 +302,7 @@ class BookmarkService {
 
   // Get user bookmarks
   static async getBookmarks(userId, bookmarkType = 'translation') {
-    // Dev: optionally disable remote API entirely
-    if (!USE_API) {
-      const all = this.getLocalBookmarks(userId);
-      return Array.isArray(all)
-        ? all.filter(b => (bookmarkType ? b.bookmarkType === bookmarkType : true))
-        : [];
-    }
+    // All bookmarks now come from API (MySQL database)
     
     // In development, skip API call if we're using local proxy (to avoid console noise)
     // The proxy might not have these endpoints available
@@ -556,10 +550,7 @@ const localBookmarks = this.getLocalBookmarks(userId);
   // Get favorite surahs/chapters
   static async getFavoriteSurahs(userId) {
     // Dev: optionally disable remote API entirely
-    if (!USE_API) {
-      return this.getLocalFavoriteSurahs(userId);
-    }
-    
+    // All favorites now come from API (MySQL database)
     // In development, skip API call if we're using local proxy (to avoid console noise)
     // The proxy might not have these endpoints available
     if (import.meta.env.DEV && THAFHEEM_API_BASE.startsWith('/api/thafheem')) {

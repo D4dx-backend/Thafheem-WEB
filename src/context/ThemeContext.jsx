@@ -1,5 +1,5 @@
 // ThemeContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { preloadLanguageServices } from "../utils/serviceLoader";
 
 const ThemeContext = createContext();
@@ -51,6 +51,13 @@ export function ThemeProvider({ children }) {
     }
     return savedLang;
   });
+
+  const adjustedTranslationFontSize = useMemo(() => {
+    if (translationLanguage === "ur") {
+      return Math.min(22, translationFontSize + 2);
+    }
+    return translationFontSize;
+  }, [translationFontSize, translationLanguage]);
 
   // Apply theme to document
   useEffect(() => {
@@ -112,6 +119,7 @@ export function ThemeProvider({ children }) {
       setFontSize, 
       translationFontSize, 
       setTranslationFontSize,
+      adjustedTranslationFontSize,
       viewType,
       setViewType,
       translationLanguage,

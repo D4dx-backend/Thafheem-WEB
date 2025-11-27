@@ -99,8 +99,7 @@ ORDER BY explanation_no_EN ASC
 
 ### 2. **AyahModal Loads Data**
 - AyahModal calls `banglaTranslationService.getAllExplanations()`
-- Service tries API first (if `VITE_USE_API=true`)
-- Falls back to SQL.js if API fails
+- Service uses MySQL API backend
 - Returns array of explanation objects
 
 ### 3. **Display Interpretation Count**
@@ -113,11 +112,11 @@ ORDER BY explanation_no_EN ASC
 
 ### ✅ **Proper Count Display**
 - Shows correct number of interpretations for each ayah
-- Works in both API and SQL.js modes
+- Uses MySQL API backend
 - Handles cases where no explanations exist
 
-### ✅ **Hybrid Mode Support**
-- API-first approach with automatic fallback
+### ✅ **API Mode**
+- All data from MySQL API
 - Better performance with caching
 - Consistent error handling
 
@@ -130,8 +129,7 @@ ORDER BY explanation_no_EN ASC
 
 ### Test Scenarios
 
-1. **API Mode**: Set `VITE_USE_API=true` and test interpretation count
-2. **SQL.js Mode**: Set `VITE_USE_API=false` and test interpretation count
+1. **API Mode**: Test interpretation count (all data from MySQL API)
 3. **Fallback**: Disable API and verify SQL.js fallback works
 4. **No Explanations**: Test ayahs with no explanations
 5. **Multiple Explanations**: Test ayahs with multiple explanations

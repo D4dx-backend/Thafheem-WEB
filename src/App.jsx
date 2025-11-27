@@ -31,6 +31,8 @@ const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 const Digitisation = lazy(() => import("./pages/Digitisation"));
 const About = lazy(() => import("./pages/About"));
 const AuthorPreface = lazy(() => import("./pages/AuthorPreface"));
+const AuthorConclusion = lazy(() => import("./pages/AuthorConclusion"));
+const Appendix = lazy(() => import("./pages/Appendix"));
 const EnglishTranslate = lazy(() => import("./pages/EnglishTranslate"));
 const Quiz = lazy(() => import("./pages/Quiz"));
 const DragDrop = lazy(() => import("./pages/DragDrop"));
@@ -103,6 +105,8 @@ function App() {
                 <Route path="/digitisation" element={<Digitisation />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/authorpreface" element={<AuthorPreface />} />
+                <Route path="/authorconclusion" element={<AuthorConclusion />} />
+                <Route path="/appendix/:lang" element={<Appendix />} />
                 <Route path="/englishtranslate" element={<EnglishTranslate />} />
                 <Route path="/quiz" element={<Quiz />} />
                 <Route path="/dragdrop" element={<DragDrop />} />

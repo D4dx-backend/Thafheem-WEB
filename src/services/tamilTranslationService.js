@@ -1,4 +1,4 @@
-import { USE_API, API_BASE_PATH } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
 
 const DEFAULT_TAMIL_PAGE_SIZE = 25;
@@ -6,15 +6,11 @@ const DEFAULT_TAMIL_PAGE_SIZE = 25;
 class TamilTranslationService {
   constructor() {
     this.language = 'tamil';
-    this.useApi = USE_API !== false;
     this.apiBasePath = API_BASE_PATH;
     this.pendingRequests = new Map();
-  }
-
-  _assertApiEnabled() {
-    if (!this.useApi) {
-      throw new Error('Tamil API is disabled (VITE_USE_API=false).');
-    }
+    this.cache = new Map();
+    this.cacheEnabled = true;
+    this.cacheTtl = 300000; // 5 minutes
   }
 
   generateCacheKey(method, params) {
@@ -69,7 +65,6 @@ class TamilTranslationService {
   }
 
   async _getAyahTranslationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getTranslation(this.language, surahNo, ayahNo);
       const translation = response?.translation_text ?? response?.translation ?? '';
@@ -105,7 +100,6 @@ class TamilTranslationService {
   }
 
   async _getSurahTranslationsInternal(surahNo, cacheKey, { page, limit }) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getSurahTranslations(this.language, surahNo, { page, limit });
       const translations = Array.isArray(response?.translations)
@@ -168,7 +162,6 @@ class TamilTranslationService {
   }
 
   async _getWordByWordDataInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getWordByWord(this.language, surahNo, ayahNo);
       const words = Array.isArray(response?.words) ? response.words : [];
@@ -216,7 +209,6 @@ class TamilTranslationService {
 
   async isAvailable() {
     try {
-      this._assertApiEnabled();
       await apiService.checkLanguageHealth(this.language);
       return true;
     } catch (error) {

@@ -1,5 +1,6 @@
 // Environment-based API configuration
-const isDevelopment = import.meta.env.DEV;
+// Use PROD for more reliable production detection
+const isDevelopment = import.meta.env.DEV && !import.meta.env.PROD;
 
 import { 
   API_BASE_URL as CONFIG_API_BASE_URL,
@@ -56,5 +57,10 @@ export const WORD_MEANINGS_API = `${LEGACY_TFH_BASE}/wordmeanings`;
 export const MALARTICLES_API = isDevelopment ? '/api/old-thaf-api/malarticles' : "https://old.thafheem.net/thaf-api/malarticles";
 export const ENGARTICLES_API = isDevelopment ? '/api/old-thaf-api/engarticles' : "https://old.thafheem.net/thaf-api/engarticles";
 export const ARTICLES_API = isDevelopment ? '/api/old-thaf-api/articles' : "https://old.thafheem.net/thaf-api/articles";
-// Use proxy path which works in both dev (via Vite) and production (via Apache .htaccess)
-export const MALAYALAM_QURANAYA_API = '/api/old-thaf-api/quranaya';
+// Use proxy path in development to avoid CORS, direct URL in production
+// Production must use: https://old.thafheem.net/thaf-api/quranaya
+// This is different from blockwise interpretation which uses a different endpoint
+// Force direct URL in production to avoid proxy/rewrite issues
+export const MALAYALAM_QURANAYA_API = import.meta.env.PROD
+  ? 'https://old.thafheem.net/thaf-api/quranaya'
+  : '/api/old-thaf-api/quranaya';

@@ -44,6 +44,7 @@ import { BlocksSkeleton, CompactLoading } from "../components/LoadingSkeleton";
 import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
+import useSequentialEnglishFootnotes from "../hooks/useSequentialEnglishFootnotes";
 import {
   getCalligraphicSurahName,
   surahNameFontFamily,
@@ -111,12 +112,12 @@ const BlockWise = () => {
     quranFont,
     translationLanguage,
     theme,
-    translationFontSize,
+    adjustedTranslationFontSize,
     viewType: contextViewType,
     setViewType: setContextViewType,
   } = useTheme();
-  const adjustedTranslationFontSize = Math.max(
-    Number(translationFontSize) - 2,
+  const blockModalFontSize = Math.max(
+    Number(adjustedTranslationFontSize) - 2,
     10
   );
   const { surahId } = useParams();
@@ -124,6 +125,12 @@ const BlockWise = () => {
   const hydratedBlockCacheRef = useRef(false);
   const previousLanguageRef = useRef(translationLanguage);
   const previousSurahRef = useRef(surahId);
+
+  useSequentialEnglishFootnotes({
+    enabled: translationLanguage === 'E' && contextViewType === 'Block Wise',
+    context: 'blockwise',
+    dependencies: [blockTranslations, blockRanges, surahId, blockData],
+  });
 
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -185,6 +192,17 @@ const BlockWise = () => {
       .split("")
       .map((digit) => arabicDigits[digit] || digit)
       .join("");
+  };
+
+  const stripArabicVerseMarker = (text) => {
+    if (!text) return "";
+    return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
+  };
+
+  const formatArabicVerseWithNumber = (text, ayahNumber) => {
+    const cleaned = stripArabicVerseMarker(text);
+    const display = cleaned || text || "";
+    return `${display} ﴿${toArabicNumber(ayahNumber)}﴾`;
   };
 
   const normalizeAyahNumber = (value, fallbackValue = null) => {
@@ -1164,6 +1182,10 @@ const BlockWise = () => {
         event.stopPropagation();
         
         const footnoteId = target.getAttribute("data-footnote-id");
+        const interpretationIdAttr = target.getAttribute("data-interpretation-id");
+        const interpretationId = interpretationIdAttr && /^\d+$/.test(interpretationIdAttr)
+          ? parseInt(interpretationIdAttr, 10)
+          : null;
         const displayedNumberAttr =
           target.getAttribute("data-interpretation-number") ||
           target.getAttribute("data-footnote-number");
@@ -1217,6 +1239,7 @@ const BlockWise = () => {
             range: blockRange,
             interpretationNumber: interpretationNumber,
             footnoteId: footnoteId, // Pass footnote ID for English footnotes
+            interpretationId: interpretationId,
           });
 
           return; // Don't open footnote modal
@@ -1233,16 +1256,22 @@ const BlockWise = () => {
       event.stopPropagation();
 
       const footnoteId = target.getAttribute("data-footnote-id");
-      if (!footnoteId) {
-        return;
-      }
-
+      const interpretationIdAttr = target.getAttribute("data-interpretation-id");
+      const interpretationId = interpretationIdAttr && /^\d+$/.test(interpretationIdAttr)
+        ? parseInt(interpretationIdAttr, 10)
+        : null;
       const footnoteNumber = target.getAttribute("data-footnote-number") || (target.textContent || "").trim();
+      const interpretationNumberAttr =
+        target.getAttribute("data-interpretation-number") || target.getAttribute("data-footnote-number");
+      const interpretationNumber = interpretationNumberAttr && /^\d+$/.test(interpretationNumberAttr)
+        ? parseInt(interpretationNumberAttr, 10)
+        : null;
       const ayahNoAttr = target.getAttribute("data-ayah");
       const ayahNo = ayahNoAttr ? parseInt(ayahNoAttr, 10) : null;
 
       setEnglishFootnoteMeta({
         footnoteId: footnoteId,
+        interpretationId: interpretationId,
         footnoteNumber: footnoteNumber || null,
         surah: surahId ? parseInt(surahId, 10) : null,
         ayah: ayahNo,
@@ -1252,7 +1281,23 @@ const BlockWise = () => {
       setShowEnglishFootnoteModal(true);
 
       try {
-        const explanation = await englishTranslationService.getExplanation(parseInt(footnoteId, 10));
+        let explanation = '';
+
+        if (interpretationId) {
+          explanation = await englishTranslationService.getInterpretationById(interpretationId);
+        } else if (footnoteId) {
+          explanation = await englishTranslationService.getExplanation(parseInt(footnoteId, 10));
+        } else if (interpretationNumber && ayahNo) {
+          explanation = await englishTranslationService.getInterpretationByNumber(
+            parseInt(surahId, 10),
+            ayahNo,
+            interpretationNumber
+          );
+        } else {
+          setEnglishFootnoteContent("Explanation not available.");
+          return;
+        }
+
         setEnglishFootnoteContent(explanation || "Explanation not available.");
       } catch (error) {
         console.error("Error fetching English footnote explanation:", error);
@@ -1791,9 +1836,11 @@ const BlockWise = () => {
                         >
                           {arabicSlice.length > 0
                             ? arabicSlice
-                              .map(
-                                (verse, idx) =>
-                                  `${verse.text_uthmani} ﴿${toArabicNumber(start + idx)}﴾`
+                              .map((verse, idx) =>
+                                formatArabicVerseWithNumber(
+                                  verse.text_uthmani,
+                                  start + idx
+                                )
                               )
                               .join(" ")
                             : "Loading Arabic text..."}
@@ -1835,11 +1882,10 @@ const BlockWise = () => {
                                   : start + idx;
                                 const parsedHtml =
                                   translationLanguage === 'E'
-                                    ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                                  ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
                                       translationText,
                                       parseInt(surahId, 10),
-                                      verseNumber,
-                                      `${start}-${end}` // Pass block range for interpretation links
+                                      verseNumber
                                     )
                                     : parseTranslationWithClickableSup(
                                       translationText,
@@ -1851,6 +1897,7 @@ const BlockWise = () => {
                                     key={`translation-${blockId}-${idx}`}
                                     className="leading-relaxed"
                                     style={{ fontSize: '17px' }}
+                                    data-footnote-context="blockwise"
                                     dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                   />
                                 );
@@ -1862,14 +1909,14 @@ const BlockWise = () => {
                               <div
                                 className="leading-relaxed"
                                 style={{ fontSize: '17px' }}
+                                data-footnote-context="blockwise"
                                 dangerouslySetInnerHTML={{
                                   __html:
                                     translationLanguage === 'E'
                                       ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
                                         translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
                                         parseInt(surahId, 10),
-                                        start,
-                                        `${start}-${end}` // Pass block range for interpretation links
+                                        start
                                       )
                                       : parseTranslationWithClickableSup(
                                         translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
@@ -1902,9 +1949,11 @@ const BlockWise = () => {
                                 const arabicText =
                                   arabicSlice.length > 0
                                     ? arabicSlice
-                                      .map(
-                                        (verse, idx) =>
-                                          `${verse.text_uthmani} ﴿${start + idx}﴾`
+                                      .map((verse, idx) =>
+                                        formatArabicVerseWithNumber(
+                                          verse.text_uthmani,
+                                          start + idx
+                                        )
                                       )
                                       .join(" ")
                                     : "Loading Arabic text...";
@@ -2077,9 +2126,11 @@ const BlockWise = () => {
                                 const arabicText =
                                   arabicSlice.length > 0
                                     ? arabicSlice
-                                      .map(
-                                        (verse, idx) =>
-                                          `${verse.text_uthmani} ﴿${toArabicNumber(start + idx)}﴾`
+                                      .map((verse, idx) =>
+                                        formatArabicVerseWithNumber(
+                                          verse.text_uthmani,
+                                          start + idx
+                                        )
                                       )
                                       .join(" ")
                                     : "Arabic text is loading...";
@@ -2312,7 +2363,7 @@ const BlockWise = () => {
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <div
                         className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                        style={{ fontSize: `${translationFontSize}px` }}
+                        style={{ fontSize: `${blockModalFontSize}px` }}
                       >
                         {englishFootnoteContent}
                       </div>
@@ -2332,6 +2383,7 @@ const BlockWise = () => {
               ipt={selectedInterpretation.interpretationNumber}
               lang={translationLanguage === 'E' ? 'E' : 'mal'}
               footnoteId={selectedInterpretation.footnoteId || null}
+              blockRanges={blockRanges}
               onClose={() => setSelectedInterpretation(null)}
             />
           )}

@@ -1,18 +1,17 @@
-import { USE_API, API_BASE_PATH } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
+
+const DEFAULT_PAGE_SIZE = 40;
+const MAX_PAGE_SIZE = 200;
 
 class BanglaTranslationService {
   constructor() {
     this.language = 'bangla';
-    this.useApi = USE_API;
     this.apiBasePath = API_BASE_PATH;
     this.pendingRequests = new Map();
-  }
-
-  _assertApiEnabled() {
-    if (!this.useApi) {
-      throw new Error('Bangla API is disabled (VITE_USE_API=false).');
-    }
+    this.cache = new Map();
+    this.cacheEnabled = true;
+    this.cacheTtl = 300000; // 5 minutes
   }
 
   generateCacheKey(method, params) {
@@ -67,7 +66,6 @@ class BanglaTranslationService {
   }
 
   async _getAyahTranslationInternal(surahId, ayahNumber, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getTranslation(this.language, surahId, ayahNumber);
       const translation = response?.translation_text ?? response?.translation ?? null;
@@ -85,8 +83,12 @@ class BanglaTranslationService {
     }
   }
 
-  async getSurahTranslations(surahId) {
-    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahId });
+  async getSurahTranslations(surahId, options = {}) {
+    const hasPagination = options && (options.page !== undefined || options.limit !== undefined);
+    const page = Number.isInteger(options.page) && options.page > 0 ? options.page : 1;
+    const requestedLimit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : DEFAULT_PAGE_SIZE;
+    const limit = Math.min(requestedLimit, MAX_PAGE_SIZE);
+    const cacheKey = this.generateCacheKey('getSurahTranslations', hasPagination ? { surahId, page, limit } : { surahId });
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
@@ -94,7 +96,7 @@ class BanglaTranslationService {
       return this.pendingRequests.get(cacheKey);
     }
 
-    const requestPromise = this._getSurahTranslationsInternal(surahId, cacheKey);
+    const requestPromise = this._getSurahTranslationsInternal(surahId, cacheKey, { page, limit, hasPagination });
     this.pendingRequests.set(cacheKey, requestPromise);
 
     try {
@@ -104,10 +106,10 @@ class BanglaTranslationService {
     }
   }
 
-  async _getSurahTranslationsInternal(surahId, cacheKey) {
-    this._assertApiEnabled();
+  async _getSurahTranslationsInternal(surahId, cacheKey, { page, limit, hasPagination }) {
     try {
-      const response = await apiService.getSurahTranslations(this.language, surahId);
+      const params = hasPagination ? { page, limit } : {};
+      const response = await apiService.getSurahTranslations(this.language, surahId, params);
       const translations = Array.isArray(response?.translations)
         ? response.translations.map(verse => ({
             number: verse.verse_number,
@@ -126,8 +128,36 @@ class BanglaTranslationService {
         }
       });
 
-      this.setCachedData(cacheKey, translations);
-      return translations;
+      if (!hasPagination) {
+        this.setCachedData(cacheKey, translations);
+        return translations;
+      }
+
+      const pagination = response?.pagination
+        ? {
+            page: response.pagination.page ?? page,
+            limit: response.pagination.limit ?? limit,
+            totalItems: response.pagination.totalItems ?? response.pagination.total ?? null,
+            totalPages: response.pagination.totalPages ?? null,
+            hasNext: response.pagination.hasNext ?? false,
+            hasPrev: response.pagination.hasPrev ?? page > 1,
+            from: response.pagination.from ?? null,
+            to: response.pagination.to ?? null,
+          }
+        : {
+            page,
+            limit,
+            totalItems: response?.count ?? null,
+            totalPages: response?.count ? Math.ceil(response.count / limit) : null,
+            hasNext: translations.length === limit,
+            hasPrev: page > 1,
+            from: translations[0]?.number ?? null,
+            to: translations[translations.length - 1]?.number ?? null,
+          };
+
+      const result = { translations, pagination };
+      this.setCachedData(cacheKey, result);
+      return result;
     } catch (error) {
       console.error(`❌ Bangla surah translation API failed for ${surahId}:`, error);
       throw error;
@@ -154,7 +184,6 @@ class BanglaTranslationService {
   }
 
   async _getWordByWordDataInternal(surahId, ayahNumber, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getWordByWord(this.language, surahId, ayahNumber);
       const wordsSource = Array.isArray(response?.words) ? response.words : [];
@@ -173,21 +202,28 @@ class BanglaTranslationService {
         code_v2: word.code_v2 ?? '',
         line_number: word.line_number ?? 1,
         page_number: word.page_number ?? 1,
-        text_uthmani: word.text_uthmani ?? '',
-        text_simple: word.text_simple ?? '',
+        // Map WordPhrase (Arabic text) to text_uthmani and text_simple
+        text_uthmani: word.text_uthmani ?? word.WordPhrase ?? '',
+        text_simple: word.text_simple ?? word.WordPhrase ?? '',
         translation: {
           text: word.translation?.text ?? word.WordMeaning ?? '',
           language_name: word.translation?.language_name ?? 'Bangla',
           resource_name: word.translation?.resource_name ?? 'Thafheem Bangla Word Database',
         },
         transliteration: {
-          text: word.transliteration?.text ?? word.WordPhrase ?? '',
-          language_name: word.transliteration?.language_name ?? 'Bangla',
+          text: word.transliteration?.text ?? '',
+          language_name: word.transliteration?.language_name ?? 'English',
         },
       }));
 
+      // Construct full verse text from words if not provided by backend
+      const constructedText = words
+        .map(word => word.text_uthmani || word.WordPhrase || '')
+        .filter(Boolean)
+        .join(' ');
+
       const payload = {
-        text_uthmani: response?.text_uthmani ?? '',
+        text_uthmani: response?.text_uthmani ?? constructedText,
         words,
         translations: response?.translations ?? [],
       };
@@ -220,7 +256,6 @@ class BanglaTranslationService {
   }
 
   async _getExplanationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(this.language, surahNo, ayahNo);
       const explanation = response?.explanations?.[0]?.explanation ?? null;
@@ -258,7 +293,6 @@ class BanglaTranslationService {
   }
 
   async _getAllExplanationsInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(this.language, surahNo, ayahNo);
       const explanations = Array.isArray(response?.explanations)
@@ -308,7 +342,6 @@ class BanglaTranslationService {
   }
 
   async _getExplanationByNumberInternal(surahNo, ayahNo, explanationNumber, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(
         this.language,
@@ -403,7 +436,6 @@ class BanglaTranslationService {
 
   async isAvailable() {
     try {
-      this._assertApiEnabled();
       await apiService.checkLanguageHealth(this.language);
       return true;
     } catch (error) {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Added the missing HTML rendering functionality for clickable explanation numbers in the hybrid BanglaTranslationService. This ensures that the blue circular buttons for explanation numbers work correctly in both API and SQL.js modes.
+Added the missing HTML rendering functionality for clickable explanation numbers in the BanglaTranslationService. This ensures that the blue circular buttons for explanation numbers work correctly with the API.
 
 ## Added Functionality
 
@@ -169,7 +169,7 @@ Added new test buttons to `test-hybrid-service.html`:
 The HTML rendering functionality has been successfully added to the hybrid BanglaTranslationService. The implementation:
 
 - ✅ **Preserves Original Functionality**: Blue circular buttons work exactly as before
-- ✅ **Supports Hybrid Mode**: Works with both API and SQL.js modes
+- ✅ **API Mode**: Works with the MySQL API backend
 - ✅ **Maintains Performance**: Includes caching and request deduplication
 - ✅ **Enhances User Experience**: Better hover effects and accessibility
 - ✅ **Zero Breaking Changes**: All existing code continues to work

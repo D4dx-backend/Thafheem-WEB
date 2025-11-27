@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import {
@@ -25,7 +25,9 @@ const BlockInterpretationModal = ({
   interpretationNo = 1,
   language = "en",
   footnoteId = null, // For English footnotes
+  interpretationId = null,
   onClose,
+  blockRanges = [],
 }) => {
   const { user } = useAuth?.() || { user: null };
   const [loading, setLoading] = useState(true);
@@ -49,9 +51,194 @@ const BlockInterpretationModal = ({
     useState(interpretationNo);
   const [currentLanguage, setCurrentLanguage] = useState(language);
   const [currentFootnoteId, setCurrentFootnoteId] = useState(footnoteId); // For English footnotes
+  const [currentInterpretationId, setCurrentInterpretationId] = useState(interpretationId);
   const [footnotesInRange, setFootnotesInRange] = useState([]); // Store footnotes for current range
   const [isClosing, setIsClosing] = useState(false);
   const isClosingRef = useRef(false); // Use ref to track closing state across renders
+  const parseRangeString = useCallback((value) => {
+    if (value == null) {
+      return null;
+    }
+    const str = String(value).trim();
+    if (!str) return null;
+    if (/^\d+$/.test(str)) {
+      const num = parseInt(str, 10);
+      return Number.isFinite(num) ? { start: num, end: num, label: str } : null;
+    }
+    const match = str.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (match) {
+      const start = parseInt(match[1], 10);
+      const end = parseInt(match[2], 10);
+      if (Number.isFinite(start) && Number.isFinite(end)) {
+        return {
+          start,
+          end,
+          label: start === end ? `${start}` : `${start}-${end}`,
+        };
+      }
+    }
+    return null;
+  }, []);
+  const normalizedBlockRanges = useMemo(() => {
+    if (!Array.isArray(blockRanges) || blockRanges.length === 0) {
+      return [];
+    }
+
+    const normalizeItem = (item) => {
+      if (typeof item === "string" || typeof item === "number") {
+        return parseRangeString(item);
+      }
+
+      if (item && typeof item === "object") {
+        const start =
+          item.AyaFrom ??
+          item.ayafrom ??
+          item.from ??
+          item.start ??
+          item.begin ??
+          item.AyaFromId;
+        const end =
+          item.AyaTo ??
+          item.ayato ??
+          item.to ??
+          item.end ??
+          item.finish ??
+          item.AyaToId ??
+          start;
+
+        if (start == null && typeof item.Range === "string") {
+          return parseRangeString(item.Range);
+        }
+
+        if (start == null && typeof item.range === "string") {
+          return parseRangeString(item.range);
+        }
+
+        const startNum = Number.parseInt(start, 10);
+        const endNum = Number.parseInt(end, 10);
+        if (Number.isFinite(startNum) && Number.isFinite(endNum)) {
+          return {
+            start: startNum,
+            end: endNum,
+            label: startNum === endNum ? `${startNum}` : `${startNum}-${endNum}`,
+          };
+        }
+      }
+      return null;
+    };
+
+    return blockRanges
+      .map((item) => normalizeItem(item))
+      .filter(Boolean)
+      .sort((a, b) => a.start - b.start)
+      .map((block, index) => ({
+        ...block,
+        index,
+      }));
+  }, [blockRanges, parseRangeString]);
+
+  // Helper function to extract all footnotes from a range for English
+  const extractFootnotesFromRange = useCallback(async (surahId, range) => {
+    try {
+      const [start, end] = range.includes('-') 
+        ? range.split('-').map(n => parseInt(n.trim(), 10))
+        : [parseInt(range, 10), parseInt(range, 10)];
+      
+      const footnotes = [];
+      
+      // Fetch translation for each verse in the range
+      for (let ayah = start; ayah <= end; ayah++) {
+        try {
+          const translation = await englishTranslationService.getAyahTranslation(surahId, ayah);
+          if (translation) {
+            // Extract footnotes using regex
+            const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
+            let match;
+            while ((match = footnoteRegex.exec(translation)) !== null) {
+              const footnoteId = match[1];
+              const footnoteNumber = parseInt(match[2], 10);
+              footnotes.push({
+                footnoteId,
+                footnoteNumber,
+                ayah
+              });
+            }
+          }
+        } catch (err) {
+          console.warn(`[BlockInterpretationModal] Failed to fetch translation for ayah ${ayah}:`, err);
+        }
+      }
+      
+      // Sort by ayah, then by footnote number
+      footnotes.sort((a, b) => {
+        if (a.ayah !== b.ayah) return a.ayah - b.ayah;
+        return a.footnoteNumber - b.footnoteNumber;
+      });
+      
+      return footnotes;
+    } catch (err) {
+      console.error('[BlockInterpretationModal] ❌ Error extracting footnotes from range:', err);
+      return [];
+    }
+  }, []); // No dependencies - function only uses parameters
+
+  const moveToAdjacentFootnoteBlock = useCallback(
+    async (direction) => {
+      if (!normalizedBlockRanges.length || !currentRange) {
+        return false;
+      }
+
+      const normalizedCurrent = parseRangeString(currentRange);
+      if (!normalizedCurrent) {
+        return false;
+      }
+
+      const currentIndex = normalizedBlockRanges.findIndex(
+        (block) =>
+          block.label === normalizedCurrent.label ||
+          (block.start === normalizedCurrent.start && block.end === normalizedCurrent.end)
+      );
+
+      if (currentIndex === -1) {
+        return false;
+      }
+
+      let nextIndex = currentIndex + direction;
+      while (nextIndex >= 0 && nextIndex < normalizedBlockRanges.length) {
+        const targetBlock = normalizedBlockRanges[nextIndex];
+        try {
+          const footnotes = await extractFootnotesFromRange(
+            currentSurahId,
+            targetBlock.label
+          );
+          if (Array.isArray(footnotes) && footnotes.length > 0) {
+            const targetFootnote =
+              direction > 0 ? footnotes[0] : footnotes[footnotes.length - 1];
+
+            setCurrentRange(targetBlock.label);
+            setCurrentFootnoteId(targetFootnote.footnoteId);
+            setCurrentInterpretationNo(targetFootnote.footnoteNumber);
+            setFootnotesInRange(footnotes);
+            return true;
+          }
+        } catch (err) {
+          console.warn(
+            `[BlockInterpretationModal] Failed to load footnotes for block ${targetBlock.label}:`,
+            err
+          );
+        }
+        nextIndex += direction;
+      }
+      return false;
+    },
+    [
+      normalizedBlockRanges,
+      currentRange,
+      currentSurahId,
+      extractFootnotesFromRange,
+      parseRangeString,
+    ]
+  );
 
   // Body scroll lock when modal is open
   useEffect(() => {
@@ -69,6 +256,10 @@ const BlockInterpretationModal = ({
     setCurrentLanguage(language);
     setCurrentFootnoteId(footnoteId);
   }, [surahId, range, interpretationNo, language, footnoteId]);
+
+  useEffect(() => {
+    setCurrentInterpretationId(interpretationId);
+  }, [surahId, range, interpretationNo, language, interpretationId]);
 
   // Handle close with animation
   const handleClose = (e) => {
@@ -219,27 +410,34 @@ const BlockInterpretationModal = ({
           }
         } else if (currentLanguage === 'E' || currentLanguage === 'en') {
           // For English, check if we have a footnote ID (from blockwise footnote click)
-          if (currentFootnoteId) {
-            try {
-              const explanation = await englishTranslationService.getExplanation(parseInt(currentFootnoteId, 10));
-              
-              // Format as interpretation data structure
-              data = explanation && explanation !== 'N/A' ? [{
-                Interpretation: explanation,
-                AudioIntrerptn: explanation,
-                text: explanation,
-                content: explanation,
-                InterpretationNo: String(currentInterpretationNo), // Use displayed number for UI
-                footnoteId: currentFootnoteId
-              }] : [];
-            } catch (footnoteErr) {
-              console.error('[BlockInterpretationModal] ❌ Error fetching English footnote:', {
-                error: footnoteErr,
-                message: footnoteErr?.message,
-                footnoteId: currentFootnoteId
-              });
-              throw footnoteErr;
+        if (currentFootnoteId || currentInterpretationId) {
+          try {
+            let explanation = '';
+            if (currentInterpretationId) {
+              explanation = await englishTranslationService.getInterpretationById(currentInterpretationId);
+            } else if (currentFootnoteId) {
+              explanation = await englishTranslationService.getExplanation(parseInt(currentFootnoteId, 10));
             }
+            
+            // Format as interpretation data structure
+            data = explanation && explanation !== 'N/A' ? [{
+              Interpretation: explanation,
+              AudioIntrerptn: explanation,
+              text: explanation,
+              content: explanation,
+              InterpretationNo: String(currentInterpretationNo), // Use displayed number for UI
+              footnoteId: currentFootnoteId,
+              interpretationId: currentInterpretationId,
+            }] : [];
+          } catch (footnoteErr) {
+            console.error('[BlockInterpretationModal] ❌ Error fetching English interpretation:', {
+              error: footnoteErr,
+              message: footnoteErr?.message,
+              footnoteId: currentFootnoteId,
+              interpretationId: currentInterpretationId
+            });
+            throw footnoteErr;
+          }
           } else {
             // For English interpretations (not footnotes), use the original interpretation API
             const isSingle = /^\d+$/.test(currentRange);
@@ -547,46 +745,19 @@ const BlockInterpretationModal = ({
     }
   }, [isNoteOpen, showAyahModal]);
 
-  // Fallback note content for when API fails
-  const getFallbackNoteContent = (noteId) => {
-    const fallbackNotes = {
-      N895: `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N895</h3>
-          <p>ലാത്ത് - ഇത് ഒരു പ്രാചീന അറബ് ദേവതയുടെ പേരാണ്. ഇസ്ലാമിന് മുമ്പുള്ള അറേബ്യയിൽ ഈ ദേവതയെ ആരാധിച്ചിരുന്നു.</p>
-          <p>ഖുർആനിൽ ഈ ദേവതയെ പരാമർശിക്കുന്നത് ബഹുദൈവവാദത്തിന്റെ തെറ്റിനെ വിശദീകരിക്കാനാണ്.</p>
-        </div>
-      `,
-      N189: `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N189</h3>
-          <p>ഉസ്സ - ഇതും ഒരു പ്രാചീന അറബ് ദേവതയാണ്. ലാത്ത്, ഉസ്സ, മനാത് എന്നിവ മക്കയിലെ പ്രധാന ദേവതകളായിരുന്നു.</p>
-          <p>ഇവയെ "അല്ലാഹുവിന്റെ പുത്രിമാർ" എന്ന് അവർ വിളിച്ചിരുന്നു.</p>
-        </div>
-      `,
-    };
-
-    return fallbackNotes[noteId] || null;
-  };
-
   const handleNoteClick = async (noteId) => {
     // Show loading state immediately
     setSelectedNote({ id: noteId, content: "Loading..." });
     setIsNoteOpen(true);
 
-    // Try to get fallback content first (for immediate display)
-    const fallbackContent = getFallbackNoteContent(noteId);
-    if (fallbackContent) {
-      setSelectedNote({ id: noteId, content: fallbackContent });
-    }
-
     try {
-      // Try to fetch from API (but don't block the UI)
+      // Fetch note from MySQL database via API
       const noteData = await fetchNoteById(noteId);
 
       // Try different possible content fields - prioritize NoteText from API response
       const content =
         noteData?.NoteText ||
+        noteData?.note_text ||
         noteData?.content ||
         noteData?.html ||
         noteData?.text ||
@@ -597,28 +768,26 @@ const BlockInterpretationModal = ({
 
       if (content && content !== "Note content not available") {
         setSelectedNote({ id: noteId, content });
-      }
-    } catch (err) {
-      // Error fetching note - only log non-500 and non-network errors to reduce console noise
-      if (
-        !err.message?.includes("500") &&
-        !err.message?.includes("Network error")
-      ) {
-        console.warn(`Failed to fetch note ${noteId}:`, err.message);
-      }
-
-      // If no fallback content was set, show a user-friendly error
-      if (!fallbackContent) {
+      } else {
         setSelectedNote({
           id: noteId,
-          content: `
-            <div class="note-content">
-              <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note ${noteId}</h3>
-              <p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>
-            </div>
-          `,
+          content: `<p style="color: #666;">Note content is not available.</p>`,
         });
       }
+    } catch (err) {
+      console.error(`Failed to fetch note ${noteId}:`, err.message);
+
+      // Show user-friendly error message
+      setSelectedNote({
+        id: noteId,
+        content: `
+          <div class="note-content">
+            <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note ${noteId}</h3>
+            <p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>
+            <p style="color: #999; font-size: 0.9em; margin-top: 10px;">Error: ${err.message || 'Unknown error'}</p>
+          </div>
+        `,
+      });
     }
   };
 
@@ -691,6 +860,20 @@ const BlockInterpretationModal = ({
   const handleContentClick = (e) => {
     const target = e.target;
 
+    // Check if clicked element is a verse reference link
+    const verseLink = target.closest('.verse-reference-link');
+    if (verseLink) {
+      e.preventDefault();
+      e.stopPropagation();
+      const surah = verseLink.getAttribute('data-surah');
+      const ayah = verseLink.getAttribute('data-ayah');
+      if (surah && ayah) {
+        setAyahTarget({ surahId: parseInt(surah, 10), verseId: parseInt(ayah, 10) });
+        setShowAyahModal(true);
+        return;
+      }
+    }
+
     // Simple click detection for sup/a tags
     if (target.tagName === "SUP" || target.tagName === "A") {
       handleNoteHighlightClick(e);
@@ -700,10 +883,12 @@ const BlockInterpretationModal = ({
     // Fallback: text-based detection
     const clickedText = target.innerText || target.textContent || "";
 
-    // Look for note patterns first (PRIORITY)
-    const noteMatch = clickedText.match(/N(\d+)/);
+    // Look for note patterns first (PRIORITY) - support N, H, B prefixes
+    const noteMatch = clickedText.match(/^([NHB])(\d+)$/i);
     if (noteMatch) {
-      const noteId = `N${noteMatch[1]}`;
+      const prefix = noteMatch[1].toUpperCase();
+      const number = noteMatch[2];
+      const noteId = `${prefix}${number}`;
       handleNoteClick(noteId);
       return;
     }
@@ -738,51 +923,6 @@ const BlockInterpretationModal = ({
     setCurrentRange(String(value));
   };
 
-  // Helper function to extract all footnotes from a range for English
-  const extractFootnotesFromRange = useCallback(async (surahId, range) => {
-    try {
-      const [start, end] = range.includes('-') 
-        ? range.split('-').map(n => parseInt(n.trim(), 10))
-        : [parseInt(range, 10), parseInt(range, 10)];
-      
-      const footnotes = [];
-      
-      // Fetch translation for each verse in the range
-      for (let ayah = start; ayah <= end; ayah++) {
-        try {
-          const translation = await englishTranslationService.getAyahTranslation(surahId, ayah);
-          if (translation) {
-            // Extract footnotes using regex
-            const footnoteRegex = /<sup[^>]*foot_note="([^"]+)"[^>]*>(\d+)<\/sup>/g;
-            let match;
-            while ((match = footnoteRegex.exec(translation)) !== null) {
-              const footnoteId = match[1];
-              const footnoteNumber = parseInt(match[2], 10);
-              footnotes.push({
-                footnoteId,
-                footnoteNumber,
-                ayah
-              });
-            }
-          }
-        } catch (err) {
-          console.warn(`[BlockInterpretationModal] Failed to fetch translation for ayah ${ayah}:`, err);
-        }
-      }
-      
-      // Sort by ayah, then by footnote number
-      footnotes.sort((a, b) => {
-        if (a.ayah !== b.ayah) return a.ayah - b.ayah;
-        return a.footnoteNumber - b.footnoteNumber;
-      });
-      
-      return footnotes;
-    } catch (err) {
-      console.error('[BlockInterpretationModal] ❌ Error extracting footnotes from range:', err);
-      return [];
-    }
-  }, []); // No dependencies - function only uses parameters
-
   // Load footnotes for current range when opening with a footnote
   useEffect(() => {
     if ((currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId && currentRange) {
@@ -796,26 +936,120 @@ const BlockInterpretationModal = ({
     }
   }, [currentSurahId, currentRange, currentLanguage, currentFootnoteId, extractFootnotesFromRange]);
 
+  // Check if there are more footnotes in adjacent blocks for English (without changing state)
+  const checkAdjacentBlockFootnotes = useCallback(async (direction) => {
+    if (!normalizedBlockRanges.length || !currentRange) {
+      return false;
+    }
+
+    const normalizedCurrent = parseRangeString(currentRange);
+    if (!normalizedCurrent) {
+      return false;
+    }
+
+    const currentIndex = normalizedBlockRanges.findIndex(
+      (block) =>
+        block.label === normalizedCurrent.label ||
+        (block.start === normalizedCurrent.start && block.end === normalizedCurrent.end)
+    );
+
+    if (currentIndex === -1) {
+      return false;
+    }
+
+    let nextIndex = currentIndex + direction;
+    while (nextIndex >= 0 && nextIndex < normalizedBlockRanges.length) {
+      const targetBlock = normalizedBlockRanges[nextIndex];
+      try {
+        const footnotes = await extractFootnotesFromRange(
+          currentSurahId,
+          targetBlock.label
+        );
+        if (Array.isArray(footnotes) && footnotes.length > 0) {
+          return true;
+        }
+      } catch (err) {
+        // Continue checking next block
+      }
+      nextIndex += direction;
+    }
+    return false;
+  }, [normalizedBlockRanges, currentRange, currentSurahId, extractFootnotesFromRange, parseRangeString]);
+
+  // Check if there are more footnotes available (current range or adjacent blocks)
+  const [hasNextFootnote, setHasNextFootnote] = useState(true);
+  const [hasPrevFootnote, setHasPrevFootnote] = useState(true);
+
+  useEffect(() => {
+    if ((currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId && normalizedBlockRanges.length > 0) {
+      let isCancelled = false;
+      
+      const checkAvailability = async () => {
+        // Wait for footnotes to load if they're not loaded yet
+        if (footnotesInRange.length === 0) {
+          // Set defaults, will be updated when footnotes load
+          setHasNextFootnote(true);
+          setHasPrevFootnote(true);
+          return;
+        }
+
+        const currentIndex = footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId);
+        
+        // Check if there's a next footnote in current range
+        const hasNextInCurrent = currentIndex >= 0 && currentIndex < footnotesInRange.length - 1;
+        if (hasNextInCurrent) {
+          if (!isCancelled) setHasNextFootnote(true);
+        } else {
+          // Check next block
+          const hasNextInNextBlock = await checkAdjacentBlockFootnotes(1);
+          if (!isCancelled) setHasNextFootnote(hasNextInNextBlock);
+        }
+
+        // Check if there's a previous footnote in current range
+        const hasPrevInCurrent = currentIndex > 0;
+        if (hasPrevInCurrent) {
+          if (!isCancelled) setHasPrevFootnote(true);
+        } else {
+          // Check previous block
+          const hasPrevInPrevBlock = await checkAdjacentBlockFootnotes(-1);
+          if (!isCancelled) setHasPrevFootnote(hasPrevInPrevBlock);
+        }
+      };
+      
+      checkAvailability();
+      
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setHasNextFootnote(true);
+      setHasPrevFootnote(true);
+    }
+  }, [currentLanguage, currentFootnoteId, footnotesInRange, normalizedBlockRanges, checkAdjacentBlockFootnotes]);
+
   const handlePrev = async () => {
     // Special handling for English footnotes
     if ((currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId) {
       if (footnotesInRange.length === 0) {
         console.warn('[BlockInterpretationModal] ⚠️ No footnotes loaded for range:', currentRange);
+      } else {
+        // Find current footnote index
+        const currentIndex = footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId);
+        
+        if (currentIndex > 0) {
+          // Go to previous footnote in the same range
+          const prevFootnote = footnotesInRange[currentIndex - 1];
+          setCurrentFootnoteId(prevFootnote.footnoteId);
+          setCurrentInterpretationNo(prevFootnote.footnoteNumber);
+          // Keep the same range
+          return;
+        }
+      }
+
+      const moved = await moveToAdjacentFootnoteBlock(-1);
+      if (moved) {
         return;
       }
-      
-      // Find current footnote index
-      const currentIndex = footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId);
-      
-      if (currentIndex > 0) {
-        // Go to previous footnote in the same range
-        const prevFootnote = footnotesInRange[currentIndex - 1];
-        setCurrentFootnoteId(prevFootnote.footnoteId);
-        setCurrentInterpretationNo(prevFootnote.footnoteNumber);
-        // Keep the same range
-        return;
-      }
-      return;
     }
 
     // First, check if we can navigate to previous interpretation number in the same range
@@ -930,21 +1164,24 @@ const BlockInterpretationModal = ({
     if ((currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId) {
       if (footnotesInRange.length === 0) {
         console.warn('[BlockInterpretationModal] ⚠️ No footnotes loaded for range:', currentRange);
+      } else {
+        // Find current footnote index
+        const currentIndex = footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId);
+        
+        if (currentIndex >= 0 && currentIndex < footnotesInRange.length - 1) {
+          // Go to next footnote in the same range
+          const nextFootnote = footnotesInRange[currentIndex + 1];
+          setCurrentFootnoteId(nextFootnote.footnoteId);
+          setCurrentInterpretationNo(nextFootnote.footnoteNumber);
+          // Keep the same range
+          return;
+        }
+      }
+
+      const moved = await moveToAdjacentFootnoteBlock(1);
+      if (moved) {
         return;
       }
-      
-      // Find current footnote index
-      const currentIndex = footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId);
-      
-      if (currentIndex >= 0 && currentIndex < footnotesInRange.length - 1) {
-        // Go to next footnote in the same range
-        const nextFootnote = footnotesInRange[currentIndex + 1];
-        setCurrentFootnoteId(nextFootnote.footnoteId);
-        setCurrentInterpretationNo(nextFootnote.footnoteNumber);
-        // Keep the same range
-        return;
-      }
-      return;
     }
 
     // First, check if we can navigate to next interpretation number in the same range
@@ -1194,9 +1431,33 @@ const BlockInterpretationModal = ({
     setShowWordByWord(true);
   };
 
+  // Process interpretation text to make verse references clickable with cyan blue styling
+  const processVerseReferences = (text) => {
+    if (!text || typeof text !== "string") return text;
+    
+    // Pattern to match verse references like (2:163), (1:2), 2:163, etc.
+    // This regex matches:
+    // - (2:163) - with parentheses
+    // - 2:163 - without parentheses
+    // - (1:2) - single digit surah/ayah
+    const versePattern = /\(?(\d+)\s*[:：]\s*(\d+)\)?/g;
+    
+    return text.replace(versePattern, (match, surah, ayah) => {
+      // Check if already wrapped in a clickable element
+      if (match.includes('verse-reference-link')) {
+        return match;
+      }
+      
+      // Wrap in clickable span with cyan blue styling
+      return `<span class="verse-reference-link inline-block cursor-pointer text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 underline decoration-cyan-500/50 hover:decoration-cyan-600 dark:decoration-cyan-400/50 dark:hover:decoration-cyan-300 transition-colors" data-surah="${surah}" data-ayah="${ayah}" title="Click to view Surah ${surah}, Verse ${ayah}">${match}</span>`;
+    });
+  };
+
   const extractText = (item) => {
     if (item == null) return "";
-    if (typeof item === "string") return item;
+    if (typeof item === "string") {
+      return processVerseReferences(item);
+    }
 
     // Common possible fields (check both lowercase and capitalized versions)
     const preferredKeys = [
@@ -1223,14 +1484,14 @@ const BlockInterpretationModal = ({
     for (const key of preferredKeys) {
       if (typeof item[key] === "string" && item[key].trim().length > 0) {
         // Removed excessive logging - only log on errors
-        return item[key];
+        return processVerseReferences(item[key]);
       }
     }
 
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-        return v;
+        return processVerseReferences(v);
       }
     }
 
@@ -1392,12 +1653,12 @@ const BlockInterpretationModal = ({
               onPickRange={handlePickRange}
               onPrev={
                 (currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId && footnotesInRange.length > 0
-                  ? (footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId) > 0) ? handlePrev : null
+                  ? hasPrevFootnote ? handlePrev : null
                   : handlePrev
               }
               onNext={
                 (currentLanguage === 'E' || currentLanguage === 'en') && currentFootnoteId && footnotesInRange.length > 0
-                  ? (footnotesInRange.findIndex(f => f.footnoteId === currentFootnoteId) < footnotesInRange.length - 1) ? handleNext : null
+                  ? hasNextFootnote ? handleNext : null
                   : handleNext
               }
               isModal={true}

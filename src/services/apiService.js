@@ -95,6 +95,21 @@ class ApiService {
     return this.makeRequest(`/urdu/footnote/${footnoteId}`);
   }
 
+  // Get English footnote
+  async getEnglishFootnote(footnoteId) {
+    return this.makeRequest(`/english/footnote/${footnoteId}`);
+  }
+
+  // Get Malayalam footnote
+  async getMalayalamFootnote(footnoteId) {
+    return this.makeRequest(`/malayalam/footnote/${footnoteId}`);
+  }
+
+  // Get Arabic text
+  async getArabicText(surah, ayah) {
+    return this.makeRequest(`/arabic/text/${surah}/${ayah}`);
+  }
+
   // Check language health
   async checkLanguageHealth(language) {
     return this.makeRequest(`/${language}/health`);

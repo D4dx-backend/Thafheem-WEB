@@ -1,6 +1,6 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { fetchCompleteSurahInfo, fetchNoteById } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ const SurahInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [shareStatus, setShareStatus] = useState(null);
   const [notePopupState, setNotePopupState] = useState({
     isOpen: false,
     noteId: null,
@@ -20,6 +21,31 @@ const SurahInfo = () => {
     error: null,
     content: null,
   });
+  const shareResetRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (shareResetRef.current) {
+        clearTimeout(shareResetRef.current);
+      }
+    };
+  }, []);
+
+  const setShareStatusWithTimeout = useCallback(
+    (status) => {
+      setShareStatus(status);
+      if (shareResetRef.current) {
+        clearTimeout(shareResetRef.current);
+      }
+      if (status) {
+        shareResetRef.current = setTimeout(
+          () => setShareStatus(null),
+          2500
+        );
+      }
+    },
+    [shareResetRef]
+  );
 
   // Helper function to clean HTML content
   const cleanHtmlContent = (htmlString) => {
@@ -157,6 +183,89 @@ const SurahInfo = () => {
   const shouldShowMalayalamPrefaceOnly =
     translationLanguage === "mal" && malayalamPrefaceSections.length > 0;
 
+  const getAllContentAsText = useCallback(() => {
+    if (!surahInfo) return "";
+
+    const surahName =
+      surahInfo?.basic?.name_simple ||
+      surahInfo?.surah?.name ||
+      `Surah ${surahId}`;
+    const arabicName =
+      surahInfo?.basic?.name_arabic || surahInfo?.surah?.arabic || "";
+
+    let content = `${surahName}\n`;
+    if (arabicName) {
+      content += `${arabicName}\n\n`;
+    }
+
+    content += `Revelation: ${
+      surahInfo?.basic?.revelation_place ||
+      surahInfo?.thafheem?.SuraType ||
+      surahInfo?.surah?.type ||
+      "Unknown"
+    }\n`;
+    content += `Revelation Order: ${
+      surahInfo?.basic?.revelation_order ||
+      surahInfo?.thafheem?.RevOrder ||
+      "Unknown"
+    }\n`;
+    content += `Verses: ${
+      surahInfo?.basic?.verses_count ||
+      surahInfo?.thafheem?.TotalAyas ||
+      surahInfo?.surah?.ayahs ||
+      "Unknown"
+    }\n`;
+
+    if (surahInfo?.thafheem) {
+      content += `Thafheem Vol: ${
+        surahInfo.thafheem.ThafVolume || "Unknown"
+      }\n`;
+      content += `Type: ${surahInfo.thafheem.SuraType || "Unknown"}\n`;
+    }
+    content += "\n";
+
+    if (surahInfo?.detailed?.short_text) {
+      content += `OVERVIEW\n${cleanHtmlContent(
+        surahInfo.detailed.short_text
+      )}\n\n`;
+    }
+
+    if (surahInfo?.detailed?.text) {
+      content += `DETAILED INFORMATION\n${cleanHtmlContent(
+        surahInfo.detailed.text
+      )}\n\n`;
+    }
+
+    if (parsedThafheemSections.length > 0) {
+      content += `THAFHEEM COMMENTARY\n\n`;
+      parsedThafheemSections.forEach((section) => {
+        content += `${section.title}\n${section.content}\n\n`;
+      });
+    }
+
+    if (
+      !surahInfo?.detailed?.text &&
+      parsedThafheemSections.length === 0
+    ) {
+      content += `BASIC INFORMATION\n\n`;
+      if (surahInfo?.basic?.translated_name?.name) {
+        content += `English Name: ${surahInfo.basic.translated_name.name}\n`;
+      }
+      if (surahInfo?.basic?.name_simple) {
+        content += `Simple Name: ${surahInfo.basic.name_simple}\n`;
+      }
+      if (surahInfo?.basic?.revelation_place) {
+        content += `Place of Revelation: ${surahInfo.basic.revelation_place}\n`;
+      }
+      if (surahInfo?.basic?.pages) {
+        content += `Pages: ${surahInfo.basic.pages[0]} to ${surahInfo.basic.pages[1]}\n`;
+      }
+    }
+
+    content += `\n— ${surahName} (Surah ${surahId})`;
+    return content;
+  }, [surahId, surahInfo, parsedThafheemSections]);
+
   const handlePrefaceContentClick = (event) => {
     if (translationLanguage !== "mal") {
       return;
@@ -175,7 +284,8 @@ const SurahInfo = () => {
     let handled = false;
     const normalized = rawText.replace(/[\s()]+/g, "").toUpperCase();
 
-    if (/^N\d+$/.test(normalized)) {
+    // Handle notes with prefixes: N (Note), H (Hadith/Hadith reference), B (Book/Book reference)
+    if (/^[NHB]\d+$/.test(normalized)) {
       handled = true;
       openNotePopup(normalized);
     } else {
@@ -193,6 +303,52 @@ const SurahInfo = () => {
     if (handled) {
       event.preventDefault();
       event.stopPropagation();
+    }
+  };
+
+  const handleShare = async () => {
+    if (!surahInfo) return;
+    if (typeof navigator === "undefined") {
+      setShareStatusWithTimeout("error");
+      return;
+    }
+
+    const surahName =
+      surahInfo?.basic?.name_simple ||
+      surahInfo?.surah?.name ||
+      `Surah ${surahId}`;
+    const shareText = getAllContentAsText();
+    const shareUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/surah/${surahId}`
+        : "";
+    const shareData = {
+      title: `${surahName} - Surah Information`,
+      text: shareText,
+      url: shareUrl || undefined,
+    };
+
+    try {
+      if (
+        navigator.share &&
+        (!navigator.canShare || navigator.canShare(shareData))
+      ) {
+        await navigator.share(shareData);
+        setShareStatusWithTimeout("shared");
+      } else {
+        const fallbackContent = shareUrl
+          ? `${shareText}\n\nRead more: ${shareUrl}`
+          : shareText;
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(fallbackContent);
+          setShareStatusWithTimeout("copied");
+        } else {
+          setShareStatusWithTimeout("error");
+        }
+      }
+    } catch (error) {
+      console.error("Error sharing Surah information:", error);
+      setShareStatusWithTimeout("error");
     }
   };
 
@@ -231,15 +387,42 @@ const SurahInfo = () => {
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white px-3 sm:px-4 lg:px-6 py-4 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto flex items-center">
-          <Link to={`/surah/${surahId}`}>
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors mr-3 sm:mr-4">
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-white" />
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center">
+            <Link to={`/surah/${surahId}`}>
+              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors mr-3 sm:mr-4">
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-white" />
+              </button>
+            </Link>
+            <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white">
+              {surahInfo?.basic?.name_simple || surahInfo?.surah?.name || `Surah ${surahId}`}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              disabled={!surahInfo}
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Share Surah information"
+            >
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-          </Link>
-          <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white">
-            {surahInfo?.basic?.name_simple || surahInfo?.surah?.name || `Surah ${surahId}`}
-          </h1>
+            {shareStatus && (
+              <span
+                className={`text-xs sm:text-sm ${
+                  shareStatus === "error"
+                    ? "text-red-500"
+                    : "text-green-500"
+                }`}
+              >
+                {shareStatus === "copied"
+                  ? "Copied"
+                  : shareStatus === "shared"
+                  ? "Shared"
+                  : "Share failed"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
  

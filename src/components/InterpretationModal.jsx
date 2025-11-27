@@ -35,7 +35,7 @@ const extractPlainText = (content) => {
 };
 
 const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onClose }) => {
-  const { translationFontSize, translationLanguage } = useTheme();
+  const { adjustedTranslationFontSize, translationLanguage } = useTheme();
   const { toasts, removeToast } = useToast();
 
   // State management
@@ -217,10 +217,30 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     loadInterpretationData();
   }, [surahId, verseId, interpretationNo, language, translationLanguage]);
 
+  // Process interpretation text to make verse references clickable with cyan blue styling
+  const processVerseReferences = (text) => {
+    if (!text || typeof text !== "string") return text;
+    
+    // Pattern to match verse references like (2:163), (1:2), 2:163, etc.
+    const versePattern = /\(?(\d+)\s*[:：]\s*(\d+)\)?/g;
+    
+    return text.replace(versePattern, (match, surah, ayah) => {
+      // Check if already wrapped in a clickable element
+      if (match.includes('verse-reference-link')) {
+        return match;
+      }
+      
+      // Wrap in clickable span with cyan blue styling
+      return `<span class="verse-reference-link inline-block cursor-pointer text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 underline decoration-cyan-500/50 hover:decoration-cyan-600 dark:decoration-cyan-400/50 dark:hover:decoration-cyan-300 transition-colors" data-surah="${surah}" data-ayah="${ayah}" title="Click to view Surah ${surah}, Verse ${ayah}">${match}</span>`;
+    });
+  };
+
   // Extract interpretation text from data
   const extractInterpretationText = (item) => {
     if (item == null) return "";
-    if (typeof item === "string") return item;
+    if (typeof item === "string") {
+      return processVerseReferences(item);
+    }
 
     // Common possible fields for interpretation content
     const preferredKeys = [
@@ -247,14 +267,14 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     // Try each preferred key
     for (const key of preferredKeys) {
       if (typeof item[key] === "string" && item[key].trim().length > 0) {
-        return item[key];
+        return processVerseReferences(item[key]);
       }
     }
 
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-        return v;
+        return processVerseReferences(v);
       }
     }
 
@@ -387,7 +407,27 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
                     <div key={index} className="mb-6 sm:mb-8">
                       <div
                         className="text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none"
-                        style={{ fontSize: `${translationFontSize}px` }}
+                        style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                        onClick={(e) => {
+                          // Handle clicks on verse reference links
+                          const verseLink = e.target.closest('.verse-reference-link');
+                          if (verseLink) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const surah = verseLink.getAttribute('data-surah');
+                            const ayah = verseLink.getAttribute('data-ayah');
+                            if (surah && ayah) {
+                              // Close current modal first
+                              onClose();
+                              // Navigate to the verse with language preserved
+                              const effectiveLang = language || translationLanguage || 'mal';
+                              // Use a small delay to ensure modal closes before navigation
+                              setTimeout(() => {
+                                window.location.href = `/surah/${surah}?ayah=${ayah}&lang=${effectiveLang}`;
+                              }, 100);
+                            }
+                          }
+                        }}
                         dangerouslySetInnerHTML={{ __html: interpretationText }}
                       />
                     </div>

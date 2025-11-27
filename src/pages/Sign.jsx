@@ -89,73 +89,66 @@ const Sign = () => {
 
           {/* Features List */}
           <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm dark:text-white text-black">
+            {/* Row 1 */}
             <div className="flex items-center justify-between space-x-1 sm:space-x-2">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  New! Notes & Reflections
+                  Capture personal notes and reflections
                 </span>
               </div>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  Create collections
+                  Organize verses into curated collections
                 </span>
               </div>
             </div>
+
+            {/* Row 2 */}
             <div className="flex items-center justify-between space-x-1 sm:space-x-2 text-black">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="dark:text-white font-poppins sm:text-[14px]">
-                  Sync your data across browsers
+                  Sync your reading progress across devices
                 </span>
               </div>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="dark:text-white font-poppins sm:text-[14px]">
-                  Create collections
+                  Cloud backup for notes and preferences
                 </span>
               </div>
             </div>
+
+            {/* Row 3 */}
             <div className="flex items-center justify-between space-x-1 sm:space-x-2">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  New! Notes & Reflections
+                  Access your study space from any browser
                 </span>
               </div>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  Create collections
+                  Quickly return to saved ayahs and pages
                 </span>
               </div>
             </div>
+
+            {/* Row 4 */}
             <div className="flex items-center justify-between space-x-1 sm:space-x-2">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  New! Notes & Reflections
+                  Secure, privacy‑focused account experience
                 </span>
               </div>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
                 <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  Create collections
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between space-x-1 sm:space-x-2">
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
-                <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  New! Notes & Reflections
-                </span>
-              </div>
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-black dark:text-white flex-shrink-0" />
-                <span className="text-black dark:text-white font-poppins sm:text-[14px]">
-                  Create collections
+                  Early access to upcoming Thafheem features
                 </span>
               </div>
             </div>

@@ -53,6 +53,23 @@ const ListIcon = ({ className }) => (
   </svg>
 );
 
+// Normalize free-form verse queries such as `4 : 20`
+const normalizeSearchQuery = (query = "") =>
+  query.replace(/\s*:\s*/g, ":").replace(/\s+/g, " ").trim();
+
+// Return `{ surah, verse }` when the normalized query matches `surah:verse`
+const extractVerseReference = (query = "") => {
+  const match = /^(\d{1,3}):(\d{1,3})$/.exec(query);
+  if (!match) {
+    return null;
+  }
+
+  const surah = match[1].replace(/^0+/, "") || "0";
+  const verse = match[2].replace(/^0+/, "") || "0";
+
+  return { surah, verse };
+};
+
 import { useTheme } from "../context/ThemeContext";
 
 const HomepageSearch = () => {
@@ -195,22 +212,22 @@ const HomepageSearch = () => {
     }
   };
 
-  // Handle search input changes
-  const handleSearchChange = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  const performSearch = async (query) => {
+    const sanitizedQuery = normalizeSearchQuery(query);
 
-    if (query.trim().length < 1) {
+    if (!sanitizedQuery) {
       setShowSearchResults(false);
       setSearchResults([]);
+      setSearchError(null);
       return;
     }
 
     setIsSearching(true);
     setSearchError(null);
+    setShowSearchResults(true);
 
     try {
-      const searchResults = await searchQuran(query.trim(), 'en');
+      const searchResults = await searchQuran(sanitizedQuery, 'en');
       
       const combinedResults = [
         ...searchResults.surahs.map(surah => ({
@@ -226,7 +243,6 @@ const HomepageSearch = () => {
           displayText: verse.text || verse.translated_text || 'Verse text not available',
           subText: `Surah ${verse.verse_key.split(':')[0]}:${verse.verse_key.split(':')[1]}`,
           verse_key: verse.verse_key,
-          // Enhanced verse information
           surahName: verse.surahInfo?.name || verse.chapter?.name_simple || `Surah ${verse.verse_key.split(':')[0]}`,
           surahArabic: verse.surahInfo?.arabic || '',
           verseNumber: verse.verse_key.split(':')[1],
@@ -236,14 +252,39 @@ const HomepageSearch = () => {
         }))
       ];
 
-      setSearchResults(combinedResults.slice(0, 12)); // Increased to show more results
-      setShowSearchResults(true);
+      setSearchResults(combinedResults.slice(0, 12));
     } catch (error) {
       setSearchError('Failed to search. Please try again.');
       setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    const rawQuery = e.target.value;
+    const normalizedQuery = normalizeSearchQuery(rawQuery);
+
+    setSearchQuery(rawQuery);
+
+    if (normalizedQuery.length < 1) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    const verseReference = extractVerseReference(normalizedQuery);
+
+    if (verseReference) {
+      setSearchQuery(normalizedQuery);
+      performSearch(normalizedQuery);
+      return;
+    }
+
+    // Hide stale results until the verse reference is complete or user submits
+    setShowSearchResults(false);
   };
 
   // Handle search result click with modifier key support
@@ -300,11 +341,35 @@ const HomepageSearch = () => {
   };
 
   // Handle search form submission
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
-    if (searchQuery.trim() && searchResults.length > 0) {
-      handleSearchResultClick(searchResults[0]);
+
+    const normalizedQuery = normalizeSearchQuery(searchQuery);
+
+    if (!normalizedQuery) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      setSearchError(null);
+      return;
     }
+
+    const verseReference = extractVerseReference(normalizedQuery);
+
+    if (verseReference) {
+      setSearchQuery(normalizedQuery);
+      await performSearch(normalizedQuery);
+      return;
+    }
+
+    const isSurahOnly = /^\d+$/.test(normalizedQuery);
+    const hasColonButNoVerse = /^\d+:$/.test(normalizedQuery);
+
+    if (isSurahOnly || hasColonButNoVerse) {
+      return;
+    }
+
+    setSearchQuery(normalizedQuery);
+    await performSearch(normalizedQuery);
   };
 
   const handleBookmarkClick = () => {
@@ -427,7 +492,6 @@ const HomepageSearch = () => {
             placeholder="Search surahs, verses, or try '2:255' for specific verses..."
             className="w-full h-[49px] pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-[#2A2C38] dark:border-gray-600 dark:text-white shadow-sm text-gray-700 placeholder-gray-400 text-base"
           />
-          {/* Voice search button temporarily removed */}
         </form>
 
         {/* Search Results Dropdown */}

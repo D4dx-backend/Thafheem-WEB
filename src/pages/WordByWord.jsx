@@ -18,6 +18,7 @@ import {
 import tamilWordByWordService from "../services/tamilWordByWordService";
 import hindiWordByWordService from "../services/hindiWordByWordService";
 import banglaWordByWordService from "../services/banglaWordByWordService";
+import malayalamTranslationService from "../services/malayalamTranslationService";
 import WordNavbar from "../components/WordNavbar";
 import AyahModal from "../components/AyahModal";
 import { useTheme } from "../context/ThemeContext";
@@ -40,7 +41,12 @@ const WordByWord = ({
   const currentVerseId = params.verseId
     ? parseInt(params.verseId)
     : selectedVerse;
-  const { quranFont, fontSize, translationFontSize, translationLanguage } = useTheme();
+  const {
+    quranFont,
+    fontSize,
+    adjustedTranslationFontSize,
+    translationLanguage,
+  } = useTheme();
 
   const [wordData, setWordData] = useState(null);
   const [thafheemWords, setThafheemWords] = useState([]);
@@ -62,8 +68,8 @@ const WordByWord = ({
         setLoading(true);
         setError(null);
 
-        // For Malayalam, we only need Thafheem data, not the regular word-by-word API
-        // For Tamil, Hindi, and Bangla, we use our local databases instead of quran.com API
+        // For Tamil, Hindi, Bangla, and Malayalam, we use our local databases
+        // For other languages, we use the regular word-by-word API
         const promises = [
           translationLanguage === 'ta'
             ? tamilWordByWordService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
@@ -83,9 +89,13 @@ const WordByWord = ({
                     // Fallback to English if Bangla service fails
                     return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
                   })
-                : translationLanguage !== 'mal'
-                  ? fetchWordByWordMeaning(currentSurahId, currentVerseId, translationLanguage)
-                  : Promise.resolve(null),
+                : translationLanguage === 'mal'
+                  ? malayalamTranslationService.getWordByWordDataWithArabic(currentSurahId, currentVerseId)
+                    .catch(async (error) => {
+                      // Fallback to English if Malayalam service fails
+                      return await fetchWordByWordMeaning(currentSurahId, currentVerseId, 'E');
+                    })
+                  : fetchWordByWordMeaning(currentSurahId, currentVerseId, translationLanguage),
           fetchThafheemWordMeanings(currentSurahId, currentVerseId).catch(() => []),
           // Only fetch surahs if we don't already have surah info
           surahInfo
@@ -365,15 +375,15 @@ const WordByWord = ({
                           translationLanguage === 'mal' ? 'font-malayalam' :
                             'font-poppins'
                     }`}
-                  style={{ fontSize: `${translationFontSize}px` }}
+                  style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                 >
                   {wordData.translations[0].text}
                 </p>
               </div>
             )}
 
-          {/* Word by Word Breakdown - Hide for Malayalam since we have Thafheem section */}
-          {translationLanguage !== 'mal' && wordData && wordData.words && wordData.words.length > 0 && (
+          {/* Word by Word Breakdown */}
+          {wordData && wordData.words && wordData.words.length > 0 && (
             <div className="mb-6 sm:mb-8">
               {/* Hide title for Bangla word breakdown */}
               {translationLanguage !== 'bn' && (
@@ -408,19 +418,26 @@ const WordByWord = ({
                           )}
                       </div>
 
-                      {/* Translation/Meaning - For non-Malayalam languages */}
+                      {/* Translation/Meaning */}
                       <div className="text-left max-w-[60%]">
                         {word.translation && word.translation.text ? (
                           <p
-                            className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 mb-1 font-medium"
-                            style={{ fontSize: `${translationFontSize}px` }}
+                            className={`text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 mb-1 font-medium ${
+                              translationLanguage === 'hi' ? 'font-hindi' :
+                              translationLanguage === 'ur' ? 'font-urdu' :
+                              translationLanguage === 'bn' ? 'font-bengali' :
+                              translationLanguage === 'ta' ? 'font-tamil' :
+                              translationLanguage === 'mal' ? 'font-malayalam' :
+                              'font-poppins'
+                            }`}
+                            style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                           >
                             {word.translation.text}
                           </p>
                         ) : (
                           <p
                             className="text-gray-500 dark:text-gray-400 mb-1 italic"
-                            style={{ fontSize: `${translationFontSize}px` }}
+                            style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                           >
                             Translation not available
                           </p>
@@ -452,8 +469,11 @@ const WordByWord = ({
             </div>
           )}
 
-          {/* Thafheem Word Meanings - Only show for Malayalam */}
-          {translationLanguage === 'mal' && thafheemWords.length > 0 && (
+          {/* Thafheem Word Meanings - Only show for Malayalam as fallback if wordData doesn't have words */}
+          {translationLanguage === 'mal' && 
+           (!wordData || !wordData.words || wordData.words.length === 0) && 
+           thafheemWords && 
+           thafheemWords.length > 0 && (
             <div className="mb-6 sm:mb-8">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-primary dark:text-primary-light mb-4 flex items-center gap-2">
                 <span className="w-8 h-[1px] bg-primary dark:bg-primary-light"></span>
@@ -463,8 +483,9 @@ const WordByWord = ({
                 {(() => {
                   // Deduplicate words based on WordPhrase to avoid showing the same word twice
                   const uniqueWords = thafheemWords.reduce((acc, word, index) => {
+                    const wordPhrase = word.WordPhrase || word.text_uthmani || word.text_simple || '';
                     const existingIndex = acc.findIndex(existing =>
-                      existing.WordPhrase === word.WordPhrase
+                      (existing.WordPhrase || existing.text_uthmani || existing.text_simple) === wordPhrase
                     );
                     if (existingIndex === -1) {
                       acc.push({ ...word, originalIndex: index });
@@ -472,34 +493,39 @@ const WordByWord = ({
                     return acc;
                   }, []);
 
-                  return uniqueWords.map((word, index) => (
-                    <div
-                      key={`${word.WordPhrase}-${index}`}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700"
-                    >
-                      <div className="flex flex-row-reverse justify-between items-center">
-                        <div className="text-right">
-                          <span
-                            className="text-2xl sm:text-3xl font-arabic dark:text-white text-gray-800"
-                            style={{
-                              fontFamily: quranFont,
-                              fontSize: `${fontSize}px`,
-                            }}
-                          >
-                            {word.WordPhrase}
-                          </span>
-                        </div>
-                        <div className="text-left max-w-[60%]">
-                          <span
-                            className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 font-malayalam font-medium"
-                            style={{ fontSize: `${translationFontSize}px` }}
-                          >
-                            {word.Meaning}
-                          </span>
+                  return uniqueWords.map((word, index) => {
+                    const wordPhrase = word.WordPhrase || word.text_uthmani || word.text_simple || '';
+                    const meaning = word.Meaning || word.translation?.text || '';
+                    
+                    return (
+                      <div
+                        key={`${wordPhrase}-${index}`}
+                        className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700"
+                      >
+                        <div className="flex flex-row-reverse justify-between items-center">
+                          <div className="text-right">
+                            <span
+                              className="text-2xl sm:text-3xl font-arabic dark:text-white text-gray-800"
+                              style={{
+                                fontFamily: quranFont,
+                                fontSize: `${fontSize}px`,
+                              }}
+                            >
+                              {wordPhrase}
+                            </span>
+                          </div>
+                          <div className="text-left max-w-[60%]">
+                            <span
+                              className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 font-malayalam font-medium"
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                            >
+                              {meaning}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ));
+                    );
+                  });
                 })()}
               </div>
             </div>

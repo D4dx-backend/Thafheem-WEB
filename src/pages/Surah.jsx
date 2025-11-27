@@ -56,15 +56,17 @@ import {
   surahNameFontFamily,
 } from "../utils/surahNameUtils.js";
 import { useSurahViewCache } from "../context/SurahViewCacheContext";
+import useSequentialEnglishFootnotes from "../hooks/useSequentialEnglishFootnotes";
 
-const URDU_BATCH_SIZE = 20;
 const TAMIL_PAGE_SIZE = 25;
+const DEFAULT_TRANSLATION_PAGE_SIZE = 40;
+const PAGINATED_TRANSLATION_LANGUAGES = new Set(['bn', 'hi', 'ur', 'ta', 'E']);
 
 const Surah = () => {
   const {
     quranFont,
     fontSize,
-    translationFontSize,
+    adjustedTranslationFontSize,
     translationLanguage,
     theme,
     viewType,
@@ -156,13 +158,10 @@ const Surah = () => {
   const audioRefForCleanup = useRef(null); // Track audio for cleanup
   const isComponentMountedRef = useRef(false); // Track component mount status
 
-  // Urdu lazy-loading state
-  const [totalUrduVerses, setTotalUrduVerses] = useState(0);
-  const [urduLoadedCount, setUrduLoadedCount] = useState(0);
-  const [isLoadingUrduBatch, setIsLoadingUrduBatch] = useState(false);
-  const loadMoreUrduRef = useRef(null);
-  const [tamilPagination, setTamilPagination] = useState(null);
-  const [isLoadingTamilPage, setIsLoadingTamilPage] = useState(false);
+  // Paginated translation state
+  const [translationPagination, setTranslationPagination] = useState(null);
+  const [isLoadingTranslationPage, setIsLoadingTranslationPage] = useState(false);
+  const loadMoreTranslationRef = useRef(null);
   const { getAyahViewCache, setAyahViewCache } = useSurahViewCache();
   const hydratedAyahCacheRef = useRef(false);
 
@@ -181,9 +180,7 @@ const Surah = () => {
       setAyahData(cached.ayahData || []);
       setArabicVerses(cached.arabicVerses || []);
       setSurahInfo(cached.surahInfo || null);
-      setTamilPagination(cached.tamilPagination || null);
-      setTotalUrduVerses(cached.totalUrduVerses || 0);
-      setUrduLoadedCount(cached.urduLoadedCount || 0);
+      setTranslationPagination(cached.translationPagination || null);
       setLoading(false);
     }
   }, [surahId, translationLanguage, getAyahViewCache]);
@@ -194,6 +191,17 @@ const Surah = () => {
     }
   }, [surahId]);
 
+  useSequentialEnglishFootnotes({
+    enabled: translationLanguage === 'E',
+    context: 'ayahwise',
+    dependencies: [ayahData, surahId],
+  });
+
+  const stripArabicVerseMarker = (text) => {
+    if (!text) return "";
+    return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
+  };
+
   const toArabicNumber = (num) => {
     const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
     return num
@@ -203,168 +211,221 @@ const Surah = () => {
       .join("");
   };
 
-  const loadUrduBatch = useCallback(
-    async (startVerse, endVerse, replace = false) => {
-      if (!surahId || translationLanguage !== 'ur') return;
+  const buildPaginatedFallbackAyahs = useCallback((count, language) => {
+    const messageMap = {
+      ta: (idx) => `Tamil translation not available for verse ${idx + 1}`,
+      hi: () => 'Hindi translation service unavailable. Please try again later.',
+      ur: () => 'Urdu translation service unavailable. Please try again later.',
+      bn: (idx) => `Bangla translation not available for verse ${idx + 1}`,
+      E: (idx) => `English translation not available for verse ${idx + 1}`,
+    };
 
-      const surahNumber = parseInt(surahId, 10);
-      if (Number.isNaN(surahNumber)) return;
+    const getMessage = messageMap[language] || ((idx) => `Translation not available for verse ${idx + 1}`);
 
-      setIsLoadingUrduBatch(true);
-      try {
-        const verseNumbers = Array.from(
-          { length: endVerse - startVerse + 1 },
-          (_, idx) => startVerse + idx
-        );
+    return Array.from({ length: count }, (_, index) => ({
+      number: index + 1,
+      ArabicText: '',
+      Translation: getMessage(index),
+      ...(language === 'E' ? { interpretationCount: 0 } : {}),
+    }));
+  }, []);
 
-        const items = await Promise.all(
-          verseNumbers.map(async (verseNumber) => {
-            const rawTranslation =
-              (await urduTranslationService.getAyahTranslation(
-                surahNumber,
-                verseNumber
-              )) || "";
+  const getPaginatedTranslationLimit = useCallback(() => {
+    return translationLanguage === 'ta'
+      ? TAMIL_PAGE_SIZE
+      : DEFAULT_TRANSLATION_PAGE_SIZE;
+  }, [translationLanguage]);
 
-            const parsedTranslation =
-              urduTranslationService.parseUrduTranslationWithClickableFootnotes(
-                rawTranslation,
-                surahNumber,
-                verseNumber
-              );
+const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
+  if (!Array.isArray(incomingVerses)) {
+    if (replace) {
+      setArabicVerses([]);
+    }
+    return;
+  }
 
-            return {
-              number: verseNumber,
-              ArabicText: "",
-              Translation: parsedTranslation,
-              RawTranslation: rawTranslation,
-            };
-          })
-        );
+  setArabicVerses(prev => {
+    if (replace) {
+      return incomingVerses;
+    }
 
-        setAyahData((prev) => (replace ? items : [...prev, ...items]));
-        setUrduLoadedCount(endVerse);
-      } catch (error) {
-        if (replace) {
-          setAyahData([]);
-        }
-        console.error(
-          `Error fetching Urdu translations for ayahs ${startVerse}-${endVerse}:`,
-          error
-        );
-        throw error;
-      } finally {
-        setIsLoadingUrduBatch(false);
+    const verseMap = new Map();
+    prev.forEach(verse => {
+      if (verse?.verse_number != null) {
+        verseMap.set(verse.verse_number, verse);
       }
-    },
-    [surahId, translationLanguage]
-  );
+    });
+    incomingVerses.forEach(verse => {
+      if (verse?.verse_number != null) {
+        verseMap.set(verse.verse_number, verse);
+      }
+    });
 
-  const handleLoadMoreUrdu = useCallback(async () => {
-    if (
-      translationLanguage !== 'ur' ||
-      isLoadingUrduBatch ||
-      urduLoadedCount >= totalUrduVerses
-    ) {
-      return;
-    }
+    return Array.from(verseMap.values()).sort((a, b) => a.verse_number - b.verse_number);
+  });
+}, []);
 
-    const nextStart = urduLoadedCount + 1;
-    const nextEnd = Math.min(
-      urduLoadedCount + URDU_BATCH_SIZE,
-      totalUrduVerses
-    );
-
-    try {
-      await loadUrduBatch(nextStart, nextEnd);
-    } catch (error) {
-      showError?.("Failed to load more Urdu ayahs. Please try again.");
-    }
-  }, [
-    isLoadingUrduBatch,
-    loadUrduBatch,
-    totalUrduVerses,
-    showError,
-    urduLoadedCount,
-    translationLanguage,
-  ]);
-
-  const fetchTamilTranslationsPage = useCallback(
+  const fetchPaginatedTranslations = useCallback(
     async ({ page = 1, replace = false, trackLoading = true } = {}) => {
-      if (!surahId || translationLanguage !== 'ta') return null;
+      if (!surahId || !PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage)) {
+        return null;
+      }
 
       const surahNumber = parseInt(surahId, 10);
       if (Number.isNaN(surahNumber)) return null;
 
+      const serviceMap = {
+        bn: banglaTranslationService,
+        hi: hindiTranslationService,
+        ur: urduTranslationService,
+        ta: tamilTranslationService,
+        E: englishTranslationService,
+      };
+
+      const service = serviceMap[translationLanguage];
+      if (!service) return null;
+
+      if (translationLanguage === 'ur' && (replace || page === 1)) {
+        urduTranslationService.resetFootnoteOrdering(surahNumber);
+      }
+
       if (trackLoading) {
-        setIsLoadingTamilPage(true);
+        setIsLoadingTranslationPage(true);
       }
 
       try {
-        const response = await tamilTranslationService.getSurahTranslations(surahNumber, {
+        const limit = getPaginatedTranslationLimit();
+        const response = await service.getSurahTranslations(surahNumber, {
           page,
-          limit: TAMIL_PAGE_SIZE,
+          limit,
         });
 
-        const items = Array.isArray(response?.translations) ? response.translations : [];
-        const paginationMeta = response?.pagination || null;
+        const rawItems = Array.isArray(response?.translations)
+          ? response.translations
+          : Array.isArray(response)
+            ? response
+            : [];
+
+        let processedItems = rawItems;
+
+        if (translationLanguage === 'bn') {
+          processedItems = rawItems.map((verse) => ({
+            ...verse,
+            Translation:
+              banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
+                verse.Translation,
+                surahNumber,
+                verse.number
+              ),
+          }));
+        } else if (translationLanguage === 'ur') {
+          processedItems = rawItems.map((verse) => {
+            const parsed = urduTranslationService.parseUrduTranslationWithClickableFootnotes(
+              verse.Translation || '',
+              surahNumber,
+              verse.number
+            );
+
+            return {
+              ...verse,
+              Translation: parsed,
+              RawTranslation: verse.Translation || '',
+            };
+          });
+        } else if (translationLanguage === 'E') {
+          processedItems = rawItems.map((verse) => {
+            const interpretationMeta = Array.isArray(verse.interpretations) ? verse.interpretations : [];
+            const footnoteMetadata = verse.footnote_metadata || null;
+
+            return {
+              ...verse,
+              Translation:
+                englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
+                  verse.Translation || verse.translation_text,
+                  surahNumber,
+                  verse.number
+                ),
+              interpretationCount: verse.interpretationCount ?? interpretationMeta.length ?? 0,
+              interpretations: interpretationMeta,
+            };
+          });
+        }
+
+        let arabicResult = null;
+        try {
+          arabicResult = await fetchArabicVerses(surahNumber, { page, limit });
+        } catch (arabicError) {
+          console.error('Error fetching Arabic verses page:', arabicError);
+        }
+
+        const arabicItems = Array.isArray(arabicResult?.verses)
+          ? arabicResult.verses
+          : Array.isArray(arabicResult)
+            ? arabicResult
+            : [];
 
         if (isComponentMountedRef.current) {
           if (replace) {
-            setAyahData(items);
-          } else if (items.length > 0) {
-            setAyahData((prev) => [...prev, ...items]);
+            setAyahData(processedItems);
+          } else if (processedItems.length > 0) {
+            setAyahData((prev) => [...prev, ...processedItems]);
           }
 
-          setTamilPagination(paginationMeta);
+          setTranslationPagination(response?.pagination || null);
+          if (arabicItems.length > 0) {
+            upsertArabicVerses(arabicItems, replace);
+          } else if (replace) {
+            upsertArabicVerses([], true);
+          }
         }
-        return { items, pagination: paginationMeta };
+
+        return { items: processedItems, pagination: response?.pagination || null };
       } catch (error) {
         if (replace && isComponentMountedRef.current) {
           setAyahData([]);
-          setTamilPagination(null);
+          setTranslationPagination(null);
         }
         throw error;
       } finally {
         if (trackLoading && isComponentMountedRef.current) {
-          setIsLoadingTamilPage(false);
+          setIsLoadingTranslationPage(false);
         }
       }
     },
-    [surahId, translationLanguage]
+    [surahId, translationLanguage, getPaginatedTranslationLimit, upsertArabicVerses]
   );
 
-  const handleLoadMoreTamil = useCallback(async () => {
+  const handleLoadMoreTranslations = useCallback(async () => {
     if (
-      translationLanguage !== 'ta' ||
-      isLoadingTamilPage ||
-      !tamilPagination ||
-      !tamilPagination.hasNext
+      !PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage) ||
+      isLoadingTranslationPage ||
+      !translationPagination ||
+      !translationPagination.hasNext
     ) {
       return;
     }
 
-    const nextPage = (tamilPagination.page || 1) + 1;
+    const nextPage = (translationPagination.page || 1) + 1;
 
     try {
-      await fetchTamilTranslationsPage({ page: nextPage, replace: false });
+      await fetchPaginatedTranslations({ page: nextPage, replace: false });
     } catch (error) {
-      console.error('Error loading more Tamil translations:', error);
-      showError?.('Failed to load more Tamil ayahs. Please try again.');
+      console.error('Error loading more translations:', error);
+      showError?.('Failed to load more ayahs. Please try again.');
     }
   }, [
     translationLanguage,
-    tamilPagination,
-    isLoadingTamilPage,
-    fetchTamilTranslationsPage,
+    translationPagination,
+    isLoadingTranslationPage,
+    fetchPaginatedTranslations,
     showError,
   ]);
-
   useEffect(() => {
-    if (translationLanguage !== 'ur') {
+    if (!PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage)) {
       return;
     }
 
-    const target = loadMoreUrduRef.current;
+    const target = loadMoreTranslationRef.current;
     if (!target) {
       return;
     }
@@ -373,10 +434,10 @@ const Surah = () => {
       (entries) => {
         if (
           entries[0]?.isIntersecting &&
-          !isLoadingUrduBatch &&
-          urduLoadedCount < totalUrduVerses
+          translationPagination?.hasNext &&
+          !isLoadingTranslationPage
         ) {
-          handleLoadMoreUrdu();
+          handleLoadMoreTranslations();
         }
       },
       { root: null, rootMargin: '200px', threshold: 0.1 }
@@ -387,11 +448,10 @@ const Surah = () => {
       observer.disconnect();
     };
   }, [
-    handleLoadMoreUrdu,
-    isLoadingUrduBatch,
-    totalUrduVerses,
     translationLanguage,
-    urduLoadedCount,
+    translationPagination,
+    isLoadingTranslationPage,
+    handleLoadMoreTranslations,
   ]);
 
   // Ref to store handleTopPlayPause for event listener (defined later)
@@ -506,16 +566,16 @@ const Surah = () => {
         if (!isMounted) return;
         setLoading(true);
         setError(null);
+        setArabicVerses([]);
+        setTranslationPagination(null);
 
         const [
           surahNamesResponse,
           surahsResponse,
-          arabicResponse,
           pageRangesResponse,
         ] = await Promise.all([
           listSurahNames(),
           fetchSurahs(),
-          fetchArabicVerses(parseInt(surahId)),
           fetchPageRanges(),
         ]);
 
@@ -556,163 +616,35 @@ const Surah = () => {
         // Check if component is still mounted before setting state
         if (!isMounted) return;
 
-        // Reset Urdu tracking for non-Urdu languages
-        if (translationLanguage !== 'ur') {
-          setTotalUrduVerses(0);
-          setUrduLoadedCount(0);
-        }
-
         // Translation source depends on selected language
-        if (translationLanguage === 'ta') {
-          // Tamil translations using paginated API
+        if (PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage)) {
           try {
-            setTamilPagination(null);
-            const tamilResult = await fetchTamilTranslationsPage({ page: 1, replace: true, trackLoading: false });
+            const result = await fetchPaginatedTranslations({
+              page: 1,
+              replace: true,
+              trackLoading: false,
+            });
             if (!isMounted) return;
-            const tamilTranslations = tamilResult?.items || [];
-            if (!tamilTranslations.length) {
-              const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-                number: index + 1,
-                ArabicText: '',
-                Translation: `Tamil translation not available for verse ${index + 1}`,
-              }));
+            const items = result?.items || [];
+            if (!items.length) {
+              const fallbackAyahData = buildPaginatedFallbackAyahs(
+                verseCount,
+                translationLanguage
+              );
               setAyahData(fallbackAyahData);
-              setTamilPagination(null);
+              setTranslationPagination(null);
             }
           } catch (error) {
             if (!isMounted) return;
             if (error.name !== 'AbortError') {
-              console.error('Error fetching Tamil translations:', error);
+              console.error(`Error fetching ${translationLanguage} translations:`, error);
             }
-            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-              number: index + 1,
-              ArabicText: '',
-              Translation: `Tamil translation service unavailable. Please try again later.`,
-            }));
+            const fallbackAyahData = buildPaginatedFallbackAyahs(
+              verseCount,
+              translationLanguage
+            );
             setAyahData(fallbackAyahData);
-            setTamilPagination(null);
-          }
-        } else if (translationLanguage === 'hi') {
-          // Hindi translations using hybrid service (API-first with SQL.js fallback)
-          try {
-            const hindiTranslations = await hindiTranslationService.getSurahTranslations(parseInt(surahId));
-            if (!isMounted) return;
-            if (hindiTranslations && hindiTranslations.length > 0) {
-              setAyahData(hindiTranslations);
-            } else {
-              console.warn('No Hindi translations found');
-              setAyahData([]);
-            }
-          } catch (error) {
-            if (!isMounted) return;
-            if (error.name !== 'AbortError') {
-              console.error('Error fetching Hindi translations:', error);
-            }
-            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-              number: index + 1,
-              ArabicText: '',
-              Translation: 'Hindi translation service unavailable. Please try again later.'
-            }));
-            setAyahData(fallbackAyahData);
-          }
-        } else if (translationLanguage === 'ur') {
-          // Urdu translations with lazy loading batches from API
-          try {
-            if (!isMounted) return;
-            setTotalUrduVerses(verseCount);
-            setUrduLoadedCount(0);
-            setAyahData([]);
-
-            if (verseCount > 0) {
-              const initialEnd = Math.min(URDU_BATCH_SIZE, verseCount);
-              await loadUrduBatch(1, initialEnd, true);
-              if (!isMounted) return;
-            }
-          } catch (error) {
-            if (!isMounted) return;
-            if (error.name !== 'AbortError') {
-              console.error('Error fetching Urdu translations:', error);
-            }
-            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-              number: index + 1,
-              ArabicText: '',
-              Translation: 'Urdu translation service unavailable. Please try again later.'
-            }));
-            setAyahData(fallbackAyahData);
-          }
-        } else if (translationLanguage === 'bn') {
-          // Bangla translations from API
-          try {
-            const banglaTranslations = await banglaTranslationService.getSurahTranslations(parseInt(surahId));
-            if (!isMounted) return;
-            if (banglaTranslations && banglaTranslations.length > 0) {
-              // Parse Bangla translations to make explanation numbers clickable
-              const parsedTranslations = banglaTranslations.map(verse => ({
-                ...verse,
-                Translation: banglaTranslationService.parseBanglaTranslationWithClickableExplanations(
-                  verse.Translation,
-                  parseInt(surahId),
-                  verse.number
-                )
-              }));
-              setAyahData(parsedTranslations);
-            } else {
-              const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-                number: index + 1,
-                ArabicText: '',
-                Translation: `Bangla translation not available for verse ${index + 1}`,
-              }));
-              setAyahData(fallbackAyahData);
-            }
-          } catch (error) {
-            if (!isMounted) return;
-            if (error.name !== 'AbortError') {
-              console.error('Error fetching Bangla translations:', error);
-            }
-            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-              number: index + 1,
-              ArabicText: '',
-              Translation: `Bangla translation service unavailable. Please try again later.`,
-            }));
-            setAyahData(fallbackAyahData);
-          }
-        } else if (translationLanguage === 'E') {
-          // English translations using database-only service
-          try {
-            const englishTranslations = await englishTranslationService.getSurahTranslations(parseInt(surahId));
-            if (!isMounted) return;
-            if (englishTranslations && englishTranslations.length > 0) {
-              // Parse English translations to make footnotes clickable
-              // Note: Interpretation counts will be fetched on-demand when user clicks interpretation button
-              const parsedTranslations = englishTranslations.map(verse => ({
-                ...verse,
-                Translation: englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                  verse.Translation,
-                  parseInt(surahId),
-                  verse.number
-                ),
-                interpretationCount: 0 // Will be fetched on-demand
-              }));
-              setAyahData(parsedTranslations);
-            } else {
-              const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-                number: index + 1,
-                ArabicText: '',
-                Translation: `English translation not available for verse ${index + 1}`,
-              }));
-              setAyahData(fallbackAyahData);
-            }
-          } catch (error) {
-            if (!isMounted) return;
-            if (error.name !== 'AbortError') {
-              console.error('Error fetching English translations:', error);
-            }
-            const fallbackAyahData = Array.from({ length: verseCount }, (_, index) => ({
-              number: index + 1,
-              ArabicText: '',
-              Translation: `English translation service unavailable. Please try again later.`,
-            }));
-            setAyahData(fallbackAyahData);
+            setTranslationPagination(null);
           }
         } else {
           const ayahResponse = await fetchAyahAudioTranslations(parseInt(surahId));
@@ -725,21 +657,56 @@ const Surah = () => {
             }));
             setAyahData(fallbackAyahData);
           } else {
-            const formattedAyahData = ayahResponse.map((ayah) => ({
-              number: ayah.contiayano || 0,
-              ArabicText: '',
-              Translation: (ayah.AudioText || '')
-                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, '')
-                .replace(/\s+/g, ' ')
-                .trim(),
-            }));
+            const formattedAyahData = ayahResponse.map((ayah, idx) => {
+              const verseNumber = (() => {
+                const candidates = [
+                  ayah.ayaid,
+                  ayah.AyaId,
+                  ayah.AyaID,
+                  ayah.contiayano,
+                  ayah.contiAyaNo,
+                  idx + 1
+                ];
+                for (const candidate of candidates) {
+                  const parsed = Number.parseInt(candidate, 10);
+                  if (Number.isFinite(parsed) && parsed > 0) {
+                    return parsed;
+                  }
+                }
+                return idx + 1;
+              })();
+
+              return {
+                number: verseNumber,
+                ArabicText: '',
+                Translation: (ayah.AudioText || '')
+                  .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, '')
+                  .replace(/\s+/g, ' ')
+                  .trim(),
+              };
+            });
             setAyahData(formattedAyahData);
+          }
+
+          try {
+            const arabicResult = await fetchArabicVerses(parseInt(surahId));
+            if (!isMounted) return;
+            const normalizedArabic = Array.isArray(arabicResult?.verses)
+              ? arabicResult.verses
+              : Array.isArray(arabicResult)
+                ? arabicResult
+                : [];
+            setArabicVerses(normalizedArabic);
+          } catch (arabicError) {
+            if (!isMounted) return;
+            if (arabicError.name !== 'AbortError') {
+              console.error('Error fetching Arabic verses:', arabicError);
+            }
+            setArabicVerses([]);
           }
         }
 
         if (!isMounted) return;
-
-        setArabicVerses(arabicResponse || []);
 
         const currentSurah = surahNamesResponse.find(
           (s) => s.id === parseInt(surahId)
@@ -781,7 +748,7 @@ const Surah = () => {
       isMounted = false;
       abortController.abort();
     };
-  }, [surahId, translationLanguage, loadUrduBatch, fetchTamilTranslationsPage]);
+  }, [surahId, translationLanguage, fetchPaginatedTranslations, buildPaginatedFallbackAyahs]);
 
   useEffect(() => {
     if (
@@ -798,9 +765,7 @@ const Surah = () => {
       ayahData,
       arabicVerses,
       surahInfo,
-      tamilPagination,
-      totalUrduVerses,
-      urduLoadedCount,
+      translationPagination,
       __meta: { isComplete: true },
     });
   }, [
@@ -809,9 +774,7 @@ const Surah = () => {
     ayahData,
     arabicVerses,
     surahInfo,
-    tamilPagination,
-    totalUrduVerses,
-    urduLoadedCount,
+    translationPagination,
     loading,
     setAyahViewCache,
   ]);
@@ -1309,41 +1272,72 @@ const Surah = () => {
     };
   }, [translationLanguage, ayahData]);
 
-  // Handle clicks on English footnotes
+  // Handle clicks on English interpretation links and footnotes
   useEffect(() => {
-    const handleEnglishFootnoteClick = async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleEnglishClick = async (e) => {
+      // Check for interpretation link clicks first (these are the numbered interpretation badges in translation text)
+      let target = e.target.closest(".interpretation-link");
+      if (target && translationLanguage === 'E') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const interpretationNumber = target.getAttribute("data-interpretation") || 
+                                     target.getAttribute("data-interpretation-number") ||
+                                     target.textContent?.trim();
+        const surahNo = target.getAttribute("data-surah") || surahId;
+        const ayahNo = target.getAttribute("data-ayah");
+        
+        if (surahNo && ayahNo) {
+          // Open AyahModal which will show all interpretations for this verse
+          setSelectedVerseForInterpretation(parseInt(ayahNo, 10));
+          setShowAyahModal(true);
+          return;
+        }
+      }
 
-      const target = e.target.closest(".english-footnote-link");
+      // Check for footnote link clicks
+      target = e.target.closest(".english-footnote-link");
       if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+
         const footnoteId = target.getAttribute("data-footnote-id");
         const surahNo = target.getAttribute("data-surah");
         const ayahNo = target.getAttribute("data-ayah");
 
-        if (footnoteId && surahNo && ayahNo) {
-          setEnglishFootnoteLoading(true);
-          setShowEnglishFootnoteModal(true);
-          setEnglishFootnoteContent('Loading...');
+        if (!surahNo || !ayahNo) {
+          return;
+        }
 
-          try {
-            const explanation = await englishTranslationService.getExplanation(parseInt(footnoteId));
-            setEnglishFootnoteContent(explanation);
-          } catch (error) {
-            console.error('Error fetching English footnote explanation:', error);
-            setEnglishFootnoteContent(`Error loading explanation: ${error.message}`);
-          } finally {
-            setEnglishFootnoteLoading(false);
+        setEnglishFootnoteLoading(true);
+        setShowEnglishFootnoteModal(true);
+        setEnglishFootnoteContent('Loading...');
+
+        try {
+          let explanation = '';
+
+          if (footnoteId) {
+            explanation = await englishTranslationService.getExplanation(parseInt(footnoteId, 10));
+          } else {
+            setEnglishFootnoteContent('Explanation not available.');
+            return;
           }
+
+          setEnglishFootnoteContent(explanation || 'Explanation not available.');
+        } catch (error) {
+          console.error('Error fetching English explanation:', error);
+          setEnglishFootnoteContent(`Error loading explanation: ${error.message}`);
+        } finally {
+          setEnglishFootnoteLoading(false);
         }
       }
     };
 
-    document.addEventListener("click", handleEnglishFootnoteClick);
+    document.addEventListener("click", handleEnglishClick);
     return () => {
-      document.removeEventListener("click", handleEnglishFootnoteClick);
+      document.removeEventListener("click", handleEnglishClick);
     };
-  }, [translationLanguage, ayahData]);
+  }, [translationLanguage, ayahData, surahId]);
 
   // Debug modal state changes
   useEffect(() => {
@@ -1713,12 +1707,11 @@ Read more: ${shareUrl}`;
           setLoading(true);
           setError(null);
 
-          const [surahNamesResponse, surahsResponse, arabicResponse, pageRangesResponse] = await Promise.all([
-            listSurahNames(),
-            fetchSurahs(),
-            fetchArabicVerses(parseInt(surahId)),
-            fetchPageRanges(),
-          ]);
+        const [surahNamesResponse, surahsResponse, pageRangesResponse] = await Promise.all([
+          listSurahNames(),
+          fetchSurahs(),
+          fetchPageRanges(),
+        ]);
 
           const getVerseCountFromPageRanges = (surahId, pageRanges) => {
             const surahRanges = pageRanges.filter(
@@ -1759,7 +1752,18 @@ Read more: ${shareUrl}`;
             setTamilPagination(null);
           }
 
-          setArabicVerses(arabicResponse || []);
+          try {
+            const arabicResult = await fetchArabicVerses(parseInt(surahId));
+            const normalizedArabic = Array.isArray(arabicResult?.verses)
+              ? arabicResult.verses
+              : Array.isArray(arabicResult)
+                ? arabicResult
+                : [];
+            setArabicVerses(normalizedArabic);
+          } catch (arabicError) {
+            console.error('Error fetching Arabic verses:', arabicError);
+            setArabicVerses([]);
+          }
 
           const currentSurah = surahNamesResponse.find(
             (s) => s.id === parseInt(surahId)
@@ -1981,6 +1985,8 @@ Read more: ${shareUrl}`;
                   (av) => av.verse_key === `${surahId}:${index + 1}`
                 );
                 const finalArabicText = arabicText || fallbackArabicVerse?.text_uthmani || "";
+                const sanitizedArabicText = stripArabicVerseMarker(finalArabicText);
+                const displayArabicText = sanitizedArabicText || finalArabicText;
                 const isCurrentAyah = playingAyah === index + 1;
                 const isPlaying = isCurrentAyah && isSequencePlaying;
 
@@ -2010,7 +2016,7 @@ Read more: ${shareUrl}`;
                             fontSize: `${fontSize}px`,
                           }}
                         >
-                          {finalArabicText}{" "}
+                          {displayArabicText}{" "}
                           <span className="inline-block mx-1 text-gray-400 dark:text-gray-500 font-arabic text-[0.8em]">
                             ﴿{toArabicNumber(arabicVerse?.verse_number || index + 1)}﴾
                           </span>
@@ -2026,7 +2032,7 @@ Read more: ${shareUrl}`;
                               data-surah={surahId}
                               data-ayah={verse.number || index + 1}
                               className="font-hindi leading-relaxed"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ 
                                 __html: hindiTranslationService.parseHindiTranslationWithClickableExplanations(
                                   verse.Translation || '',
@@ -2039,31 +2045,32 @@ Read more: ${shareUrl}`;
                             <div
                               className="font-urdu leading-relaxed text-right"
                               dir="rtl"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
                             />
                           ) : translationLanguage === 'bn' ? (
                             <div
                               className="font-bengali leading-relaxed"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
                             />
                           ) : translationLanguage === 'ta' ? (
                             <div
                               className="font-tamil leading-relaxed"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
                             />
                           ) : translationLanguage === 'mal' ? (
                             <div
                               className="font-malayalam leading-relaxed"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
                             />
                           ) : (
                             <div
                               className="font-poppins leading-relaxed"
-                              style={{ fontSize: `${translationFontSize}px` }}
+                              style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                              data-footnote-context="ayahwise"
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
                             />
                           )}
@@ -2156,22 +2163,23 @@ Read more: ${shareUrl}`;
                 );
               })}
 
-              {/* Urdu Lazy Loading Indicator */}
-              {translationLanguage === 'ur' && totalUrduVerses > 0 && (
-                <div className="flex flex-col items-center gap-3 py-8">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {Math.min(urduLoadedCount, totalUrduVerses)} of {totalUrduVerses} ayahs
-                  </p>
-                  <div ref={loadMoreUrduRef} className="h-10 flex items-center justify-center">
-                    {isLoadingUrduBatch && (
-                      <div className="flex items-center gap-2 text-primary">
-                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
-                        <span className="text-sm font-medium">Loading more...</span>
-                      </div>
-                    )}
+              {/* Paginated translation indicator */}
+              {PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage) &&
+                translationPagination?.totalItems ? (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Showing {Math.min(ayahData.length, translationPagination.totalItems)} of {translationPagination.totalItems} ayahs
+                    </p>
+                    <div ref={loadMoreTranslationRef} className="h-10 flex items-center justify-center">
+                      {isLoadingTranslationPage && (
+                        <div className="flex items-center gap-2 text-primary">
+                          <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+                          <span className="text-sm font-medium">Loading more...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null}
             </>
           ) : null}
         </div>
@@ -2317,7 +2325,7 @@ Read more: ${shareUrl}`;
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                     <div
                       className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${translationFontSize}px` }}
+                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                     >
                       {hindiFootnoteContent}
                     </div>
@@ -2362,7 +2370,7 @@ Read more: ${shareUrl}`;
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                     <div
                       className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${translationFontSize}px` }}
+                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                     >
                       {banglaExplanationContent}
                     </div>
@@ -2407,7 +2415,7 @@ Read more: ${shareUrl}`;
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                     <div
                       className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${translationFontSize}px` }}
+                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                     >
                       {urduFootnoteContent}
                     </div>
@@ -2452,7 +2460,7 @@ Read more: ${shareUrl}`;
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                     <div
                       className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${translationFontSize}px` }}
+                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                     >
                       {englishFootnoteContent}
                     </div>

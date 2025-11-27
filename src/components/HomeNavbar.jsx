@@ -43,6 +43,7 @@ import {
   Copy,
   ExternalLink,
   Send,
+  FolderOpen,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
@@ -79,6 +80,10 @@ const HomepageNavbar = () => {
     location.pathname.startsWith("/reading") ||
     location.pathname.startsWith("/surah") ||
     location.pathname.startsWith("/blockwise");
+  const isBookmarkPage =
+    location.pathname.startsWith("/bookmark") ||
+    location.pathname.startsWith("/bookmarked") ||
+    location.pathname.startsWith("/favorite");
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSubmenu = (index) =>
     setOpenSubmenu(openSubmenu === index ? null : index);
@@ -146,7 +151,28 @@ const HomepageNavbar = () => {
     { icon: BookOpen, label: "Table of Contents", path: "/tablecontents" },
     { icon: FileText, label: "Sayyid Maududi", path: "/maududi" },
     { icon: BookA, label: "English Translation", path: "/englishtranslate" },
-    { icon: Book, label: "Introduction", path: "/authorpreface" },
+    {
+      icon: Book,
+      label: "Introduction",
+      path: "/authorpreface",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Author's Preface", path: "/authorpreface" },
+        { label: "Author's Conclusion", path: "/authorconclusion" },
+      ],
+    },
+    {
+      icon: FolderOpen,
+      label: "Appendix",
+      path: "/appendix/english",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Malayalam Appendix", path: "/appendix/malayalam" },
+        { label: "English Appendix", path: "/appendix/english" },
+      ],
+    },
     { icon: LaptopMinimal, label: "Digitisation", path: "/digitisation" },
     { icon: BookType, label: "Tajwid", path: "/tajweed" },
     { icon: BookOpenCheck, label: "Quiz", path: "/quiz" },
@@ -363,7 +389,7 @@ const HomepageNavbar = () => {
               <Menu size={18} className="sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
 
-            {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise')) && (
+            {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise') || isBookmarkPage) && (
               <button
                 onClick={() => navigate('/')}
                 className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"

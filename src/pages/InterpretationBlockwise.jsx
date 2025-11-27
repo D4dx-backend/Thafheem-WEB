@@ -30,6 +30,7 @@ const InterpretationBlockwise = (props) => {
       ipt: parseInt(props.ipt || searchParams.get("ipt") || state.ipt || 1),
       lang: props.lang || searchParams.get("lang") || state.lang || "mal",
       footnoteId: props.footnoteId || searchParams.get("footnoteId") || state.footnoteId || null,
+      interpretationId: props.interpretationId || searchParams.get("interpretationId") || state.interpretationId || null,
     };
   }, [
     location.state,
@@ -40,6 +41,7 @@ const InterpretationBlockwise = (props) => {
     props.ipt,
     props.lang,
     props.footnoteId,
+    props.interpretationId,
   ]);
 
   const handleClose = () => {
@@ -64,7 +66,9 @@ const InterpretationBlockwise = (props) => {
       interpretationNo={initialParams.ipt}
       language={initialParams.lang}
       footnoteId={initialParams.footnoteId}
+      interpretationId={initialParams.interpretationId}
       onClose={handleClose}
+      blockRanges={props.blockRanges}
     />
   );
 };

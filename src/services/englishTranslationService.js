@@ -3,6 +3,9 @@
 import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
 
+const DEFAULT_PAGE_SIZE = 40;
+const MAX_PAGE_SIZE = 200;
+
 class EnglishTranslationService {
   constructor() {
     this.language = 'english';
@@ -87,10 +90,15 @@ class EnglishTranslationService {
   /**
    * Get all surah translations from English database
    * @param {number} surahNo - Surah number
-   * @returns {Promise<Array>} Array of translation objects
+   * @param {Object} options - Pagination options
+   * @returns {Promise<Array|Object>} Translation array or paginated result
    */
-  async getSurahTranslations(surahNo) {
-    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahNo });
+  async getSurahTranslations(surahNo, options = {}) {
+    const hasPagination = options && (options.page !== undefined || options.limit !== undefined);
+    const page = Number.isInteger(options.page) && options.page > 0 ? options.page : 1;
+    const requestedLimit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : DEFAULT_PAGE_SIZE;
+    const limit = Math.min(requestedLimit, MAX_PAGE_SIZE);
+    const cacheKey = this.generateCacheKey('getSurahTranslations', hasPagination ? { surahNo, page, limit } : { surahNo });
     
     // Check cache first
     const cachedData = this.getCachedData(cacheKey);
@@ -104,7 +112,7 @@ class EnglishTranslationService {
     }
 
     // Create request promise
-    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey);
+    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination });
     this.pendingRequests.set(cacheKey, requestPromise);
     
     try {
@@ -194,45 +202,7 @@ class EnglishTranslationService {
       this.setCachedData(cacheKey, translation);
       return translation;
     } catch (error) {
-      // If API returns 503 (database not available), try Quran.com fallback
-      if (error.message?.includes('503') || error.message?.includes('database not available')) {
-        console.warn(`⚠️ English database not available, using Quran.com fallback for ${surahNo}:${ayahNo}`);
-        return await this._getQuranComAyahFallback(surahNo, ayahNo, cacheKey);
-      }
       console.error(`Error fetching English translation for ${surahNo}:${ayahNo}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Fallback to Quran.com API for single ayah translation
-   * @param {number} surahNo - Surah number
-   * @param {number} ayahNo - Ayah number
-   * @param {string} cacheKey - Cache key
-   * @returns {Promise<string>} Translation text
-   */
-  async _getQuranComAyahFallback(surahNo, ayahNo, cacheKey) {
-    try {
-      // Use Quran.com API translation ID 131 (Sahih International)
-      const verseKey = `${surahNo}:${ayahNo}`;
-      const response = await fetch(
-        `https://api.quran.com/api/v4/verses/by_key/${verseKey}?translations=131&fields=text_uthmani,translations`
-      );
-      if (!response.ok) {
-        throw new Error(`Quran.com API error: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Get the translation text
-      const translation = data.verse?.translations?.[0]?.text || '';
-      
-      // Cache the result
-      if (translation) {
-        this.setCachedData(cacheKey, translation);
-      }
-      return translation;
-    } catch (error) {
-      console.error(`Error fetching Quran.com fallback for ${surahNo}:${ayahNo}:`, error);
       throw error;
     }
   }
@@ -241,86 +211,116 @@ class EnglishTranslationService {
    * Internal method for getting surah translations
    * @param {number} surahNo - Surah number
    * @param {string} cacheKey - Cache key
-   * @returns {Promise<Array>} Array of translation objects
+   * @param {Object} options - Pagination context
+   * @returns {Promise<Array|Object>} Translation data
    */
-  async _getSurahTranslationsInternal(surahNo, cacheKey) {
+  async _getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination }) {
     try {
-      const response = await apiService.getSurahTranslations('english', surahNo);
+      const params = hasPagination ? { page, limit } : {};
+      const response = await apiService.getSurahTranslations('english', surahNo, params);
       
       // Transform response from unified API format to expected format
-      // Unified API returns: { language, surah, count, translations: [{verse_number, translation_text}] }
-      // Expected format: [{number, Translation}]
       const translations = response?.translations?.map(verse => ({
         number: verse.verse_number,
         ArabicText: '',
-        Translation: verse.translation_text || ''
+        Translation: verse.translation_text || '',
+        footnote_metadata: verse.footnote_metadata || null,
+        interpretations: verse.interpretations || [],
+        interpretationCount: verse.interpretationCount || 0
       })) || [];
       
-      // Cache the result
-      this.setCachedData(cacheKey, translations);
-      return translations;
-    } catch (error) {
-      // If API returns 503 (database not available), try Quran.com fallback
-      if (error.message?.includes('503') || error.message?.includes('database not available')) {
-        console.warn(`⚠️ English database not available, using Quran.com fallback for surah ${surahNo}`);
-        return await this._getQuranComFallback(surahNo, cacheKey);
+      if (!hasPagination) {
+        this.setCachedData(cacheKey, translations);
+        return translations;
       }
+
+      const pagination = response?.pagination
+        ? {
+            page: response.pagination.page ?? page,
+            limit: response.pagination.limit ?? limit,
+            totalItems: response.pagination.totalItems ?? response.pagination.total ?? null,
+            totalPages: response.pagination.totalPages ?? null,
+            hasNext: response.pagination.hasNext ?? false,
+            hasPrev: response.pagination.hasPrev ?? page > 1,
+            from: response.pagination.from ?? null,
+            to: response.pagination.to ?? null,
+          }
+        : {
+            page,
+            limit,
+            totalItems: response?.count ?? null,
+            totalPages: response?.count ? Math.ceil(response.count / limit) : null,
+            hasNext: translations.length === limit,
+            hasPrev: page > 1,
+            from: translations[0]?.number ?? null,
+            to: translations[translations.length - 1]?.number ?? null,
+          };
+
+      const result = { translations, pagination };
+      this.setCachedData(cacheKey, result);
+      return result;
+    } catch (error) {
       console.error(`Error fetching English surah translations for ${surahNo}:`, error);
       throw error;
     }
   }
 
   /**
-   * Fallback to Quran.com API for English translations
+   * Get all interpretations for a specific ayah from database (no regex parsing)
    * @param {number} surahNo - Surah number
-   * @param {string} cacheKey - Cache key
-   * @returns {Promise<Array>} Array of translation objects
+   * @param {number} ayahNo - Ayah number
+   * @returns {Promise<Array>} Array of interpretation objects
    */
-  async _getQuranComFallback(surahNo, cacheKey) {
+  async getAllInterpretations(surahNo, ayahNo) {
+    const cacheKey = this.generateCacheKey('getAllInterpretations', { surahNo, ayahNo });
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
+    if (this.pendingRequests.has(cacheKey)) {
+      return this.pendingRequests.get(cacheKey);
+    }
+
+    const request = this._getAllInterpretationsInternal(surahNo, ayahNo, cacheKey);
+    this.pendingRequests.set(cacheKey, request);
+
     try {
-      // Get chapter info first to get verse count
-      const chapterResponse = await fetch(`https://api.quran.com/api/v4/chapters/${surahNo}`);
-      if (!chapterResponse.ok) {
-        throw new Error(`Quran.com API error: ${chapterResponse.status}`);
-      }
-      const chapterData = await chapterResponse.json();
-      const verseCount = chapterData.chapter?.verses_count || 0;
-      
-      // Fetch all verses for the surah using verses endpoint
-      const translations = [];
-      for (let verseNum = 1; verseNum <= verseCount; verseNum++) {
-        try {
-          const verseKey = `${surahNo}:${verseNum}`;
-          const verseResponse = await fetch(
-            `https://api.quran.com/api/v4/verses/by_key/${verseKey}?translations=131&fields=text_uthmani,translations`
-          );
-          if (verseResponse.ok) {
-            const verseData = await verseResponse.json();
-            const translation = verseData.verse?.translations?.[0]?.text || '';
-            translations.push({
-              number: verseNum,
-              ArabicText: '',
-              Translation: translation
-            });
-          }
-        } catch (verseError) {
-          // Continue with next verse if one fails
-          translations.push({
-            number: verseNum,
-            ArabicText: '',
-            Translation: ''
-          });
+      return await request;
+    } finally {
+      this.pendingRequests.delete(cacheKey);
+    }
+  }
+
+  /**
+   * Internal method for getting all interpretations
+   * @param {number} surahNo - Surah number
+   * @param {number} ayahNo - Ayah number
+   * @param {string} cacheKey - Cache key
+   * @returns {Promise<Array>} Array of interpretation objects
+   */
+  async _getAllInterpretationsInternal(surahNo, ayahNo, cacheKey) {
+    try {
+      // Fetch all interpretations directly from database (no regex parsing)
+      const response = await fetch(`${API_BASE_PATH}/english/interpretation/all/${surahNo}/${ayahNo}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No interpretations found - return empty array
+          this.setCachedData(cacheKey, []);
+          return [];
         }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      const interpretations = data.interpretations || [];
       
       // Cache the result
-      if (translations.length > 0) {
-        this.setCachedData(cacheKey, translations);
-      }
-      return translations;
+      this.setCachedData(cacheKey, interpretations);
+      return interpretations;
     } catch (error) {
-      console.error(`Error fetching Quran.com fallback for surah ${surahNo}:`, error);
-      throw error;
+      console.error(`Error fetching all English interpretations for ${surahNo}:${ayahNo}:`, error);
+      // Return empty array on error instead of throwing
+      this.setCachedData(cacheKey, []);
+      return [];
     }
   }
 
@@ -376,235 +376,156 @@ class EnglishTranslationService {
    * @param {number} ayahNo - Ayah number
    * @returns {string} HTML with clickable footnotes
    */
-  parseEnglishTranslationWithClickableFootnotes(htmlContent, surahNo, ayahNo, blockRange = null) {
+  parseEnglishTranslationWithClickableFootnotes(htmlContent, surahNo, ayahNo) {
     if (!htmlContent) return "";
-    
+
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlContent;
-    
-    // First, handle interpretation numbers (for blockwise view) - these are sup tags with just numbers
-    // These should be clickable to open interpretations, not footnotes
-    const interpretationSupTags = tempDiv.querySelectorAll("sup:not([foot_note])");
-    interpretationSupTags.forEach((sup) => {
-      const number = sup.textContent.trim();
-      // Check if it's a number (interpretation number) and not already processed
-      if (/^\d+$/.test(number) && !sup.hasAttribute('data-footnote-id')) {
-        // This is an interpretation number, make it clickable
-        sup.style.cssText = `
-          cursor: pointer !important;
-          background-color: rgb(41 169 199) !important;
-          color: rgb(255, 255, 255) !important;
-          font-weight: 600 !important;
-          text-decoration: none !important;
-          border: none !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          font-size: 12px !important;
-          vertical-align: middle !important;
-          line-height: 1 !important;
-          border-radius: 9999px !important;
-          position: relative !important;
-          z-index: 10 !important;
-          top: 0px !important;
-          min-width: 20px !important;
-          min-height: 19px !important;
-          text-align: center !important;
-          transition: 0.2s ease-in-out !important;
-          padding-top: 3px !important;
-          margin-right: 4px;
-          margin-left: -1px;
-          margin-top: -15px;
-          padding-left: 2px !important;
-          padding-right: 2px !important;
-        `;
-        sup.setAttribute("data-interpretation", number);
-        if (blockRange) {
-        sup.setAttribute("data-range", blockRange);
-        } else {
-          // For single verse, use verse number as range
-          sup.setAttribute("data-range", `${ayahNo}-${ayahNo}`);
-        }
-        sup.setAttribute("data-lang", "E");
-        sup.setAttribute("title", `Click to view interpretation ${number}`);
-        sup.setAttribute("aria-label", `Interpretation ${number}`);
-        sup.setAttribute("data-interpretation-label", number);
-        sup.setAttribute("data-interpretation-number", number);
-        sup.className = "interpretation-link";
-        if (blockRange) {
-          sup.textContent = "i";
-        }
+
+    const SUP_WRAPPER_STYLES = `
+      vertical-align: super !important;
+      font-size: 0.75em !important;
+      line-height: 1 !important;
+      margin-left: 2px !important;
+      margin-right: 2px !important;
+      font-weight: 600 !important;
+    `;
+
+    const FOOTNOTE_BADGE_STYLES = `
+      cursor: pointer !important;
+      background-color: #19B5DD !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      text-decoration: none !important;
+      border: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      border-radius: 9999px !important;
+      min-width: 18px !important;
+      min-height: 18px !important;
+      text-align: center !important;
+      transition: all 0.2s ease-in-out !important;
+      padding-left: 4px !important;
+      padding-right: 4px !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    `;
+
+    const decorateFootnote = (supEl, number, attrs = {}) => {
+      if (!supEl || !/^\d+$/.test(number)) {
+        return null;
       }
-    });
-    
-    // Find all <sup> tags with foot_note attributes (these are footnotes, not interpretations)
+
+      supEl.innerHTML = '';
+      supEl.style.cssText = SUP_WRAPPER_STYLES;
+
+      const badge = document.createElement('span');
+      badge.className = 'english-footnote-link';
+      badge.style.cssText = FOOTNOTE_BADGE_STYLES;
+      badge.textContent = number;
+
+      Object.entries(attrs || {}).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          badge.setAttribute(key, value);
+        }
+      });
+
+      badge.addEventListener('mouseenter', () => {
+        badge.style.backgroundColor = '#0ea5e9';
+        badge.style.transform = 'scale(1.05)';
+      });
+
+      badge.addEventListener('mouseleave', () => {
+        badge.style.backgroundColor = '#19B5DD';
+        badge.style.transform = 'scale(1)';
+      });
+
+      supEl.appendChild(badge);
+      supEl.setAttribute('data-english-processed', 'true');
+      return badge;
+    };
+
     const footnoteElements = tempDiv.querySelectorAll("sup[foot_note]");
-    
+
     footnoteElements.forEach((element) => {
       const footnoteId = element.getAttribute('foot_note');
       const footnoteNumber = element.textContent.trim();
-      
+
       if (footnoteId && footnoteNumber) {
-        // Create a clickable button element
-        const button = document.createElement('span');
-        button.className = 'english-footnote-link';
-        button.setAttribute("data-footnote-id", footnoteId);
-        button.setAttribute("data-surah", surahNo);
-        button.setAttribute("data-ayah", ayahNo);
-        button.setAttribute("data-footnote-number", footnoteNumber);
-        button.setAttribute("data-interpretation-number", footnoteNumber);
-        button.setAttribute("data-interpretation", footnoteNumber);
-        button.setAttribute("title", `Click to view explanation ${footnoteNumber}`);
-        button.textContent = blockRange ? "i" : footnoteNumber;
-        
-        // Apply clickable button styling
-        button.style.cssText = `
-          cursor: pointer !important;
-          background-color: #19B5DD !important;
-          color: #ffffff !important;
-          font-weight: 500 !important;
-          text-decoration: none !important;
-          border: none !important;
-          padding: 4px 8px !important;
-          margin: 0 4px !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          font-size: 12px !important;
-          vertical-align: middle !important;
-          line-height: 1 !important;
-          border-radius: 50% !important;
-          position: relative !important;
-          top: 0 !important;
-          min-width: 24px !important;
-          min-height: 24px !important;
-          text-align: center !important;
-          transition: all 0.2s ease-in-out !important;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        `;
-        
-        // Add hover effects
-        button.addEventListener('mouseenter', () => {
-          button.style.backgroundColor = '#0ea5e9';
-          button.style.transform = 'scale(1.1)';
-        });
-        
-        button.addEventListener('mouseleave', () => {
-          button.style.backgroundColor = '#19B5DD';
-          button.style.transform = 'scale(1)';
-        });
-        
-        // Replace the original <sup> element with the clickable button
-        element.parentNode.replaceChild(button, element);
+        decorateFootnote(
+          element,
+          footnoteNumber,
+          {
+            "data-footnote-id": footnoteId,
+            "data-surah": surahNo,
+            "data-ayah": ayahNo,
+            "data-footnote-number": footnoteNumber,
+          }
+        );
       }
-    });
-    
-    // Fallback 1: handle <sup>n</sup> without foot_note attribute
-    const bareSupElements = tempDiv.querySelectorAll("sup:not([foot_note])");
-    bareSupElements.forEach((element) => {
-      const num = (element.textContent || "").trim();
-      if (!/^[0-9]+$/.test(num)) return;
-      const button = document.createElement('span');
-      button.className = 'english-footnote-link';
-      button.setAttribute("data-footnote-id", num);
-      button.setAttribute("data-surah", surahNo);
-      button.setAttribute("data-ayah", ayahNo);
-      button.setAttribute("data-footnote-number", num);
-      button.setAttribute("data-interpretation-number", num);
-      button.setAttribute("data-interpretation", num);
-      button.setAttribute("title", `Click to view explanation ${num}`);
-      button.textContent = blockRange ? "i" : num;
-      button.style.cssText = `
-        cursor: pointer !important;
-        background-color: #19B5DD !important;
-        color: #ffffff !important;
-        font-weight: 500 !important;
-        text-decoration: none !important;
-        border: none !important;
-        padding: 4px 8px !important;
-        margin: 0 4px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 12px !important;
-        vertical-align: middle !important;
-        line-height: 1 !important;
-        border-radius: 50% !important;
-        position: relative !important;
-        top: 0 !important;
-        min-width: 24px !important;
-        min-height: 24px !important;
-        text-align: center !important;
-        transition: all 0.2s ease-in-out !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-      `;
-      element.parentNode.replaceChild(button, element);
     });
 
-    // Fallback 2: replace plain text markers like (1), (2) with clickable spans
-    function wrapPlainMarkers(root) {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-      const targets = [];
-      while (walker.nextNode()) {
-        const node = walker.currentNode;
-        const text = node.nodeValue;
-        if (!text) continue;
-        if (/\(\d+\)/.test(text)) {
-          targets.push(node);
-        }
-      }
-      targets.forEach((textNode) => {
-        const frag = document.createDocumentFragment();
-        const parts = textNode.nodeValue.split(/(\(\d+\))/g);
-        parts.forEach((part) => {
-          const m = part.match(/^\((\d+)\)$/);
-          if (m) {
-            const num = m[1];
-            const span = document.createElement('span');
-            span.className = 'english-footnote-link';
-            span.setAttribute('data-footnote-id', num);
-            span.setAttribute('data-surah', surahNo);
-            span.setAttribute('data-ayah', ayahNo);
-            span.setAttribute('data-footnote-number', num);
-            span.setAttribute('data-interpretation-number', num);
-            span.setAttribute('data-interpretation', num);
-            span.setAttribute('title', `Click to view explanation ${num}`);
-            span.textContent = blockRange ? "i" : num;
-            span.style.cssText = `
-              cursor: pointer !important;
-              background-color: #19B5DD !important;
-              color: #ffffff !important;
-              font-weight: 500 !important;
-              text-decoration: none !important;
-              border: none !important;
-              padding: 4px 8px !important;
-              margin: 0 4px !important;
-              display: inline-flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-              font-size: 12px !important;
-              vertical-align: middle !important;
-              line-height: 1 !important;
-              border-radius: 50% !important;
-              position: relative !important;
-              top: 0 !important;
-              min-width: 24px !important;
-              min-height: 24px !important;
-              text-align: center !important;
-              transition: all 0.2s ease-in-out !important;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            `;
-            frag.appendChild(span);
-          } else {
-            frag.appendChild(document.createTextNode(part));
-          }
-        });
-        textNode.parentNode.replaceChild(frag, textNode);
-      });
-    }
-    wrapPlainMarkers(tempDiv);
-    
     return tempDiv.innerHTML;
+  }
+
+  async getInterpretationByNumber(surahNo, ayahNo, interpretationNo) {
+    if (!Number.isFinite(surahNo) || !Number.isFinite(ayahNo) || !interpretationNo) {
+      return '';
+    }
+
+    const cacheKey = this.generateCacheKey('englishInterpretation', {
+      surahNo,
+      ayahNo,
+      interpretationNo
+    });
+
+    const cachedData = this.getCachedData(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    try {
+      const response = await apiService.getInterpretation('english', surahNo, ayahNo, interpretationNo);
+      const explanations = response?.explanations || [];
+      const explanation =
+        explanations.find((exp) => {
+          const localNo = exp.explanation_no_local ?? exp.InterpretationNo ?? exp.interptn_no;
+          const globalNo = exp.explanation_no_en ?? exp.InterpretationNo ?? exp.interptn_no;
+          return String(localNo ?? globalNo ?? '').trim() === String(interpretationNo).trim();
+        }) || explanations[0];
+
+      const content = explanation?.explanation || '';
+      this.setCachedData(cacheKey, content);
+      return content;
+    } catch (error) {
+      console.error(`Error fetching English interpretation ${surahNo}:${ayahNo} [${interpretationNo}]:`, error);
+      throw error;
+    }
+  }
+
+  async getInterpretationById(interpretationId) {
+    const numericId = Number.parseInt(interpretationId, 10);
+    if (!Number.isFinite(numericId)) {
+      return '';
+    }
+
+    const cacheKey = this.generateCacheKey('englishInterpretationId', { interpretationId: numericId });
+    const cachedData = this.getCachedData(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    try {
+      const response = await apiService.makeRequest(`/english/interpretation/id/${numericId}`);
+      const interpretation = response?.interpretation_text || response?.Interpretation || '';
+      this.setCachedData(cacheKey, interpretation);
+      return interpretation;
+    } catch (error) {
+      console.error(`Error fetching English interpretation by ID ${interpretationId}:`, error);
+      throw error;
+    }
   }
 
   /**

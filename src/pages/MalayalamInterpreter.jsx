@@ -25,48 +25,6 @@ const MalayalamInterpreter = () => {
   const params = useParams();
   const [searchParams] = useSearchParams();
 
-  // Fallback note content for when API fails
-  const getFallbackNoteContent = (noteId) => {
-    const fallbackNotes = {
-      'N895': `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N895</h3>
-          <p>ലാത്ത് - ഇത് ഒരു പ്രാചീന അറബ് ദേവതയുടെ പേരാണ്. ഇസ്ലാമിന് മുമ്പുള്ള അറേബ്യയിൽ ഈ ദേവതയെ ആരാധിച്ചിരുന്നു.</p>
-          <p>ഖുർആനിൽ ഈ ദേവതയെ പരാമർശിക്കുന്നത് ബഹുദൈവവാദത്തിന്റെ തെറ്റിനെ വിശദീകരിക്കാനാണ്.</p>
-          </div>
-      `,
-      'N189': `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N189</h3>
-          <p>ഉസ്സ - ഇതും ഒരു പ്രാചീന അറബ് ദേവതയാണ്. ലാത്ത്, ഉസ്സ, മനാത് എന്നിവ മക്കയിലെ പ്രധാന ദേവതകളായിരുന്നു.</p>
-          <p>ഇവയെ "അല്ലാഹുവിന്റെ പുത്രിമാർ" എന്ന് അവർ വിളിച്ചിരുന്നു.</p>
-        </div>
-      `,
-      'N1514': `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N1514</h3>
-          <p>നബി(സ) തിരുമേനി ആ സന്ദർഭത്തിൽ അകപ്പെട്ടിരുന്ന സ്ഥിതിവിശേഷമാണിവിടെ സൂചിപ്പിക്കുന്നത്.</p>
-          <p>നബി(സ)ക്കും സഹചാരികൾക്കും എതിരാളികൾ ഏൽപിച്ചിരുന്ന ദണ്ഡനപീഡനങ്ങളല്ല തിരുമേനിയെ ദുഃഖാകുലനാക്കിയിരുന്നതെന്ന് ഇതിൽനിന്ന് വ്യക്തമാണ്.</p>
-          </div>
-      `,
-      'N1462': `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note N1462</h3>
-          <p>മുസ്ലിം ഹദീസ് ശേഖരത്തിലെ 1462-ാം നമ്പർ ഹദീസിനെ സൂചിപ്പിക്കുന്നു.</p>
-          <p>ഈ ഹദീസ് നബി(സ)യുടെ ഉദാഹരണങ്ങളെക്കുറിച്ച് പ്രതിപാദിക്കുന്നു.</p>
-        </div>
-      `,
-      '3 26:3': `
-        <div class="note-content">
-          <h3 style="color: #2AA0BF; margin-bottom: 10px;">Verse Reference 3:26:3</h3>
-          <p>അശ്ശുഅറാഅ് സൂറയിലെ 26-ാം വാക്യത്തിന്റെ 3-ാം ഭാഗത്തെ സൂചിപ്പിക്കുന്നു.</p>
-          <p>ഈ വാക്യം കവികളെക്കുറിച്ചും അവരുടെ പിന്തുടർച്ചക്കാരെക്കുറിച്ചും പ്രതിപാദിക്കുന്നു.</p>
-        </div>
-      `
-    };
-    
-    return fallbackNotes[noteId] || null;
-  };
   // Load interpretation content from API
   useEffect(() => {
     const loadContent = async () => {
@@ -105,21 +63,17 @@ const MalayalamInterpreter = () => {
   }, [params, searchParams]);
 
   const handleNoteClick = async (noteId) => {
-// Show loading state immediately
+    // Show loading state immediately
     setSelectedNote({ id: noteId, content: 'Loading...' });
     setIsNoteOpen(true);
     
-    // Try to get fallback content first (for immediate display)
-    const fallbackContent = getFallbackNoteContent(noteId);
-    if (fallbackContent) {
-setSelectedNote({ id: noteId, content: fallbackContent });
-    }
-    
     try {
-      // Try to fetch from API (but don't block the UI)
-const noteData = await fetchNoteById(noteId);
-// Try different possible content fields - prioritize NoteText from API response
+      // Fetch note from MySQL database via API
+      const noteData = await fetchNoteById(noteId);
+      
+      // Try different possible content fields - prioritize NoteText from API response
       const content = noteData?.NoteText || 
+                     noteData?.note_text ||
                      noteData?.content || 
                      noteData?.html || 
                      noteData?.text || 
@@ -129,23 +83,27 @@ const noteData = await fetchNoteById(noteId);
                      (typeof noteData === 'string' ? noteData : null);
       
       if (content && content !== 'Note content not available') {
-setSelectedNote({ id: noteId, content });
+        setSelectedNote({ id: noteId, content });
       } else {
-// Keep the fallback content that was already set
+        setSelectedNote({ 
+          id: noteId, 
+          content: `<p style="color: #666;">Note content is not available.</p>` 
+        });
       }
     } catch (err) {
       console.error('Error fetching note:', err);
-      console.error('Error details:', {
-        message: err.message,
-        status: err.status,
-        stack: err.stack
-      });
       
-      // If no fallback content was set, show error
-      if (!fallbackContent) {
-        setSelectedNote({ id: noteId, content: `Error loading note ${noteId}: ${err.message}` });
-      }
-      // Otherwise, keep the fallback content that was already set
+      // Show user-friendly error message
+      setSelectedNote({ 
+        id: noteId, 
+        content: `
+          <div class="note-content">
+            <h3 style="color: #2AA0BF; margin-bottom: 10px;">Note ${noteId}</h3>
+            <p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>
+            <p style="color: #999; font-size: 0.9em; margin-top: 10px;">Error: ${err.message || 'Unknown error'}</p>
+          </div>
+        `
+      });
     }
   };
 

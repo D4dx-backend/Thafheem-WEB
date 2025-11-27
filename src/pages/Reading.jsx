@@ -433,20 +433,50 @@ const Reading = () => {
         setLoadingMore(true);
 
         try {
-          const allVersesData = await fetchArabicVerses(currentSurahId);
-          
-          // Load first batch immediately
-          const firstBatch = allVersesData.slice(0, BATCH_SIZE);
-          setVerses(firstBatch);
-          setLoadedVerseCount(BATCH_SIZE);
+          const firstBatchResult = await fetchArabicVerses(currentSurahId, {
+            page: 1,
+            limit: BATCH_SIZE,
+          });
+          const firstBatch = Array.isArray(firstBatchResult?.verses)
+            ? firstBatchResult.verses
+            : Array.isArray(firstBatchResult)
+              ? firstBatchResult
+              : [];
 
-          // Load remaining verses asynchronously
-          if (allVersesData.length > BATCH_SIZE) {
-            // Use requestIdleCallback for better performance, fallback to setTimeout
-            const loadRemaining = () => {
-              const remainingVerses = allVersesData.slice(BATCH_SIZE);
-              setVerses(allVersesData);
-              setLoadedVerseCount(allVersesData.length);
+          setVerses(firstBatch);
+          setLoadedVerseCount(firstBatch.length);
+
+          const initialPagination = firstBatchResult?.pagination || null;
+          if (initialPagination?.hasNext) {
+            const loadRemaining = async () => {
+              let nextPage = (initialPagination.page || 1) + 1;
+              let hasNext = initialPagination.hasNext;
+
+              while (hasNext) {
+                try {
+                  const nextResult = await fetchArabicVerses(currentSurahId, {
+                    page: nextPage,
+                    limit: BATCH_SIZE,
+                  });
+                  const nextVerses = Array.isArray(nextResult?.verses)
+                    ? nextResult.verses
+                    : Array.isArray(nextResult)
+                      ? nextResult
+                      : [];
+
+                  if (nextVerses.length > 0) {
+                    setVerses(prev => [...prev, ...nextVerses]);
+                    setLoadedVerseCount(prev => prev + nextVerses.length);
+                  }
+
+                  hasNext = nextResult?.pagination?.hasNext;
+                  nextPage += 1;
+                } catch (pageError) {
+                  console.error('Error loading additional verses:', pageError);
+                  break;
+                }
+              }
+
               setLoadingMore(false);
             };
 
@@ -617,6 +647,11 @@ const Reading = () => {
     return numberString.replace(/\d/g, (digit) => arabicDigits[digit]);
   };
 
+  const stripArabicVerseMarker = (text) => {
+    if (!text) return "";
+    return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
+  };
+
   const { quranFont, theme } = useTheme();
 
   // Memoize grouped verses to prevent recalculation on every render
@@ -741,7 +776,7 @@ const Reading = () => {
                               }`}
                               title={`Click to play ayah ${actualAyahNumber}`}
                             >
-                              {verse.text_uthmani} ﴿
+                              {(stripArabicVerseMarker(verse.text_uthmani) || verse.text_uthmani || "")} ﴿
                               {toArabicNumber(actualAyahNumber.toString())}﴾
                               {index < pageGroup.verses.length - 1 && "   "}
                             </span>

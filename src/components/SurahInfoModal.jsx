@@ -135,7 +135,8 @@ const SurahInfoModal = ({ surahId, onClose }) => {
     let handled = false;
     const normalized = rawText.replace(/[\s()]+/g, "").toUpperCase();
 
-    if (/^N\d+$/.test(normalized)) {
+    // Handle notes with prefixes: N (Note), H (Hadith/Hadith reference), B (Book/Book reference)
+    if (/^[NHB]\d+$/.test(normalized)) {
       handled = true;
       openNotePopup(normalized);
     } else {
@@ -167,12 +168,21 @@ const SurahInfoModal = ({ surahId, onClose }) => {
 
     try {
       const data = await fetchNoteById(noteId);
+      const content = data?.NoteText || 
+                     data?.note_text ||
+                     data?.content || 
+                     data?.html || 
+                     data?.text || 
+                     data?.body ||
+                     (typeof data === 'string' ? data : null);
+      
       setNotePopupState((prev) => ({
         ...prev,
         loading: false,
-        content: (data && (data.NoteText || data.html || data.content || data.text)) || data || "Note content unavailable.",
+        content: content || "Note content unavailable.",
       }));
     } catch (fetchError) {
+      console.error('Error fetching note:', fetchError);
       setNotePopupState((prev) => ({
         ...prev,
         loading: false,

@@ -33,18 +33,35 @@ export default defineConfig({
     dedupe: ['react', 'react-dom']
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    force: true
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    exclude: []
+  },
+  ssr: {
+    noExternal: ['react', 'react-dom']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
   },
   server: {
     port: 5173,
-    strictPort: true,
+    strictPort: false,
     host: 'localhost',
     hmr: {
       protocol: 'ws',
       host: 'localhost',
       port: 5173,
       clientPort: 5173,
+      overlay: true,
       timeout: 5000
     },
     // Only apply cache headers in production, not in development

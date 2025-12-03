@@ -70,6 +70,7 @@ const HomepageNavbar = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [navbarHeight, setNavbarHeight] = useState(0);
+  const [urduMenuTranslations, setUrduMenuTranslations] = useState({});
 
   const navRef = useRef(null);
   const lastScrollY = useRef(0);
@@ -146,53 +147,138 @@ const HomepageNavbar = () => {
     }
   };
 
-  const menuItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: BookOpen, label: "Table of Contents", path: "/tablecontents" },
-    { icon: FileText, label: "Sayyid Maududi", path: "/maududi" },
-    { icon: BookA, label: "English Translation", path: "/englishtranslate" },
+  // Malayalam menu items
+  const malayalamMenuItems = [
+    { icon: Home, label: "Home", path: "/", key: "home" },
+    { icon: FileText, label: "Sayyid Maududi", path: "/maududi", key: "sayyid_maududi" },
     {
       icon: Book,
-      label: "Introduction",
+      label: "Thafheemul Quran",
       path: "/authorpreface",
+      key: "thafheemul_quran",
       hasSubmenu: true,
       hasArrow: true,
       submenuItems: [
-        { label: "Author's Preface", path: "/authorpreface" },
-        { label: "Author's Conclusion", path: "/authorconclusion" },
+        { label: "Author's Preface", path: "/authorpreface", key: "authors_preface" },
+        { label: "Author's Conclusion", path: "/authorconclusion", key: "authors_conclusion" },
+      ],
+    },
+    {
+      icon: FolderOpen,
+      label: "Library",
+      path: "/appendix/malayalam",
+      key: "library",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Appendix", path: "/appendix/malayalam", key: "appendix" },
+        { label: "Jesus and Mohammed", path: "/malayalam/jesus-mohammed", key: "jesus_mohammed" },
+        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "The Finality of Prophethood", path: "/malayalam/finality-of-prophethood", key: "finality_of_prophethood" },
+        { label: "Technical terms", path: "/technical-terms", key: "technical_terms" },
+        { label: "Translators", path: "/translators", key: "translators" },
+        { label: "History of Translation", path: "/history-of-translation", key: "history_of_translation" },
+      ],
+    },
+    { icon: User, label: "About Us", path: "/about", key: "about_us" },
+    { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
+    { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
+    { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
+    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+  ];
+
+  // Base menu items with English labels (for non-Malayalam languages)
+  const baseMenuItems = [
+    { icon: Home, label: "Home", path: "/", key: "home" },
+    { icon: BookOpen, label: "Table of Contents", path: "/tablecontents", key: "table_of_contents" },
+    { icon: FileText, label: "Sayyid Maududi", path: "/maududi", key: "sayyid_maududi" },
+    { icon: BookA, label: "English Translation", path: "/englishtranslate", key: "english_translation" },
+    {
+      icon: Book,
+      label: "Library",
+      path: "/authorpreface",
+      key: "introduction",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Author's Preface", path: "/authorpreface", key: "authors_preface" },
+        { label: "Author's Conclusion", path: "/authorconclusion", key: "authors_conclusion" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
       ],
     },
     {
       icon: FolderOpen,
       label: "Appendix",
       path: "/appendix/english",
+      key: "appendix",
       hasSubmenu: true,
       hasArrow: true,
       submenuItems: [
-        { label: "Malayalam Appendix", path: "/appendix/malayalam" },
-        { label: "English Appendix", path: "/appendix/english" },
+        { label: "Malayalam Appendix", path: "/appendix/malayalam", key: "malayalam_appendix" },
+        { label: "English Appendix", path: "/appendix/english", key: "english_appendix" },
+        { label: "Urdu Appendix", path: "/appendix/urdu", key: "urdu_appendix" },
       ],
     },
-    { icon: LaptopMinimal, label: "Digitisation", path: "/digitisation" },
-    { icon: BookType, label: "Tajwid", path: "/tajweed" },
-    { icon: BookOpenCheck, label: "Quiz", path: "/quiz" },
-    { icon: LetterText, label: "Drag & drop", path: "/dragdrop" },
-    { icon: Sparkles, label: "What's New", path: "/whatsnew" },
-    { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp },
-    { icon: User, label: "About Us", path: "/about" },
-    { icon: MessageSquareMore, label: "Contact Us", path: "/contact" },
-    { icon: Shield, label: "Privacy", path: "/privacy" },
+    {
+      icon: Book,
+      label: "The Finality of Prophethood",
+      path: "/urdu/finality-of-prophethood",
+      key: "urdu_finality_of_prophethood",
+    },
+    {
+      icon: Book,
+      label: "Jesus and Mohammed",
+      path: "/urdu/jesus-mohammed",
+      key: "urdu_jesus_mohammed",
+    },
+    { icon: LaptopMinimal, label: "Digitisation", path: "/digitisation", key: "digitisation" },
+    { icon: BookType, label: "Tajwid", path: "/tajweed", key: "tajwid" },
+    { icon: BookOpenCheck, label: "Quiz", path: "/quiz", key: "quiz" },
+    { icon: LetterText, label: "Drag & drop", path: "/dragdrop", key: "drag_drop" },
+    { icon: Sparkles, label: "What's New", path: "/whatsnew", key: "whats_new" },
+    { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp, key: "share_app" },
+    { icon: User, label: "About Us", path: "/about", key: "about_us" },
+    { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
+    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
   ];
 
-  const dangerMenuItems = [
+  // Helper function to get translated label
+  const getTranslatedLabel = (key, defaultLabel) => {
+    if (translationLanguage === 'ur' && urduMenuTranslations[key]) {
+      return urduMenuTranslations[key];
+    }
+    return defaultLabel;
+  };
+
+  // Select menu items based on language
+  const selectedMenuItems = translationLanguage === 'mal' ? malayalamMenuItems : baseMenuItems;
+
+  // Create menu items with translations applied
+  const menuItems = selectedMenuItems.map(item => ({
+    ...item,
+    label: getTranslatedLabel(item.key, item.label),
+    submenuItems: item.submenuItems?.map(subItem => ({
+      ...subItem,
+      label: getTranslatedLabel(subItem.key, subItem.label)
+    }))
+  }));
+
+  const baseDangerMenuItems = [
     {
       icon: UserX,
       label: "Delete Account",
       path: "/deleteaccount",
+      key: "delete_account",
       isDanger: true,
     },
-    { icon: LogOut, label: "Log Out", path: "/logout", isDanger: true },
+    { icon: LogOut, label: "Log Out", path: "/logout", key: "log_out", isDanger: true },
   ];
+
+  // Create danger menu items with translations applied
+  const dangerMenuItems = baseDangerMenuItems.map(item => ({
+    ...item,
+    label: getTranslatedLabel(item.key, item.label)
+  }));
 
   // Helper function to determine if a menu item is active
   const isActive = (path) => location.pathname === path;
@@ -200,6 +286,15 @@ const HomepageNavbar = () => {
     // Navigate to bookmarks page - users can then click on their preferred tab
     navigate("/bookmarkedverses");
   };
+
+  // Urdu side menu translations - will be hardcoded later
+  // Removed API call - translations will be hardcoded
+  useEffect(() => {
+    if (translationLanguage !== 'ur') {
+      // Clear Urdu translations when language is not Urdu
+      setUrduMenuTranslations({});
+    }
+  }, [translationLanguage]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -389,7 +484,7 @@ const HomepageNavbar = () => {
               <Menu size={18} className="sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
 
-            {(location.pathname === '/' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise') || isBookmarkPage) && (
+            {(location.pathname === '/' || location.pathname === '/sign' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise') || isBookmarkPage) && (
               <button
                 onClick={() => navigate('/')}
                 className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"
@@ -582,8 +677,8 @@ const HomepageNavbar = () => {
                   <X size={20} />
                 </button> */}
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins">
-                MENU
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins" dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}>
+                {translationLanguage === 'ur' ? (urduMenuTranslations['menu'] || 'MENU') : 'MENU'}
               </h2>
             </div>
 
@@ -612,7 +707,7 @@ const HomepageNavbar = () => {
                           setIsMenuOpen(false);
                         }
                       }}
-                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors text-left min-h-[48px] ${isMainActive
+                      className={`w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3 transition-colors ${translationLanguage === 'ur' ? 'text-right' : 'text-left'} min-h-[48px] ${isMainActive
                         ? "bg-[#ebeef0] dark:bg-gray-900 text-black dark:text-white"
                         : "text-black dark:text-white hover:bg-[#ebeef0] dark:hover:bg-gray-900"
                         }`}
@@ -625,7 +720,7 @@ const HomepageNavbar = () => {
                             : "text-[#d9d9d9] dark:text-gray-400"
                             }`}
                         />
-                        <span className="text-sm sm:text-sm leading-tight">
+                        <span className="text-sm sm:text-sm leading-tight" dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}>
                           {item.label}
                         </span>
                       </div>
@@ -666,13 +761,14 @@ const HomepageNavbar = () => {
                                   setIsMenuOpen(false);
                                 }
                               }}
-                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors text-left text-sm min-h-[44px] ${isSubActive
+                              className={`w-full rounded-xl flex items-center px-4 sm:px-6  py-2 sm:py-2 transition-colors ${translationLanguage === 'ur' ? 'text-right' : 'text-left'} text-sm min-h-[44px] ${isSubActive
                                 ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
                                 : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
                                 }`}
+                              dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}
                             >
                               <span className="mr-3 flex-shrink-0">•</span>
-                              <span className="leading-tight">
+                              <span className="leading-tight" dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}>
                                 {subItem.label}
                               </span>
                             </button>
@@ -696,10 +792,11 @@ const HomepageNavbar = () => {
                       navigate(item.path);
                       setIsMenuOpen(false);
                     }}
-                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors text-left min-h-[48px] ${isDangerActive
+                    className={`w-full flex items-center space-x-3 px-4 sm:px-6 py-3 transition-colors ${translationLanguage === 'ur' ? 'text-right' : 'text-left'} min-h-[48px] ${isDangerActive
                       ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                       : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                       }`}
+                    dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}
                   >
                     <IconComponent
                       size={18}
@@ -708,7 +805,7 @@ const HomepageNavbar = () => {
                         : "text-red-600 dark:text-red-400"
                         }`}
                     />
-                    <span className="text-sm leading-tight">{item.label}</span>
+                    <span className="text-sm leading-tight" dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}>{item.label}</span>
                   </button>
                 );
               })}

@@ -134,8 +134,9 @@ const StickyAudioPlayer = ({
     { value: 'interpretation', label: 'Interpretation', description: 'Play Interpretation audio' }
   ];
 
-  // Filter audio types based on language - only show Translation and Interpretation for Malayalam
-  const availableAudioTypes = translationLanguage === 'mal' 
+  // Filter audio types based on language - show Translation and Interpretation for Malayalam and Urdu
+  // Urdu language code is 'ur', not 'urdu'
+  const availableAudioTypes = (translationLanguage === 'mal' || translationLanguage === 'ur')
     ? audioTypeOptions 
     : audioTypeOptions.filter(type => type.value === 'quran');
 

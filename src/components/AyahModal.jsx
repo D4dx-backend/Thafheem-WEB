@@ -181,10 +181,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
         const shouldUseMalayalamQuranaya = translationLanguage === 'mal';
 
-        // For Malayalam, don't fetch all interpretations - use AudioIntrerptn from translationData instead
-        // This matches the old API behavior where each translation has its corresponding interpretation
+        // For Malayalam, use fetchAllInterpretations to get interpretations from MySQL API
         const interpretationPromise = translationLanguage === 'mal'
-          ? Promise.resolve(null) // Will use AudioIntrerptn from translationData instead
+          ? (async () => {
+              try {
+                const interpretations = await fetchAllInterpretations(activeSurahId, verseNumberForRequest, 'mal');
+                // Transform to match expected format
+                return interpretations && interpretations.length > 0 ? interpretations.map(i => ({
+                  interpretation: i.Interpretation || '',
+                  AudioIntrerptn: i.Interpretation || '',
+                  text: i.Interpretation || '',
+                  content: i.Interpretation || '',
+                  InterpretationNo: i.InterpretationNo || String(i.resolvedInterpretationNo || 1),
+                  interptn_no: i.resolvedInterpretationNo || parseInt(i.InterpretationNo || '1', 10),
+                  number: i.resolvedInterpretationNo || parseInt(i.InterpretationNo || '1', 10)
+                })) : [];
+              } catch (error) {
+                console.error(`[AyahModal] Error fetching Malayalam interpretations for Surah ${activeSurahId}, Ayah ${verseNumberForRequest}:`, error);
+                return [];
+              }
+            })()
           : translationLanguage === 'ta'
             ? (() => {
               return tamilTranslationService.getAyahTranslation(activeSurahId, verseNumberForRequest)
@@ -380,10 +396,6 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             : translationData)
           : null;
 
-        const malayalamInterpretations = shouldUseMalayalamQuranaya
-          ? buildMalayalamInterpretations(translationData || translationVerse, verseNumberForRequest)
-          : [];
-
         let englishTranslation = "";
         if (translationLanguage === 'E') {
           try {
@@ -418,20 +430,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
         if (isCancelled) return;
 
-        // For Malayalam in ayah-wise view, use AudioIntrerptn from translationData (quranaya)
-        // This corresponds to the translation being shown, matching the old API behavior
-        if (shouldUseMalayalamQuranaya) {
-          console.log(`[AyahModal] Processing interpretations for Malayalam - malayalamInterpretations from translationData:`, malayalamInterpretations);
-          // Use malayalamInterpretations which comes from AudioIntrerptn in translationData
-          // This is the interpretation that corresponds to the translation being displayed
-          if (malayalamInterpretations.length > 0) {
-            console.log(`[AyahModal] Using malayalamInterpretations (from AudioIntrerptn) with ${malayalamInterpretations.length} items`);
-            setInterpretationData(malayalamInterpretations);
-          } else {
-            console.log(`[AyahModal] No malayalamInterpretations found in translationData, setting to null`);
-            setInterpretationData(null);
-          }
-        } else if (interpretationResponse) {
+        // Process interpretation data - for Malayalam, use the fetched interpretations from MySQL API
+        if (interpretationResponse) {
           if (Array.isArray(interpretationResponse)) {
             setInterpretationData(interpretationResponse);
           } else if (

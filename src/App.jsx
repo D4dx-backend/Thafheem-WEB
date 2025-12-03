@@ -32,6 +32,7 @@ const Digitisation = lazy(() => import("./pages/Digitisation"));
 const About = lazy(() => import("./pages/About"));
 const AuthorPreface = lazy(() => import("./pages/AuthorPreface"));
 const AuthorConclusion = lazy(() => import("./pages/AuthorConclusion"));
+const IntroductionToQuran = lazy(() => import("./pages/IntroductionToQuran"));
 const Appendix = lazy(() => import("./pages/Appendix"));
 const EnglishTranslate = lazy(() => import("./pages/EnglishTranslate"));
 const Quiz = lazy(() => import("./pages/Quiz"));
@@ -46,6 +47,15 @@ const EndofProphethood = lazy(() => import("./pages/EndofProphethood"));
 const WordByWordPage = lazy(() => import("./pages/WordByWordPage"));
 const InterpretationBlockwise = lazy(() => import("./pages/InterpretationBlockwise"));
 const Note = lazy(() => import("./pages/Note"));
+const UrduFinalityOfProphethood = lazy(() => import("./pages/UrduFinalityOfProphethood"));
+const UrduJesusMohammed = lazy(() => import("./pages/UrduJesusMohammed"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Feedback = lazy(() => import("./pages/Feedback"));
+const TechnicalTerms = lazy(() => import("./pages/TechnicalTerms"));
+const Translators = lazy(() => import("./pages/Translators"));
+const HistoryOfTranslation = lazy(() => import("./pages/HistoryOfTranslation"));
+const MalayalamJesusMohammed = lazy(() => import("./pages/MalayalamJesusMohammed"));
+const MalayalamFinalityOfProphethood = lazy(() => import("./pages/MalayalamFinalityOfProphethood"));
 
 function resolveRouterBasename() {
   const raw = import.meta.env.VITE_BASE_PATH?.trim();
@@ -106,6 +116,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/authorpreface" element={<AuthorPreface />} />
                 <Route path="/authorconclusion" element={<AuthorConclusion />} />
+                <Route path="/introduction-to-quran" element={<IntroductionToQuran />} />
                 <Route path="/appendix/:lang" element={<Appendix />} />
                 <Route path="/englishtranslate" element={<EnglishTranslate />} />
                 <Route path="/quiz" element={<Quiz />} />
@@ -117,6 +128,15 @@ function App() {
                 <Route path="/tajweed" element={<Tajweed />} />
                 <Route path="/quranstudy" element={<QuranStudy />} />
                 <Route path="/end" element={<EndofProphethood />} />
+                <Route path="/urdu/finality-of-prophethood" element={<UrduFinalityOfProphethood />} />
+                <Route path="/urdu/jesus-mohammed" element={<UrduJesusMohammed />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/feedback" element={<Feedback />} />
+                <Route path="/technical-terms" element={<TechnicalTerms />} />
+                <Route path="/translators" element={<Translators />} />
+                <Route path="/history-of-translation" element={<HistoryOfTranslation />} />
+                <Route path="/malayalam/jesus-mohammed" element={<MalayalamJesusMohammed />} />
+                <Route path="/malayalam/finality-of-prophethood" element={<MalayalamFinalityOfProphethood />} />
                 <Route
                   path="/word-by-word/:surahId/:verseId"
                   element={<WordByWordPage />}

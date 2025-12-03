@@ -393,7 +393,21 @@ const WordByWord = ({
                 </h4>
               )}
               <div className="space-y-4">
-                {wordData.words.map((word, index) => (
+                {wordData.words.map((word, index) => {
+                  const arabicText = word.text_uthmani || word.text_simple || "";
+                  const hasTranslation = !!(word.translation && word.translation.text);
+
+                  // Hide tokens that are just verse numbers (e.g. ﴿١﴾, (١), (1)) with no translation
+                  const isArabicDigitOnly =
+                    arabicText &&
+                    /^[\s()\u0660-\u0669\u06F0-\u06F9\uFD3E\uFD3F0-9]+$/.test(arabicText) &&
+                    !hasTranslation;
+
+                  if (isArabicDigitOnly) {
+                    return null;
+                  }
+
+                  return (
                   <div
                     key={index}
                     className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700"
@@ -420,7 +434,7 @@ const WordByWord = ({
 
                       {/* Translation/Meaning */}
                       <div className="text-left max-w-[60%]">
-                        {word.translation && word.translation.text ? (
+                        {hasTranslation ? (
                           <p
                             className={`text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 mb-1 font-medium ${
                               translationLanguage === 'hi' ? 'font-hindi' :
@@ -450,7 +464,7 @@ const WordByWord = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           )}

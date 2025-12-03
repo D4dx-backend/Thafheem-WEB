@@ -76,7 +76,7 @@ const Home = () => {
       {/* <HomepageNavbar /> */}
       <HomepageSearch />
       <div className="w-full mx-auto bg-white dark:bg-gray-900 min-h-screen">
-        <div className="max-w-[1290px] w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
+        <div className="max-w-[1290px] w-full mx-auto px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12">
           {/* Header Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex overflow-x-auto">

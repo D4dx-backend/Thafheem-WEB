@@ -77,7 +77,15 @@ const BookVerse = () => {
   };
 
   const handleVerseClick = (surahId, verseId) => {
-    navigate(`/surah/${surahId}#verse-${verseId}`);
+    // Navigate to ayahwise view with verse hash
+    // Pass state to ensure it's in ayahwise view
+    navigate(`/surah/${surahId}#verse-${verseId}`, {
+      state: {
+        viewType: 'Ayah Wise',
+        scrollToVerse: verseId,
+        highlightVerse: `${surahId}:${verseId}`
+      }
+    });
   };
 
   // Show sign-in message if user is not authenticated

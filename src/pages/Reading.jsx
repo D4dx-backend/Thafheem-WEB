@@ -20,6 +20,8 @@ import {
   fetchArabicVerses,
   fetchSurahs,
   fetchPageRanges,
+  fetchUrduTranslationAudio,
+  fetchUrduInterpretationAudio,
 } from "../api/apifunction";
 import BookmarkService from "../services/bookmarkService";
 import { useAuth } from "../context/AuthContext";
@@ -81,7 +83,7 @@ const Reading = () => {
   const { translationLanguage } = useTheme();
 
   // Generate audio URL based on audio type
-  const generateAudioUrl = (surahId, ayahId, type, qirathName, qirathCode) => {
+  const generateAudioUrl = async (surahId, ayahId, type, qirathName, qirathCode) => {
     const surahIdPadded = String(surahId).padStart(3, '0');
     const ayahIdPadded = String(ayahId).padStart(3, '0');
     
@@ -96,16 +98,32 @@ const Reading = () => {
         audioUrl = `https://old.thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
       }
     } else if (type === 'translation') {
-      // Translation audio format: https://old.thafheem.net/audio/translation/T{surahId_3digit}_{ayahId_3digit}.ogg
-      // Example: https://old.thafheem.net/audio/translation/T002_004.ogg
+      // For Urdu, fetch from API (language code is 'ur')
+      if (translationLanguage === 'ur') {
+        const apiUrl = await fetchUrduTranslationAudio(surahId, ayahId);
+        if (apiUrl) {
+          return apiUrl;
+        }
+        // If API fails, return null instead of falling back to Malayalam pattern
+        return null;
+      }
+      // For Malayalam, use default pattern
       if (import.meta.env.DEV) {
         audioUrl = `/api/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
       } else {
         audioUrl = `https://old.thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
       }
     } else if (type === 'interpretation') {
-      // Interpretation audio format: https://old.thafheem.net/audio/interpretation/I{surahId_3digit}_{ayahId_3digit}.ogg
-      // Example: https://old.thafheem.net/audio/interpretation/I002_004.ogg
+      // For Urdu, fetch from API (language code is 'ur')
+      if (translationLanguage === 'ur') {
+        const apiUrl = await fetchUrduInterpretationAudio(surahId, ayahId);
+        if (apiUrl) {
+          return apiUrl;
+        }
+        // If API fails, return null instead of falling back to Malayalam pattern
+        return null;
+      }
+      // For Malayalam, use default pattern
       if (import.meta.env.DEV) {
         audioUrl = `/api/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
       } else {
@@ -118,7 +136,7 @@ const Reading = () => {
 
   // Play audio types for an ayah in sequence, then move to next ayah
   // This version accepts audioTypes as parameter to avoid closure issues
-  const playAyahAtIndexWithTypes = (index, audioTypeIndex = 0, typesToPlay = null) => {
+  const playAyahAtIndexWithTypes = async (index, audioTypeIndex = 0, typesToPlay = null) => {
     // Use provided types or fall back to state
     const activeAudioTypes = typesToPlay || audioTypes;
     
@@ -153,7 +171,43 @@ const Reading = () => {
     const verse = verses[index];
     const ayahId = index + 1; // Since verse_number is undefined, use index + 1
     const currentAudioType = activeAudioTypes[audioTypeIndex];
-    const audioUrl = generateAudioUrl(currentSurahId, ayahId, currentAudioType, selectedQirath, qirathCode);
+    
+    // Generate audio URL (async for Urdu audio)
+    let audioUrl;
+    try {
+      audioUrl = await generateAudioUrl(currentSurahId, ayahId, currentAudioType, selectedQirath, qirathCode);
+    } catch (error) {
+      console.error('[Reading] Error generating audio URL:', error);
+      // Skip to next audio type on error
+      if (audioTypeIndex < activeAudioTypes.length - 1) {
+        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
+      } else {
+        // Move to next ayah if all audio types failed
+        if (index < verses.length - 1) {
+          playAyahAtIndexWithTypes(index + 1, 0, typesToPlay);
+        } else {
+          setIsPlaying(false);
+          setCurrentAyah(null);
+        }
+      }
+      return;
+    }
+    
+    if (!audioUrl) {
+      // Skip to next audio type if URL is null
+      if (audioTypeIndex < activeAudioTypes.length - 1) {
+        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
+      } else {
+        // Move to next ayah if all audio types failed
+        if (index < verses.length - 1) {
+          playAyahAtIndexWithTypes(index + 1, 0, typesToPlay);
+        } else {
+          setIsPlaying(false);
+          setCurrentAyah(null);
+        }
+      }
+      return;
+    }
     
     // Create new audio element
     const audio = new Audio(audioUrl);

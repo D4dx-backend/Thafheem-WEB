@@ -445,16 +445,24 @@ const localBookmarks = this.getLocalBookmarks(userId);
     try {
       const response = await fetch(`${THAFHEEM_API_BASE}/bookmarks`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(bookmarkData)
       });
 
       if (!response.ok) {
-        throw new Error('API bookmark failed');
+        // Fallback to localStorage if API fails (401, 403, etc.)
+        const localBookmarks = this.getLocalBookmarks(userId);
+        localBookmarks.push(bookmarkData);
+        this.saveLocalBookmarks(userId, localBookmarks);
+        return bookmarkData;
       }
 
       return await response.json();
     } catch (error) {
       console.warn('API bookmark failed, using local storage:', error);
+      // Fallback to local storage
       const localBookmarks = this.getLocalBookmarks(userId);
       localBookmarks.push(bookmarkData);
       this.saveLocalBookmarks(userId, localBookmarks);

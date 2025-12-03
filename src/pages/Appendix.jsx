@@ -13,6 +13,11 @@ const PAGE_CONFIG = {
     description: "English appendix articles curated from Thafheem resources.",
     apiLanguage: "english",
   },
+  urdu: {
+    title: "Urdu Appendix",
+    description: "Urdu appendix articles curated from Thafheem resources.",
+    apiLanguage: "urdu",
+  },
 };
 
 const Appendix = () => {
@@ -23,6 +28,9 @@ const Appendix = () => {
   const pageConfig = useMemo(() => {
     if (normalized.startsWith("mal")) {
       return PAGE_CONFIG.malayalam;
+    }
+    if (normalized.startsWith("urdu") || normalized === "u") {
+      return PAGE_CONFIG.urdu;
     }
     return PAGE_CONFIG.english;
   }, [normalized]);
@@ -115,9 +123,10 @@ const Appendix = () => {
                 className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7"
               >
                 {section.title && (
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                    {section.title}
-                  </h3>
+                  <h3 
+                    className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                    dangerouslySetInnerHTML={{ __html: section.title }}
+                  />
                 )}
                 <div
                   className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400"

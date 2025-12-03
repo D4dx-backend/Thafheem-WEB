@@ -37,6 +37,8 @@ import {
   fetchAyahAudioTranslations,
   fetchAyaRanges,
   fetchAyaTranslation,
+  fetchUrduTranslationAudio,
+  fetchUrduInterpretationAudio,
 } from "../api/apifunction";
 import { useSurahData } from "../hooks/useSurahData";
 import { fetchDeduplicated } from "../utils/requestDeduplicator";
@@ -66,6 +68,10 @@ const BlockWise = () => {
   const [isContinuousPlay, setIsContinuousPlay] = useState(false); // Track if continuous playback is active
   const [isPaused, setIsPaused] = useState(false); // Track if audio is paused
   const audioRef = useRef(null); // Audio element reference
+  // Refs to track playback state for event handlers (avoid stale closures)
+  const playingBlockRef = useRef(null);
+  const isContinuousPlayRef = useRef(false);
+  const isProcessingNextRef = useRef(false); // Guard to prevent duplicate calls to moveToNextAyahOrBlock/playNextBlock
 
   useEffect(() => {
     console.log("[BlockWise] audioTypes state updated", audioTypes);
@@ -131,6 +137,13 @@ const BlockWise = () => {
     context: 'blockwise',
     dependencies: [blockTranslations, blockRanges, surahId, blockData],
   });
+
+  // Handle viewType from location state (e.g., when navigating from bookmarks)
+  useEffect(() => {
+    if (location.state?.viewType) {
+      setContextViewType(location.state.viewType);
+    }
+  }, [location.state, setContextViewType]);
 
   useEffect(() => {
     const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
@@ -255,6 +268,9 @@ const BlockWise = () => {
       setCurrentAyahInBlock(null);
       setIsContinuousPlay(false);
       setIsPaused(false);
+      // Update refs
+      playingBlockRef.current = null;
+      isContinuousPlayRef.current = false;
     };
   }, []); // Only run on mount/unmount
 
@@ -279,26 +295,31 @@ const BlockWise = () => {
   };
 
   // Function to play audio for a specific block - starts from the first ayah
-  const playBlockAudio = (blockId, fromContinuous = false) => {
+  const playBlockAudio = (blockId, fromContinuous = false, preservedAudioTypes = null) => {
     if (!audioRef.current) return;
+
+    // Preserve audioTypes when moving to next block
+    const audioTypesToUse = preservedAudioTypes || audioTypes;
 
     console.log("[BlockWise] playBlockAudio start", {
       blockId,
       fromContinuous,
-      audioTypes,
+      audioTypes: audioTypesToUse,
+      preservedAudioTypes,
       translationLanguage,
       selectedQirath
     });
 
     // Check if translation/interpretation audio is selected but language is not Malayalam
+    // Urdu doesn't support blockwise - only ayahwise and reading page
     // Only check if not already in continuous mode (to allow resume)
     if (!fromContinuous && translationLanguage !== 'mal') {
-      const hasTranslationOrInterpretation = audioTypes.some(type =>
+      const hasTranslationOrInterpretation = audioTypesToUse.some(type =>
         type === 'translation' || type === 'interpretation'
       );
       if (hasTranslationOrInterpretation) {
         const languageName = getLanguageName(translationLanguage);
-        showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available.`);
+        showWarning(`${languageName} translation and explanation audio is coming soon. Currently, only Malayalam translation and explanation audio is available for blockwise view.`);
         // Filter out translation and interpretation from audioTypes
         const filteredTypes = audioTypes.filter(type =>
           type !== 'translation' && type !== 'interpretation'
@@ -314,15 +335,25 @@ const BlockWise = () => {
       }
     }
 
-    // Stop any currently playing audio
+    // Stop any currently playing audio and clean up handlers
     if (audioRef.current) {
-      audioRef.current.pause();
+      try {
+        audioRef.current.pause();
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+        audioRef.current.src = '';
+        audioRef.current.load();
+      } catch (error) {
+        console.warn('[BlockWise] Error cleaning up audio:', error);
+      }
     }
 
     // Find the block data
     const blockInfo = blockRanges.find(b => (b.ID || b.id) === blockId);
     if (!blockInfo) {
       console.error('Block not found:', blockId);
+      // Reset guard flag if block not found
+      isProcessingNextRef.current = false;
       return;
     }
 
@@ -334,22 +365,28 @@ const BlockWise = () => {
     setCurrentAyahInBlock(normalizedStartingAyah);
     setCurrentInterpretationNumber(1); // Reset interpretation number for new block
     setIsPaused(false);
+    // Update refs for event handlers
+    playingBlockRef.current = blockId;
+    isContinuousPlayRef.current = true;
 
     console.log("[BlockWise] playBlockAudio state set", {
       playingBlock: blockId,
       normalizedStartingAyah,
-      currentAudioType: audioTypes?.[0] || 'quran'
+      currentAudioType: audioTypesToUse?.[0] || 'quran',
+      audioTypes: audioTypesToUse
     });
 
     // Dispatch event to update header button
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
 
     // Play the first ayah's audio (will play all selected types in sequence)
-    playAyahAudio(blockId, normalizedStartingAyah, 0);
+    // Pass preserved audioTypes to maintain continuity
+    // Guard flag will be reset when audio starts playing (in playAyahAudioWithTypes)
+    playAyahAudio(blockId, normalizedStartingAyah, 0, audioTypesToUse);
   };
 
   // Generate audio URL based on audio type
-  const generateAudioUrl = (surahId, ayahId, type) => {
+  const generateAudioUrl = async (surahId, ayahId, type, interpretationNumber = 1) => {
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahId).padStart(3, "0");
 
@@ -359,16 +396,24 @@ const BlockWise = () => {
     if (type === 'quran') {
       return `${baseUrl}/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
     } else if (type === 'translation') {
+      // For Malayalam, use default pattern (Urdu doesn't support blockwise)
       return `${baseUrl}/translation/T${surahCode}_${ayahCode}.ogg`;
     } else if (type === 'interpretation') {
-      return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}.ogg`;
+      // For Malayalam, use default pattern (Urdu doesn't support blockwise)
+      // First interpretation has no number suffix, subsequent ones have _02, _03, etc.
+      if (interpretationNumber === 1) {
+        return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}.ogg`;
+      } else {
+        const interpretationCode = String(interpretationNumber).padStart(2, "0");
+        return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
+      }
     }
     return null;
   };
 
   // Function to play audio types for a specific ayah in sequence
   // This version accepts audioTypes as parameter to avoid closure issues
-  const playAyahAudioWithTypes = (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
+  const playAyahAudioWithTypes = async (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!audioRef.current) return;
 
     const ayahToPlay = normalizeAyahNumber(
@@ -385,6 +430,8 @@ const BlockWise = () => {
       ayahToPlay,
       audioTypeIndex,
       audioTypes: activeAudioTypes,
+      audioTypesLength: activeAudioTypes.length,
+      shouldMoveToNext: audioTypeIndex >= activeAudioTypes.length,
       playbackSpeed,
       isContinuousPlay,
       isPaused,
@@ -393,15 +440,49 @@ const BlockWise = () => {
 
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
+      console.log('[BlockWise] All audio types played for ayah, moving to next ayah', {
+        audioTypeIndex,
+        audioTypesLength: activeAudioTypes.length,
+        ayahToPlay,
+        blockId
+      });
       moveToNextAyahOrBlock(ayahToPlay, activeAudioTypes);
       return;
     }
 
     // Stop any currently playing audio before starting new audio
-    audioRef.current.pause();
+    // Clear handlers first to prevent old handlers from firing
+    try {
+      if (audioRef.current.onended) {
+        audioRef.current.onended = null;
+      }
+      if (audioRef.current.onerror) {
+        audioRef.current.onerror = null;
+      }
+      audioRef.current.pause();
+    } catch (error) {
+      console.warn('[BlockWise] Error stopping previous audio:', error);
+    }
 
     const currentAudioType = activeAudioTypes[audioTypeIndex];
-    const audioUrl = generateAudioUrl(surahId, ayahToPlay, currentAudioType);
+    
+    // For interpretation, use currentInterpretationNumber
+    let interpretationNumber = 1;
+    if (currentAudioType === 'interpretation') {
+      interpretationNumber = currentInterpretationNumber;
+    }
+    
+    // Generate audio URL (async for Urdu audio)
+    let audioUrl;
+    try {
+      audioUrl = await generateAudioUrl(surahId, ayahToPlay, currentAudioType, interpretationNumber);
+    } catch (error) {
+      console.error('[BlockWise] Error generating audio URL:', error);
+      // If URL generation fails, skip to next audio type
+      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, typesToPlay);
+      return;
+    }
+    
     if (!audioUrl) {
       // If URL generation fails, skip to next audio type
       playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, typesToPlay);
@@ -428,28 +509,247 @@ const BlockWise = () => {
     // FIXED: Don't reset interpretation number here - it should only reset when moving to a new ayah
 
     // CRITICAL FIX: Remove old event handlers before adding new ones to prevent multiple triggers
-    audioRef.current.onended = null;
-    audioRef.current.onerror = null;
+    try {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+    } catch (error) {
+      console.warn('[BlockWise] Error clearing audio handlers:', error);
+    }
+
+    // Add timeout to detect stuck audio loading (missing files)
+    let loadTimeout = null;
+    const clearLoadTimeout = () => {
+      if (loadTimeout) {
+        clearTimeout(loadTimeout);
+        loadTimeout = null;
+      }
+    };
+
+    const startLoadTimeout = () => {
+      clearLoadTimeout(); // Clear any existing timeout
+      loadTimeout = setTimeout(() => {
+        if (audioRef.current && audioRef.current.readyState < 2 && 
+            playingBlock === blockId && currentAyahInBlock === ayahToPlay && isContinuousPlay) {
+          console.warn('[BlockWise] Audio load timeout (file may be missing):', audioUrl);
+          // Skip to next audio type
+          playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+        }
+      }, 5000); // 5 second timeout
+    };
 
     // Set up audio event handlers before setting src
     audioRef.current.onended = () => {
-      // Play next audio type for this ayah, or move to next ayah if all types done
-      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+      clearLoadTimeout();
+      console.log('[BlockWise] Audio ended', {
+        blockId,
+        ayahToPlay,
+        audioTypeIndex,
+        currentAudioType,
+        playingBlock: playingBlockRef.current,
+        isContinuousPlay: isContinuousPlayRef.current,
+        audioTypes: activeAudioTypes,
+        totalTypes: activeAudioTypes.length,
+        isProcessingNext: isProcessingNextRef.current
+      });
+      
+      // Guard against duplicate calls when already processing next move
+      if (isProcessingNextRef.current) {
+        console.warn('[BlockWise] onended handler aborted - already processing next move');
+        return;
+      }
+      
+      // Use refs instead of state for reliability (state might be stale)
+      // Check if we should continue - only check block and continuous play mode
+      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+      
+      if (shouldContinue) {
+        console.log('[BlockWise] Continuing to next audio type/ayah');
+        // Play next audio type for this ayah, or move to next ayah if all types done
+        playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+      } else {
+        console.warn('[BlockWise] Not continuing - state mismatch', {
+          isContinuousPlay: isContinuousPlayRef.current,
+          playingBlock: playingBlockRef.current,
+          blockId,
+          ayahToPlay
+        });
+      }
     };
 
-    audioRef.current.onerror = () => {
-      console.error('Error playing audio:', audioUrl);
-      // Skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+    audioRef.current.onerror = (error) => {
+      clearLoadTimeout();
+      // Check if it's a network/load error (404, network failure, etc.)
+      const audioElement = audioRef.current;
+      if (audioElement && audioElement.error) {
+        const errorCode = audioElement.error.code;
+        // Error codes: 1=MEDIA_ERR_ABORTED, 2=MEDIA_ERR_NETWORK, 3=MEDIA_ERR_DECODE, 4=MEDIA_ERR_SRC_NOT_SUPPORTED
+        if (errorCode === 2 || errorCode === 4) {
+          // Only log as debug for missing files (expected behavior)
+          if (import.meta.env.DEV) {
+            console.log('[BlockWise] Audio file not found (expected), skipping:', audioUrl);
+          }
+          
+          // If it's an interpretation that doesn't exist, skip to next audio type (translation) for the same ayah
+          if (currentAudioType === 'interpretation') {
+            // Only log in development mode
+            if (import.meta.env.DEV) {
+              console.log('[BlockWise] Interpretation not found, skipping to next audio type', {
+                currentInterpretationNumber,
+                ayahToPlay,
+                audioUrl,
+                audioTypeIndex,
+                nextAudioTypeIndex: audioTypeIndex + 1
+              });
+            }
+            // CRITICAL: Set guard flag immediately to prevent other handlers (onended, play().catch()) from continuing
+            isProcessingNextRef.current = true;
+            // CRITICAL: Pause and clear handlers to prevent duplicate calls
+            if (audioRef.current) {
+              try {
+                audioRef.current.pause();
+                audioRef.current.onended = null;
+                audioRef.current.onerror = null;
+              } catch (error) {
+                console.warn('[BlockWise] Error cleaning up audio on interpretation error:', error);
+              }
+            }
+            // Reset interpretation number for next ayah (will be used if we move to next ayah later)
+            setCurrentInterpretationNumber(1);
+            // Skip to next audio type (translation) for the same ayah instead of moving to next ayah
+            // Use refs to check if we should continue
+            const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+            if (shouldContinue) {
+              // Only log in development mode
+              if (import.meta.env.DEV) {
+                console.log('[BlockWise] Continuing to next audio type after interpretation error', {
+                  blockId,
+                  ayahToPlay,
+                  audioTypeIndex,
+                  nextAudioTypeIndex: audioTypeIndex + 1,
+                  playingBlockRef: playingBlockRef.current,
+                  isContinuousPlayRef: isContinuousPlayRef.current
+                });
+              }
+              // Continue to next audio type (translation) for the same ayah
+              setTimeout(() => {
+                playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+                // Reset guard flag after a short delay to ensure new audio has started
+                setTimeout(() => {
+                  isProcessingNextRef.current = false;
+                }, 300);
+              }, 200);
+              return; // Don't continue with error handler
+            } else {
+              // Only log in development mode
+              if (import.meta.env.DEV) {
+                console.warn('[BlockWise] Not continuing after interpretation error - state mismatch', {
+                  blockId,
+                  playingBlockRef: playingBlockRef.current,
+                  isContinuousPlayRef: isContinuousPlayRef.current
+                });
+              }
+              // Reset guard flag if we're not continuing
+              isProcessingNextRef.current = false;
+            }
+          }
+        } else {
+          // Log unexpected errors (not 404/network errors)
+          console.error('[BlockWise] Unexpected audio error:', {
+            errorCode: audioElement.error?.code,
+            audioUrl,
+            currentAudioType
+          });
+        }
+      } else {
+        // Log if we can't determine the error
+        console.error('[BlockWise] Audio error event (unknown error):', audioUrl, error);
+      }
+      
+      // Use refs instead of state for reliability (state might be stale)
+      // Check if we should continue - only check block and continuous play mode
+      // Also check guard flag to prevent duplicate calls if interpretation error was already handled
+      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId && !isProcessingNextRef.current;
+      
+      if (shouldContinue) {
+        // Skip to next audio type or next ayah with delay to prevent rapid error loops
+        setTimeout(() => {
+          playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+        }, 200);
+      } else {
+        // Only log in development mode - this is expected when guard flag is set
+        if (import.meta.env.DEV && isProcessingNextRef.current) {
+          console.log('[BlockWise] Not continuing after error - already processing (expected)');
+        } else if (!isProcessingNextRef.current) {
+          console.warn('[BlockWise] Not continuing after error - state mismatch', {
+            isContinuousPlay: isContinuousPlayRef.current,
+            playingBlock: playingBlockRef.current,
+            blockId
+          });
+        }
+      }
     };
+
+    // Reset guard flag when audio is ready to play (canplay event)
+    // This ensures the flag is reset before audio ends, allowing progression
+    const handleCanPlay = () => {
+      isProcessingNextRef.current = false;
+      audioRef.current.removeEventListener('canplay', handleCanPlay);
+    };
+    audioRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+    
+    // Clear timeout when audio successfully loads
+    audioRef.current.addEventListener('canplay', clearLoadTimeout, { once: true });
+    audioRef.current.addEventListener('loadeddata', clearLoadTimeout, { once: true });
 
     audioRef.current.src = audioUrl;
     audioRef.current.playbackRate = playbackSpeed;
     audioRef.current.load();
+    startLoadTimeout();
+    
     audioRef.current.play().catch(err => {
-      console.error('Error playing audio:', err.name, err.message, audioUrl);
-      // If audio fails, skip to next audio type or next ayah
-      playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+      clearLoadTimeout();
+      
+      // Guard against duplicate calls if we're already processing an error
+      // But still reset the flag to allow future attempts
+      if (isProcessingNextRef.current) {
+        // Only log in development mode - this is expected behavior
+        if (import.meta.env.DEV) {
+          console.log('[BlockWise] play().catch() aborted - already processing next move (expected)');
+        }
+        // Reset flag even if already processing to allow future attempts
+        setTimeout(() => {
+          isProcessingNextRef.current = false;
+        }, 100);
+        return;
+      }
+      
+      // Only log unexpected errors (not NotSupportedError which is expected for missing files)
+      if (err.name !== 'NotSupportedError') {
+        console.error('[BlockWise] Error playing audio:', err.name, err.message, audioUrl);
+      } else if (import.meta.env.DEV) {
+        console.log('[BlockWise] Audio file not supported (expected for missing files):', audioUrl);
+      }
+      
+      // If audio fails to play, skip to next audio type or next ayah
+      // Use refs instead of state for reliability
+      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+      
+      if (shouldContinue) {
+        // Reset guard flag before continuing to next audio type
+        isProcessingNextRef.current = false;
+        // Small delay to prevent rapid error loops
+        setTimeout(() => {
+          playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+        }, 200);
+      } else {
+        // Reset guard flag if not continuing
+        isProcessingNextRef.current = false;
+        console.warn('[BlockWise] Not continuing after play error - state mismatch', {
+          blockId,
+          playingBlockRef: playingBlockRef.current,
+          isContinuousPlayRef: isContinuousPlayRef.current
+        });
+      }
     });
   };
 
@@ -462,14 +762,35 @@ const BlockWise = () => {
 
   // Function to move to the next ayah in the block or the next block
   const moveToNextAyahOrBlock = (currentAyahOverride = null, activeAudioTypes = null) => {
-
-    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
-    if (!playingBlock || !effectiveCurrentAyah) {
+    // Guard against duplicate calls
+    if (isProcessingNextRef.current) {
+      console.warn('[BlockWise] moveToNextAyahOrBlock aborted - already processing next', {
+        currentAyahOverride,
+        currentAyahInBlock
+      });
       return;
     }
 
-    const blockInfo = blockRanges.find(b => (b.ID || b.id) === playingBlock);
+    const effectiveCurrentAyah = currentAyahOverride ?? currentAyahInBlock;
+    // Use ref instead of state to avoid stale closures
+    const currentPlayingBlock = playingBlockRef.current || playingBlock;
+    
+    if (!currentPlayingBlock || !effectiveCurrentAyah) {
+      console.warn('[BlockWise] moveToNextAyahOrBlock aborted - no playing block or ayah', {
+        currentPlayingBlock,
+        effectiveCurrentAyah,
+        playingBlock,
+        playingBlockRef: playingBlockRef.current
+      });
+      return;
+    }
+
+    // Set guard flag
+    isProcessingNextRef.current = true;
+
+    const blockInfo = blockRanges.find(b => (b.ID || b.id) === currentPlayingBlock);
     if (!blockInfo) {
+      isProcessingNextRef.current = false; // Reset guard flag on early return
       return;
     }
 
@@ -479,21 +800,22 @@ const BlockWise = () => {
 
     if (currentAyahNumber === null || ayaToNumber === null) {
       console.warn("[BlockWise] moveToNextAyahOrBlock aborted - invalid ayah numbers", {
-        playingBlock,
+        currentPlayingBlock,
         currentAyahInBlock: effectiveCurrentAyah,
         ayaTo
       });
+      isProcessingNextRef.current = false; // Reset guard flag on early return
       return;
     }
 
     const nextAyah = currentAyahNumber + 1;
 
     console.log("[BlockWise] moveToNextAyahOrBlock", {
-      playingBlock,
+      currentPlayingBlock,
       currentAyahNumber,
       nextAyah,
       ayaToNumber,
-      isContinuousPlay
+      isContinuousPlay: isContinuousPlayRef.current
     });
 
     // Check if there are more ayahs in this block
@@ -501,18 +823,50 @@ const BlockWise = () => {
       // Reset interpretation number for new ayah
       setCurrentInterpretationNumber(1);
       // Play the next ayah in the same block (start with first audio type)
-      playAyahAudio(playingBlock, nextAyah, 0, activeAudioTypes);
+      // Guard flag will be reset when audio starts playing (in playAyahAudioWithTypes)
+      playAyahAudio(currentPlayingBlock, nextAyah, 0, activeAudioTypes);
     } else {
       // Block is finished, move to next block or stop
-      if (isContinuousPlay) {
+      // Use ref to check continuous play status
+      if (isContinuousPlayRef.current) {
+        // Clean up current audio before moving to next block
+        if (audioRef.current) {
+          try {
+            audioRef.current.pause();
+            audioRef.current.onended = null;
+            audioRef.current.onerror = null;
+          } catch (error) {
+            console.warn('[BlockWise] Error cleaning up audio before next block:', error);
+          }
+        }
         setCurrentInterpretationNumber(1); // Reset for next block
-        playNextBlock();
+        // Reset guard flag before calling playNextBlock
+        // playNextBlock will set it again when it starts
+        isProcessingNextRef.current = false;
+        // Small delay to ensure cleanup completes
+        setTimeout(() => {
+          playNextBlock();
+        }, 50);
       } else {
+        if (audioRef.current) {
+          try {
+            audioRef.current.pause();
+            audioRef.current.onended = null;
+            audioRef.current.onerror = null;
+          } catch (error) {
+            console.warn('[BlockWise] Error stopping audio:', error);
+          }
+        }
         setPlayingBlock(null);
         setCurrentAudioType(null);
         setCurrentAyahInBlock(null);
         setCurrentInterpretationNumber(1);
         setIsPaused(false);
+        // Update refs
+        playingBlockRef.current = null;
+        isContinuousPlayRef.current = false;
+        // Reset guard flag
+        isProcessingNextRef.current = false;
         // Dispatch event to update header button
         window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
       }
@@ -596,6 +950,9 @@ const BlockWise = () => {
       setCurrentAyahInBlock(lastAyah);
       setCurrentInterpretationNumber(1);
       setIsPaused(false);
+      // Update refs
+      playingBlockRef.current = previousBlockId;
+      isContinuousPlayRef.current = true;
 
       // Play the last ayah of the previous block
       playAyahAudio(previousBlockId, lastAyah);
@@ -615,26 +972,108 @@ const BlockWise = () => {
 
   // Function to play next block in continuous mode
   const playNextBlock = () => {
-    if (!isContinuousPlay || !blockRanges || blockRanges.length === 0) return;
+    // Guard against duplicate calls
+    if (isProcessingNextRef.current) {
+      console.warn('[BlockWise] playNextBlock aborted - already processing next');
+      return;
+    }
 
+    // Use ref instead of state to avoid stale closures
+    const shouldContinue = isContinuousPlayRef.current;
+    
+    if (!shouldContinue || !blockRanges || blockRanges.length === 0) {
+      console.warn('[BlockWise] playNextBlock aborted - invalid state', {
+        isContinuousPlay: isContinuousPlayRef.current,
+        isContinuousPlayState: isContinuousPlay,
+        blockRangesLength: blockRanges?.length
+      });
+      isProcessingNextRef.current = false; // Reset guard if aborted
+      return;
+    }
+
+    // Set guard flag
+    isProcessingNextRef.current = true;
+
+    // Use ref instead of state to avoid stale closures
+    const currentPlayingBlock = playingBlockRef.current || playingBlock;
+    
     const currentIndex = blockRanges.findIndex(block => {
       const blockId = block.ID || block.id;
-      return blockId === playingBlock;
+      return blockId === currentPlayingBlock;
+    });
+
+    console.log('[BlockWise] playNextBlock', {
+      currentIndex,
+      currentPlayingBlock,
+      playingBlock,
+      playingBlockRef: playingBlockRef.current,
+      blockRangesLength: blockRanges.length
     });
 
     // Check if there's a next block
     if (currentIndex !== -1 && currentIndex < blockRanges.length - 1) {
       const nextBlock = blockRanges[currentIndex + 1];
       const nextBlockId = nextBlock.ID || nextBlock.id;
-      playBlockAudio(nextBlockId, true); // Keep continuous mode active
+      
+      if (!nextBlockId) {
+        console.error('[BlockWise] playNextBlock - next block has no ID', nextBlock);
+        return;
+      }
+
+      // Clean up current audio before switching blocks
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.onended = null;
+          audioRef.current.onerror = null;
+          audioRef.current.src = '';
+          audioRef.current.load();
+        } catch (error) {
+          console.warn('[BlockWise] Error cleaning up audio before next block:', error);
+        }
+      }
+
+      // Small delay to ensure cleanup completes before starting next block
+      setTimeout(() => {
+        try {
+          // Preserve audioTypes when moving to next block
+          // playBlockAudio will reset the guard flag when starting the new block
+          playBlockAudio(nextBlockId, true, audioTypes); // Keep continuous mode active and preserve audioTypes
+        } catch (error) {
+          console.error('[BlockWise] Error playing next block:', error);
+          // Stop playback on error
+          setPlayingBlock(null);
+          setCurrentAudioType(null);
+          setCurrentAyahInBlock(null);
+          setCurrentInterpretationNumber(1);
+          setIsContinuousPlay(false);
+          setIsPaused(false);
+          isProcessingNextRef.current = false; // Reset guard on error
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+        }
+      }, 100);
     } else {
       // End of blocks, stop continuous play
+      console.log('[BlockWise] playNextBlock - end of blocks reached');
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.onended = null;
+          audioRef.current.onerror = null;
+        } catch (error) {
+          console.warn('[BlockWise] Error stopping audio at end:', error);
+        }
+      }
       setPlayingBlock(null);
       setCurrentAudioType(null);
       setCurrentAyahInBlock(null);
       setCurrentInterpretationNumber(1);
       setIsContinuousPlay(false);
       setIsPaused(false);
+      // Update refs
+      playingBlockRef.current = null;
+      isContinuousPlayRef.current = false;
+      isProcessingNextRef.current = false; // Reset guard flag
       // Dispatch event to update header button
       window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     }
@@ -662,6 +1101,8 @@ const BlockWise = () => {
         }
         setIsContinuousPlay(false);
         setIsPaused(true);
+        // Update refs
+        isContinuousPlayRef.current = false;
         // Dispatch event to update header button
         window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
         // Don't clear playingBlock, currentAyahInBlock - keep them for resume
@@ -671,6 +1112,8 @@ const BlockWise = () => {
           // Resume from current position
           setIsContinuousPlay(true);
           setIsPaused(false);
+          // Update refs
+          isContinuousPlayRef.current = true;
           if (audioRef.current) {
             audioRef.current.play().then(() => {
               // Dispatch event to update header button
@@ -683,6 +1126,8 @@ const BlockWise = () => {
           // Start from first block
           setIsContinuousPlay(true);
           setIsPaused(false);
+          // Update refs
+          isContinuousPlayRef.current = true;
           const firstBlockId = blockRanges[0].ID || blockRanges[0].id;
           playBlockAudio(firstBlockId);
           // Dispatch event to update header button (will be dispatched when audio actually starts)
@@ -744,11 +1189,18 @@ const BlockWise = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      // Clear handlers
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
     }
     setIsContinuousPlay(false);
     setPlayingBlock(null);
     setCurrentAudioType(null);
     setCurrentAyahInBlock(null);
+    // Update refs
+    playingBlockRef.current = null;
+    isContinuousPlayRef.current = false;
+    isProcessingNextRef.current = false; // Reset guard flag
     // Dispatch event to update header button
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
     setCurrentInterpretationNumber(1);
@@ -777,6 +1229,10 @@ const BlockWise = () => {
         setCurrentInterpretationNumber(1);
         setIsContinuousPlay(false);
         setIsPaused(false);
+        // Update refs
+        playingBlockRef.current = null;
+        isContinuousPlayRef.current = false;
+        isProcessingNextRef.current = false; // Reset guard flag
       }
     };
   }, [surahId]);
@@ -1606,6 +2062,36 @@ const BlockWise = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Handle scroll to specific block when navigating from bookmark
+  useEffect(() => {
+    const scrollToBlock = () => {
+      const scrollToBlockRange = location.state?.scrollToBlock;
+      
+      if (scrollToBlockRange && !loading && blockRanges.length > 0) {
+        // Wait for DOM to render blocks
+        setTimeout(() => {
+          const blockElement = document.getElementById(`block-${scrollToBlockRange}`);
+          
+          if (blockElement) {
+            blockElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            // Highlight the block briefly
+            blockElement.style.backgroundColor = "#fef3c7";
+            setTimeout(() => {
+              blockElement.style.backgroundColor = "";
+            }, 2000);
+          }
+        }, 500);
+      }
+    };
+
+    if (!loading && blockRanges.length > 0) {
+      scrollToBlock();
+    }
+  }, [loading, blockRanges, location.state]);
+
   // Loading state - Show shimmer skeleton for better perceived performance
   if (loading && blockRanges.length === 0) {
     return (
@@ -1814,6 +2300,7 @@ const BlockWise = () => {
 
                 return (
                   <div
+                    id={`block-${start}-${end}`}
                     key={`block-${blockId}-${start}-${end}`}
                     className="relative rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300"
                   >
@@ -1986,6 +2473,8 @@ const BlockWise = () => {
                                   // Resume playback
                                   setIsPaused(false);
                                   setIsContinuousPlay(true);
+                                  // Update refs
+                                  isContinuousPlayRef.current = true;
                                   if (audioRef.current) {
                                     audioRef.current.play().then(() => {
                                       // Dispatch event to update header button
@@ -2464,6 +2953,9 @@ const BlockWise = () => {
               setIsPaused(false);
               setPlayingBlock(currentBlock);
               setCurrentAyahInBlock(currentAyah);
+              // Update refs
+              playingBlockRef.current = currentBlock;
+              isContinuousPlayRef.current = true;
               // Pass newTypes directly to avoid closure issue
               setTimeout(() => {
                 console.log("[BlockWise] restarting playback after audioTypes change", {

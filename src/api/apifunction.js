@@ -1607,6 +1607,44 @@ export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
   return shouldReturnSingleRecord ? null : [];
 };
 
+// Fetch Urdu translation audio URL from API
+export const fetchUrduTranslationAudio = async (surahId, ayahId) => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/urdu/translation-audio/${surahId}/${ayahId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    // Handle both single object and array response
+    if (Array.isArray(data.audio)) {
+      return data.audio[0]?.audio_url || null;
+    }
+    return data.audio_url || null;
+  } catch (error) {
+    console.error('Error fetching Urdu translation audio:', error);
+    return null;
+  }
+};
+
+// Fetch Urdu interpretation audio URL from API
+export const fetchUrduInterpretationAudio = async (surahId, ayahId) => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/urdu/interpretation-audio/${surahId}/${ayahId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    // Handle both single object and array response
+    if (Array.isArray(data.audio)) {
+      return data.audio[0]?.audio_url || null;
+    }
+    return data.audio_url || null;
+  } catch (error) {
+    console.error('Error fetching Urdu interpretation audio:', error);
+    return null;
+  }
+};
+
 // Fetch Arabic verses in Uthmani script from MySQL database via API
 const formatArabicVerses = (verses, surahId) => {
   return verses.map((verse, index) => {
@@ -4351,7 +4389,9 @@ const APPENDIX_LANGUAGE_MAP = {
   english: 'english',
   e: 'english',
   malayalam: 'malayalam',
-  mal: 'malayalam'
+  mal: 'malayalam',
+  urdu: 'urdu',
+  u: 'urdu'
 };
 
 export const fetchAppendix = async (language = 'english') => {
@@ -4376,6 +4416,227 @@ export const fetchAppendix = async (language = 'english') => {
       language: apiLangKey,
       count: 0,
       sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Urdu Finality of Prophethood
+export const fetchUrduFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/urdu/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'urdu',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Urdu Finality of Prophethood:', error.message);
+    return {
+      language: 'urdu',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Urdu Jesus and Mohammed
+export const fetchUrduJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/urdu/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'urdu',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Urdu Jesus and Mohammed:', error.message);
+    return {
+      language: 'urdu',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam Jesus and Mohammed
+export const fetchMalayalamJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam Jesus and Mohammed:', error.message);
+    return {
+      language: 'malayalam',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam Finality of Prophethood
+export const fetchMalayalamFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam Finality of Prophethood:', error.message);
+    return {
+      language: 'malayalam',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam Introduction to Quran
+export const fetchMalayalamIntroductionToQuran = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/introduction-to-quran`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam Introduction to Quran:', error.message);
+    return {
+      language: 'malayalam',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam Technical Terms (article ID 9)
+export const fetchMalayalamTechnicalTerms = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/technical-terms`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      id: data?.id || 9,
+      title: data?.title || null,
+      text: data?.text || '',
+      raw_title: data?.raw_title || null,
+      raw_text: data?.raw_text || '',
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam Technical Terms:', error.message);
+    return {
+      language: 'malayalam',
+      id: 9,
+      title: null,
+      text: '',
+      raw_title: null,
+      raw_text: '',
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam Translators
+export const fetchMalayalamTranslators = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/translators`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      id: data?.id || null,
+      title: data?.title || null,
+      text: data?.text || '',
+      raw_title: data?.raw_title || null,
+      raw_text: data?.raw_text || '',
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam Translators:', error.message);
+    return {
+      language: 'malayalam',
+      id: null,
+      title: null,
+      text: '',
+      raw_title: null,
+      raw_text: '',
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Malayalam History of Translation (article ID 11)
+export const fetchMalayalamHistoryOfTranslation = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/malayalam/history-of-translation`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'malayalam',
+      id: data?.id || 11,
+      title: data?.title || null,
+      text: data?.text || '',
+      raw_title: data?.raw_title || null,
+      raw_text: data?.raw_text || '',
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam History of Translation:', error.message);
+    return {
+      language: 'malayalam',
+      id: 11,
+      title: null,
+      text: '',
+      raw_title: null,
+      raw_text: '',
       error: error.message,
     };
   }

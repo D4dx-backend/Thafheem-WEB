@@ -84,7 +84,9 @@ const BookmarkBlock = () => {
           id: b.id,
           number: b.surahId,
           surah: b.surahName || `Surah ${b.surahId}`,
-          verses: `Verses ${b.blockFrom}-${b.blockTo}`
+          verses: `Verses ${b.blockFrom}-${b.blockTo}`,
+          blockFrom: b.blockFrom,
+          blockTo: b.blockTo
         }));
         setBookmarkedBlocks(mapped);
       } finally {
@@ -106,8 +108,14 @@ const BookmarkBlock = () => {
   };
 
   const handleBlockClick = (block) => {
-    // Navigate to the blockwise page for the specific surah
-    navigate(`/blockwise/${block.number}`);
+    // Navigate to the blockwise page for the specific surah with block range
+    // Pass block range and viewType via state so BlockWise can scroll to it and stay in Block Wise view
+    navigate(`/blockwise/${block.number}`, {
+      state: {
+        scrollToBlock: `${block.blockFrom}-${block.blockTo}`,
+        viewType: 'Block Wise',
+      },
+    });
   };
 
   return (

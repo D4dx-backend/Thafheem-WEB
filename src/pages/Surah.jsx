@@ -86,6 +86,13 @@ const Surah = () => {
     }
   }, [setContextViewType, showBlockNavigation]);
 
+  // Handle viewType from location state (e.g., when navigating from bookmarks)
+  useEffect(() => {
+    if (location.state?.viewType) {
+      setContextViewType(location.state.viewType);
+    }
+  }, [location.state, setContextViewType]);
+
   useEffect(() => {
     if (!showBlockNavigation && viewType !== "Ayah Wise") {
       setContextViewType("Ayah Wise");
@@ -1557,7 +1564,7 @@ Read more: ${shareUrl}`;
 
   // Play audio types for an ayah in sequence, then move to next ayah
   // This version accepts audioTypes as parameter to avoid closure issues
-  const playAyahSequenceWithTypes = (ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
+  const playAyahSequenceWithTypes = async (ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!surahId) return;
 
     // Use provided types or fall back to state
@@ -1578,7 +1585,11 @@ Read more: ${shareUrl}`;
       return;
     }
 
+    // Set playing state early so UI shows loading/playing state immediately
     setIsSequencePlaying(true);
+    setPlayingAyah(ayahNumber);
+    // Dispatch event to update header button immediately
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
 
     // Map audioType to playAyahAudio format
     const audioTypeMap = {
@@ -1592,32 +1603,55 @@ Read more: ${shareUrl}`;
     stopCurrentAudio();
     setCurrentAudioTypeIndex(audioTypeIndex);
 
-    const audioElement = playAyahAudio({
-      ayahNumber,
-      surahNumber: parseInt(surahId),
-      audioType: mappedAudioType,
-      qariName: selectedQari,
-      playbackSpeed: playbackSpeed,
-      onStart: () => {
-        setPlayingAyah(ayahNumber);
-        // Dispatch event to update header button
-        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
-      },
-      onEnd: () => {
-        // Play next audio type for this ayah, or move to next ayah if all types done
+    try {
+      const audioElement = await playAyahAudio({
+        ayahNumber,
+        surahNumber: parseInt(surahId),
+        audioType: mappedAudioType,
+        qariName: selectedQari,
+        playbackSpeed: playbackSpeed,
+        translationLanguage: translationLanguage,
+        onStart: () => {
+          // Ensure state is set when audio actually starts playing
+          setPlayingAyah(ayahNumber);
+          setIsSequencePlaying(true);
+          // Dispatch event to update header button
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+        },
+        onEnd: () => {
+          // Play next audio type for this ayah, or move to next ayah if all types done
+          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+        },
+        onError: () => {
+          // If audio fails, skip to next audio type or next ayah
+          setIsSequencePlaying(false);
+          setPlayingAyah(null);
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+        },
+      });
+      
+      if (audioElement) {
+        setAudioEl(audioElement);
+      } else {
+        // If audio element is null (URL not available), skip to next
+        setIsSequencePlaying(false);
+        setPlayingAyah(null);
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
         playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
-      },
-      onError: () => {
-        // If audio fails, skip to next audio type or next ayah
-        playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
-      },
-    });
-    setAudioEl(audioElement);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsSequencePlaying(false);
+      setPlayingAyah(null);
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+      playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+    }
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)
-  const playAyahSequence = (ayahNumber, audioTypeIndex = 0) => {
-    playAyahSequenceWithTypes(ayahNumber, audioTypeIndex, null);
+  const playAyahSequence = async (ayahNumber, audioTypeIndex = 0) => {
+    await playAyahSequenceWithTypes(ayahNumber, audioTypeIndex, null);
   };
 
 

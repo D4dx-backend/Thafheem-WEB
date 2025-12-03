@@ -91,6 +91,7 @@ const HomepageSearch = () => {
   const hasDragged = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const wasManuallyClosed = useRef(false); // Track if user manually closed the popup
 
   // Preload popular data when component mounts
   useEffect(() => {
@@ -222,6 +223,9 @@ const HomepageSearch = () => {
       return;
     }
 
+    // Reset manual close flag when performing new search
+    wasManuallyClosed.current = false;
+    
     setIsSearching(true);
     setSearchError(null);
     setShowSearchResults(true);
@@ -272,18 +276,15 @@ const HomepageSearch = () => {
       setShowSearchResults(false);
       setSearchResults([]);
       setSearchError(null);
+      wasManuallyClosed.current = false; // Reset when input is cleared
       return;
     }
 
-    const verseReference = extractVerseReference(normalizedQuery);
+    // Reset manual close flag when user starts typing
+    wasManuallyClosed.current = false;
 
-    if (verseReference) {
-      setSearchQuery(normalizedQuery);
-      performSearch(normalizedQuery);
-      return;
-    }
-
-    // Hide stale results until the verse reference is complete or user submits
+    // Don't auto-show popup while typing - only show after form submit or when user completes input
+    // Hide any existing results while user is typing
     setShowSearchResults(false);
   };
 
@@ -338,6 +339,7 @@ const HomepageSearch = () => {
     
     setShowSearchResults(false);
     setSearchQuery("");
+    setSearchResults([]);
   };
 
   // Handle search form submission
@@ -353,6 +355,7 @@ const HomepageSearch = () => {
       return;
     }
 
+    // Only show popup after form is submitted (Enter key or button click)
     const verseReference = extractVerseReference(normalizedQuery);
 
     if (verseReference) {
@@ -398,10 +401,20 @@ const HomepageSearch = () => {
     navigate(targetPath);
   };
 
-  // Close search results when clicking outside
+  // Handle search input blur - show popup if complete verse reference
   const handleSearchBlur = () => {
+    // Small delay to allow click events to process first
     setTimeout(() => {
-      setShowSearchResults(false);
+      const normalizedQuery = normalizeSearchQuery(searchQuery);
+      const verseReference = extractVerseReference(normalizedQuery);
+      
+      // Only show popup if input is a complete verse reference (like "2:255")
+      // and popup wasn't manually closed
+      if (verseReference && !wasManuallyClosed.current && normalizedQuery.trim().length > 0) {
+        performSearch(normalizedQuery);
+      } else {
+        setShowSearchResults(false);
+      }
     }, 200);
   };
 
@@ -484,11 +497,8 @@ const HomepageSearch = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             onBlur={handleSearchBlur}
-            onFocus={() => {
-              if (searchResults.length > 0) {
-                setShowSearchResults(true);
-              }
-            }}
+            // Removed onFocus auto-show to prevent popup from reappearing after cancel
+            // Results will only show when user types or submits search
             placeholder="Search surahs, verses, or try '2:255' for specific verses..."
             className="w-full h-[49px] pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-[#2A2C38] dark:border-gray-600 dark:text-white shadow-sm text-gray-700 placeholder-gray-400 text-base"
           />
@@ -500,7 +510,12 @@ const HomepageSearch = () => {
             {/* Backdrop */}
             <div 
               className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[300] backdrop-blur-sm"
-              onClick={() => setShowSearchResults(false)}
+              onClick={() => {
+                setShowSearchResults(false);
+                setSearchResults([]);
+                setSearchQuery("");
+                wasManuallyClosed.current = true; // Mark as manually closed
+              }}
             />
             
             {/* Modal */}
@@ -511,7 +526,12 @@ const HomepageSearch = () => {
                     Search Results
                   </h3>
                   <button
-                    onClick={() => setShowSearchResults(false)}
+                    onClick={() => {
+                      setShowSearchResults(false);
+                      setSearchResults([]);
+                      setSearchQuery("");
+                      wasManuallyClosed.current = true; // Mark as manually closed
+                    }}
                     className="text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <XIcon className="h-5 w-5" />

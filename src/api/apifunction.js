@@ -3550,6 +3550,40 @@ export const searchArabicPhrases = async (query, limit = 40) => {
   throw new Error("Failed to fetch Arabic phrase search results");
 };
 
+// Word search for 6 languages (Bangla, Hindi, Tamil, Urdu, English, Malayalam)
+export const searchWords = async (query, language, limit = 50) => {
+  const trimmedQuery = query?.toString().trim();
+  if (!trimmedQuery) {
+    return { language, query: '', count: 0, results: [] };
+  }
+
+  const safeLimit = typeof limit === "number" && Number.isFinite(limit) && limit > 0
+    ? Math.min(limit, 100)
+    : 50;
+
+  const encodedQuery = encodeURIComponent(trimmedQuery);
+  const apiBase = (CONFIG_API_BASE_PATH || API_BASE_PATH || API_BASE_URL || '').replace(/\/+$/, '');
+  const url = `${apiBase}/${language}/word-search/${encodedQuery}`;
+
+  try {
+    const response = await fetchWithTimeout(url, {}, 10000);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.results && Array.isArray(data.results)) {
+      return {
+        ...data,
+        results: safeLimit ? data.results.slice(0, safeLimit) : data.results
+      };
+    }
+    return { language, query: trimmedQuery, count: 0, results: [] };
+  } catch (error) {
+    console.error(`Error searching words for ${language}:`, error);
+    return { language, query: trimmedQuery, count: 0, results: [] };
+  }
+};
+
 const QURAN_SUBJECT_ENDPOINTS = Array.from(
   new Set(
     [
@@ -4391,7 +4425,11 @@ const APPENDIX_LANGUAGE_MAP = {
   malayalam: 'malayalam',
   mal: 'malayalam',
   urdu: 'urdu',
-  u: 'urdu'
+  u: 'urdu',
+  hindi: 'hindi',
+  hi: 'hindi',
+  bangla: 'bangla',
+  bn: 'bangla'
 };
 
 export const fetchAppendix = async (language = 'english') => {
@@ -4496,6 +4534,56 @@ export const fetchMalayalamJesusMohammed = async () => {
   }
 };
 
+// Fetch Hindi Jesus and Mohammed
+export const fetchHindiJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/hindi/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'hindi',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Hindi Jesus and Mohammed:', error.message);
+    return {
+      language: 'hindi',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch English Jesus and Mohammed
+export const fetchEnglishJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/english/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'english',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch English Jesus and Mohammed:', error.message);
+    return {
+      language: 'english',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
 // Fetch Malayalam Finality of Prophethood
 export const fetchMalayalamFinalityOfProphethood = async () => {
   try {
@@ -4539,6 +4627,181 @@ export const fetchMalayalamIntroductionToQuran = async () => {
     console.error('Failed to fetch Malayalam Introduction to Quran:', error.message);
     return {
       language: 'malayalam',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch English Introduction to Quran
+export const fetchEnglishIntroductionToQuran = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/english/introduction-to-quran`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'english',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch English Introduction to Quran:', error.message);
+    return {
+      language: 'english',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Hindi Introduction to Quran
+export const fetchHindiIntroductionToQuran = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/hindi/introduction-to-quran`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'hindi',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Hindi Introduction to Quran:', error.message);
+    return {
+      language: 'hindi',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Bangla Introduction to Quran
+export const fetchBanglaIntroductionToQuran = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/bangla/introduction-to-quran`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'bangla',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Bangla Introduction to Quran:', error.message);
+    return {
+      language: 'bangla',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch English Finality of Prophethood
+export const fetchEnglishFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/english/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'english',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch English Finality of Prophethood:', error.message);
+    return {
+      language: 'english',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Hindi Finality of Prophethood
+export const fetchHindiFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/hindi/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'hindi',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Hindi Finality of Prophethood:', error.message);
+    return {
+      language: 'hindi',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Bangla Jesus and Mohammed
+export const fetchBanglaJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/bangla/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'bangla',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Bangla Jesus and Mohammed:', error.message);
+    return {
+      language: 'bangla',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Bangla Finality of Prophethood
+export const fetchBanglaFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/bangla/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'bangla',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Bangla Finality of Prophethood:', error.message);
+    return {
+      language: 'bangla',
       count: 0,
       sections: [],
       error: error.message,

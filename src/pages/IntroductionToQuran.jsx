@@ -1,15 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
-import { fetchMalayalamIntroductionToQuran } from "../api/apifunction";
-
-const ENGLISH_INTRODUCTION = `
-<p>
-When so many translations of, and commentaries on, the Holy Qur'an already exist, a desire for spiritual blessing and grace is not in itself sufficient justification for undertaking a fresh venture in this field. The effort will only be worthwhile if it fills gaps left by earlier works, or satisfies some unmet need felt by those interested in studying the Holy Book.
-</p>
-<p>
-The present work is neither directed at scholars and researchers, nor is it aimed at assisting those who, having mastered the Arabic language and the Islamic religious sciences, now wish to embark upon a thorough and elaborate study of the Qur'ãn. Such people already have plenty of material at their disposal. Instead it is intended for the lay reader, the average educated person, who is not well-versed in Arabic and so is unable to make full use of the vast treasures to be found in classical works on the Qur'an.
-</p>
-`;
+import { fetchMalayalamIntroductionToQuran, fetchEnglishIntroductionToQuran, fetchHindiIntroductionToQuran, fetchBanglaIntroductionToQuran } from "../api/apifunction";
 
 const URDU_INTRODUCTION = `
 <div dir="rtl" style="text-align: right;">
@@ -43,15 +34,18 @@ const IntroductionToQuran = () => {
   const { translationLanguage } = useTheme();
   const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
   const isMalayalam = translationLanguage === 'mal';
+  const isEnglish = translationLanguage === 'E';
+  const isHindi = translationLanguage === 'hi';
+  const isBangla = translationLanguage === 'bn';
 
-  // State for Malayalam API content
+  // State for API content (Malayalam, English, and Hindi)
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch Malayalam content when language is Malayalam
+  // Fetch content when language is Malayalam, English, Hindi, or Bangla
   useEffect(() => {
-    if (!isMalayalam) {
+    if (!isMalayalam && !isEnglish && !isHindi && !isBangla) {
       setSections([]);
       setError(null);
       return;
@@ -63,7 +57,16 @@ const IntroductionToQuran = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchMalayalamIntroductionToQuran();
+        let data;
+        if (isMalayalam) {
+          data = await fetchMalayalamIntroductionToQuran();
+        } else if (isHindi) {
+          data = await fetchHindiIntroductionToQuran();
+        } else if (isBangla) {
+          data = await fetchBanglaIntroductionToQuran();
+        } else {
+          data = await fetchEnglishIntroductionToQuran();
+        }
         if (!isMounted) return;
 
         setSections(data.sections || []);
@@ -86,28 +89,30 @@ const IntroductionToQuran = () => {
     return () => {
       isMounted = false;
     };
-  }, [isMalayalam]);
+  }, [isMalayalam, isEnglish, isHindi, isBangla]);
 
   // Determine title based on language
   const getTitle = () => {
     if (isUrdu) return "قرآن سے تعارف";
     if (isMalayalam) return "ഖുര്‍ആനിലേക്കുള്ള ആമുഖം";
+    if (isHindi) return "कुरान का परिचय";
+    if (isBangla) return "কুরআনের পরিচিতি";
     return "An Introduction to the Quran";
   };
 
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
+        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
           {getTitle()}
         </h2>
 
-        {/* Malayalam content from API */}
-        {isMalayalam && (
+        {/* Malayalam, English, Hindi, and Bangla content from API */}
+        {(isMalayalam || isEnglish || isHindi || isBangla) && (
           <>
             {loading && (
-              <div className="py-10 text-center text-gray-600 dark:text-gray-300 font-malayalam">
-                ഉള്ളടക്കം ലോഡുചെയ്യുന്നു...
+              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : 'inherit' }}>
+                {isMalayalam ? 'ഉള്ളടക്കം ലോഡുചെയ്യുന്നു...' : isHindi ? 'सामग्री लोड हो रही है...' : isBangla ? 'বিষয়বস্তু লোড হচ্ছে...' : 'Loading content...'}
               </div>
             )}
 
@@ -118,8 +123,8 @@ const IntroductionToQuran = () => {
             )}
 
             {!loading && !error && sections.length === 0 && (
-              <div className="py-10 text-center text-gray-600 dark:text-gray-300 font-malayalam">
-                ഇപ്പോൾ ഉള്ളടക്കം ലഭ്യമല്ല.
+              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : 'inherit' }}>
+                {isMalayalam ? 'ഇപ്പോൾ ഉള്ളടക്കം ലഭ്യമല്ല.' : isHindi ? 'सामग्री इस समय उपलब्ध नहीं है।' : isBangla ? 'বিষয়বস্তু এই মুহূর্তে উপলব্ধ নয়।' : 'Content is not available at the moment.'}
               </div>
             )}
 
@@ -132,12 +137,12 @@ const IntroductionToQuran = () => {
                   >
                     {section.title && (
                       <div
-                        className="mb-4 prose prose-lg dark:prose-invert max-w-none font-malayalam"
+                        className={`mb-4 prose prose-lg dark:prose-invert max-w-none ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`}
                         dangerouslySetInnerHTML={{ __html: section.title }}
                       />
                     )}
                     <div
-                      className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 font-malayalam"
+                      className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`}
                       dangerouslySetInnerHTML={{ __html: section.text || '' }}
                       style={{
                         lineHeight: 1.8,
@@ -151,12 +156,12 @@ const IntroductionToQuran = () => {
           </>
         )}
 
-        {/* English and Urdu static content */}
-        {!isMalayalam && (
+        {/* Urdu static content */}
+        {isUrdu && (
           <div
-            className={`prose prose-base dark:prose-invert prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7 text-justify ${isUrdu ? 'font-urdu' : ''}`}
-            dangerouslySetInnerHTML={{ __html: isUrdu ? URDU_INTRODUCTION : ENGLISH_INTRODUCTION }}
-            dir={isUrdu ? 'rtl' : 'ltr'}
+            className="prose prose-base dark:prose-invert prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7 text-justify font-urdu"
+            dangerouslySetInnerHTML={{ __html: URDU_INTRODUCTION }}
+            dir="rtl"
           />
         )}
       </div>

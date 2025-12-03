@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import { fetchAppendix } from "../api/apifunction";
 
 const PAGE_CONFIG = {
@@ -18,12 +19,24 @@ const PAGE_CONFIG = {
     description: "Urdu appendix articles curated from Thafheem resources.",
     apiLanguage: "urdu",
   },
+  hindi: {
+    title: "Hindi Appendix",
+    description: "Hindi appendix articles curated from Thafheem resources.",
+    apiLanguage: "hindi",
+  },
+  bangla: {
+    title: "Bangla Appendix",
+    description: "Bangla appendix articles curated from Thafheem resources.",
+    apiLanguage: "bangla",
+  },
 };
 
 const Appendix = () => {
   const { lang } = useParams();
   const navigate = useNavigate();
+  const { translationLanguage } = useTheme();
   const normalized = String(lang || "english").toLowerCase();
+  const isBangla = normalized.startsWith("bangla") || normalized === "bn" || translationLanguage === "bn";
 
   const pageConfig = useMemo(() => {
     if (normalized.startsWith("mal")) {
@@ -31,6 +44,12 @@ const Appendix = () => {
     }
     if (normalized.startsWith("urdu") || normalized === "u") {
       return PAGE_CONFIG.urdu;
+    }
+    if (normalized.startsWith("hindi") || normalized === "hi") {
+      return PAGE_CONFIG.hindi;
+    }
+    if (normalized.startsWith("bangla") || normalized === "bn") {
+      return PAGE_CONFIG.bangla;
     }
     return PAGE_CONFIG.english;
   }, [normalized]);
@@ -124,12 +143,12 @@ const Appendix = () => {
               >
                 {section.title && (
                   <h3 
-                    className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''}`}
                     dangerouslySetInnerHTML={{ __html: section.title }}
                   />
                 )}
                 <div
-                  className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400"
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali' : ''}`}
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
                 />
               </section>

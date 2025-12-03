@@ -3563,7 +3563,8 @@ export const searchWords = async (query, language, limit = 50) => {
 
   const encodedQuery = encodeURIComponent(trimmedQuery);
   const apiBase = (CONFIG_API_BASE_PATH || API_BASE_PATH || API_BASE_URL || '').replace(/\/+$/, '');
-  const url = `${apiBase}/${language}/word-search/${encodedQuery}`;
+  // Use query parameter instead of path parameter to handle special characters like colons
+  const url = `${apiBase}/${language}/word-search?q=${encodedQuery}`;
 
   try {
     const response = await fetchWithTimeout(url, {}, 10000);

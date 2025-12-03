@@ -123,20 +123,48 @@ const MalayalamInterpreter = () => {
     const sup = target.closest('sup');
     const a = target.closest('a');
     
-    const idText = (highlightedElement?.innerText || sup?.innerText || a?.innerText || '').trim();
+    // Check if element has data-note-id attribute (set during highlighting)
+    // Check all possible elements for the attribute
+    const noteIdFromAttr = highlightedElement?.getAttribute('data-note-id') || 
+                          sup?.getAttribute('data-note-id') || 
+                          a?.getAttribute('data-note-id') ||
+                          target.getAttribute('data-note-id');
+    if (noteIdFromAttr) {
+      handleNoteClick(noteIdFromAttr);
+      return;
+    }
+    
+    const idText = (highlightedElement?.innerText || sup?.innerText || a?.innerText || target.innerText || '').trim();
     if (!idText) return;
     
-// Detect verse pattern like (2:163) or 2:163
+    // Extract B-prefixed note from patterns like "1B67", "43,44B70", "3: 1B67"
+    // First try to extract B note from complex patterns
+    const bNoteMatch = idText.match(/(\d+,\d+)?B(\d+)/i) || idText.match(/B(\d+)/i);
+    if (bNoteMatch) {
+      const noteId = `B${bNoteMatch[2] || bNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+    
+    // Extract N-prefixed note
+    const nNoteMatch = idText.match(/N(\d+)/i);
+    if (nNoteMatch) {
+      const noteId = `N${nNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+    
+    // Detect verse pattern like (2:163) or 2:163
     const verseMatch = idText.match(/^\(?(\d+)\s*[:：]\s*(\d+)\)?$/);
     if (verseMatch) {
       const [, s, v] = verseMatch;
-setAyahTarget({ surahId: parseInt(s, 10), verseId: parseInt(v, 10) });
+      setAyahTarget({ surahId: parseInt(s, 10), verseId: parseInt(v, 10) });
       setShowAyahModal(true);
       return;
     }
     
     // Otherwise treat as note id
-handleNoteClick(idText);
+    handleNoteClick(idText);
   };
 
   // Style inline note markers like N895 or "3 26:3"
@@ -175,46 +203,60 @@ handleNoteClick(idText);
     
     // Process text nodes that contain note patterns
     textNodes.forEach((textNode) => {
-      const text = textNode.textContent;
+      let text = textNode.textContent;
       const parent = textNode.parentElement;
       
-      // Check for note patterns in text
-      const notePatterns = [
-        { regex: /N\d+/g, type: 'note' },
-        { regex: /\(\d+:\d+\)/g, type: 'verse' },
-        { regex: /\d+\s+\d+:\d+/g, type: 'range' }
-      ];
+      if (!text || text.trim().length === 0) return;
       
-      notePatterns.forEach(({ regex, type }) => {
-        if (regex.test(text)) {
-          // Choose color based on type
-          let color, bgColor, borderColor;
-          if (type === 'note') {
-            color = '#1e40af';
-            bgColor = '#dbeafe';
-            borderColor = '#3b82f6';
-          } else if (type === 'verse') {
-            color = '#059669';
-            bgColor = '#d1fae5';
-            borderColor = '#10b981';
-          } else { // range
-            color = '#7c3aed';
-            bgColor = '#ede9fe';
-            borderColor = '#8b5cf6';
-          }
-          
-          // Replace text with highlighted version
-          const highlightedText = text.replace(regex, (match) => {
-               return `<span class="note-highlight" style="color: #2AA0BF !important; text-decoration: none !important; cursor: pointer !important; font-weight: 600 !important;">${match}</span>`;
-          });
-          
-          if (highlightedText !== text) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = highlightedText;
-            parent.replaceChild(tempDiv.firstChild, textNode);
-          }
-        }
+      // First, handle B notes - they can appear in various formats
+      // Patterns: B\d+, \d+B\d+, \d+,\d+B\d+, \d+:\d+B\d+, \d+:\s*\d+B\d+, etc.
+      // We want to highlight just the B\d+ part, not the preceding numbers
+      let hasBNotes = false;
+      let highlightedText = text;
+      
+      // Find all B\d+ patterns and highlight them
+      // This regex matches B followed by digits, regardless of what comes before
+      highlightedText = text.replace(/(B\d+)/gi, (match, bNote) => {
+        hasBNotes = true;
+        const noteId = bNote.toUpperCase(); // e.g., "B70"
+        return `<span class="note-highlight" data-note-id="${noteId}" style="color: #2AA0BF !important; text-decoration: none !important; cursor: pointer !important; font-weight: 600 !important;">${bNote}</span>`;
       });
+      
+      // Then handle N notes
+      if (!hasBNotes || highlightedText === text) {
+        const nNotePattern = /N\d+/g;
+        if (nNotePattern.test(text)) {
+          highlightedText = text.replace(nNotePattern, (match) => {
+            return `<span class="note-highlight" data-note-id="${match.toUpperCase()}" style="color: #2AA0BF !important; text-decoration: none !important; cursor: pointer !important; font-weight: 600 !important;">${match}</span>`;
+          });
+        }
+      } else {
+        // If we already processed B notes, also check for N notes in the result
+        highlightedText = highlightedText.replace(/N\d+/g, (match) => {
+          return `<span class="note-highlight" data-note-id="${match.toUpperCase()}" style="color: #2AA0BF !important; text-decoration: none !important; cursor: pointer !important; font-weight: 600 !important;">${match}</span>`;
+        });
+      }
+      
+      // Handle verse patterns
+      const versePattern = /\(?(\d+)\s*[:：]\s*(\d+)\)?/g;
+      if (versePattern.test(text) && highlightedText === text) {
+        highlightedText = text.replace(versePattern, (match) => {
+          return `<span class="verse-highlight" style="color: #059669 !important; cursor: pointer !important; font-weight: 600 !important;">${match}</span>`;
+        });
+      }
+      
+      // Apply the changes if we made any modifications
+      if (highlightedText !== text) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = highlightedText;
+        
+        // Replace the text node with the new content
+        const fragment = document.createDocumentFragment();
+        while (tempDiv.firstChild) {
+          fragment.appendChild(tempDiv.firstChild);
+        }
+        parent.replaceChild(fragment, textNode);
+      }
     });
     
     // Also handle existing sup/a tags
@@ -227,6 +269,19 @@ handleNoteClick(idText);
         m.style.setProperty('text-decoration', 'none', 'important');
         m.style.setProperty('cursor', 'pointer', 'important');
         m.style.setProperty('font-weight', '600', 'important');
+        m.setAttribute('data-note-id', t.toUpperCase());
+        return;
+      }
+      // B-prefixed notes like B67, B68, or patterns like 1B67, 43,44B70
+      // Extract just the B part
+      const bNoteMatch = t.match(/(B\d+)/i);
+      if (bNoteMatch) {
+        const noteId = bNoteMatch[1].toUpperCase();
+        m.style.setProperty('color', '#2AA0BF', 'important');
+        m.style.setProperty('text-decoration', 'none', 'important');
+        m.style.setProperty('cursor', 'pointer', 'important');
+        m.style.setProperty('font-weight', '600', 'important');
+        m.setAttribute('data-note-id', noteId);
         return;
       }
       // Verse refs like 2:163 or (2:163)

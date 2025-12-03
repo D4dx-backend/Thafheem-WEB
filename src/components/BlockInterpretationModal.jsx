@@ -710,10 +710,33 @@ const BlockInterpretationModal = ({
 
         // Apply data attributes for CSS styling and set click handlers
         if (/^N\d+$/.test(text)) {
-          // Note references
+          // Note references (N-prefixed)
           m.setAttribute("data-type", "note");
           m.setAttribute("data-value", text);
           m.onclick = handleNoteHighlightClick;
+        } else if (/^B\d+$/.test(text)) {
+          // Note references (B-prefixed)
+          m.setAttribute("data-type", "note");
+          m.setAttribute("data-value", text);
+          m.onclick = handleNoteHighlightClick;
+        } else if (/^\d+B\d+$/.test(text)) {
+          // Number followed by B note like 1B67
+          const bNoteMatch = text.match(/B(\d+)/i);
+          if (bNoteMatch) {
+            const noteId = `B${bNoteMatch[1]}`;
+            m.setAttribute("data-type", "note");
+            m.setAttribute("data-value", noteId);
+            m.onclick = handleNoteHighlightClick;
+          }
+        } else if (/^\d+,\d+B\d+$/.test(text)) {
+          // Multiple numbers followed by B note like 43,44B70
+          const bNoteMatch = text.match(/B(\d+)/i);
+          if (bNoteMatch) {
+            const noteId = `B${bNoteMatch[1]}`;
+            m.setAttribute("data-type", "note");
+            m.setAttribute("data-value", noteId);
+            m.onclick = handleNoteHighlightClick;
+          }
         } else if (
           /^\(?\d+\s*[:：]\s*\d+\)?$/.test(text) ||
           /^\d+\s*[:：]\s*\d+$/.test(text) ||
@@ -883,12 +906,27 @@ const BlockInterpretationModal = ({
     // Fallback: text-based detection
     const clickedText = target.innerText || target.textContent || "";
 
-    // Look for note patterns first (PRIORITY) - support N, H, B prefixes
-    const noteMatch = clickedText.match(/^([NHB])(\d+)$/i);
-    if (noteMatch) {
-      const prefix = noteMatch[1].toUpperCase();
-      const number = noteMatch[2];
-      const noteId = `${prefix}${number}`;
+    // Look for B-prefixed note patterns first (PRIORITY) - handle complex patterns
+    // Patterns like "1B67", "43,44B70", "B67"
+    const bNoteMatch = clickedText.match(/(\d+,\d+)?B(\d+)/i) || clickedText.match(/B(\d+)/i);
+    if (bNoteMatch) {
+      const noteId = `B${bNoteMatch[2] || bNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+
+    // Look for N-prefixed note patterns
+    const nNoteMatch = clickedText.match(/N(\d+)/i);
+    if (nNoteMatch) {
+      const noteId = `N${nNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+
+    // Look for H-prefixed note patterns
+    const hNoteMatch = clickedText.match(/H(\d+)/i);
+    if (hNoteMatch) {
+      const noteId = `H${hNoteMatch[1]}`;
       handleNoteClick(noteId);
       return;
     }

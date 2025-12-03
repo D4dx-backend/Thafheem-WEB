@@ -1,21 +1,17 @@
-import { USE_API, API_BASE_PATH, CACHE_ENABLED, CACHE_TTL } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
+
+const DEFAULT_PAGE_SIZE = 40;
+const MAX_PAGE_SIZE = 200;
 
 class HindiTranslationService {
   constructor() {
     this.language = 'hindi';
-    this.useApi = USE_API;
     this.apiBasePath = API_BASE_PATH;
-    this.cacheEnabled = CACHE_ENABLED;
-    this.cacheTtl = CACHE_TTL;
-    this.cache = new Map();
     this.pendingRequests = new Map();
-  }
-
-  _assertApiEnabled() {
-    if (!this.useApi) {
-      throw new Error('Hindi API is disabled (VITE_USE_API=false).');
-    }
+    this.cache = new Map();
+    this.cacheEnabled = true;
+    this.cacheTtl = 300000; // 5 minutes
   }
 
   generateCacheKey(method, params) {
@@ -70,7 +66,6 @@ class HindiTranslationService {
   }
 
   async _getAyahTranslationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getTranslation(this.language, surahNo, ayahNo);
       const translation = response?.translation_text ?? response?.translation ?? '';
@@ -83,8 +78,12 @@ class HindiTranslationService {
     }
   }
 
-  async getSurahTranslations(surahNo) {
-    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahNo });
+  async getSurahTranslations(surahNo, options = {}) {
+    const hasPagination = options && (options.page !== undefined || options.limit !== undefined);
+    const page = Number.isInteger(options.page) && options.page > 0 ? options.page : 1;
+    const requestedLimit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : DEFAULT_PAGE_SIZE;
+    const limit = Math.min(requestedLimit, MAX_PAGE_SIZE);
+    const cacheKey = this.generateCacheKey('getSurahTranslations', hasPagination ? { surahNo, page, limit } : { surahNo });
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
@@ -92,7 +91,7 @@ class HindiTranslationService {
       return this.pendingRequests.get(cacheKey);
     }
 
-    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey);
+    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination });
     this.pendingRequests.set(cacheKey, requestPromise);
 
     try {
@@ -102,10 +101,10 @@ class HindiTranslationService {
     }
   }
 
-  async _getSurahTranslationsInternal(surahNo, cacheKey) {
-    this._assertApiEnabled();
+  async _getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination }) {
     try {
-      const response = await apiService.getSurahTranslations(this.language, surahNo);
+      const params = hasPagination ? { page, limit } : {};
+      const response = await apiService.getSurahTranslations(this.language, surahNo, params);
       const translations = Array.isArray(response?.translations)
         ? response.translations.map(verse => ({
             number: verse.verse_number,
@@ -124,8 +123,36 @@ class HindiTranslationService {
         }
       });
 
-      this.setCachedData(cacheKey, translations);
-      return translations;
+      if (!hasPagination) {
+        this.setCachedData(cacheKey, translations);
+        return translations;
+      }
+
+      const pagination = response?.pagination
+        ? {
+            page: response.pagination.page ?? page,
+            limit: response.pagination.limit ?? limit,
+            totalItems: response.pagination.totalItems ?? response.pagination.total ?? null,
+            totalPages: response.pagination.totalPages ?? null,
+            hasNext: response.pagination.hasNext ?? false,
+            hasPrev: response.pagination.hasPrev ?? page > 1,
+            from: response.pagination.from ?? null,
+            to: response.pagination.to ?? null,
+          }
+        : {
+            page,
+            limit,
+            totalItems: response?.count ?? null,
+            totalPages: response?.count ? Math.ceil(response.count / limit) : null,
+            hasNext: translations.length === limit,
+            hasPrev: page > 1,
+            from: translations[0]?.number ?? null,
+            to: translations[translations.length - 1]?.number ?? null,
+          };
+
+      const result = { translations, pagination };
+      this.setCachedData(cacheKey, result);
+      return result;
     } catch (error) {
       console.error(`❌ Hindi surah translation API failed for ${surahNo}:`, error);
       throw error;
@@ -152,7 +179,6 @@ class HindiTranslationService {
   }
 
   async _getWordByWordDataInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getWordByWord(this.language, surahNo, ayahNo);
       const wordsSource = Array.isArray(response?.words) ? response.words : [];
@@ -212,7 +238,6 @@ class HindiTranslationService {
   }
 
   async _getExplanationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(this.language, surahNo, ayahNo);
       const explanation = response?.explanations?.[0]?.explanation ?? null;
@@ -250,7 +275,6 @@ class HindiTranslationService {
   }
 
   async _getAllExplanationsInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(this.language, surahNo, ayahNo);
       const explanations = Array.isArray(response?.explanations)
@@ -289,7 +313,6 @@ class HindiTranslationService {
   }
 
   async _getExplanationByNumberInternal(surahNo, ayahNo, explanationNumber, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getInterpretation(this.language, surahNo, ayahNo, explanationNumber);
       const explanation = response?.explanations?.find(exp =>
@@ -375,7 +398,6 @@ class HindiTranslationService {
 
   async isAvailable() {
     try {
-      this._assertApiEnabled();
       await apiService.checkLanguageHealth(this.language);
       return true;
     } catch (error) {

@@ -26,6 +26,7 @@ CREATE TABLE tamil_translations (
   - Includes error handling and availability checking
   - **Download functionality**: Simulates database download from cloud (placeholder for now)
   - **Download tracking**: Tracks whether database has been downloaded
+- **Pagination support**: Proxies the backend paginated API so the frontend can request smaller batches
 
 ### 2. Language Selection Integration
 - **HomeNavbar Component**: Updated to handle Tamil language selection
@@ -54,7 +55,10 @@ import tamilTranslationService from '../services/tamilTranslationService';
 const isAvailable = await tamilTranslationService.isAvailable();
 
 // Get translations for a specific surah
-const translations = await tamilTranslationService.getSurahTranslations(surahId);
+const { translations, pagination } = await tamilTranslationService.getSurahTranslations(surahId, {
+  page: 1,
+  limit: 25,
+});
 
 // Get translation for a specific ayah
 const translation = await tamilTranslationService.getAyahTranslation(surahId, ayahNumber);
@@ -80,6 +84,7 @@ A test file (`test-tamil-service.html`) is provided to verify the Tamil translat
 2. Navigate to any surah page (e.g., `/surah/1`)
 3. Select Tamil from the language dropdown
 4. Verify that Tamil translations are displayed correctly
+5. Use the “Load more ayahs” control to fetch subsequent pages when Tamil is selected
 
 ## Error Handling
 

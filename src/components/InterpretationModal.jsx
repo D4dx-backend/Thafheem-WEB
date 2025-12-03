@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Copy, Share2, X } from "lucide-react";
 import { fetchInterpretation, fetchAyaRanges, fetchInterpretationRange, fetchAllInterpretations } from "../api/apifunction";
 import tamilTranslationService from "../services/tamilTranslationService";
 import hindiTranslationService from "../services/hindiTranslationService";
@@ -34,13 +35,14 @@ const extractPlainText = (content) => {
 };
 
 const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onClose }) => {
-  const { translationFontSize, translationLanguage } = useTheme();
+  const { adjustedTranslationFontSize, translationLanguage } = useTheme();
   const { toasts, removeToast } = useToast();
 
   // State management
   const [interpretationData, setInterpretationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const rangesCacheRef = useRef(new Map()); // key: `${surahId}-E` -> ranges
 
@@ -92,7 +94,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }
             }
           } catch (error) {
-}
+          }
         } else if (effectiveLang === 'ta') {
           try {
             const tamilTranslation = await tamilTranslationService.getAyahTranslation(parseInt(surahId), parseInt(verseId));
@@ -105,7 +107,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-}
+          }
         } else if (effectiveLang === 'hi') {
           try {
             const hindiExplanation = await hindiTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -118,7 +120,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-}
+          }
         } else if (effectiveLang === 'ur') {
           try {
             const urduExplanation = await urduTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -131,7 +133,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-}
+          }
         } else if (effectiveLang === 'bn') {
           try {
             const banglaExplanation = await banglaTranslationService.getExplanation(parseInt(surahId), parseInt(verseId));
@@ -144,7 +146,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               }];
             }
           } catch (error) {
-}
+          }
         } else if (effectiveLang === 'E') {
           // 1) Try single-ayah English endpoint (fast path)
           try {
@@ -154,7 +156,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
               parseInt(verseId), // interpretNo == ayahId for this endpoint
               'E'
             );
-          } catch (_) {}
+          } catch (_) { }
 
           // 2) If empty, try mapped English range with the requested interpretation number (one call)
           if (!interpretationResponse || isEmptyInterpretation(interpretationResponse)) {
@@ -177,7 +179,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
                 interpretationNo || 1,
                 'E'
               );
-            } catch (_) {}
+            } catch (_) { }
           }
         }
 
@@ -215,11 +217,31 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
     loadInterpretationData();
   }, [surahId, verseId, interpretationNo, language, translationLanguage]);
 
+  // Process interpretation text to make verse references clickable with cyan blue styling
+  const processVerseReferences = (text) => {
+    if (!text || typeof text !== "string") return text;
+    
+    // Pattern to match verse references like (2:163), (1:2), 2:163, etc.
+    const versePattern = /\(?(\d+)\s*[:：]\s*(\d+)\)?/g;
+    
+    return text.replace(versePattern, (match, surah, ayah) => {
+      // Check if already wrapped in a clickable element
+      if (match.includes('verse-reference-link')) {
+        return match;
+      }
+      
+      // Wrap in clickable span with cyan blue styling
+      return `<span class="verse-reference-link inline-block cursor-pointer text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 underline decoration-cyan-500/50 hover:decoration-cyan-600 dark:decoration-cyan-400/50 dark:hover:decoration-cyan-300 transition-colors" data-surah="${surah}" data-ayah="${ayah}" title="Click to view Surah ${surah}, Verse ${ayah}">${match}</span>`;
+    });
+  };
+
   // Extract interpretation text from data
   const extractInterpretationText = (item) => {
     if (item == null) return "";
-    if (typeof item === "string") return item;
-    
+    if (typeof item === "string") {
+      return processVerseReferences(item);
+    }
+
     // Common possible fields for interpretation content
     const preferredKeys = [
       "interpret_text",
@@ -241,162 +263,197 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
       "description",
       "Description",
     ];
-    
+
     // Try each preferred key
     for (const key of preferredKeys) {
       if (typeof item[key] === "string" && item[key].trim().length > 0) {
-        return item[key];
+        return processVerseReferences(item[key]);
       }
     }
-    
+
     // Fallback: find any string field with substantial content
     for (const [k, v] of Object.entries(item)) {
       if (typeof v === "string" && v.trim().length > 20) {
-return v;
+        return processVerseReferences(v);
       }
     }
-    
+
     return `<p class="text-gray-500 italic">No interpretation content available</p>`;
   };
 
-  const modalContentLength = useMemo(() => {
-    if (!interpretationData) return 0;
-    const items = Array.isArray(interpretationData)
-      ? interpretationData
-      : [interpretationData];
-    return items.reduce((longest, item) => {
-      const interpretationText = extractInterpretationText(item);
-      const plainText = extractPlainText(interpretationText);
-      return Math.max(longest, plainText.trim().length);
-    }, 0);
-  }, [interpretationData]);
+  const handleCopy = async () => {
+    if (!interpretationData || interpretationData.length === 0) return;
+    const textToCopy = interpretationData
+      .map(item => extractPlainText(extractInterpretationText(item)))
+      .join("\n\n");
 
-  const modalWidthClass = determineModalWidthClass(modalContentLength);
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toasts.error("Failed to copy text");
+    }
+  };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/interpretation?surah=${surahId}&verse=${verseId}&no=${interpretationNo || 1}&lang=${language}`;
+    const shareText = `Interpretation for Surah ${surahId}, Verse ${verseId}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Tafheem-ul-Quran",
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+    }
+  };
+
+  // Portal Root
+  const modalRoot = document.getElementById("modal-root") || document.body;
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+
+        {/* Modal Content */}
+        <div className="relative w-full sm:w-auto sm:max-w-4xl xl:max-w-[1073px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden">
+
+          {/* Drag Handle (Mobile) */}
+          <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={onClose}>
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          </div>
+
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Interpretation {interpretationNo || 1} - Surah {surahId}, Verse {verseId}
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+              Interpretation - Surah {surahId}, Verse {verseId}
             </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </button>
-          </div>
-          
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Loading interpretation...
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-        <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Interpretation {interpretationNo || 1} - Surah {surahId}, Verse {verseId}
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </button>
-          </div>
-          
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-red-500 dark:text-red-400 text-lg mb-2">
-                Failed to load interpretation
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {error}
-              </p>
+            <div className="flex items-center gap-2">
+              {!loading && !error && (
+                <>
+                  <button
+                    onClick={handleCopy}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative text-gray-500 dark:text-gray-400"
+                    title="Copy"
+                  >
+                    {copied ? <span className="text-green-500 font-bold text-xs">Copied!</span> : <Copy className="w-5 h-5" />}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                    title="Share"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
               <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                title="Close"
               >
-                Try Again
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
+
+          {/* Scrollable Content */}
+          <div className="px-4 sm:px-6 py-6 sm:py-8 overflow-y-auto flex-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Loading interpretation...
+                  </p>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 dark:text-red-400 text-lg mb-2">
+                  Failed to load interpretation
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : interpretationData && interpretationData.length > 0 ? (
+              <div className="font-poppins">
+                {interpretationData.map((interpretation, index) => {
+                  const interpretationText = extractInterpretationText(interpretation);
+
+                  return (
+                    <div key={index} className="mb-6 sm:mb-8">
+                      <div
+                        className="text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none"
+                        style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                        onClick={(e) => {
+                          // Handle clicks on verse reference links
+                          const verseLink = e.target.closest('.verse-reference-link');
+                          if (verseLink) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const surah = verseLink.getAttribute('data-surah');
+                            const ayah = verseLink.getAttribute('data-ayah');
+                            if (surah && ayah) {
+                              // Close current modal first
+                              onClose();
+                              // Navigate to the verse with language preserved
+                              const effectiveLang = language || translationLanguage || 'mal';
+                              // Use a small delay to ensure modal closes before navigation
+                              setTimeout(() => {
+                                window.location.href = `/surah/${surah}?ayah=${ayah}&lang=${effectiveLang}`;
+                              }, 100);
+                            }
+                          }
+                        }}
+                        dangerouslySetInnerHTML={{ __html: interpretationText }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+                    {parseInt(surahId) === 114
+                      ? "Interpretation data is not available for Surah An-Nas (114). This surah may not have interpretation content in the current database."
+                      : "No interpretation available for this verse. The interpretation API may be temporarily unavailable."
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-[99999] p-2 sm:p-4 lg:p-6 bg-gray-500/70 dark:bg-black/70 overflow-hidden">
-      <div className={`bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full sm:w-auto ${modalWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Interpretation {interpretationNo || 1} - Surah {surahId}, Verse {verseId}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
-          {/* Interpretation Content */}
-          {interpretationData && interpretationData.length > 0 ? (
-            <div className="space-y-4">
-              {interpretationData.map((interpretation, index) => {
-                const interpretationText = extractInterpretationText(interpretation);
-
-                return (
-                  <div
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6"
-                  >
-                    <div
-                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${translationFontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: interpretationText }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
-              <p className="text-gray-500 dark:text-gray-400 text-sm italic text-center">
-                {parseInt(surahId) === 114 
-                  ? "Interpretation data is not available for Surah An-Nas (114). This surah may not have interpretation content in the current database."
-                  : "No interpretation available for this verse. The interpretation API may be temporarily unavailable."
-                }
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-      
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-    </div>
+    </>,
+    modalRoot
   );
 };
 

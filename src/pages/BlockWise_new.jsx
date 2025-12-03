@@ -125,6 +125,17 @@ const BlockWise = () => {
       .join("");
   };
 
+  const stripArabicVerseMarker = (text) => {
+    if (!text) return "";
+    return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
+  };
+
+  const formatArabicVerseWithNumber = (text, ayahNumber) => {
+    const cleaned = stripArabicVerseMarker(text);
+    const display = cleaned || text || "";
+    return `${display} ﴿${toArabicNumber(ayahNumber)}﴾`;
+  };
+
   // Initialize audio element
   useEffect(() => {
     if (!audioRef.current) {
@@ -641,6 +652,7 @@ const BlockWise = () => {
 
   // Handle interpretation number click
   const handleInterpretationClick = (blockRange, interpretationNumber) => {
+    console.log('🔵 handleInterpretationClick called:', { blockRange, interpretationNumber });
     setSelectedInterpretation({
       range: blockRange,
       interpretationNumber: interpretationNumber,
@@ -705,6 +717,7 @@ const BlockWise = () => {
     const handleSupClick = (e) => {
       const target = e.target.closest(".interpretation-link");
       if (target) {
+        console.log('🟢 Click detected on interpretation link:', target);
         // Prevent default behavior and stop event propagation
         e.preventDefault();
         e.stopPropagation();
@@ -712,10 +725,14 @@ const BlockWise = () => {
         const interpretationNumber = target.getAttribute("data-interpretation");
         const range = target.getAttribute("data-range");
         const langAttr = target.getAttribute("data-lang");
+        console.log('🟡 Extracted data:', { interpretationNumber, range, langAttr });
         if (interpretationNumber && range) {
-          // Use requestAnimationFrame to ensure state updates properly
-          requestAnimationFrame(() => {
-            handleInterpretationClick(range, parseInt(interpretationNumber));
+          const parsedNumber = parseInt(interpretationNumber, 10);
+          console.log('🔵 Calling handleInterpretationClick with:', { range, parsedNumber });
+          // Directly set the state instead of using the handler
+          setSelectedInterpretation({
+            range: range,
+            interpretationNumber: parsedNumber,
           });
         }
       }
@@ -1023,17 +1040,23 @@ const BlockWise = () => {
                           }}
                           dir="rtl"
                         >
-                          {arabicSlice.map((verse, idx) => (
-                            <p
-                              key={`arabic-verse-${blockId}-${start + idx}`}
-                              className="text-right"
-                            >
-                              {verse.text_uthmani}
-                              <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
-                                ﴿{toArabicNumber(start + idx)}﴾
-                              </span>
-                            </p>
-                          ))}
+                          {arabicSlice.map((verse, idx) => {
+                            const displayText =
+                              stripArabicVerseMarker(verse.text_uthmani) ||
+                              verse.text_uthmani ||
+                              "";
+                            return (
+                              <p
+                                key={`arabic-verse-${blockId}-${start + idx}`}
+                                className="text-right"
+                              >
+                                {displayText}
+                                <span className="ml-2 inline-block text-base sm:text-lg md:text-xl text-cyan-600 dark:text-cyan-400">
+                                  ﴿{toArabicNumber(start + idx)}﴾
+                                </span>
+                              </p>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p
@@ -1115,9 +1138,11 @@ const BlockWise = () => {
                               const arabicText =
                                 arabicSlice.length > 0
                                   ? arabicSlice
-                                      .map(
-                                        (verse, idx) =>
-                                          `${verse.text_uthmani} ﴿${start + idx}﴾`
+                                      .map((verse, idx) =>
+                                        formatArabicVerseWithNumber(
+                                          verse.text_uthmani,
+                                          start + idx
+                                        )
                                       )
                                       .join(" ")
                                   : "Loading Arabic text...";
@@ -1425,8 +1450,9 @@ const BlockWise = () => {
 
           {/* Overlay Popup for Block Interpretation (from clicking sup numbers in translation) */}
           {selectedInterpretation && (
-            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-start justify-center z-[9999] pt-24 sm:pt-28 lg:pt-32 p-2 sm:p-4 lg:p-6 overflow-y-auto">
-              <div className="bg-white dark:bg-[#2A2C38] rounded-lg max-w-xs sm:max-w-4xl max-h-[90vh] overflow-y-auto relative w-full shadow-2xl">
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
+              <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                {console.log('🟣 Rendering InterpretationBlockwise modal:', selectedInterpretation)}
                 <InterpretationBlockwise
                   key={`block-interpretation-${surahId}-${selectedInterpretation.range}-${selectedInterpretation.interpretationNumber}`}
                   surahId={parseInt(surahId)}
@@ -1434,8 +1460,7 @@ const BlockWise = () => {
                   ipt={selectedInterpretation.interpretationNumber}
                   lang={translationLanguage === 'E' ? 'E' : 'mal'}
                   onClose={() => setSelectedInterpretation(null)}
-                  showSuccess={showSuccess}
-                  showError={showError}
+                  isModal={true}
                 />
               </div>
             </div>

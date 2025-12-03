@@ -27,7 +27,7 @@ const BookmarkNavbar = () => {
     <div className="flex justify-center dark:bg-gray-900 px-3 sm:px-4 lg:px-6">
       <div className="bg-white border-b dark:bg-gray-900 border-gray-200 w-full max-w-[1290px]">
         {/* Header */}
-        <div className="flex items-center justify-between py-3 sm:py-4 px-2 sm:px-0">
+        <div className="flex items-center justify-between py-3 sm:py-4 px-2 sm:px-0 gap-2">
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -36,11 +36,9 @@ const BookmarkNavbar = () => {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white text-center flex-1">
             Bookmark
           </h1>
-          {/* spacer to balance layout */}
-          <div className="w-[90px] sm:w-[100px]" />
         </div>
 
         {/* Navigation Tabs */}

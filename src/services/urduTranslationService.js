@@ -1,21 +1,58 @@
-import { USE_API, API_BASE_PATH, CACHE_ENABLED, CACHE_TTL } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
+
+const DEFAULT_PAGE_SIZE = 40;
+const MAX_PAGE_SIZE = 200;
 
 class UrduTranslationService {
   constructor() {
     this.language = 'urdu';
-    this.useApi = USE_API;
     this.apiBasePath = API_BASE_PATH;
-    this.cacheEnabled = CACHE_ENABLED;
-    this.cacheTtl = CACHE_TTL;
-    this.cache = new Map();
     this.pendingRequests = new Map();
+    this.cache = new Map();
+    this.cacheEnabled = true;
+    this.cacheTtl = 300000; // 5 minutes
+    this.footnoteOrderMap = new Map(); // surahNo -> Map(footnoteId -> sequentialNo)
   }
 
-  _assertApiEnabled() {
-    if (!this.useApi) {
-      throw new Error('Urdu API is disabled (VITE_USE_API=false).');
+  normalizeSurahNo(surahNo) {
+    const parsed = Number.parseInt(surahNo, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  resetFootnoteOrdering(surahNo) {
+    if (surahNo === undefined || surahNo === null) {
+      this.footnoteOrderMap.clear();
+      return;
     }
+    const normalized = this.normalizeSurahNo(surahNo);
+    if (normalized !== null) {
+      this.footnoteOrderMap.delete(normalized);
+    }
+  }
+
+  getOrAssignFootnoteNumber(surahNo, footnoteId, fallbackNumber) {
+    if (!footnoteId) {
+      return Number.isFinite(fallbackNumber) ? fallbackNumber : null;
+    }
+
+    const normalizedSurah = this.normalizeSurahNo(surahNo);
+    if (normalizedSurah === null) {
+      return Number.isFinite(fallbackNumber) ? fallbackNumber : null;
+    }
+
+    if (!this.footnoteOrderMap.has(normalizedSurah)) {
+      this.footnoteOrderMap.set(normalizedSurah, new Map());
+    }
+
+    const orderMap = this.footnoteOrderMap.get(normalizedSurah);
+    if (orderMap.has(footnoteId)) {
+      return orderMap.get(footnoteId);
+    }
+
+    const nextNumber = orderMap.size + 1;
+    orderMap.set(footnoteId, nextNumber);
+    return nextNumber;
   }
 
   generateCacheKey(method, params) {
@@ -70,7 +107,6 @@ class UrduTranslationService {
   }
 
   async _getAyahTranslationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getTranslation(this.language, surahNo, ayahNo);
       const translation = response?.translation_text ?? response?.translation ?? '';
@@ -83,8 +119,12 @@ class UrduTranslationService {
     }
   }
 
-  async getSurahTranslations(surahNo) {
-    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahNo });
+  async getSurahTranslations(surahNo, options = {}) {
+    const hasPagination = options && (options.page !== undefined || options.limit !== undefined);
+    const page = Number.isInteger(options.page) && options.page > 0 ? options.page : 1;
+    const requestedLimit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : DEFAULT_PAGE_SIZE;
+    const limit = Math.min(requestedLimit, MAX_PAGE_SIZE);
+    const cacheKey = this.generateCacheKey('getSurahTranslations', hasPagination ? { surahNo, page, limit } : { surahNo });
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
@@ -92,7 +132,7 @@ class UrduTranslationService {
       return this.pendingRequests.get(cacheKey);
     }
 
-    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey);
+    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination });
     this.pendingRequests.set(cacheKey, requestPromise);
 
     try {
@@ -102,29 +142,58 @@ class UrduTranslationService {
     }
   }
 
-  async _getSurahTranslationsInternal(surahNo, cacheKey) {
-    this._assertApiEnabled();
+  async _getSurahTranslationsInternal(surahNo, cacheKey, { page, limit, hasPagination }) {
     try {
-      const response = await apiService.getSurahTranslations(this.language, surahNo);
+      const params = hasPagination ? { page, limit } : {};
+      const response = await apiService.getSurahTranslations(this.language, surahNo, params);
       const translations = Array.isArray(response?.translations)
         ? response.translations.map(verse => ({
-            verse_number: verse.verse_number,
-            translation_text: verse.translation_text ?? '',
+            number: verse.verse_number,
+            ArabicText: '',
+            Translation: verse.translation_text ?? '',
           }))
         : [];
 
       translations.forEach(verse => {
         const ayahKey = this.generateCacheKey('getAyahTranslation', {
           surahNo,
-          ayahNo: verse.verse_number,
+          ayahNo: verse.number,
         });
-        if (verse.translation_text) {
-          this.setCachedData(ayahKey, verse.translation_text);
+        if (verse.Translation) {
+          this.setCachedData(ayahKey, verse.Translation);
         }
       });
 
-      this.setCachedData(cacheKey, translations);
-      return translations;
+      if (!hasPagination) {
+        this.setCachedData(cacheKey, translations);
+        return translations;
+      }
+
+      const pagination = response?.pagination
+        ? {
+            page: response.pagination.page ?? page,
+            limit: response.pagination.limit ?? limit,
+            totalItems: response.pagination.totalItems ?? response.pagination.total ?? null,
+            totalPages: response.pagination.totalPages ?? null,
+            hasNext: response.pagination.hasNext ?? false,
+            hasPrev: response.pagination.hasPrev ?? page > 1,
+            from: response.pagination.from ?? null,
+            to: response.pagination.to ?? null,
+          }
+        : {
+            page,
+            limit,
+            totalItems: response?.count ?? null,
+            totalPages: response?.count ? Math.ceil(response.count / limit) : null,
+            hasNext: translations.length === limit,
+            hasPrev: page > 1,
+            from: translations[0]?.number ?? null,
+            to: translations[translations.length - 1]?.number ?? null,
+          };
+
+      const result = { translations, pagination };
+      this.setCachedData(cacheKey, result);
+      return result;
     } catch (error) {
       console.error(`❌ Urdu surah translation API failed for ${surahNo}:`, error);
       throw error;
@@ -151,7 +220,6 @@ class UrduTranslationService {
   }
 
   async _getWordByWordDataInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getWordByWord(this.language, surahNo, ayahNo);
       const wordsSource = Array.isArray(response?.words) ? response.words : [];
@@ -211,7 +279,6 @@ class UrduTranslationService {
   }
 
   async _getFootnoteExplanationInternal(footnoteId, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.makeRequest(`/urdu/footnote/${footnoteId}`);
       const explanation = response?.footnote_text ?? 'Explanation not available';
@@ -290,9 +357,14 @@ class UrduTranslationService {
 
     while ((match = footnoteRegex.exec(translationText)) !== null) {
       const footnoteId = match[1];
-      const footnoteNumber = parseInt(match[2], 10);
+      const fallbackNumber = parseInt(match[2], 10);
+      const sequentialNumber = this.getOrAssignFootnoteNumber(
+        surahNo,
+        footnoteId,
+        fallbackNumber
+      );
       if (!footnoteIds.has(footnoteId)) {
-        footnoteIds.set(footnoteId, footnoteNumber);
+        footnoteIds.set(footnoteId, sequentialNumber ?? fallbackNumber ?? footnoteIds.size + 1);
       }
     }
 
@@ -303,9 +375,14 @@ class UrduTranslationService {
       try {
         const explanation = await this.getFootnoteExplanation(footnoteId);
         if (explanation && explanation.trim() !== '' && explanation !== 'Explanation not available') {
+          const sequentialNumber = this.getOrAssignFootnoteNumber(
+            surahNo,
+            footnoteId,
+            footnoteNumber
+          );
           explanations.push({
             explanation,
-            explanation_no: footnoteNumber,
+            explanation_no: sequentialNumber ?? footnoteNumber,
           });
         }
       } catch (error) {
@@ -328,6 +405,13 @@ class UrduTranslationService {
       const footnoteNumber = element.textContent.trim();
 
       if (footnoteId && /^\d+$/.test(footnoteNumber)) {
+        const fallbackNumber = parseInt(footnoteNumber, 10);
+        const sequentialNumber = this.getOrAssignFootnoteNumber(
+          surahNo,
+          footnoteId,
+          fallbackNumber
+        );
+        const displayNumber = Number.isFinite(sequentialNumber) ? sequentialNumber : fallbackNumber;
         element.style.cssText = `
           cursor: pointer !important;
           background-color: #19B5DD !important;
@@ -335,30 +419,30 @@ class UrduTranslationService {
           font-weight: 500 !important;
           text-decoration: none !important;
           border: none !important;
-          padding: 4px 8px !important;
           margin: 0 4px !important;
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
           font-size: 12px !important;
           vertical-align: middle !important;
-          line-height: 1 !important;
-          border-radius: 8px !important;
+          line-height: 22px !important;
+          width: 22px !important;
+          height: 22px !important;
+          border-radius: 9999px !important;
           position: relative !important;
           top: 0 !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
           text-align: center !important;
           transition: all 0.2s ease-in-out !important;
         `;
 
         element.setAttribute('data-footnote-id', footnoteId);
-        element.setAttribute('data-footnote-number', footnoteNumber);
+        element.setAttribute('data-footnote-number', displayNumber);
         element.setAttribute('data-surah', surahNo);
         element.setAttribute('data-ayah', ayahNo);
-        element.setAttribute('title', `Click to view explanation ${footnoteNumber}`);
+        element.setAttribute('title', `Click to view explanation ${displayNumber}`);
         element.className = 'urdu-footnote-link';
         element.removeAttribute('foot_note');
+        element.textContent = displayNumber;
       }
     });
 
@@ -388,7 +472,6 @@ class UrduTranslationService {
 
   async isAvailable() {
     try {
-      this._assertApiEnabled();
       await apiService.checkLanguageHealth(this.language);
       return true;
     } catch (error) {

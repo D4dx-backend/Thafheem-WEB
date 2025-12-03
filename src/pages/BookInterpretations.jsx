@@ -46,32 +46,44 @@ const BookInterpretations = () => {
         ]);
 
         // Format ayah-wise bookmarks
-        const formattedAyahBookmarks = ayahBookmarks.map((bookmark) => ({
-          id: bookmark.id || `${bookmark.surahId}-${bookmark.verseId}`,
-          bookmarkId: bookmark.id,
-          number: bookmark.surahId,
-          surah: bookmark.surahName || `Surah ${bookmark.surahId}`,
-          detail: `Verse ${bookmark.verseId}`,
-          verseText: bookmark.verseText || "",
-          surahId: bookmark.surahId,
-          verseId: bookmark.verseId,
-          interpretationNo: bookmark.interpretationNo || 1,
-          language: bookmark.language || "en",
-        }));
+        const formattedAyahBookmarks = ayahBookmarks.map((bookmark) => {
+          const interpretationNo = bookmark.interpretationNo || 1;
+          const language = (bookmark.language || "en").toLowerCase();
+
+          return {
+            id: bookmark.id || `${bookmark.surahId}-${bookmark.verseId}`,
+            bookmarkId: bookmark.id,
+            number: bookmark.surahId,
+            surah: bookmark.surahName || `Surah ${bookmark.surahId}`,
+            // Show exact ayah + interpretation number + language
+            detail: `Ayah ${bookmark.verseId} • Interpretation ${interpretationNo} • ${language.toUpperCase()}`,
+            verseText: bookmark.verseText || "",
+            surahId: bookmark.surahId,
+            verseId: bookmark.verseId,
+            interpretationNo,
+            language,
+          };
+        });
 
         // Format block-wise bookmarks
-        const formattedBlockBookmarks = blockBookmarks.map((bookmark) => ({
-          id: bookmark.id || `${bookmark.surahId}-${bookmark.range}`,
-          bookmarkId: bookmark.id,
-          number: bookmark.surahId,
-          surah: bookmark.surahName || `Surah ${bookmark.surahId}`,
-          detail: `Verses ${bookmark.range}`,
-          verseText: "",
-          surahId: bookmark.surahId,
-          range: bookmark.range, // This is the key difference!
-          interpretationNo: bookmark.interpretationNo || 1,
-          language: bookmark.language || "en",
-        }));
+        const formattedBlockBookmarks = blockBookmarks.map((bookmark) => {
+          const interpretationNo = bookmark.interpretationNo || 1;
+          const language = (bookmark.language || "en").toLowerCase();
+
+          return {
+            id: bookmark.id || `${bookmark.surahId}-${bookmark.range}`,
+            bookmarkId: bookmark.id,
+            number: bookmark.surahId,
+            surah: bookmark.surahName || `Surah ${bookmark.surahId}`,
+            // Show exact block range + interpretation number + language
+            detail: `Verses ${bookmark.range} • Interpretation ${interpretationNo} • ${language.toUpperCase()}`,
+            verseText: "",
+            surahId: bookmark.surahId,
+            range: bookmark.range, // This is the key difference!
+            interpretationNo,
+            language,
+          };
+        });
 
         setAyahWiseInterpretations(formattedAyahBookmarks);
         setBlockWiseInterpretations(formattedBlockBookmarks);

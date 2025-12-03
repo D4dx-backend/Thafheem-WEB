@@ -1,12 +1,10 @@
-
-
 // ThemeContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { preloadLanguageServices } from "../utils/serviceLoader";
 
 const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
+export function ThemeProvider({ children }) {
   // Initialize state with values from localStorage or defaults
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -53,6 +51,13 @@ export const ThemeProvider = ({ children }) => {
     }
     return savedLang;
   });
+
+  const adjustedTranslationFontSize = useMemo(() => {
+    if (translationLanguage === "ur") {
+      return Math.min(22, translationFontSize + 2);
+    }
+    return translationFontSize;
+  }, [translationFontSize, translationLanguage]);
 
   // Apply theme to document
   useEffect(() => {
@@ -114,6 +119,7 @@ export const ThemeProvider = ({ children }) => {
       setFontSize, 
       translationFontSize, 
       setTranslationFontSize,
+      adjustedTranslationFontSize,
       viewType,
       setViewType,
       translationLanguage,
@@ -122,6 +128,6 @@ export const ThemeProvider = ({ children }) => {
       {children}
     </ThemeContext.Provider>
   );
-};
+}
 
 export const useTheme = () => useContext(ThemeContext);

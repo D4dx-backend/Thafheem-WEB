@@ -1,5 +1,6 @@
 // Environment-based API configuration
-const isDevelopment = import.meta.env.DEV;
+// Use PROD for more reliable production detection
+const isDevelopment = import.meta.env.DEV && !import.meta.env.PROD;
 
 import { 
   API_BASE_URL as CONFIG_API_BASE_URL,
@@ -53,7 +54,13 @@ export const DIRECTUS_AI_API_CONFIG = `${DIRECTUS_BASE_URL}/items/thafheem_ai_ap
 export const TAJWEED_RULES_API = `${API_BASE_PATH}/thajweedrules`;
 // Word meanings is a legacy endpoint
 export const WORD_MEANINGS_API = `${LEGACY_TFH_BASE}/wordmeanings`;
-export const MALARTICLES_API = "https://old.thafheem.net/thaf-api/malarticles";
-export const ENGARTICLES_API = "https://old.thafheem.net/thaf-api/engarticles";
-export const ARTICLES_API = "https://old.thafheem.net/thaf-api/articles";
-export const MALAYALAM_QURANAYA_API = "https://old.thafheem.net/thaf-api/quranaya";
+export const MALARTICLES_API = isDevelopment ? '/api/old-thaf-api/malarticles' : "https://old.thafheem.net/thaf-api/malarticles";
+export const ENGARTICLES_API = isDevelopment ? '/api/old-thaf-api/engarticles' : "https://old.thafheem.net/thaf-api/engarticles";
+export const ARTICLES_API = isDevelopment ? '/api/old-thaf-api/articles' : "https://old.thafheem.net/thaf-api/articles";
+// Use proxy path in development to avoid CORS, direct URL in production
+// Production must use: https://old.thafheem.net/thaf-api/quranaya
+// This is different from blockwise interpretation which uses a different endpoint
+// Force direct URL in production to avoid proxy/rewrite issues
+export const MALAYALAM_QURANAYA_API = import.meta.env.PROD
+  ? 'https://old.thafheem.net/thaf-api/quranaya'
+  : '/api/old-thaf-api/quranaya';

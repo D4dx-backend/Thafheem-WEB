@@ -62,7 +62,6 @@
 import React, { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import BookmarkNavbar from '../components/BookmarkNavbar';
-import { ArrowLeft } from 'lucide-react';
 import StarNumber from '../components/StarNumber';
 import { useAuth } from '../context/AuthContext';
 import BookmarkService from '../services/bookmarkService';
@@ -85,7 +84,9 @@ const BookmarkBlock = () => {
           id: b.id,
           number: b.surahId,
           surah: b.surahName || `Surah ${b.surahId}`,
-          verses: `Verses ${b.blockFrom}-${b.blockTo}`
+          verses: `Verses ${b.blockFrom}-${b.blockTo}`,
+          blockFrom: b.blockFrom,
+          blockTo: b.blockTo
         }));
         setBookmarkedBlocks(mapped);
       } finally {
@@ -107,8 +108,14 @@ const BookmarkBlock = () => {
   };
 
   const handleBlockClick = (block) => {
-    // Navigate to the blockwise page for the specific surah
-    navigate(`/blockwise/${block.number}`);
+    // Navigate to the blockwise page for the specific surah with block range
+    // Pass block range and viewType via state so BlockWise can scroll to it and stay in Block Wise view
+    navigate(`/blockwise/${block.number}`, {
+      state: {
+        scrollToBlock: `${block.blockFrom}-${block.blockTo}`,
+        viewType: 'Block Wise',
+      },
+    });
   };
 
   return (
@@ -119,6 +126,26 @@ const BookmarkBlock = () => {
 
       {loading ? (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">Loading bookmarks...</div>
+      ) : bookmarkedBlocks.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="mb-6">
+            <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              No block bookmarks yet
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Start reading and bookmark your favorite verses to see them here.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium"
+            >
+              Start Reading
+            </button>
+          </div>
+        </div>
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {bookmarkedBlocks.map((block) => (

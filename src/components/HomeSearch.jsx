@@ -4,7 +4,6 @@ import logo from "../assets/logo.png";
 import logoWhite from "../assets/logo-white.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
-import ForwardIcon from "../assets/forward.png";
 import { searchQuran, fetchPopularChapters } from "../api/apifunction";
 import {
   getLastReading,
@@ -54,6 +53,23 @@ const ListIcon = ({ className }) => (
   </svg>
 );
 
+// Normalize free-form verse queries such as `4 : 20`
+const normalizeSearchQuery = (query = "") =>
+  query.replace(/\s*:\s*/g, ":").replace(/\s+/g, " ").trim();
+
+// Return `{ surah, verse }` when the normalized query matches `surah:verse`
+const extractVerseReference = (query = "") => {
+  const match = /^(\d{1,3}):(\d{1,3})$/.exec(query);
+  if (!match) {
+    return null;
+  }
+
+  const surah = match[1].replace(/^0+/, "") || "0";
+  const verse = match[2].replace(/^0+/, "") || "0";
+
+  return { surah, verse };
+};
+
 import { useTheme } from "../context/ThemeContext";
 
 const HomepageSearch = () => {
@@ -75,11 +91,28 @@ const HomepageSearch = () => {
   const hasDragged = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const wasManuallyClosed = useRef(false); // Track if user manually closed the popup
 
   // Preload popular data when component mounts
   useEffect(() => {
     fetchPopularData();
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showPopular || showSearchResults) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px'; // Prevent layout shift
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [showPopular, showSearchResults]);
 
   useEffect(() => {
     setLastReading(getLastReading());
@@ -180,22 +213,25 @@ const HomepageSearch = () => {
     }
   };
 
-  // Handle search input changes
-  const handleSearchChange = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  const performSearch = async (query) => {
+    const sanitizedQuery = normalizeSearchQuery(query);
 
-    if (query.trim().length < 1) {
+    if (!sanitizedQuery) {
       setShowSearchResults(false);
       setSearchResults([]);
+      setSearchError(null);
       return;
     }
 
+    // Reset manual close flag when performing new search
+    wasManuallyClosed.current = false;
+    
     setIsSearching(true);
     setSearchError(null);
+    setShowSearchResults(true);
 
     try {
-      const searchResults = await searchQuran(query.trim(), 'en');
+      const searchResults = await searchQuran(sanitizedQuery, 'en');
       
       const combinedResults = [
         ...searchResults.surahs.map(surah => ({
@@ -211,7 +247,6 @@ const HomepageSearch = () => {
           displayText: verse.text || verse.translated_text || 'Verse text not available',
           subText: `Surah ${verse.verse_key.split(':')[0]}:${verse.verse_key.split(':')[1]}`,
           verse_key: verse.verse_key,
-          // Enhanced verse information
           surahName: verse.surahInfo?.name || verse.chapter?.name_simple || `Surah ${verse.verse_key.split(':')[0]}`,
           surahArabic: verse.surahInfo?.arabic || '',
           verseNumber: verse.verse_key.split(':')[1],
@@ -221,14 +256,36 @@ const HomepageSearch = () => {
         }))
       ];
 
-      setSearchResults(combinedResults.slice(0, 12)); // Increased to show more results
-      setShowSearchResults(true);
+      setSearchResults(combinedResults.slice(0, 12));
     } catch (error) {
       setSearchError('Failed to search. Please try again.');
       setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    const rawQuery = e.target.value;
+    const normalizedQuery = normalizeSearchQuery(rawQuery);
+
+    setSearchQuery(rawQuery);
+
+    if (normalizedQuery.length < 1) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      setSearchError(null);
+      wasManuallyClosed.current = false; // Reset when input is cleared
+      return;
+    }
+
+    // Reset manual close flag when user starts typing
+    wasManuallyClosed.current = false;
+
+    // Don't auto-show popup while typing - only show after form submit or when user completes input
+    // Hide any existing results while user is typing
+    setShowSearchResults(false);
   };
 
   // Handle search result click with modifier key support
@@ -282,14 +339,40 @@ const HomepageSearch = () => {
     
     setShowSearchResults(false);
     setSearchQuery("");
+    setSearchResults([]);
   };
 
   // Handle search form submission
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
-    if (searchQuery.trim() && searchResults.length > 0) {
-      handleSearchResultClick(searchResults[0]);
+
+    const normalizedQuery = normalizeSearchQuery(searchQuery);
+
+    if (!normalizedQuery) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      setSearchError(null);
+      return;
     }
+
+    // Only show popup after form is submitted (Enter key or button click)
+    const verseReference = extractVerseReference(normalizedQuery);
+
+    if (verseReference) {
+      setSearchQuery(normalizedQuery);
+      await performSearch(normalizedQuery);
+      return;
+    }
+
+    const isSurahOnly = /^\d+$/.test(normalizedQuery);
+    const hasColonButNoVerse = /^\d+:$/.test(normalizedQuery);
+
+    if (isSurahOnly || hasColonButNoVerse) {
+      return;
+    }
+
+    setSearchQuery(normalizedQuery);
+    await performSearch(normalizedQuery);
   };
 
   const handleBookmarkClick = () => {
@@ -318,10 +401,20 @@ const HomepageSearch = () => {
     navigate(targetPath);
   };
 
-  // Close search results when clicking outside
+  // Handle search input blur - show popup if complete verse reference
   const handleSearchBlur = () => {
+    // Small delay to allow click events to process first
     setTimeout(() => {
-      setShowSearchResults(false);
+      const normalizedQuery = normalizeSearchQuery(searchQuery);
+      const verseReference = extractVerseReference(normalizedQuery);
+      
+      // Only show popup if input is a complete verse reference (like "2:255")
+      // and popup wasn't manually closed
+      if (verseReference && !wasManuallyClosed.current && normalizedQuery.trim().length > 0) {
+        performSearch(normalizedQuery);
+      } else {
+        setShowSearchResults(false);
+      }
     }, 200);
   };
 
@@ -404,51 +497,67 @@ const HomepageSearch = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             onBlur={handleSearchBlur}
-            onFocus={() => {
-              if (searchResults.length > 0) {
-                setShowSearchResults(true);
-              }
-            }}
+            // Removed onFocus auto-show to prevent popup from reappearing after cancel
+            // Results will only show when user types or submits search
             placeholder="Search surahs, verses, or try '2:255' for specific verses..."
             className="w-full h-[49px] pl-12 pr-12 py-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-[#2A2C38] dark:border-gray-600 dark:text-white shadow-sm text-gray-700 placeholder-gray-400 text-base"
           />
-          {/* Voice search button temporarily removed */}
         </form>
 
         {/* Search Results Dropdown */}
         {showSearchResults && (
-          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 w-full max-w-xl sm:max-w-2xl md:max-w-3xl z-50 max-h-96 overflow-y-auto">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium font-poppins text-gray-900 dark:text-white">
-                  Search Results
-                </h3>
-                <button
-                  onClick={() => setShowSearchResults(false)}
-                  className="text-gray-500 dark:text-white hover:text-gray-700 transition-colors"
-                >
-                  <XIcon className="h-5 w-5" />
-                </button>
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[300] backdrop-blur-sm"
+              onClick={() => {
+                setShowSearchResults(false);
+                setSearchResults([]);
+                setSearchQuery("");
+                wasManuallyClosed.current = true; // Mark as manually closed
+              }}
+            />
+            
+            {/* Modal */}
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-xl sm:max-w-2xl md:max-w-3xl z-[310] max-h-[85vh] flex flex-col">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium font-poppins text-gray-900 dark:text-white">
+                    Search Results
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowSearchResults(false);
+                      setSearchResults([]);
+                      setSearchQuery("");
+                      wasManuallyClosed.current = true; // Mark as manually closed
+                    }}
+                    className="text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <XIcon className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
-              {isSearching && (
-                <div className="text-center py-4">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2">Searching...</p>
-                </div>
-              )}
+              <div className="overflow-y-auto flex-1 p-4">
+                {isSearching && (
+                  <div className="text-center py-4">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">Searching...</p>
+                  </div>
+                )}
 
-              {searchError && (
-                <div className="text-center py-4">
-                  <p className="text-red-500 dark:text-red-400">{searchError}</p>
-                </div>
-              )}
+                {searchError && (
+                  <div className="text-center py-4">
+                    <p className="text-red-500 dark:text-red-400">{searchError}</p>
+                  </div>
+                )}
 
-              {!isSearching && !searchError && searchResults.length === 0 && searchQuery.length >= 2 && (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 dark:text-gray-400">No results found</p>
-                </div>
-              )}
+                {!isSearching && !searchError && searchResults.length === 0 && searchQuery.length >= 2 && (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 dark:text-gray-400">No results found</p>
+                  </div>
+                )}
 
               {!isSearching && searchResults.length > 0 && (
                 <div className="space-y-3">
@@ -533,27 +642,36 @@ const HomepageSearch = () => {
               )}
             </div>
           </div>
+          </>
         )}
 
         {/* Popular Content - Enhanced with Drag Scrolling */}
         {showPopular && !showSearchResults && (
-          <div className="absolute top-[100%] left-0 mt-2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-3 sm:p-4 w-full max-w-lg sm:max-w-xl md:max-w-2xl z-50">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-1.5">
-                <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[300] backdrop-blur-sm"
+              onClick={() => setShowPopular(false)}
+            />
+            
+            {/* Modal */}
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#2A2C38] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 w-[95vw] max-w-lg sm:max-w-xl md:max-w-2xl z-[310] max-h-[85vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-1.5">
+                  <TrendingUpIcon className="h-5 w-5 text-cyan-500" />
                 <h2 className="sm:text-[15px] font-semibold font-poppins text-gray-600 dark:text-[#95959b]">Popular</h2>
               </div>
               <button
                 onClick={() => setShowPopular(false)}
-                className="text-[#323A3F] dark:text-white transition-colors"
+                className="text-[#323A3F] dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-lg"
               >
                 <XIcon className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="space-y-3">
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1 p-3 sm:p-4 space-y-3">
               <h3 className="text-base font-medium font-poppins text-gray-900 dark:text-white">
                 Chapters and Verses
               </h3>
@@ -618,19 +736,9 @@ const HomepageSearch = () => {
                 </>
               )}
 
-              {/* Listen to Quran Tajwid */}
-              <div className="flex flex-col items-center dark:bg-[#2A2C38] rounded-lg py-2.5 text-center">
-                <div className="flex items-center space-x-2.5">
-                  <div className="flex items-center justify-center w-9 h-7 rounded-full">
-                    <img src={ForwardIcon} alt="Forward" className="w-[85px] h-[18px] object-contain" />
-                  </div>
-                  <h4 className="font-medium font-poppins text-black dark:text-white text-sm sm:text-base">
-                    Listen to Quran Tajwid
-                  </h4>
-                </div>
-              </div>
             </div>
           </div>
+          </>
         )}
       </div>
 

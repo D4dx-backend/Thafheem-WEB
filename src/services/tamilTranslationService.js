@@ -1,21 +1,16 @@
-import { USE_API, API_BASE_PATH, CACHE_ENABLED, CACHE_TTL } from '../config/apiConfig.js';
+import { API_BASE_PATH } from '../config/apiConfig.js';
 import apiService from './apiService.js';
+
+const DEFAULT_TAMIL_PAGE_SIZE = 25;
 
 class TamilTranslationService {
   constructor() {
     this.language = 'tamil';
-    this.useApi = USE_API !== false;
     this.apiBasePath = API_BASE_PATH;
-    this.cacheEnabled = CACHE_ENABLED;
-    this.cacheTtl = CACHE_TTL;
-    this.cache = new Map();
     this.pendingRequests = new Map();
-  }
-
-  _assertApiEnabled() {
-    if (!this.useApi) {
-      throw new Error('Tamil API is disabled (VITE_USE_API=false).');
-    }
+    this.cache = new Map();
+    this.cacheEnabled = true;
+    this.cacheTtl = 300000; // 5 minutes
   }
 
   generateCacheKey(method, params) {
@@ -70,7 +65,6 @@ class TamilTranslationService {
   }
 
   async _getAyahTranslationInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getTranslation(this.language, surahNo, ayahNo);
       const translation = response?.translation_text ?? response?.translation ?? '';
@@ -83,8 +77,11 @@ class TamilTranslationService {
     }
   }
 
-  async getSurahTranslations(surahNo) {
-    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahNo });
+  async getSurahTranslations(surahNo, options = {}) {
+    const page = Number.isInteger(options.page) && options.page > 0 ? options.page : 1;
+    const limit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : DEFAULT_TAMIL_PAGE_SIZE;
+
+    const cacheKey = this.generateCacheKey('getSurahTranslations', { surahNo, page, limit });
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
@@ -92,7 +89,7 @@ class TamilTranslationService {
       return this.pendingRequests.get(cacheKey);
     }
 
-    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey);
+    const requestPromise = this._getSurahTranslationsInternal(surahNo, cacheKey, { page, limit });
     this.pendingRequests.set(cacheKey, requestPromise);
 
     try {
@@ -102,17 +99,18 @@ class TamilTranslationService {
     }
   }
 
-  async _getSurahTranslationsInternal(surahNo, cacheKey) {
-    this._assertApiEnabled();
+  async _getSurahTranslationsInternal(surahNo, cacheKey, { page, limit }) {
     try {
-      const response = await apiService.getSurahTranslations(this.language, surahNo);
+      const response = await apiService.getSurahTranslations(this.language, surahNo, { page, limit });
       const translations = Array.isArray(response?.translations)
         ? response.translations.map(verse => ({
             number: verse.verse_number,
             ArabicText: '',
             Translation: verse.translation_text ?? '',
+            RawTranslation: verse.translation_text ?? '',
           }))
         : [];
+      const pagination = response?.pagination || null;
 
       translations.forEach(verse => {
         const ayahKey = this.generateCacheKey('getAyahTranslation', {
@@ -124,8 +122,20 @@ class TamilTranslationService {
         }
       });
 
-      this.setCachedData(cacheKey, translations);
-      return translations;
+      const result = {
+        translations,
+        pagination: pagination || {
+          page,
+          limit,
+          totalItems: translations.length,
+          totalPages: translations.length > 0 ? Math.ceil(translations.length / limit) : 0,
+          hasNext: false,
+          hasPrev: page > 1,
+        },
+      };
+
+      this.setCachedData(cacheKey, result);
+      return result;
     } catch (error) {
       console.error(`❌ Tamil surah translation API failed for ${surahNo}:`, error);
       throw error;
@@ -152,7 +162,6 @@ class TamilTranslationService {
   }
 
   async _getWordByWordDataInternal(surahNo, ayahNo, cacheKey) {
-    this._assertApiEnabled();
     try {
       const response = await apiService.getWordByWord(this.language, surahNo, ayahNo);
       const words = Array.isArray(response?.words) ? response.words : [];
@@ -200,7 +209,6 @@ class TamilTranslationService {
 
   async isAvailable() {
     try {
-      this._assertApiEnabled();
       await apiService.checkLanguageHealth(this.language);
       return true;
     } catch (error) {

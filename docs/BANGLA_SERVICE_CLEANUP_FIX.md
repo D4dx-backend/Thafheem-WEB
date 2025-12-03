@@ -79,10 +79,9 @@ import banglaInterpretationService from "../services/banglaInterpretationService
    - Should see `banglaTranslationService` calls only
    - No more `banglaInterpretationService` calls
 
-3. **API vs SQL.js Mode**
-   - Test with `VITE_USE_API=true` (API mode)
-   - Test with `VITE_USE_API=false` (SQL.js mode)
-   - Both should work consistently
+3. **API Mode**
+   - All data comes from MySQL API backend
+   - No SQL.js fallback (removed hybrid mode)
 
 ### Expected Console Output
 

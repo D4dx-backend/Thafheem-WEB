@@ -4,6 +4,15 @@ import tailwindcss from '@tailwindcss/vite'
 
 const ensureTrailingSlash = (value) => (value.endsWith('/') ? value : `${value}/`)
 
+const attachLegacyHeaders = (proxyReq) => {
+  if (!proxyReq.getHeader('accept')) {
+    proxyReq.setHeader('accept', 'application/json, text/plain, */*')
+  }
+  if (!proxyReq.getHeader('x-requested-with')) {
+    proxyReq.setHeader('x-requested-with', 'XMLHttpRequest')
+  }
+}
+
 const resolveBasePath = () => {
   const raw = process.env.VITE_BASE_PATH?.trim()
   if (!raw) return '/'
@@ -20,15 +29,40 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom']
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    exclude: []
+  },
+  ssr: {
+    noExternal: ['react', 'react-dom']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
-    strictPort: true,
+    strictPort: false,
     host: 'localhost',
     hmr: {
       protocol: 'ws',
       host: 'localhost',
       port: 5173,
-      clientPort: 5173
+      clientPort: 5173,
+      overlay: true,
+      timeout: 5000
     },
     // Only apply cache headers in production, not in development
     // Cache headers can interfere with HMR WebSocket connections
@@ -53,7 +87,8 @@ export default defineConfig({
           proxy.on('error', (err, req, res) => {
 })
           proxy.on('proxyReq', (proxyReq, req, res) => {
-})
+            attachLegacyHeaders(proxyReq)
+          })
           proxy.on('proxyRes', (proxyRes, req, res) => {
 })
         },
@@ -66,6 +101,7 @@ export default defineConfig({
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
 })
+          proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
         },
       },
       // Proxy Directus CMS API calls
@@ -76,6 +112,7 @@ export default defineConfig({
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
 })
+          proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
         },
       },
       // Proxy audio files to bypass CORS
@@ -86,6 +123,17 @@ export default defineConfig({
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
 })
+          proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
+        },
+      },
+      '/api/old-thaf-api': {
+        target: 'https://old.thafheem.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/old-thaf-api/, '/thaf-api'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+})
+          proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
         },
       }
     }

@@ -27,7 +27,7 @@ This is a React + Vite application serving as a comprehensive Quran study platfo
 - **Directus CMS** (`/api/directus/*`) - Content management for articles and media
 - **Audio Proxy** (`/api/audio/*`) - Audio recitations and interpretations
 
-All API calls are proxied through Vite dev server to handle CORS. Production uses Netlify redirects (see `netlify.toml`).
+All API calls are proxied through Vite dev server to handle CORS. Production uses direct API calls to the backend server.
 
 ### Context Architecture
 - **ThemeContext**: Global state for UI preferences (dark/light mode, fonts, translation language)

@@ -104,7 +104,7 @@ const SearchConsole = ({ onClose }) => {
         return match[0];
       }
     }
-      return null;
+    return null;
   };
 
   const normalizePositiveInteger = (value) => {
@@ -144,9 +144,9 @@ const SearchConsole = ({ onClose }) => {
     const navigationState =
       verseNumber != null
         ? {
-            scrollToVerse: verseNumber.toString(),
-            highlightVerse: `${surahId}:${verseNumber}`,
-          }
+          scrollToVerse: verseNumber.toString(),
+          highlightVerse: `${surahId}:${verseNumber}`,
+        }
         : undefined;
     const targetUrl =
       verseNumber != null
@@ -223,12 +223,12 @@ const SearchConsole = ({ onClose }) => {
                   isMalayalam
                     ? "ml"
                     : isArabic
-                    ? "ar"
-                    : isSubject
-                    ? quranSubjectLanguage === "M"
-                      ? "ml"
-                      : "en"
-                    : "en"
+                      ? "ar"
+                      : isSubject
+                        ? quranSubjectLanguage === "M"
+                          ? "ml"
+                          : "en"
+                        : "en"
                 }
               >
                 {isSubject ? result.SubjText : normalizeResultText(result)}
@@ -442,7 +442,7 @@ const SearchConsole = ({ onClose }) => {
 
     loadGlossary();
   }, [showGlossaryResults]);
-  
+
   useEffect(() => {
     if (typeof document === "undefined") {
       return;
@@ -457,23 +457,34 @@ const SearchConsole = ({ onClose }) => {
   }, []);
 
   return (
-    <>
+    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[200]"
+        className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
-      ></div>
-      <div className="fixed inset-y-0 right-0 z-[210] w-full max-w-xs sm:max-w-sm md:max-w-[360px] bg-white dark:bg-[#2A2C38] font-poppins shadow-2xl flex flex-col">
-        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Search</h2>
+      />
+
+      {/* Modal Content */}
+      <div className="relative w-full sm:w-[480px] max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col animate-slideUp sm:animate-fadeIn overflow-hidden">
+
+        {/* Drag Handle (Mobile) */}
+        <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing" onClick={onClose}>
+          <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Search</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 dark:text-gray-400"
           >
-            <X size={20} />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-5 pb-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <div className="mt-6 space-y-5">
             {/* English Phrase Section */}
             <div>
@@ -635,9 +646,8 @@ const SearchConsole = ({ onClose }) => {
                     value={quranSubjectCategory}
                     onChange={(e) => setQuranSubjectCategory(Number(e.target.value))}
                     disabled={quranSubjectLanguage === "E"}
-                    className={`px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-black text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      quranSubjectLanguage === "E" ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
+                    className={`px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-black text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${quranSubjectLanguage === "E" ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                   >
                     <option value={1}>Translation Subjects</option>
                     <option value={2}>Thafheem Subjects</option>
@@ -684,9 +694,8 @@ const SearchConsole = ({ onClose }) => {
               {showSubjectResults &&
                 renderResultSection({
                   id: "subjects",
-                  languageLabel: `Subjects • ${
-                    quranSubjectLanguage === "M" ? "Malayalam" : "English"
-                  } ${quranSubjectCategory === 2 ? "Thafheem" : "Translation"}`,
+                  languageLabel: `Subjects • ${quranSubjectLanguage === "M" ? "Malayalam" : "English"
+                    } ${quranSubjectCategory === 2 ? "Thafheem" : "Translation"}`,
                   query: quranSubjectSearch,
                   isLoading: quranSubjectLoading,
                   error: quranSubjectError,
@@ -834,7 +843,7 @@ const SearchConsole = ({ onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

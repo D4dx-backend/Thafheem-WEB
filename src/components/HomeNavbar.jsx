@@ -838,9 +838,6 @@ const HomepageNavbar = () => {
                   <X size={20} />
                 </button> */}
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100 font-poppins" dir={translationLanguage === 'ur' || translationLanguage === 'ta' ? 'rtl' : 'ltr'}>
-                {translationLanguage === 'ur' || translationLanguage === 'ta' ? (urduMenuTranslations['menu'] || 'MENU') : 'MENU'}
-              </h2>
             </div>
 
             <div className="py-2 font-poppins">

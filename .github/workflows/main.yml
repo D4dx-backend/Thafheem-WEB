@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy Frontend to Server
 
 on:
   push:
@@ -10,32 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1.2.0
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          
-          cd /home/thafheem/public_html/thafheem_multilang_backend
-          
-          # Set up git with token for authentication
-          if [ ! -d .git ]; then
-            git init
-            git remote add origin https://${{ secrets.GH_PAT }}@github.com/D4dx-backend/Thafheem-WEB.git
-          else
-            git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/D4dx-backend/Thafheem-WEB.git
-          fi
-          
-          # Fetch and reset to latest production
-          git fetch origin production
-          git reset --hard origin/production
-          
-          # Install dependencies
-          npm install
-          
-          # Restart the application with PM2
-          pm2 restart thafheem-backend || pm2 start npm --name "Thafheem-WEB" -- start
+      - name: Checkout Code
+        uses: actions/checkout@v4   # Latest version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4  # Latest version
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Frontend
+        run: npm run build
+
+      - name: Upload dist folder to cPanel via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          target: "/home/thafheem/public_html/"
+          strip_components: 0

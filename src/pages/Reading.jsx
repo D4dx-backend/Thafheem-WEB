@@ -66,9 +66,15 @@ const Reading = () => {
   const [pageRanges, setPageRanges] = useState([]);
   const [loadedVerseCount, setLoadedVerseCount] = useState(0);
   const BATCH_SIZE = 50; // Load 50 verses at a time
-  const [selectedQirath, setSelectedQirath] = useState("al-afasy");
+  const [selectedQirath, setSelectedQirath] = useState(() => {
+    const savedReciter = localStorage.getItem("reciter");
+    return savedReciter || "al-afasy";
+  });
   const [audioTypes, setAudioTypes] = useState(["quran"]); // Array of selected audio types
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("playbackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1.0;
+  });
   const [currentAudioTypeIndex, setCurrentAudioTypeIndex] = useState(0); // Track which audio type is currently playing
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAyah, setCurrentAyah] = useState(null);
@@ -216,6 +222,23 @@ const Reading = () => {
     audio.preload = 'none'; // Don't preload to avoid conflicts
     audio.playbackRate = playbackSpeed; // Apply playback speed
     // Removed crossOrigin to avoid CORS issues
+    
+    // Ensure playback speed is applied after audio metadata loads
+    const handleLoadedMetadata = () => {
+      if (audio && currentAudioRef.current === audio) {
+        audio.playbackRate = playbackSpeed;
+      }
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+    
+    const handleCanPlay = () => {
+      if (audio && currentAudioRef.current === audio) {
+        audio.playbackRate = playbackSpeed;
+      }
+      audio.removeEventListener('canplay', handleCanPlay);
+    };
+    audio.addEventListener('canplay', handleCanPlay, { once: true });
     
     setAudioElement(audio);
     currentAudioRef.current = audio;
@@ -406,12 +429,56 @@ const Reading = () => {
     };
   }, [showSuccess, showError]);
 
+  // Save reciter to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("reciter", selectedQirath);
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: selectedQirath } }));
+  }, [selectedQirath]);
+
+  // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handleReciterChange = (event) => {
+      const newReciter = event.detail.reciter;
+      if (newReciter !== selectedQirath) {
+        setSelectedQirath(newReciter);
+      }
+    };
+
+    window.addEventListener('reciterChange', handleReciterChange);
+    return () => {
+      window.removeEventListener('reciterChange', handleReciterChange);
+    };
+  }, [selectedQirath]);
+
   // Stop audio and clear highlight when Qirath or audio types change
   useEffect(() => {
     if (isPlaying && audioElement) {
       stopAudio();
     }
   }, [selectedQirath, audioTypes]);
+
+  // Save playback speed to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('playbackSpeedChange', { detail: { playbackSpeed } }));
+  }, [playbackSpeed]);
+
+  // Listen for playback speed changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handlePlaybackSpeedChange = (event) => {
+      const newSpeed = event.detail.playbackSpeed;
+      if (newSpeed !== playbackSpeed) {
+        setPlaybackSpeed(newSpeed);
+      }
+    };
+
+    window.addEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    return () => {
+      window.removeEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    };
+  }, [playbackSpeed]);
 
   // Apply playback speed when it changes
   useEffect(() => {
@@ -706,7 +773,7 @@ const Reading = () => {
     return text.replace(/\s*﴿\s*[\d\u0660-\u0669]+\s*﴾\s*$/u, "").trim();
   };
 
-  const { quranFont, theme } = useTheme();
+  const { quranFont, theme, fontSize } = useTheme();
 
   // Memoize grouped verses to prevent recalculation on every render
   const versesGroupedByPage = useMemo(() => getVersesGroupedByPage(), [verses, pageRanges]);
@@ -810,7 +877,7 @@ const Reading = () => {
                           wordSpacing: "0.1em",
                           letterSpacing: "0.02em",
                           lineHeight: 2.3,
-                          fontSize: "24px",
+                          fontSize: `${fontSize}px`,
                         }}
                         className="font-arabic text-gray-900 dark:text-white"
                         dir="rtl"

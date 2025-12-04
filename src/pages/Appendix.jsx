@@ -1,29 +1,42 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import { fetchAppendix } from "../api/apifunction";
 
 const PAGE_CONFIG = {
   malayalam: {
     title: "Malayalam Appendix",
-    description: "Supplementary Malayalam appendix content compiled from Thafheem archives.",
+    
     apiLanguage: "malayalam",
   },
   english: {
     title: "English Appendix",
-    description: "English appendix articles curated from Thafheem resources.",
+    
     apiLanguage: "english",
   },
   urdu: {
     title: "Urdu Appendix",
-    description: "Urdu appendix articles curated from Thafheem resources.",
+    
     apiLanguage: "urdu",
+  },
+  hindi: {
+    title: "Hindi Appendix",
+   
+    apiLanguage: "hindi",
+  },
+  bangla: {
+    title: "Bangla Appendix",
+
+    apiLanguage: "bangla",
   },
 };
 
 const Appendix = () => {
   const { lang } = useParams();
   const navigate = useNavigate();
+  const { translationLanguage } = useTheme();
   const normalized = String(lang || "english").toLowerCase();
+  const isBangla = normalized.startsWith("bangla") || normalized === "bn" || translationLanguage === "bn";
 
   const pageConfig = useMemo(() => {
     if (normalized.startsWith("mal")) {
@@ -32,8 +45,16 @@ const Appendix = () => {
     if (normalized.startsWith("urdu") || normalized === "u") {
       return PAGE_CONFIG.urdu;
     }
+    if (normalized.startsWith("hindi") || normalized === "hi") {
+      return PAGE_CONFIG.hindi;
+    }
+    if (normalized.startsWith("bangla") || normalized === "bn") {
+      return PAGE_CONFIG.bangla;
+    }
     return PAGE_CONFIG.english;
   }, [normalized]);
+
+  const isUrdu = normalized.startsWith("urdu") || normalized === "u" || translationLanguage === "ur" || translationLanguage === "urdu";
 
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +101,29 @@ const Appendix = () => {
     }
   };
 
+  // Fix question mark position in English text within parentheses for Urdu content
+  const fixQuestionMarkPosition = (html) => {
+    if (!isUrdu || !html) return html;
+    // Match pattern like ")?WHY ALLAH SENT PROPHETS AND MESSENGERS(" and fix it to "(WHY ALLAH SENT PROPHETS AND MESSENGERS?)"
+    // Also handle the normal pattern "(?WHY ALLAH SENT PROPHETS AND MESSENGERS)" 
+    return html
+      .replace(/\)\?([A-Z][^(]+)\(/g, '($1?)')  // Fix reversed pattern: )?...(
+      .replace(/\(\?([A-Z][^)]+)\)/g, '($1?)'); // Fix normal pattern: (?...)
+  };
+
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
+      {isUrdu && (
+        <style>{`
+          .urdu-appendix-content p {
+            text-align: right !important;
+            font-size: 16px !important;
+            line-height: 2.6 !important;
+            margin-bottom: 10px !important;
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          }
+        `}</style>
+      )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         <button
           onClick={handleBack}
@@ -116,7 +158,7 @@ const Appendix = () => {
         )}
 
         {!loading && !error && sections.length > 0 && (
-          <div className="space-y-8">
+          <div className="space-y-8" dir={isUrdu ? "rtl" : "ltr"}>
             {sections.map((section, index) => (
               <section
                 key={section.id || index}
@@ -124,13 +166,20 @@ const Appendix = () => {
               >
                 {section.title && (
                   <h3 
-                    className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3"
-                    dangerouslySetInnerHTML={{ __html: section.title }}
+                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: fixQuestionMarkPosition(section.title) }}
+                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : {}}
                   />
                 )}
                 <div
-                  className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400"
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''}`}
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
+                  style={isUrdu ? {
+                    textAlign: 'right',
+                    fontSize: '16px',
+                    lineHeight: '2.6',
+                    fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                  } : {}}
                 />
               </section>
             ))}

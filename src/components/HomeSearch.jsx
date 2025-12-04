@@ -4,7 +4,7 @@ import logo from "../assets/logo.png";
 import logoWhite from "../assets/logo-white.png";
 import banner from "../assets/banner.png";
 import { Play } from "lucide-react";
-import { searchQuran, fetchPopularChapters } from "../api/apifunction";
+import { searchQuran, fetchPopularChapters, searchWords, searchArabicPhrases, searchSurahsByName, fetchSurahs } from "../api/apifunction";
 import {
   getLastReading,
   LAST_READING_STORAGE_KEY,
@@ -73,7 +73,7 @@ const extractVerseReference = (query = "") => {
 import { useTheme } from "../context/ThemeContext";
 
 const HomepageSearch = () => {
-  const { theme, setViewType } = useTheme();
+  const { theme, setViewType, translationLanguage } = useTheme();
   const [showPopular, setShowPopular] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -84,6 +84,7 @@ const HomepageSearch = () => {
   const [isLoadingPopular, setIsLoadingPopular] = useState(false);
   const [popularError, setPopularError] = useState(null);
   const [lastReading, setLastReading] = useState(null);
+  const [surahsCache, setSurahsCache] = useState(null);
 
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
@@ -93,9 +94,15 @@ const HomepageSearch = () => {
   const scrollLeft = useRef(0);
   const wasManuallyClosed = useRef(false); // Track if user manually closed the popup
 
-  // Preload popular data when component mounts
+  // Preload popular data and surahs when component mounts
   useEffect(() => {
     fetchPopularData();
+    // Preload surahs for name matching
+    fetchSurahs().then(surahs => {
+      setSurahsCache(surahs);
+    }).catch(err => {
+      console.warn('Failed to preload surahs:', err);
+    });
   }, []);
 
   // Lock body scroll when modal is open
@@ -213,6 +220,61 @@ const HomepageSearch = () => {
     }
   };
 
+  // Helper function to check if query matches a surah name or number
+  const findMatchingSurah = async (query) => {
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Check if it's a pure number (surah number)
+    const surahNumber = /^\d+$/.test(normalizedQuery);
+    if (surahNumber) {
+      const num = parseInt(normalizedQuery, 10);
+      if (num >= 1 && num <= 114) {
+        return { number: num, name: `Surah ${num}` };
+      }
+    }
+
+    // Try to get surahs from cache or fetch them
+    let surahs = surahsCache;
+    if (!surahs) {
+      try {
+        surahs = await fetchSurahs();
+        setSurahsCache(surahs);
+      } catch (err) {
+        console.warn('Failed to fetch surahs for name matching:', err);
+        return null;
+      }
+    }
+
+    if (!surahs || surahs.length === 0) {
+      return null;
+    }
+
+    // Search for exact match first (by name or number)
+    // Note: surah.name = English name, surah.arabic = Arabic name
+    // This works regardless of the selected translation language
+    const exactMatch = surahs.find(surah => 
+      surah.name?.toLowerCase() === normalizedQuery ||
+      surah.number?.toString() === normalizedQuery ||
+      surah.arabic?.toLowerCase() === normalizedQuery
+    );
+
+    if (exactMatch) {
+      return exactMatch;
+    }
+
+    // Search for partial match (starts with)
+    const startsWithMatch = surahs.find(surah =>
+      surah.name?.toLowerCase().startsWith(normalizedQuery) ||
+      surah.arabic?.toLowerCase().startsWith(normalizedQuery)
+    );
+
+    if (startsWithMatch) {
+      return startsWithMatch;
+    }
+
+    return null;
+  };
+
   const performSearch = async (query) => {
     const sanitizedQuery = normalizeSearchQuery(query);
 
@@ -223,40 +285,139 @@ const HomepageSearch = () => {
       return;
     }
 
-    // Reset manual close flag when performing new search
+    // Skip word search for verse references - they should navigate directly
+    const verseReference = extractVerseReference(sanitizedQuery);
+    if (verseReference) {
+      // This shouldn't happen if handleSearchSubmit works correctly, but handle it anyway
+      return;
+    }
+
     wasManuallyClosed.current = false;
-    
     setIsSearching(true);
     setSearchError(null);
     setShowSearchResults(true);
 
     try {
-      const searchResults = await searchQuran(sanitizedQuery, 'en');
+      // Map translationLanguage code to API language name
+      const languageMap = {
+        'E': 'english',
+        'mal': 'malayalam',
+        'ta': 'tamil',
+        'bn': 'bangla',
+        'ur': 'urdu',
+        'hi': 'hindi'
+      };
       
-      const combinedResults = [
-        ...searchResults.surahs.map(surah => ({
-          type: 'surah',
-          data: surah,
-          displayText: `${surah.number}. ${surah.name}`,
-          subText: `${surah.ayahs} verses • ${surah.type}`,
-          arabicText: surah.arabic
-        })),
-        ...searchResults.verses.slice(0, 10).map(verse => ({
-          type: 'verse',
-          data: verse,
-          displayText: verse.text || verse.translated_text || 'Verse text not available',
-          subText: `Surah ${verse.verse_key.split(':')[0]}:${verse.verse_key.split(':')[1]}`,
-          verse_key: verse.verse_key,
-          surahName: verse.surahInfo?.name || verse.chapter?.name_simple || `Surah ${verse.verse_key.split(':')[0]}`,
-          surahArabic: verse.surahInfo?.arabic || '',
-          verseNumber: verse.verse_key.split(':')[1],
-          surahNumber: verse.verse_key.split(':')[0],
-          surahType: verse.surahInfo?.type || '',
-          highlighted_text: verse.highlighted_text
-        }))
+      const selectedLang = languageMap[translationLanguage] || 'malayalam';
+      
+      // Search in both selected language AND Arabic (always include Arabic search)
+      // Run searches in parallel for better performance
+      const searchPromises = [
+        searchWords(sanitizedQuery, selectedLang, 15).catch((err) => {
+          console.warn(`Word search failed for ${selectedLang}:`, err);
+          return { language: selectedLang, results: [] };
+        }),
+        searchArabicPhrases(sanitizedQuery, 15).catch((err) => {
+          console.warn('Arabic phrase search failed:', err);
+          return [];
+        })
       ];
+      
+      const [wordSearchResult, arabicResults] = await Promise.all(searchPromises);
+      
+      // Format selected language word search results
+      const formattedWordResults = (wordSearchResult.results || []).map(item => {
+        // Ensure surah and ayah are properly parsed as integers
+        const surah = typeof item.surah === 'number' ? item.surah : parseInt(String(item.surah), 10);
+        const ayah = typeof item.ayah === 'number' ? item.ayah : parseInt(String(item.ayah), 10);
+        
+        // Validate values
+        if (!surah || !ayah || isNaN(surah) || isNaN(ayah)) {
+          console.warn('Invalid surah/ayah in result:', { item, surah, ayah, language: wordSearchResult.language });
+          return null;
+        }
+        
+        // Include sourceType in subText for Malayalam (translation/interpretation)
+        const sourceType = item.sourceType || '';
+        const sourceLabel = sourceType ? ` • ${sourceType}` : '';
+        
+        return {
+          type: 'word_search',
+          language: wordSearchResult.language,
+          surah: surah,
+          ayah: ayah,
+          displayText: item.matchedText || '',
+          subText: `${wordSearchResult.language}${sourceLabel} • Surah ${surah}:${ayah}`,
+          arabicWord: item.arabicWord || '',
+          matchedText: item.matchedText || '',
+          sourceType: sourceType || undefined
+        };
+      }).filter(result => result !== null && result.surah > 0 && result.ayah > 0); // Filter out invalid results
 
-      setSearchResults(combinedResults.slice(0, 12));
+      // Format Arabic phrase search results - handle multiple possible response formats
+      let formattedArabicResults = [];
+      if (Array.isArray(arabicResults) && arabicResults.length > 0) {
+        formattedArabicResults = arabicResults.map(result => {
+          // Handle different possible field names from Arabic phrase search API
+          const surah = result.SuraID || result.suraid || result.SuraId || result.surah || result.Sura;
+          const ayah = result.AyaID || result.ayaid || result.AyaId || result.ayah || result.Aya;
+          const text = result.AyaHText || result.text_uthmani || result.Text || result.text || result.AyaText || '';
+          
+          return {
+            type: 'word_search',
+            language: 'arabic',
+            surah: parseInt(surah) || 0,
+            ayah: parseInt(ayah) || 0,
+            displayText: text,
+            subText: `arabic • Surah ${surah}:${ayah}`,
+            matchedText: sanitizedQuery
+          };
+        }).filter(result => result.surah > 0 && result.ayah > 0); // Filter out invalid results
+      }
+
+      // Also include surah name search results
+      const surahResults = [];
+      try {
+        const surahs = await searchSurahsByName(sanitizedQuery);
+        if (surahs && surahs.length > 0) {
+          surahResults.push(...surahs.map(surah => ({
+            type: 'surah',
+            data: surah,
+            displayText: `${surah.number}. ${surah.name}`,
+            subText: `${surah.ayahs} verses • ${surah.type}`,
+            arabicText: surah.arabic
+          })));
+        }
+      } catch (error) {
+        // Silently fail surah search
+      }
+
+      // Combine all results: preserve existing results (verse references, surahs) first, then new surahs, then word results
+      // Use functional update to get current results from state
+      setSearchResults(currentResults => {
+        const existingResults = (currentResults || []).filter(r => r.type === 'verse_reference' || r.type === 'surah');
+        const allResults = [...existingResults, ...surahResults, ...formattedWordResults, ...formattedArabicResults];
+        return allResults.slice(0, 25);
+      });
+      
+      // Debug: Log results to help troubleshoot
+      setSearchResults(currentResults => {
+        const existingResults = (currentResults || []).filter(r => r.type === 'verse_reference' || r.type === 'surah');
+        const allResults = [...existingResults, ...surahResults, ...formattedWordResults, ...formattedArabicResults];
+        
+        console.log('📊 Search results:', {
+          selectedLanguage: selectedLang,
+          wordResults: formattedWordResults.length,
+          arabicResults: formattedArabicResults.length,
+          surahResults: surahResults.length,
+          existingResults: existingResults.length,
+          total: allResults.length,
+          sampleWordResult: formattedWordResults[0],
+          allWordResults: formattedWordResults
+        });
+        
+        return allResults.slice(0, 25);
+      });
     } catch (error) {
       setSearchError('Failed to search. Please try again.');
       setSearchResults([]);
@@ -290,38 +451,122 @@ const HomepageSearch = () => {
 
   // Handle search result click with modifier key support
   const handleSearchResultClick = (result, event) => {
-    // Check if modifier key is pressed (Ctrl/Cmd)
+    // Prevent default to avoid any unwanted behavior
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Debug: Log all clicks to see what's happening
+    console.log('🔍 Click handler called:', { 
+      type: result.type, 
+      language: result.language,
+      surah: result.surah,
+      ayah: result.ayah,
+      fullResult: result
+    });
+    
+    // Mark that we're navigating so blur handler doesn't interfere
+    wasManuallyClosed.current = true;
+    
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
     
-    if (result.type === 'surah') {
+    if (result.type === 'word_search') {
+      // Navigate to specific surah and ayah for word search results
+      // Ensure we get the values correctly - handle both number and string
+      const surah = typeof result.surah === 'number' ? result.surah : parseInt(String(result.surah || ''), 10);
+      const ayah = typeof result.ayah === 'number' ? result.ayah : parseInt(String(result.ayah || ''), 10);
+      
+      // Debug log to help troubleshoot
+      console.log('✅ Navigating to word search result:', { surah, ayah, language: result.language, originalResult: result });
+      
+      if (!surah || !ayah || isNaN(surah) || isNaN(ayah) || surah < 1 || surah > 114 || ayah < 1) {
+        console.warn('Invalid surah or ayah:', { surah, ayah, result });
+        return;
+      }
+      
+      const targetUrl = `/surah/${surah}#verse-${ayah}`;
+      
+      if (isModifierPressed) {
+        event?.preventDefault();
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      
+      // Store state in sessionStorage for the surah page to read (backup)
+      sessionStorage.setItem('scrollToVerse', ayah.toString());
+      sessionStorage.setItem('navigationState', JSON.stringify({
+        viewType: 'Ayah Wise',
+        highlightVerse: `${surah}:${ayah}`,
+        scrollToVerse: ayah
+      }));
+      
+      // Close the popup before navigation
+      setShowSearchResults(false);
+      setSearchQuery("");
+      setSearchResults([]);
+      
+      // Always use window.location.href to ensure hash is preserved in URL
+      // This works reliably for all languages
+      window.location.href = targetUrl;
+    } else if (result.type === 'surah') {
+      // Try to extract surah number from various possible locations and types
       let surahNumber =
         result.data?.number ??
         result.data?.id ??
         result.data?.chapter_id ??
         result.data?.code ??
+        result.number ??
+        result.id ??
+        result.chapter_id ??
+        result.code ??
         null;
 
-      if (typeof surahNumber === "string") {
-        surahNumber = surahNumber.replace(/^0+/, "");
-      }
-
-      if (!surahNumber) {
+      // Normalize the surah number - handle both string and number types
+      if (surahNumber != null) {
+        // Convert to string first to handle leading zeros
+        let surahStr = String(surahNumber).replace(/^0+/, "");
+        
+        // Convert to number for validation
+        const surahNum = parseInt(surahStr, 10);
+        
+        // Validate the surah number
+        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+          console.warn("Invalid surah number:", { surahNumber, surahNum, result });
+          return;
+        }
+        
+        // Use the validated number as string for URL
+        const targetSurahId = surahNum.toString();
+        const url = `/surah/${targetSurahId}`;
+        
+        if (isModifierPressed) {
+          event?.preventDefault();
+          window.open(url, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        
+        // Close the popup before navigation
+        setShowSearchResults(false);
+        setSearchQuery("");
+        setSearchResults([]);
+        
+        navigate(url);
+      } else {
         console.warn("Unable to determine surah number from search result:", result);
         return;
       }
-
-      const targetSurahId = surahNumber.toString();
-
-      const url = `/surah/${targetSurahId}`;
-      if (isModifierPressed) {
-        event?.preventDefault();
-        window.open(url, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      navigate(url);
     } else if (result.type === 'verse' || result.type === 'verse_reference') {
-      const [surahNumber, verseNumber] = result.verse_key.split(':');
-      const url = `/surah/${surahNumber}#verse-${verseNumber}`;
+      const surah = result.surah || (result.verse_key ? parseInt(result.verse_key.split(':')[0], 10) : null);
+      const verse = result.ayah || result.verse || (result.verse_key ? parseInt(result.verse_key.split(':')[1], 10) : null);
+      
+      if (!surah || !verse) {
+        console.warn('Invalid verse reference:', result);
+        return;
+      }
+      
+      const url = `/surah/${surah}#verse-${verse}`;
+      const verseKey = result.verse_key || `${surah}:${verse}`;
       
       if (isModifierPressed) {
         event?.preventDefault();
@@ -329,12 +574,20 @@ const HomepageSearch = () => {
         return;
       }
       
-      navigate(url, {
-        state: { 
-          highlightVerse: result.verse_key,
-          scrollToVerse: verseNumber
-        }
-      });
+      // Store state for navigation
+      sessionStorage.setItem('scrollToVerse', verse.toString());
+      sessionStorage.setItem('navigationState', JSON.stringify({
+        viewType: 'Ayah Wise',
+        highlightVerse: verseKey,
+        scrollToVerse: verse
+      }));
+      
+      // Close the popup before navigation
+      setShowSearchResults(false);
+      setSearchQuery("");
+      setSearchResults([]);
+      
+      window.location.href = url;
     }
     
     setShowSearchResults(false);
@@ -355,24 +608,133 @@ const HomepageSearch = () => {
       return;
     }
 
-    // Only show popup after form is submitted (Enter key or button click)
-    const verseReference = extractVerseReference(normalizedQuery);
-
-    if (verseReference) {
-      setSearchQuery(normalizedQuery);
-      await performSearch(normalizedQuery);
-      return;
-    }
-
-    const isSurahOnly = /^\d+$/.test(normalizedQuery);
-    const hasColonButNoVerse = /^\d+:$/.test(normalizedQuery);
-
-    if (isSurahOnly || hasColonButNoVerse) {
-      return;
-    }
-
+    wasManuallyClosed.current = false;
+    setIsSearching(true);
+    setSearchError(null);
+    setShowSearchResults(true);
     setSearchQuery(normalizedQuery);
-    await performSearch(normalizedQuery);
+
+    try {
+      const results = [];
+
+      // Check if it's a verse reference (e.g., "2:45")
+      const verseReference = extractVerseReference(normalizedQuery);
+      if (verseReference) {
+        const surah = parseInt(verseReference.surah, 10);
+        const verse = parseInt(verseReference.verse, 10);
+        
+        // Validate surah and verse numbers
+        if (surah >= 1 && surah <= 114 && verse >= 1) {
+          // Get surah name for display
+          let surahs = surahsCache;
+          if (!surahs) {
+            try {
+              surahs = await fetchSurahs();
+              setSurahsCache(surahs);
+            } catch (err) {
+              console.warn('Failed to fetch surahs:', err);
+            }
+          }
+          
+          const surahInfo = surahs?.find(s => s.number === surah);
+          const surahName = surahInfo?.name || `Surah ${surah}`;
+          const surahArabic = surahInfo?.arabic || '';
+          
+          results.push({
+            type: 'verse_reference',
+            surah: surah,
+            ayah: verse,
+            displayText: `${surahName} - Verse ${verse}`,
+            subText: `Surah ${surah}:${verse}`,
+            arabicText: surahArabic,
+            verse_key: `${surah}:${verse}`
+          });
+        }
+      }
+
+      // Check if it's a surah number only (e.g., "2")
+      const isSurahOnly = /^\d+$/.test(normalizedQuery);
+      if (isSurahOnly) {
+        const surahNum = parseInt(normalizedQuery, 10);
+        if (surahNum >= 1 && surahNum <= 114) {
+          // Get surah info
+          let surahs = surahsCache;
+          if (!surahs) {
+            try {
+              surahs = await fetchSurahs();
+              setSurahsCache(surahs);
+            } catch (err) {
+              console.warn('Failed to fetch surahs:', err);
+            }
+          }
+          
+          const surahInfo = surahs?.find(s => s.number === surahNum);
+          if (surahInfo) {
+            results.push({
+              type: 'surah',
+              data: surahInfo,
+              displayText: `${surahInfo.number}. ${surahInfo.name}`,
+              subText: `${surahInfo.ayahs} verses • ${surahInfo.type}`,
+              arabicText: surahInfo.arabic
+            });
+          }
+        }
+      }
+
+      // Check if it's a surah name
+      const matchingSurah = await findMatchingSurah(normalizedQuery);
+      if (matchingSurah && !isSurahOnly) {
+        const surahId = matchingSurah.number || matchingSurah.id;
+        if (surahId >= 1 && surahId <= 114) {
+          // Get full surah info
+          let surahs = surahsCache;
+          if (!surahs) {
+            try {
+              surahs = await fetchSurahs();
+              setSurahsCache(surahs);
+            } catch (err) {
+              console.warn('Failed to fetch surahs:', err);
+            }
+          }
+          
+          const surahInfo = surahs?.find(s => s.number === surahId);
+          if (surahInfo) {
+            results.push({
+              type: 'surah',
+              data: surahInfo,
+              displayText: `${surahInfo.number}. ${surahInfo.name}`,
+              subText: `${surahInfo.ayahs} verses • ${surahInfo.type}`,
+              arabicText: surahInfo.arabic
+            });
+          }
+        }
+      }
+
+      // If we found verse reference or surah matches, show them
+      if (results.length > 0) {
+        setSearchResults(results);
+        setIsSearching(false);
+        
+        // Only do word search if it's not a pure verse reference or surah number
+        // (e.g., "2:45" or "2" should not trigger word search, but "Al-Baqarah" can)
+        const isVerseReference = extractVerseReference(normalizedQuery);
+        const isSurahNumber = /^\d+$/.test(normalizedQuery);
+        
+        if (!isVerseReference && !isSurahNumber) {
+          // Perform word search in background to add more results
+          performSearch(normalizedQuery).catch(() => {
+            // Ignore word search errors, we already have verse/surah results
+          });
+        }
+      } else {
+        // No verse/surah matches, just do word search
+        await performSearch(normalizedQuery);
+      }
+    } catch (error) {
+      setSearchError('Failed to search. Please try again.');
+      setSearchResults([]);
+      setIsSearching(false);
+    }
   };
 
   const handleBookmarkClick = () => {
@@ -401,17 +763,67 @@ const HomepageSearch = () => {
     navigate(targetPath);
   };
 
-  // Handle search input blur - show popup if complete verse reference
-  const handleSearchBlur = () => {
-    // Small delay to allow click events to process first
-    setTimeout(() => {
-      const normalizedQuery = normalizeSearchQuery(searchQuery);
-      const verseReference = extractVerseReference(normalizedQuery);
+  // Handle search input blur - navigate directly if verse reference or surah
+  const handleSearchBlur = async () => {
+    // Longer delay to allow click events to process first (especially for word search results)
+    setTimeout(async () => {
+      // Check if user clicked on a result (wasManuallyClosed is set to true on click)
+      if (wasManuallyClosed.current) {
+        return; // Don't interfere with navigation
+      }
       
-      // Only show popup if input is a complete verse reference (like "2:255")
-      // and popup wasn't manually closed
-      if (verseReference && !wasManuallyClosed.current && normalizedQuery.trim().length > 0) {
-        performSearch(normalizedQuery);
+      const normalizedQuery = normalizeSearchQuery(searchQuery);
+      
+      if (!normalizedQuery) {
+        setShowSearchResults(false);
+        return;
+      }
+
+      // Check if it's a verse reference (e.g., "2:45")
+      const verseReference = extractVerseReference(normalizedQuery);
+      if (verseReference) {
+        const surah = parseInt(verseReference.surah, 10);
+        const verse = parseInt(verseReference.verse, 10);
+        
+        if (surah >= 1 && surah <= 114 && verse >= 1) {
+          const targetUrl = `/surah/${surah}#verse-${verse}`;
+          sessionStorage.setItem('scrollToVerse', verse.toString());
+          sessionStorage.setItem('navigationState', JSON.stringify({
+            viewType: 'Ayah Wise',
+            highlightVerse: `${surah}:${verse}`,
+            scrollToVerse: verse
+          }));
+          window.location.href = targetUrl;
+          return;
+        }
+      }
+
+      // Check if it's a surah number
+      const isSurahOnly = /^\d+$/.test(normalizedQuery);
+      if (isSurahOnly) {
+        const surahNum = parseInt(normalizedQuery, 10);
+        if (surahNum >= 1 && surahNum <= 114) {
+          navigate(`/surah/${surahNum}`);
+          setSearchQuery("");
+          return;
+        }
+      }
+
+      // Check if it's a surah name
+      const matchingSurah = await findMatchingSurah(normalizedQuery);
+      if (matchingSurah) {
+        const surahId = matchingSurah.number || matchingSurah.id;
+        if (surahId >= 1 && surahId <= 114) {
+          navigate(`/surah/${surahId}`);
+          setSearchQuery("");
+          return;
+        }
+      }
+
+      // If it's a complete verse reference, show search results
+      if (verseReference && normalizedQuery.trim().length > 0) {
+        // Don't perform search for verse references - they should navigate directly
+        setShowSearchResults(false);
       } else {
         setShowSearchResults(false);
       }
@@ -561,17 +973,50 @@ const HomepageSearch = () => {
 
               {!isSearching && searchResults.length > 0 && (
                 <div className="space-y-3">
-                  {/* Show result count */}
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Found {searchResults.filter(r => r.type === 'surah').length} surahs and {searchResults.filter(r => r.type === 'verse').length} verses
+                    Found {searchResults.filter(r => r.type === 'surah').length} surahs, {searchResults.filter(r => r.type === 'verse' || r.type === 'verse_reference').length} verses, {searchResults.filter(r => r.type === 'word_search').length} word matches
                   </div>
                   {searchResults.map((result, index) => (
                     <div
-                      key={`${result.type}-${index}`}
-                      onClick={(e) => handleSearchResultClick(result, e)}
+                      key={`${result.type}-${index}-${result.surah || result.data?.number || index}`}
+                      onMouseDown={(e) => {
+                        // Use onMouseDown instead of onClick to ensure it fires before blur
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🖱️ Div clicked:', { result, index });
+                        handleSearchResultClick(result, e);
+                      }}
+                      onClick={(e) => {
+                        // Also handle onClick as backup
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
                     >
-                      {result.type === 'surah' ? (
+                      {result.type === 'word_search' ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400 uppercase">
+                                {result.language}
+                              </span>
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {result.subText}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {result.displayText}
+                            </p>
+                            {result.arabicWord && (
+                              <p className="text-lg text-gray-700 dark:text-gray-300 mt-1" dir="rtl">
+                                {result.arabicWord}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRightIcon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                        </div>
+                      ) : result.type === 'surah' ? (
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
@@ -590,6 +1035,31 @@ const HomepageSearch = () => {
                               <p className="text-lg text-gray-700 dark:text-gray-300 ml-4" dir="rtl">
                                 {result.arabicText}
                               </p>
+                            </div>
+                          </div>
+                          <ChevronRightIcon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                        </div>
+                      ) : result.type === 'verse_reference' ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-sm font-medium text-cyan-600 dark:text-cyan-400">
+                                Verse Reference
+                              </span>
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {result.subText}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {result.displayText}
+                              </p>
+                              {result.arabicText && (
+                                <p className="text-lg text-gray-700 dark:text-gray-300 ml-4" dir="rtl">
+                                  {result.arabicText}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <ChevronRightIcon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />

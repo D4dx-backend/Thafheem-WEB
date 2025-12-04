@@ -7,7 +7,6 @@ import Ed4 from "../assets/ed4.png";
 import Ed5 from "../assets/ed5.png";
 import Ed6 from "../assets/ed6.png";
 import Ed7 from "../assets/ed7.png";
-import VideoPlayer from '../components/VideoPlayer';
 import { useTheme } from "../context/ThemeContext";
 
 const MALAYALAM_CONTENT = `
@@ -28,10 +27,7 @@ const MALAYALAM_CONTENT = `
   <p>1920 മുതല്‍ 1928 വരെ 4 വ്യത്യസ്ത പുസ്തകങ്ങള്‍ മൗദൂദി സാഹിബ് വിവര്‍ത്തനം ചെയ്തു. ഒന്ന് അറബിയില്‍നിന്നും ബാക്കിയുള്ളവ ഇംഗ്ലീഷില്‍നിന്നും. ആദ്യത്തെ ഗ്രന്ഥമായ 'അല്‍ ജിഹാദു ഫില്‍ ഇസ്‌ലാം' 1927 ല്‍ 'അല്‍ജംഇയ്യത്തി'ല്‍ പരമ്പരയായി പ്രസിദ്ധീകരിച്ചു. 1930ല്‍ അത് പുസ്തകരൂപത്തില്‍ പുറത്തുവന്നു. അല്ലാമാ മുഹമ്മദ് ഇഖ്ബാലും മൗലാനാ മുഹമ്മദലി ജൗഹറും പ്രസ്തുത കൃതിയെ ഏറെ പ്രശംസിക്കുകയുണ്ടായി. മൗദൂദി സാഹിബ് തന്റെ ഇരുപതുകളില്‍ എഴുതിയതാണെങ്കിലും ഇന്നും ഏറെ വിലമതിക്കപ്പെടുന്ന ഈ കൃതി അദ്ദേഹത്തിന്റെ പ്രമുഖ ഗ്രന്ഥങ്ങളിലൊന്നാണ്.</p>
   <h3>ഗവേഷണവും രചനയും</h3>
   <p>
-    <video width="350" controls="">
-      <source src="/articles/video/MaududiSahibVideo2.mp4" type="video/mp4">
-      നിങ്ങളുടെ ബ്രൗസര്‍ വീഡിയോ പ്‌ളേബാക്ക് പിന്തുണക്കുന്നില്ല.
-    </video>
+    
   </p>
   <p>1928ല്‍ 'അല്‍ ജംഇയ്യത്തി'ല്‍നിന്ന് വിരമിച്ച ശേഷം മൗദൂദി സാഹിബ് ഹൈദരാബാദിലേക്കു തിരിച്ചുപോയി ഗവേഷണത്തിലും എഴുത്തിലും മുഴുകി. 1933ല്‍ സ്വന്തം പത്രാധിപത്യത്തില്‍ 'തര്‍ജുമാനുല്‍ ഖുര്‍ആന്‍' മാസിക ആരംഭിച്ചു. അന്നുമുതല്‍ തന്റെ ആശയങ്ങളും ചിന്തകളും വീക്ഷണങ്ങളും പ്രകാശിപ്പിക്കാനുള്ള മുഖ്യമാധ്യമമായി ഓഫ് തര്‍ജുമാനുല്‍ ഖുര്‍ആന്‍ മാറി.</p>
   <p>മുപ്പതുകളുടെ മധ്യത്തില്‍ ഇന്ത്യന്‍ മുസ്‌ലിംകള്‍ നേരിട്ടുകൊണ്ടിരുന്ന മുഖ്യ രാഷ്ട്രീയ സാംസ്‌കാരിക പ്രശ്‌നങ്ങളെക്കുറിച്ച് ഇസ്‌ലാമിക കാഴ്ചപ്പാടിലൂടെ അദ്ദേഹം എഴുതാന്‍ തുടങ്ങി. മുസ്‌ലിംകളില്‍ സ്വാധീനം ചെലുത്തിക്കൊണ്ടിരുന്ന അനിസ്‌ലാമിക ആശയാദര്‍ശങ്ങളെയും ചിന്താഗതികളെയും രൂക്ഷമായി വിമര്‍ശിക്കുകയും അവയുടെ പൊള്ളത്തരം സമര്‍ഥമായി തുറന്നുകാട്ടുകയും ചെയ്തു.</p>
@@ -132,10 +128,177 @@ const URDU_CONTENT = `
 </div>
 `;
 
+// Hindi content for Maududi page
+const HINDI_CONTENT = `
+<div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;">
+    <img src="${maududiImg}" alt="सैय्यद अबुल अला मौदूदी" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+    <img src="${Ed2}" alt="मौदूदी का घर" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+  </div>
+  <h2 style="font-size: 1.5em; margin-top: 1em; margin-bottom: 0.5em;">सैय्यद अबुल अला मौदूदी (1903-1979)</h2>
+  <p>अबुल अला का जन्म रजब 3, 1321 AH (25 सितंबर, 1903 AD) को औरंगाबाद में हुआ था, जो हैदराबाद (डेक्कन) की पुरानी रियासत का एक जाना-माना शहर था, जो अब महाराष्ट्र, इंडिया में है। एक इज्ज़तदार परिवार में जन्मे, उनके पिता की तरफ से उनके खानदान का रिश्ता पवित्र पैगंबर मुहम्मद (सल्लल्लाहु अलैहि वसल्लम) से जुड़ा है।</p>
+  <p>परिवार में आध्यात्मिक लीडरशिप की एक पुरानी परंपरा थी और मौदूदी के कई पूर्वज सूफी सिलसिले के जाने-माने लीडर थे। उनमें से एक मशहूर हस्ती, जिनसे उन्हें अपना खानदानी नाम मिला, ख्वाजा कुतुब अल-दीन मौदूद (मौत 527 AH) थे, जो चिश्ती सूफी सिलसिले के एक मशहूर लीडर थे। मौदूदी के पुरखे इस्लामिक कैलेंडर की 9वीं सदी (ईसाई कैलेंडर की 15वीं सदी) के आखिर में चिश्त से सबकॉन्टिनेंट चले गए थे। सबसे पहले आने वाले मौदूदी के हमनाम, अबुल अला मौदूदी (मौत 935 AH) थे। मौदूदी के पिता, अहमद हसन, जिनका जन्म 1855 AD में हुआ था, पेशे से वकील थे, बहुत धार्मिक और नेक इंसान थे। अबुल अला उनके तीन बेटों में सबसे छोटे थे।</p>
+  
+  <h3>एजुकेशनल और इंटेलेक्चुअल ग्रोथ</h3>
+  <p><img src="${Ed1}" alt="मौदूदी का सर्टिफिकेट" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />घर पर शुरुआती पढ़ाई करने के बाद, अबुल अला को मदरसा फुरकानिया में एडमिशन मिला, जो एक हाई स्कूल था जो मॉडर्न वेस्टर्न और ट्रेडिशनल इस्लामिक एजुकेशन को मिलाने की कोशिश करता था। अपनी सेकेंडरी एजुकेशन सफलतापूर्वक पूरी करने के बाद, युवा अबुल अला हैदराबाद के दारुल उलूम में अंडरग्रेजुएट पढ़ाई के स्टेज पर थे, जब उनके पिता की बीमारी और आखिरकार मौत की वजह से उनकी फॉर्मल पढ़ाई में रुकावट आई। इससे मौदूदी को अपनी पढ़ाई जारी रखने से कोई दिक्कत नहीं हुई, हालांकि उन्हें अपनी पढ़ाई रेगुलर एजुकेशनल इंस्टीट्यूशन से बाहर करनी पड़ी। 1920 के दशक की शुरुआत तक, अबुल अला अपनी मातृभाषा उर्दू के अलावा अरबी, फ़ारसी और अंग्रेज़ी भी इतनी जानते थे कि अपनी पसंद के विषय खुद से पढ़ सकें। इस तरह, उन्होंने जो कुछ भी सीखा, वह ज़्यादातर खुद सीखा था, हालाँकि कुछ समय के लिए उन्हें कुछ काबिल विद्वानों से भी ठीक-ठाक तरीके से निर्देश और गाइडेंस मिला। इस तरह, मौदूदी की दिमागी तरक्की काफी हद तक उनकी अपनी कोशिशों और उनके टीचरों से मिली हिम्मत का नतीजा थी। इसके अलावा, उनकी ईमानदारी, सही कामों और नेकी के लिए उनका गहरा सम्मान काफी हद तक उनके माता-पिता की धार्मिक आस्था और उनकी सही नैतिक परवरिश के लिए उनकी चिंता को दिखाता है।</p>
+  
+  <h3>पत्रकारिता में शामिल होना</h3>
+  <p><img src="${Ed4}" alt="पत्रकारिता नोट्स" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />अपनी फॉर्मल पढ़ाई में रुकावट के बाद, मौदूदी ने गुज़ारा करने के लिए पत्रकारिता की ओर रुख किया। 1918 में, वह पहले से ही एक बड़े उर्दू अखबार में योगदान दे रहे थे, और 1920 में, 17 साल की उम्र में, उन्हें ताज का एडिटर बनाया गया, जो जबलपुर से छपता था, जो अब भारत के मध्य प्रदेश प्रांत का एक शहर है। 1920 के आखिर में, मौदूदी दिल्ली आए और पहले मुस्लिम (1921-23) अखबार के एडिटर बने, और बाद में अल-जमियत (1925-28) के, ये दोनों ही जमीयत-ए-उलेमा-ए-हिंद के हिस्से थे, जो मुस्लिम धार्मिक विद्वानों का एक संगठन था। उनके एडिटर रहते हुए, अल-जमियत भारत के मुसलमानों का सबसे बड़ा अखबार बन गया।</p>
+  
+  <h3>राजनीति में दिलचस्पी</h3>
+  <p>साल 1920 के आसपास, मौदूदी ने राजनीति में भी कुछ दिलचस्पी लेना शुरू कर दिया। उन्होंने खिलाफत आंदोलन में हिस्सा लिया, और तहरीक-ए-हिजरत से जुड़ गए, जो भारत पर ब्रिटिश राज के खिलाफ एक आंदोलन था और उस देश के मुसलमानों से बड़ी संख्या में अफगानिस्तान जाने की अपील करता था। हालांकि, आंदोलन के लीडरशिप से उनकी अनबन हो गई क्योंकि उनका कहना था कि आंदोलन के मकसद और स्ट्रेटेजी असलियत के करीब और अच्छी तरह से प्लान की हुई होनी चाहिए। मौदूदी धीरे-धीरे पढ़ाई और पत्रकारिता के कामों में लग गए।</p>
+  
+  <h3>पहली किताब</h3>
+  <p>1920-28 के दौरान, मौलाना मौदूदी ने चार अलग-अलग किताबों का ट्रांसलेशन भी किया, एक अरबी से और बाकी इंग्लिश से। उन्होंने अपनी पहली बड़ी किताब, अल-जिहाद फी अल-इस्लाम लिखकर सबकॉन्टिनेंट की एकेडमिक लाइफ पर भी अपनी छाप छोड़ी। यह युद्ध और शांति के इस्लामिक कानून पर एक बेहतरीन किताब है। इसे पहली बार 1927 में अल-जमियत में सीरियल के तौर पर छापा गया था और 1930 में इसे ऑफिशियली पब्लिश किया गया था। इसे मशहूर कवि-फिलॉसफर मुहम्मद इकबाल (मृत्यु 1938) और खिलाफत मूवमेंट के मशहूर लीडर मौलाना मुहम्मद अली जौहर (मृत्यु 1931) दोनों ने बहुत सराहा था। हालांकि यह उनके 20s में लिखी गई थी, लेकिन यह उनके बड़े और सबसे ज़्यादा माने जाने वाले कामों में से एक है।</p>
+  
+  <h3>रिसर्च और राइटिंग</h3>
+  <p>1928 में अल-जमियत से इस्तीफा देने के बाद, मौदूदी हैदराबाद चले गए और खुद को रिसर्च और राइटिंग में लगा दिया। इसी सिलसिले में उन्होंने 1933 में महीने की तर्जुमान अल-कुरान का एडिटर-इन-चीफ का काम संभाला, जो तब से मौदूदी के विचारों को फैलाने का मुख्य ज़रिया रहा है। वह एक बहुत लिखने वाले लेखक साबित हुए, जो हर महीने कई पेज लिखते थे। शुरू में, उन्होंने इस्लाम के विचारों, मूल्यों और बुनियादी उसूलों को समझाने पर ध्यान दिया। उन्होंने इस्लामी और आज के पश्चिमी दौर के बीच टकराव से पैदा होने वाले सवालों पर खास ध्यान दिया। उन्होंने आज के ज़माने की कुछ बड़ी समस्याओं पर भी बात करने की कोशिश की और उन समस्याओं के इस्लामी हल पेश करने की कोशिश की। उन्होंने पश्चिम और मुस्लिम दुनिया के अनुभव के हिसाब से उन समस्याओं की स्टडी करने के लिए एक नया तरीका भी बनाया, उन्हें उनकी अंदरूनी मज़बूती और काम करने की काबिलियत और कुरान और सुन्नत की शिक्षाओं के हिसाब से थ्योरी के आधार पर परखा। उनके लेखों से उनकी समझ और ज्ञान, कुरान और सुन्नत की शिक्षाओं के महत्व की गहरी समझ और पश्चिमी सोच और इतिहास की मुख्यधारा के बारे में उनकी गहरी समझ का पता चलता है। इन सब बातों से इन समस्याओं के प्रति मुस्लिम नज़रिए में एक नई जान आई और उनके संदेश को ज़्यादा अपील मिली।</p>
+  <p>30 के दशक के बीच में, मौदूदी ने उस समय भारत के मुसलमानों के सामने आने वाले बड़े राजनीतिक और सांस्कृतिक मुद्दों पर लिखना शुरू किया और उन्हें सिर्फ़ थोड़े समय के राजनीतिक और आर्थिक फ़ायदों के नज़रिए से देखने के बजाय इस्लामी नज़रिए से देखने की कोशिश की। उन्होंने उन नई सोच की लगातार आलोचना की, जो उनके मज़हबी भाइयों के दिलो-दिमाग पर छाने लगी थीं और उन सोच का खोखलापन दिखाने की कोशिश की। इस सिलसिले में, राष्ट्रवाद के विचार पर मौदूदी ने तब खास ध्यान दिया जब उन्होंने ज़ोर देकर इसके खतरनाक मौकों के साथ-साथ इस्लाम की शिक्षाओं के साथ इसके मेल न खाने को भी समझाया। मौदूदी ने इस बात पर भी ज़ोर दिया कि भारत के संदर्भ में राष्ट्रवाद का मतलब मुसलमानों की अलग पहचान को पूरी तरह खत्म करना है। इस बीच, दार्शनिक-कवि अल्लामा मुहम्मद इकबाल के एक न्योते ने उन्हें हैदराबाद छोड़कर पंजाब के पूर्वी हिस्से में पठानकोट ज़िले में बसने के लिए राज़ी कर लिया। मौदूदी ने असल में दारुल-इस्लाम नाम का एक एकेडमिक और रिसर्च सेंटर बनाया, जहाँ अल्लामा इकबाल के साथ मिलकर, उन्होंने इस्लाम के काबिल जानकारों को इस्लाम पर बहुत अच्छी क्वालिटी की किताबें लिखने के लिए ट्रेनिंग देने और सबसे बढ़कर, इस्लामिक सोच को फिर से बनाने का प्लान बनाया।</p>
+  
+  <h3>जमात-ए-इस्लामी</h3>
+  <p>साल 1940 के आस-पास, मौदूदी ने एक ज़्यादा बड़े और बड़े आंदोलन की शुरुआत के बारे में सोचा और इसी वजह से उन्होंने जमात-ए-इस्लामी नाम से एक नया संगठन शुरू किया। मौदूदी जमात के पहले अमीर चुने गए और 1972 तक रहे, जब उन्होंने सेहत की वजहों से ज़िम्मेदारी से खुद को अलग कर लिया।</p>
+  
+  <h3>संघर्ष और ज़ुल्म</h3>
+  <p><img src="${Ed5}" alt="मौदूदी का भाषण" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />अगस्त 1947 में पाकिस्तान जाने के बाद, मौदूदी ने देश में एक सच्चा इस्लामिक देश और समाज बनाने पर ध्यान दिया। इस मकसद के हिसाब से, उन्होंने इस्लामिक जीवनशैली के अलग-अलग पहलुओं, खासकर सामाजिक-राजनीतिक पहलुओं को समझाने के लिए बहुत कुछ लिखा। इस्लामिक जीवनशैली को लागू करने की इस चिंता ने मौदूदी को पाकिस्तान की एक के बाद एक आने वाली सरकारों की नीतियों की आलोचना करने और उनका विरोध करने के लिए प्रेरित किया और सत्ता में बैठे लोगों पर पाकिस्तान को सच्चा इस्लामिक देश बनाने में नाकाम रहने का आरोप लगाया। शासकों ने बदले की कार्रवाई के तौर पर कड़ी कार्रवाई की। मौदूदी को अक्सर गिरफ्तार किया गया और उन्हें लंबे समय तक जेल में रहना पड़ा।</p>
+  <p>संघर्ष और ज़ुल्म के इन सालों के दौरान, मौदूदी ने अपनी मज़बूत इच्छाशक्ति और दूसरी शानदार खूबियों से, अपने आलोचकों और विरोधियों सहित सभी को प्रभावित किया। 1953 में, जब उन्हें कादयानी समस्या पर एक देशद्रोही पैम्फलेट लिखने के आरोप में मार्शल लॉ अधिकारियों ने मौत की सज़ा सुनाई, तो उन्होंने दया की अर्ज़ी देने का मौका पूरी तरह से ठुकरा दिया। उन्होंने खुशी-खुशी मौत को उन लोगों से माफ़ी मांगने के लिए बेहतर बताया जो उन्हें सही बात मानने के लिए पूरी तरह से गलत तरीके से फांसी पर लटकाना चाहते थे। इस पक्के विश्वास के साथ कि ज़िंदगी और मौत पूरी तरह से अल्लाह के हाथ में है, उन्होंने अपने बेटे और अपने साथियों से कहा: "अगर मेरी मौत का समय आ गया है, तो कोई मुझे इससे नहीं बचा सकता; और अगर नहीं आया है, तो वे मुझे फांसी पर नहीं चढ़ा सकते, भले ही वे ऐसा करने की कोशिश में खुद को उल्टा लटका लें।" उनके परिवार ने भी दया की कोई अपील करने से मना कर दिया। उनकी इस मज़बूती ने सरकार को हैरान कर दिया, जिसे अंदर और बाहर से भारी पब्लिक प्रेशर के कारण मौत की सज़ा को उम्रकैद में बदलने और फिर उसे कैंसल करने के लिए मजबूर होना पड़ा।</p>
+  
+  <h3>इंटेलेक्चुअल योगदान</h3>
+  <p>मौलाना मौदूदी ने 120 से ज़्यादा किताबें और पैम्फलेट लिखे हैं और 1000 से ज़्यादा भाषण और प्रेस स्टेटमेंट दिए हैं, जिनमें से लगभग 700 रिकॉर्ड में मौजूद हैं।</p>
+  <p><img src="${Ed6}" alt="मौदूदी की यात्राएँ" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />मौदूदी की कलम एक ही समय में बहुत ज़्यादा लिखने वाली, दमदार और कई तरह से इस्तेमाल होने वाली थी। उन्होंने जिन सब्जेक्ट्स को कवर किया, उनकी रेंज बहुत ज़्यादा बड़ी है। तफ़सीर, हदीस, कानून, फिलॉसफी और इतिहास जैसे सब्जेक्ट्स पर उनका पूरा ध्यान गया है। उन्होंने कई तरह की समस्याओं - पॉलिटिकल, इकोनॉमिक, कल्चरल, सोशल, थियोलॉजिकल वगैरह - पर बात की और यह बताने की कोशिश की कि इस्लाम की शिक्षाएँ उन समस्याओं से कैसे जुड़ी हैं। मौदूदी ने स्पेशलिस्ट की टेक्निकल दुनिया में नहीं गए, बल्कि सीखने और जानने-समझने के ज़्यादातर फील्ड्स में इस्लामिक अप्रोच की ज़रूरी बातों को समझाया है। हालाँकि, उनका मुख्य योगदान कुरान की व्याख्या (तफ़सीर), एथिक्स, सोशल स्टडीज़ और इस्लामिक रिवाइवल मूवमेंट के सामने आने वाली समस्याओं के फील्ड्स में रहा है। उनका सबसे बड़ा काम कुरान पर उर्दू में लिखी उनकी बड़ी तफ़सीर, तफ़हीम अल-कुरान है, जिसे पूरा करने में उन्हें 30 साल लगे। इसकी खासियत यह है कि इसमें कुरान का मतलब और मैसेज ऐसी भाषा और स्टाइल में पेश किया गया है जो आज के मर्दों और औरतों के दिलों और दिमाग में उतर जाता है और दिखाता है कि कुरान उनकी रोज़मर्रा की दिक्कतों के लिए कितना ज़रूरी है, चाहे वो निजी हो या सामाजिक। उन्होंने कुरान का सीधा और दमदार मॉडर्न उर्दू मुहावरे में ट्रांसलेशन किया। उनका ट्रांसलेशन कुरान के आम सीधे ट्रांसलेशन से कहीं ज़्यादा पढ़ने में आसान और असरदार है। उन्होंने कुरान को इंसानी ज़िंदगी के लिए गाइडेंस की किताब और इंसानी ज़िंदगी में उस गाइडेंस को लागू करने और लागू करने के मूवमेंट के लिए एक गाइड-बुक के तौर पर पेश किया। उन्होंने कुरान की आयतों को उसके पूरे मैसेज के संदर्भ में समझाने की कोशिश की। इस तफ़सीर ने सबकॉन्टिनेंट में आज की इस्लामी सोच पर, और इसके ट्रांसलेशन के ज़रिए, विदेशों में भी, बहुत गहरा असर डाला है।</p>
+  <p>मौलाना मौदूदी का असर सिर्फ़ जमात-ए-इस्लामी से जुड़े लोगों तक ही सीमित नहीं है। उनका असर पार्टियों और संगठनों की सीमाओं से परे है। मौदूदी पूरी दुनिया के मुसलमानों के लिए पिता जैसे हैं। एक विद्वान और लेखक के तौर पर, वे हमारे समय के सबसे ज़्यादा पढ़े जाने वाले मुस्लिम लेखक हैं। उनकी किताबों का दुनिया की ज़्यादातर बड़ी भाषाओं अरबी, अंग्रेज़ी, तुर्की, फ़ारसी, हिंदी, फ़्रेंच, जर्मन, स्वाहिली, तमिल, बंगाली, वगैरह में ट्रांसलेट हो चुका है और अब ये एशियाई, अफ़्रीकी और यूरोपियन भाषाओं में भी तेज़ी से उपलब्ध हो रही हैं।</p>
+  
+  <h3>विदेश यात्राएँ</h3>
+  <p>साल 1956-74 के दौरान मौदूदी ने जो कई यात्राएँ कीं, उनसे दुनिया के कई हिस्सों में रहने वाले मुसलमानों को उनसे पर्सनली जान-पहचान करने और उनकी कई खूबियों की तारीफ़ करने का मौका मिला। साथ ही, ये यात्राएँ खुद मौदूदी के लिए भी सीखने लायक थीं, क्योंकि इनसे उन्हें ज़िंदगी की सच्चाइयों के बारे में बहुत कुछ सीधे तौर पर जानने और दुनिया के अलग-अलग हिस्सों में बहुत से लोगों से जान-पहचान करने का मौका मिला। इन कई यात्राओं के दौरान, उन्होंने काहिरा, दमिश्क, अम्मान, मक्का, मदीना, जेद्दा, कुवैत, रबात, इस्तांबुल, लंदन, न्यूयॉर्क, टोरंटो और कई इंटरनेशनल सेंटर्स में लेक्चर दिए। इन सालों के दौरान, उन्होंने करीब 10 इंटरनेशनल कॉन्फ्रेंस में भी हिस्सा लिया। उन्होंने 1959-60 में कुरान में बताई गई जगहों के ज्योग्राफिकल पहलुओं की स्टडी करने के लिए सऊदी अरब, जॉर्डन (यरूशलेम सहित), सीरिया और मिस्र का स्टडी टूर भी किया। उन्हें एडवाइजरी कमेटी में भी बुलाया गया था, जिसने मदीना की इस्लामिक यूनिवर्सिटी बनाने का प्लान तैयार किया था और 1962 में यूनिवर्सिटी बनने के बाद से ही वे इसकी एकेडमिक काउंसिल में थे।</p>
+  <p>वे मक्का में रबीता अल-आलम अल-इस्लामी की फाउंडेशन कमेटी और मदीना में इस्लामिक लॉ पर रिसर्च एकेडमी के भी मेंबर थे। आसान शब्दों में कहें तो, वे दुनिया भर के मुसलमानों के लिए प्रेरणा की एक मीनार थे और उन्होंने मुसलमानों के माहौल और सोच के तरीके पर वैसे ही असर डाला जैसे हिमालय या आल्प्स बिना हिले-डुले एशिया या यूरोप के माहौल पर असर डालते हैं।</p>
+  
+  <h3>उनके आखिरी दिन</h3>
+  <p><img src="${Ed7}" alt="मौदूदी का जनाज़ा" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />अप्रैल 1979 में, मौदूदी की लंबे समय से चली आ रही किडनी की बीमारी और बिगड़ गई और तब तक उन्हें दिल की भी दिक्कतें होने लगीं। वे इलाज के लिए यूनाइटेड स्टेट्स गए और बफ़ेलो, न्यूयॉर्क में हॉस्पिटल में भर्ती हुए, जहाँ उनके दूसरे बेटे ने डॉक्टर के तौर पर काम किया। बफ़ेलो में भी, उनका समय दिमागी तौर पर फायदेमंद था। उन्होंने पैगंबर की ज़िंदगी पर वेस्टर्न कामों को रिव्यू करने और मुस्लिम लीडर्स, उनके फॉलोअर्स और शुभचिंतकों से मिलने में कई घंटे बिताए।</p>
+  <p>कुछ सर्जिकल ऑपरेशन के बाद, 22 सितंबर, 1979 को 76 साल की उम्र में उनकी मौत हो गई। उनका अंतिम संस्कार बफ़ेलो में हुआ, लेकिन शहर में एक बहुत बड़े जनाज़े के जुलूस के बाद उन्हें लाहौर में उनके घर (इचरा) में एक बिना निशान वाली कब्र में दफ़नाया गया।</p>
+  <p>अल्लाह उनकी कोशिशों के लिए उन पर रहमत बरसाए और इस्लाम (उम्मा) के लिए उनके किए अच्छे कामों का उन्हें पूरा इनाम दे।</p>
+  
+  <h3>उनकी कुछ किताबों का हिंदी में अनुवाद</h3>
+  <ul>
+    <li>इस्लाम और आधुनिकता</li>
+    <li>इस्लाम का परिचय (Towards Understanding Islam)</li>
+    <li>इस्लामी राज्य और क़ानून</li>
+    <li>खिलाफ़त और बादशाहत</li>
+    <li>सुन्नत और इसकी कानूनी हैसियत</li>
+    <li>इस्लाम का आर्थिक सिद्धांत</li>
+    <li>युवाओं के लिए इस्लाम</li>
+    <li>पर्दा (Purdah and the Status of Women in Islam)</li>
+    <li>जिहाद पर इस्लाम की दृष्टि</li>
+    <li>मानवता को क्या दिया इस्लाम ने</li>
+    <li>दीन का सही तसव्वुर (The Meaning of Deen)</li>
+  </ul>
+</div>
+`;
+
+// English content for Maududi page
+const ENGLISH_CONTENT = `
+<div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;">
+    <img src="${maududiImg}" alt="Sayyid Abul A'la Maududi" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+    <img src="${Ed2}" alt="Maududi's house" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+  </div>
+  <h2 style="font-size: 1.5em; margin-top: 1em; margin-bottom: 0.5em;">Sayyid Abul A'la Maududi (1903-1979)</h2>
+  <p>Abul A'la was born on Rajab 3, 1321 AH (September 25, 1903 AD) in Aurangabad, a well-known town in the former princely state of Hyderabad (Deccan), presently Maharashtra, India. Born in a respectable family, his ancestry on the paternal side is traced back to the Holy Prophet Muhammad (peace and blessing of Allah be on him).</p>
+  <p>The family had a long-standing tradition of spiritual leadership and a number of Maududi's ancestors were outstanding leaders of Sufi Orders. One of the luminaries among them, the one from whom he derived his family name, was Khwajah Qutb al-Din Maudud (d. 527 AH), a renowned leader of the Chishti Sufi Order. Maududi's forefathers had moved to the Subcontinent from Chisht towards the end of the 9th century of the Islamic calendar (15th century of the Christian calendar). The first one to arrive was Maududi's namesake, Abul A'la Maududi (d. 935 AH). Maududi's father, Ahmad Hasan, born in 1855 AD, a lawyer by profession, was a highly religious and devout person. Abul A'la was the youngest of his three sons.</p>
+  
+  <h3>Educational & Intellectual Growth</h3>
+  <p><img src="${Ed1}" alt="Maududi's certificate" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />After acquiring early education at home, Abul A'la was admitted in Madrasah Furqaniyah, a high school which attempted to combine the modern Western with the traditional Islamic education. After successfully completing his secondary education, young Abul A'la was at the stage of undergraduate studies at Darul Uloom, Hyderabad, when his formal education was disrupted by the illness and eventual death of his father. This did not deter Maududi from continuing his studies though these had to be outside of the regular educational institutions. By the early 1920s, Abul A'la knew enough Arabic, Persian and English, besides his mother-tongue, Urdu, to study the subjects of his interest independently. Thus, most of what he learned was self-acquired though for short spells of time he also received systematic instruction and guidance from some competent scholars. Thus, Maududi's intellectual growth was largely a result of his own effort and the stimulation he received from his teachers. Moreover, his uprightness, his profound regard for propriety and righteousness largely reflect the religious piety of his parents and their concern for his proper moral upbringing.</p>
+  
+  <h3>Involvement in journalism</h3>
+  <p><img src="${Ed4}" alt="Journalism notes" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />After the interruption of his formal education, Maududi turned to journalism in order to make his living. In 1918, he was already contributing to a leading Urdu newspaper, and in 1920, at the age of 17, he was appointed editor of Taj, which was being published from Jabalpore, a city in the province now called Madhya Pradesh, India. Late in 1920, Maududi came to Delhi and first assumed the editorship of the newspaper Muslim (1921-23), and later of al-Jam'iyat (1925-28), both of which were the organs of the Jam'iyat-i 'Ulama-i Hind, an organisation of Muslim religious scholars. Under his editorship, al-Jam'iyat became the leading newspaper of the Muslims of India.</p>
+  
+  <h3>Interest in politics</h3>
+  <p><img src="${Ed5}" alt="Maududi's speech" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />Around the year 1920, Maududi also began to take some interest in politics. He participated in the Khilafat Movement, and became associated with the Tahrik-e Hijrat, which was a movement in opposition to the British rule over India and urged the Muslims of that country to migrate en masse to Afghanistan. However, he fell foul of the leadership of the movement because of his insistence that the aims and strategy of the movement should be realistic and well-planned. Maududi withdrew more and more into academic and journalistic pursuits.</p>
+  
+  <h3>First book</h3>
+  <p>During 1920-28, Maulana Maududi also translated four different books, one from Arabic and the rest from English. He also made his mark on the academic life of the Subcontinent by writing his first major book, al-Jihad fi al-Islam. This is a masterly treatise on the Islamic law of war and peace. It was first serialised in al-Jam'iyat in 1927 and was formally published in 1930. It was highly acclaimed both by the famous poet-philosopher Muhammad Iqbal (d. 1938) and Maulana Muhammad Ali Jauhar (d. 1931), the famous leader of the Khilafat Movement. Though written during his '20s, it is one of his major and most highly regarded works.</p>
+  
+  <h3>Research and writings</h3>
+  <p>After his resignation from al-Jam'iyat in 1928, Maududi moved to Hyderabad and devoted himself to research and writing. It was in this connection that he took up the editorship of the monthly Tarjuman al-Qur'an in 1933, which since then has been the main vehicle for the dissemination of Maududi's ideas. He proved to be a highly prolific writer, turning out several scores of pages every month. Initially, he concentrated on the exposition of ideas, values and basic principles of Islam. He paid special attention to the questions arising out of the conflict between the Islamic and the contemporary Western world.</p>
+  <p>He also attempted to discuss some of the major problems of the modern age and sought to present Islamic solutions to those problems. He also developed a new methodology to study those problems in the context of the experience of the West and the Muslim world, judging them on the theoretical criterion of their intrinsic soundness and viability and conformity with the teachings of the Qur'an and the Sunnah. His writings revealed his erudition and scholarship, a deep perception of the significance of the teachings of the Qur'an and the Sunnah and a critical awareness of the mainstream of Western thought and history. All this brought a freshness to Muslim approach to these problems and lent a wider appeal to his message.</p>
+  <p>In the mid '30s, Maududi started writing on major political and cultural issues confronting the Muslims of India at that time and tried to examine them from the Islamic perspective rather than merely from the viewpoint of short-term political and economic interests. He relentlessly criticised the newfangled ideologies which had begun to cast a spell over the minds and hearts of his brethren-in-faith and attempted to show the hollowness of those ideologies. In this connection, the idea of nationalism received concerted attention from Maududi when he forcefully explained its dangerous potentialities as well as its incompatibility with the teachings of Islam. Maududi also emphasised that nationalism in the context of India meant the utter destruction of the separate identity of Muslims. In the meantime, an invitation from the philosopher-poet Allama Muhammad Iqbal persuaded him to leave Hyderabad and settle down at a place in the Eastern part of Punjab, in the district of Pathankot. Maududi established what was essentially an academic and research centre called Darul-Islam where, in collaboration with Allama Iqbal, he planned to train competent scholars in Islamics to produce works of outstanding quality on Islam, and above all, to carry out the reconstruction of Islamic Thought.</p>
+  
+  <h3>Jamaat-e-Islami</h3>
+  <p>Around the year 1940, Maududi developed ideas regarding the founding of a more comprehensive and ambitious movement and this led him to launch a new organisation under the name of the Jamaat-e-Islami. Maududi was elected Jamaat's first Ameer and remained so till 1972 when he withdrew from the responsibility for reasons of health.</p>
+  
+  <h3>Struggle & persecution</h3>
+  <p>After migrating to Pakistan in August 1947, Maududi concentrated his efforts on establishing a truly Islamic state and society in the country. Consistent with this objective, he wrote profusely to explain the different aspects of the Islamic way of life, especially the socio-political aspects. This concern for the implementation of the Islamic way of life led Maududi to criticise and oppose the policies pursued by the successive governments of Pakistan and to blame those in power for failing to transform Pakistan into a truly Islamic state. The rulers reacted with severe reprisal measures. Maududi was often arrested and had to face long spells in prison.</p>
+  <p>During these years of struggle and persecution, Maududi impressed all, including his critics and opponents, by the firmness and tenacity of his will and other outstanding qualities. In 1953, when he was sentenced to death by the martial law authorities on the charge of writing a seditious pamphlet on the Qadyani problem, he resolutely turned down the opportunity to file a petition for mercy. He cheerfully expressed his preference for death to seeking clemency from those who wanted, altogether unjustly, to hang him for upholding the right. With unshakeable faith that life and death lie solely in the hands of Allah, he told his son as well as his colleagues: "If the time of my death has come, no one can keep me from it; and if it has not come, they cannot send me to the gallows even if they hang themselves upside down in trying to do so." His family also declined to make any appeal for mercy. His firmness astonished the government which was forced, under strong public pressure both from within and without, to commute the death sentence to life imprisonment and then to cancel it.</p>
+  
+  <h3>Intellectual contribution</h3>
+  <p>Maulana Maududi has written over 120 books and pamphlets and made over a 1000 speeches and press statements of which about 700 are available on record.</p>
+  <p><img src="${Ed6}" alt="Maududi's travels" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />Maududi's pen was simultaneously prolific, forceful and versatile. The range of subjects he covered is unusually wide. Disciplines such as Tafsir, Hadith, law, philosophy and history, all have received the due share of his attention. He discussed a wide variety of problems — political, economic, cultural, social, theological etc. — and attempted to state how the teachings of Islam were related to those problems. Maududi has not delved into the technical world of the specialist, but has expounded the essentials of the Islamic approach in most of the fields of learning and inquiry. His main contribution, however, has been in the fields of the Qur'anic exegesis (Tafsir), ethics, social studies and the problems facing the movement of Islamic revival. His greatest work is his monumental tafsir in Urdu of the Qur'an, Tafhim al-Qur'an, a work he took 30 years to complete. Its chief characteristic lies in presenting the meaning and message of the Qur'an in a language and style that penetrates the hearts and minds of the men and women of today and shows the relevance of the Qur'an to their everyday problems, both on the individual and societal planes. He translated the Qur'an in direct and forceful modern Urdu idiom. His translation is much more readable and eloquent than ordinary literal translations of the Qur'an. He presented the Qur'an as a book of guidance for human life and as a guide-book for the movement to implement and enforce that guidance in human life. He attempted to explain the verses of the Qur'an in the context of its total message. This tafsir has made a far-reaching impact on contemporary Islamic thinking in the Subcontinent, and through its translations, even abroad.</p>
+  <p>The influence of Maulana Maududi is not confined to those associated with the Jamaat-e-Islami. His influence transcends the boundaries of parties and organisations. Maududi is very much like a father-figure for Muslims all over the world. As a scholar and writer, he is the most widely read Muslim writer of our time. His books have been translated into most of the major languages of the world Arabic, English, Turkish, Persian, Hindi, French, German, Swahili, Tamil, Bengali, etc. and are now increasingly becoming available in many more of the Asian, African and European languages.</p>
+  
+  <h3>Travels & journeys abroad</h3>
+  <p>The several journeys which Maududi undertook during the years 1956-74 enabled Muslims in many parts of the world to become acquainted with him personally and appreciate many of his qualities. At the same time, these journeys were educative for Maududi himself as well as they provided to him the opportunity to gain a great deal of first-hand knowledge of the facts of life and to get acquainted with a large number of persons in different parts of the world. During these numerous tours, he lectured in Cairo, Damascus, Amman, Makkah, Madinah, Jeddah, Kuwait, Rabat, Istanbul, London, New York, Toronto and at a host of international centres. During these years, he also participated in some 10 international conferences. He also made a study tour of Saudi Arabia, Jordan (including Jerusalem), Syria and Egypt in 1959-60 in order to study the geographical aspects of the places mentioned in the Qur'an. He was also invited to serve on the Advisory Committee which prepared the scheme for the establishment of the Islamic University of Madinah and was on its Academic Council ever since the inception of the University in 1962.</p>
+  <p>He was also a member of the Foundation Committee of the Rabitah al-Alam al-Islami, Makkah, and of the Academy of Research on Islamic Law, Madinah. In short, he was a tower of inspiration for Muslims the world over and influenced the climate and pattern of thought of Muslims, as the Himalayas or the Alps influence the climate in Asia or Europe without themselves moving about.</p>
+  
+  <h3>His last days</h3>
+  <p><img src="${Ed7}" alt="Maududi's funeral" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />In April 1979, Maududi's long-time kidney ailment worsened and by then he also had heart problems. He went to the United States for treatment and was hospitalised in Buffalo, New York, where his second son worked as a physician. Even at Buffalo, his time was intellectually productive. He spent many hours reviewing Western works on the life of the Prophet and meeting with Muslim leaders, their followers and well-wishers. Following a few surgical operations, he died on September 22, 1979 at the age of 76. His funeral was held in Buffalo, but he was buried in an unmarked grave at his residence (Ichra) in Lahore after a very large funeral procession through the city.</p>
+  <p>May Allah bless him with his mercy for his efforts and reward him amply for the good that he has rendered for the nation of Islam (Ummah).</p>
+</div>
+`;
+
+// Bangla content for Maududi page
+const BANGLA_CONTENT = `
+<div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;">
+    <img src="${maududiImg}" alt="সৈয়দ আবুল আলা মওদুদী" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+    <img src="${Ed2}" alt="মওদুদীর বাড়ি" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+  </div>
+  <h2 style="font-size: 1.5em; margin-top: 1em; margin-bottom: 0.5em;">সৈয়দ আবুল আলা মওদুদী (1903-1979)</h2>
+  <p>আবু আলা ৩ রজব ১৩২১ হিজরি (২৫ সেপ্টেম্বর ১৯০৩ খ্রিস্টাব্দ) ভারতের বর্তমান মহারাষ্ট্র রাজ্যের পূর্বতন হায়দ্রাবাদ রাজ্যের (ডেকান) একটি বিখ্যাত শহর আওরঙ্গবাদে জন্মগ্রহণ করেন। একটি বিশিষ্ট পরিবারে জন্মগ্রহণ করেন, তাঁর বংশধারা নবী মুহাম্মদ (সা.)-এর সাথে সম্পর্কিত।</p>
+  <p>এই পরিবারের আধ্যাত্মিক নেতৃত্বের দীর্ঘ ঐতিহ্য ছিল এবং মওদুদীর পূর্বপুরুষদের মধ্যে অনেকেই সুফি তরিকার বিশিষ্ট নেতা ছিলেন। এই জ্ঞানী ব্যক্তিদের মধ্যে একজন, যার নাম থেকে তিনি তাঁর পারিবারিক নামকরণ করেছিলেন, তিনি ছিলেন খাজা কুতুব-উদ্দিন মওদুদী (মৃত্যু ৫২৭ হিজরি), যিনি চিশতি সুফি তরিকার একজন বিখ্যাত নেতা। মওদুদীর পূর্বপুরুষরা ইসলামিক ক্যালেন্ডারের ৯ম শতাব্দীর শেষের দিকে (খ্রিস্টীয় ক্যালেন্ডারের ১৫শ শতাব্দী) চিশতি থেকে উপমহাদেশে হিজরত করেন। প্রথম মওদুদী হিসেবে আগমন করেন আবু আলা মওদুদী (মৃত্যু ৯৩৫ হিজরি)। মওদুদীর বাবা আহমদ হাসান, ১৮৫৫ সালে জন্মগ্রহণ করেন, পেশায় একজন আইনজীবী ছিলেন, একজন গভীর ধার্মিক এবং ধার্মিক ব্যক্তি। আবুল-আলা ছিলেন তার তিন ছেলের মধ্যে সর্বকনিষ্ঠ।</p>
+  
+  <h3>শিক্ষা ও বৌদ্ধিক বিকাশ</h3>
+  <p><img src="${Ed1}" alt="মওদুদীর সার্টিফিকেট" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />বাড়িতে প্রাথমিক শিক্ষা লাভের পর, আবুল-আলাকে মাদ্রাসা ফুরকানিয়ায় ভর্তি করা হয়, একটি উচ্চ বিদ্যালয় যা আধুনিক পাশ্চাত্যীকরণকে ঐতিহ্যবাহী ইসলামী শিক্ষার সাথে একত্রিত করার চেষ্টা করেছিল। মাধ্যমিক শিক্ষা সফলভাবে সম্পন্ন করার পর, তরুণ আবুল-আলা হায়দ্রাবাদের দারুল উলুমে তার পড়াশোনার স্নাতক পর্যায়ে ছিলেন, যখন অসুস্থতা এবং শেষ পর্যন্ত তার বাবার মৃত্যুর কারণে তার আনুষ্ঠানিক শিক্ষা ব্যাহত হয়। এটি মওদুদীকে তার শিক্ষা চালিয়ে যেতে বাধা দেয়নি যদিও তাকে আনুষ্ঠানিক শিক্ষা প্রতিষ্ঠান থেকে দূরে থাকতে হয়েছিল। ১৯২০-এর দশকের গোড়ার দিকে, আবুল-আলা তার মাতৃভাষা উর্দু ছাড়াও যথেষ্ট আরবি, ফারসি এবং ইংরেজি জানতেন, যাতে তিনি তার আগ্রহের বিষয়গুলি স্বাধীনভাবে অধ্যয়ন করতে সক্ষম হন। এইভাবে তিনি যা শিখেছিলেন তার বেশিরভাগই নিজে থেকে অর্জন করেছিলেন, যদিও অল্প সময়ের জন্য তিনি কিছু পণ্ডিতের কাছ থেকে নিয়মতান্ত্রিক নির্দেশনা এবং নির্দেশনাও পেয়েছিলেন। এভাবে মওদুদীর বৌদ্ধিক বিকাশ মূলত তাঁর নিজস্ব প্রচেষ্টা এবং তাঁর শিক্ষকদের কাছ থেকে প্রাপ্ত অনুপ্রেরণার ফল। অধিকন্তু, ধার্মিকতা, সদাচার এবং সদাচারের প্রতি তাঁর গভীর শ্রদ্ধা তাঁর পিতামাতার ধর্মীয় ধার্মিকতা এবং তাঁর সুষ্ঠু নৈতিক লালন-পালনের প্রতি তাদের উদ্বেগকে প্রতিফলিত করে।</p>
+  
+  <h3>সাংবাদিকতায় জড়িত থাকা</h3>
+  <p><img src="${Ed4}" alt="সাংবাদিকতা নোট" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />প্রথাগত শিক্ষা ব্যাহত হওয়ার পর, মওদুদী জীবিকা নির্বাহের জন্য সাংবাদিকতার দিকে ঝুঁকে পড়েন। ১৯১৮ সালে, তিনি ইতিমধ্যেই একটি শীর্ষস্থানীয় উর্দু সংবাদপত্রে কাজ করছিলেন এবং ১৯২০ সালে, ১৭ বছর বয়সে, তিনি ভারতের মধ্য প্রদেশ রাজ্যের জবলপুর শহর থেকে প্রকাশিত তাজের সম্পাদক নিযুক্ত হন। ১৯২০-এর দশকের শেষের দিকে, মওদুদী দিল্লিতে আসেন এবং প্রথমে আখবার মুসলিম (১৯২১-২৩) এবং পরে জমিয়তের (১৯২৫-২৮) সম্পাদকের দায়িত্ব গ্রহণ করেন, উভয়ই ছিল মুসলিম ধর্মীয় পণ্ডিতদের সংগঠন জমিয়তে উলেমা-ই-হিন্দের অঙ্গ। তাঁর সম্পাদনায়, জমিয়ত ভারতের মুসলমানদের বৃহত্তম সংবাদপত্র হয়ে ওঠে।</p>
+  
+  <h3>রাজনীতিতে আগ্রহ</h3>
+  <p>১৯২০ সালের দিকে, মওদুদী রাজনীতিতেও কিছুটা আগ্রহ দেখাতে শুরু করেন। তিনি খিলাফত আন্দোলনে অংশগ্রহণ করেন এবং হিজরত আন্দোলনের সাথে যুক্ত হন, যা ভারতে ব্রিটিশ শাসনের বিরুদ্ধে একটি আন্দোলন ছিল এবং এই আন্দোলন সে দেশের মুসলমানদেরকে আফগানিস্তানে ব্যাপকভাবে হিজরত করতে উৎসাহিত করত। তবে, আন্দোলনের লক্ষ্য এবং কৌশল বাস্তবসম্মত এবং পরিকল্পিত হওয়া উচিত এই দাবির কারণে তিনি আন্দোলনের নেতৃত্বের প্রতি বিরক্ত হয়ে পড়েন। মওদুদী ক্রমশ পণ্ডিতি ও সাংবাদিকতা থেকে নিজেকে সরিয়ে নেন।</p>
+  
+  <h3>প্রথম বই</h3>
+  <p>১৯২০-২৮ সালের মধ্যে, মাওলানা মওদুদী চারটি ভিন্ন বই অনুবাদ করেন, যার একটি আরবি এবং বাকিগুলি ইংরেজি থেকে। তিনি তার প্রথম প্রধান বই, আল-জিহাদ ফি আল-ইসলাম লিখে উপমহাদেশের বৌদ্ধিক জীবনেও তার ছাপ ফেলেন। এটি যুদ্ধ ও শান্তির ইসলামী আইনের উপর একটি উজ্জ্বল বই। এটি প্রথম ১৯২৭ সালে বিশ্ববিদ্যালয়গুলিতে সংকলিত হয় এবং ১৯৩০ সালে নিয়মিত সংস্করণে প্রকাশিত হয়। বিখ্যাত কবি-দার্শনিক মুহাম্মদ ইকবাল (মৃত্যু ১৯৩৮) এবং খিলাফত আন্দোলনের বিখ্যাত নেতা মাওলানা মুহাম্মদ আলী জওহর (মৃত্যু ১৯৩১) উভয়ের দ্বারাই এটির উচ্চ প্রশংসা করা হয়েছিল। যদিও এটি তাঁর বিশের দশকে লেখা হয়েছিল, এটি তাঁর অন্যতম প্রধান এবং সর্বাধিক প্রামাণিক রচনা।</p>
+  
+  <h3>গবেষণা এবং লেখালেখি</h3>
+  <p>১৯২৮ সালে বিশ্ববিদ্যালয় থেকে পদত্যাগ করার পর, মওদুদী হায়দ্রাবাদে চলে আসেন এবং গবেষণা ও লেখালেখিতে নিজেকে নিয়োজিত করেন। এই ক্ষেত্রে, তিনি ১৯৩৩ সালে মাসিক পত্রিকা "তারজুমান-উল-কুরআন"-এর সম্পাদকের দায়িত্ব গ্রহণ করেন, যা তখন থেকে মওদুদীর ধারণা প্রচারের প্রধান মাধ্যম হয়ে উঠেছে। তিনি একজন অত্যন্ত দক্ষ লেখক হিসেবে প্রমাণিত হন, প্রতি মাসে কয়েকশ পৃষ্ঠা প্রকাশ করতেন। প্রাথমিকভাবে, তিনি ইসলামের ধারণা, মূল্যবোধ এবং মৌলিক নীতিগুলি উপস্থাপনের উপর মনোনিবেশ করেছিলেন। তিনি ইসলাম এবং সমসাময়িক পাশ্চাত্যের মধ্যে দ্বন্দ্ব থেকে উদ্ভূত প্রশ্নগুলির প্রতি বিশেষ মনোযোগ দিতেন। তিনি আধুনিক যুগের কিছু গুরুত্বপূর্ণ সমস্যা নিয়ে আলোচনা করার চেষ্টা করেছিলেন এবং এই সমস্যার ইসলামী সমাধান উপস্থাপন করার চেষ্টা করেছিলেন। তিনি পশ্চিমা এবং মুসলিম বিশ্বের অভিজ্ঞতার প্রেক্ষাপটে এই সমস্যাগুলি অধ্যয়নের জন্য একটি নতুন পদ্ধতিও তৈরি করেছিলেন, তাদের অভ্যন্তরীণ শক্তি এবং বৈধতার আদর্শিক মানদণ্ড এবং কুরআন ও সুন্নাহর শিক্ষার সাথে তাদের সামঞ্জস্য পরীক্ষা করেছিলেন। তাঁর লেখাগুলি তাঁর অন্তর্দৃষ্টি এবং অন্তর্দৃষ্টি, কুরআন ও সুন্নাহর শিক্ষার গুরুত্ব সম্পর্কে গভীর ধারণা এবং পশ্চিমা চিন্তাভাবনা ও ইতিহাসের মূলধারার সমালোচনামূলক সচেতনতা প্রকাশ করে। এই সমস্ত বিষয়গুলি এই বিষয়গুলিতে মুসলিম দৃষ্টিভঙ্গিতে এক নতুনত্ব এনে দেয় এবং তার বার্তাকে আরও বিস্তৃত আবেদন দেয়।</p>
+  <p>ত্রিশের দশকের মাঝামাঝি সময়ে, মওদুদী ভারতের মুসলমানদের মুখোমুখি গুরুত্বপূর্ণ রাজনৈতিক ও সাংস্কৃতিক বিষয়গুলি নিয়ে লেখা শুরু করেন এবং কেবল স্বল্পমেয়াদী রাজনৈতিক ও অর্থনৈতিক স্বার্থের দৃষ্টিকোণ থেকে দেখার পরিবর্তে ইসলামী দৃষ্টিকোণ থেকে সেগুলি পরীক্ষা করার চেষ্টা করেন। তিনি তার ভাইদের হৃদয় ও মনে জাদু করতে শুরু করা নতুন ধারণাগুলির তীব্র সমালোচনা করেন এবং এই ধারণাগুলির শূন্যতা প্রকাশ করার চেষ্টা করেন। এই প্রসঙ্গে, জাতীয়তাবাদের আদর্শ মওদুদীর কাছ থেকে অনেক মনোযোগ আকর্ষণ করে যখন তিনি এর বিপজ্জনক সম্ভাবনা এবং ইসলামের শিক্ষার সাথে এর অসঙ্গতি জোরদারভাবে ব্যাখ্যা করেন। মওদুদী আরও জোর দিয়েছিলেন যে ভারতীয় প্রেক্ষাপটে জাতীয়তাবাদের অর্থ মুসলমানদের পৃথক পরিচয়ের সম্পূর্ণ ধ্বংস। একই সময়ে, দার্শনিক-কবি আল্লামা মুহাম্মদ ইকবালের আমন্ত্রণ তাকে হায়দ্রাবাদ ছেড়ে পাঞ্জাবের পূর্ব অংশে, পাঠানকোট জেলায় একটি জায়গায় বসতি স্থাপন করতে প্ররোচিত করে। মওদুদী মূলত দারুল ইসলাম নামে একটি একাডেমিক ও গবেষণা কেন্দ্র প্রতিষ্ঠা করেছিলেন যেখানে তিনি আল্লামা ইকবালের সাথে মিলে ইসলামের উপর অসাধারণ মানের কাজ তৈরির জন্য এবং সর্বোপরি ইসলামী চিন্তাধারার পুনর্গঠনের জন্য কাজ করার জন্য ইসলামী শিক্ষায় দক্ষ পণ্ডিতদের প্রশিক্ষণ দেওয়ার পরিকল্পনা করেছিলেন।</p>
+  
+  <h3>জামাতে ইসলামী</h3>
+  <p>১৯৪০ সালের দিকে, মওদুদী আরও ব্যাপক ও উদ্যমী আন্দোলনের ভিত্তি সম্পর্কে ধারণা তৈরি করেছিলেন এবং এর ফলে তিনি জামায়াতে ইসলামী নামে একটি নতুন সংগঠন শুরু করেছিলেন। মওদুদী জামাতের প্রথম আমির নির্বাচিত হন এবং ১৯৭২ সাল পর্যন্ত তিনি অসুস্থতার কারণে পদত্যাগ না করা পর্যন্ত এই পদে ছিলেন।</p>
+  
+  <h3>সংগ্রাম ও নির্যাতন</h3>
+  <p><img src="${Ed5}" alt="মওদুদীর বক্তৃতা" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />১৯৪৭ সালের আগস্টে পাকিস্তানে হিজরতের পর, মওদুদী দেশে একটি সত্যিকারের ইসলামী রাষ্ট্র ও সমাজ প্রতিষ্ঠার উপর তার প্রচেষ্টাকে কেন্দ্রীভূত করেছিলেন। এই লক্ষ্যের সাথে সামঞ্জস্য রেখে, তিনি ইসলামী জীবনধারার বিভিন্ন দিক, বিশেষ করে এর সামাজিক-রাজনৈতিক দিকগুলি ব্যাখ্যা করার জন্য ব্যাপকভাবে লিখেছিলেন। ইসলামী জীবনধারা বাস্তবায়নের এই উদ্বেগের কারণে মওদুদী পাকিস্তানের পরবর্তী সরকারগুলির অনুসরণ করা নীতির সমালোচনা ও বিরোধিতা করতে এবং পাকিস্তানকে সত্যিকার অর্থে ইসলামী রাষ্ট্রে রূপান্তরিত করতে ব্যর্থতার জন্য ক্ষমতাসীনদের দোষারোপ করতে প্ররোচিত করেছিলেন। শাসকরা কঠোর প্রতিশোধমূলক ব্যবস্থা গ্রহণ করেছিলেন। মওদুদীকে প্রায়শই গ্রেপ্তার করা হয়েছিল এবং দীর্ঘ সময় কারাগারে কাটাতে হয়েছিল।</p>
+  <p>এই বছরগুলিতে সংগ্রাম ও নির্যাতনের সময়, মওদুদী তার ইচ্ছাশক্তি এবং অন্যান্য অসাধারণ গুণাবলী দিয়ে সমালোচক এবং বিরোধীদের সহ সকলকে মুগ্ধ করেছিলেন। ১৯৫৩ সালে, যখন কাদিয়ানী ইস্যুতে একটি রাষ্ট্রদ্রোহী পুস্তিকা লেখার জন্য সামরিক আইন কর্তৃপক্ষ তাকে মৃত্যুদণ্ড দেয়, তখন তিনি ক্ষমা প্রার্থনার সুযোগ প্রত্যাখ্যান করেছিলেন। মৃত্যুকে প্রাধান্য দেওয়ার পরিবর্তে, তিনি আনন্দের সাথে তাদের কাছে ক্ষমা চাওয়ার ইচ্ছা প্রকাশ করেছিলেন যারা সত্যকে সমর্থন করার জন্য তাকে অন্যায়ভাবে ফাঁসিতে ঝুলিয়ে দিতে চেয়েছিলেন। জীবন ও মৃত্যু একমাত্র আল্লাহর হাতে এই অটল বিশ্বাস নিয়ে তিনি তার পুত্র এবং সঙ্গীদের বলেছিলেন: "যদি আমার মৃত্যুর সময় আসে, কেউ আমাকে তা থেকে আটকাতে পারবে না, এবং যদি তা না আসে, তাহলে তারা আমাকে ফাঁসির মঞ্চে পাঠাতে পারবে না, এমনকি যদি তারা এই প্রচেষ্টায় নিজেদের উল্টো করে ঝুলিয়েও ফেলে।" তার পরিবারও করুণার আবেদন করতে অস্বীকৃতি জানায়। তার দৃঢ়তা সরকারকে অবাক করে, যা মৃত্যুদণ্ডকে যাবজ্জীবন কারাদণ্ডে রূপান্তর করতে এবং তারপর ভেতর ও বাইরে থেকে তীব্র জনসাধারণের চাপে তা বাতিল করতে বাধ্য হয়।</p>
+  
+  <h3>বৌদ্ধিক অবদান</h3>
+  <p>মাওলানা মওদুদী ১২০ টিরও বেশি বই এবং পুস্তিকা লিখেছেন এবং ১০০০ টিরও বেশি বক্তৃতা এবং প্রেস বিবৃতি দিয়েছেন, যার মধ্যে প্রায় ৭০০ রেকর্ডে রয়েছে।</p>
+  <p><img src="${Ed6}" alt="মওদুদীর ভ্রমণ" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />মওদুদীর কলম একই সাথে ছিল প্রাণবন্ত, শক্তিশালী এবং বহুমুখী। তাঁর লেখার পরিধি ছিল অস্বাভাবিকভাবে বিস্তৃত। তাঁর বিশেষ মনোযোগ ছিল তাফসীর, হাদিস, আইন, দর্শন এবং ইতিহাসের মতো ক্ষেত্রগুলিতে। তিনি রাজনৈতিক, অর্থনৈতিক, সাংস্কৃতিক, সামাজিক, ধর্মীয় ইত্যাদি বিষয় নিয়ে আলোচনা করেছিলেন এবং ইসলামের শিক্ষা কীভাবে এই বিষয়গুলির সাথে সম্পর্কিত তা দেখানোর চেষ্টা করেছিলেন। মওদুদী বিশেষজ্ঞের প্রযুক্তিগত জগতে প্রবেশ করেননি বরং শিক্ষা ও গবেষণার বেশিরভাগ ক্ষেত্রে ইসলামী দৃষ্টিভঙ্গির প্রয়োজনীয়তা স্পষ্ট করেছেন। তবে, তাঁর প্রধান অবদান কুরআনের ভাষ্য (তাফসীর), নীতিশাস্ত্র, সামাজিক বিজ্ঞান এবং ইসলামী পুনরুজ্জীবন আন্দোলনের মুখোমুখি সমস্যাগুলির ক্ষেত্রে। তাঁর সর্বশ্রেষ্ঠ কাজ হল উর্দুতে কুরআনের তার স্মরণীয় ভাষ্য, তাফহীমুল কুরআন, যা সম্পূর্ণ করতে তিনি ৩০ বছর সময় নিয়েছিলেন। তাঁর সবচেয়ে বড় বৈশিষ্ট্য হলো কুরআনের অর্থ ও বার্তাকে এমন ভাষা ও শৈলীতে উপস্থাপন করা যা আজকের পুরুষ ও নারীর হৃদয় ও মনকে স্পর্শ করে এবং ব্যক্তিগত ও সামাজিক উভয় স্তরেই তাদের দৈনন্দিন সমস্যার সাথে কুরআনের প্রাসঙ্গিকতা প্রদর্শন করে। তিনি কুরআনকে একটি প্রত্যক্ষ ও শক্তিশালী আধুনিক উর্দু বাগ্ধারায় অনুবাদ করেছিলেন। তাঁর অনুবাদ কুরআনের সাধারণ আক্ষরিক অনুবাদের তুলনায় অনেক বেশি পাঠযোগ্য এবং স্পষ্ট। তিনি কুরআনকে মানব জীবনের জন্য একটি নির্দেশিকা গ্রন্থ হিসেবে এবং মানব জীবনে এই নির্দেশনা বাস্তবায়ন ও বাস্তবায়নের আন্দোলনের জন্য একটি নির্দেশিকা হিসেবে উপস্থাপন করেছিলেন। তিনি কুরআনের আয়াতগুলিকে এর সামগ্রিক বার্তার প্রেক্ষাপটে ব্যাখ্যা করার চেষ্টা করেছিলেন। এই তাফসীরটি তাঁর অনুবাদের মাধ্যমে উপমহাদেশ এবং বিদেশে সমসাময়িক ইসলামী চিন্তাধারার উপর সুদূরপ্রসারী প্রভাব ফেলেছে।</p>
+  <p>মাওলানা মওদুদীর প্রভাব কেবল জামায়াতে ইসলামীর সাথে যুক্ত ব্যক্তিদের মধ্যেই সীমাবদ্ধ নয়। তাঁর প্রভাব দল ও সংগঠনের সীমানা ছাড়িয়ে যায়। মওদুদী সারা বিশ্বের মুসলমানদের পিতার মতো। একজন পণ্ডিত এবং লেখক হিসেবে, তিনি আমাদের সময়ের সবচেয়ে বেশি পঠিত মুসলিম লেখকদের একজন। তাঁর বইগুলি বিশ্বের বেশিরভাগ প্রধান ভাষায় অনূদিত হয়েছে, যার মধ্যে রয়েছে আরবি, ইংরেজি, তুর্কি, ফার্সি, হিন্দি, ফরাসি, জার্মান, সোয়াহিলি, তামিল, বাংলা ইত্যাদি এবং এখন এশিয়ান, আফ্রিকান এবং ইউরোপীয় ভাষায় ক্রমবর্ধমানভাবে উপলব্ধ।</p>
+  
+  <h3>ভ্রমণ এবং বিদেশ</h3>
+  <p>১৯৫৬-৭৪ সালে মওদুদীর বহু ভ্রমণ তাকে বিশ্বের বিভিন্ন অঞ্চলের মুসলমানদের সাথে ব্যক্তিগত পরিচিতি এনে দেয় এবং তার বহু গুণাবলীর প্রশংসা করে। একই সাথে, এই ভ্রমণগুলি মওদুদীর জন্যও শিক্ষণীয় ছিল এবং জীবনের বাস্তবতা সম্পর্কে আরও বেশি ধারণা অর্জন এবং বিশ্বের বিভিন্ন অঞ্চলের বিপুল সংখ্যক মানুষের সাথে দেখা করার সুযোগ করে দেয়। এই অসংখ্য ভ্রমণের সময় তিনি কায়রো, দামেস্ক, আম্মান, মক্কা, মদিনা, জেদ্দা, কুয়েত, রাবাত, ইস্তাম্বুল, লন্ডন, নিউ ইয়র্ক, টরন্টো এবং বেশ কয়েকটি আন্তর্জাতিক কেন্দ্রে বক্তৃতা দেন। এই বছরগুলিতে তিনি প্রায় ১০টি আন্তর্জাতিক সম্মেলনে যোগ দেন। ১৯৫৯-৬০ সালে তিনি কুরআনে উল্লেখিত স্থানগুলির ভৌগোলিক দিকগুলি অধ্যয়নের জন্য সৌদি আরব, জর্ডান (জেরুজালেম সহ), সিরিয়া এবং মিশরে একটি অধ্যয়ন সফরও করেছিলেন। মদিনা ইসলামী বিশ্ববিদ্যালয় প্রতিষ্ঠার পরিকল্পনা প্রস্তুতকারী উপদেষ্টা কমিটিতেও তাকে আমন্ত্রণ জানানো হয়েছিল এবং ১৯৬২ সালে প্রতিষ্ঠার পর থেকে এর একাডেমিক কাউন্সিলের সদস্য ছিলেন।</p>
+  <p>তিনি মক্কার রাবিআতুল আলম আল-ইসলামির প্রতিষ্ঠা কমিটির সদস্য এবং মদিনার ইসলামিক আইন গবেষণা একাডেমির সদস্য ছিলেন। সংক্ষেপে, তিনি বিশ্বজুড়ে মুসলমানদের জন্য অনুপ্রেরণার এক স্তম্ভ ছিলেন এবং মুসলিমদের জলবায়ু এবং চিন্তাভাবনাকে প্রভাবিত করেছিলেন, ঠিক যেমন হিমালয় বা আল্পস এশিয়া বা ইউরোপের জলবায়ুকে কোনও নড়াচড়া ছাড়াই প্রভাবিত করে।</p>
+  
+  <h3>তার শেষ দিনগুলি</h3>
+  <p><img src="${Ed7}" alt="মওদুদীর জানাজা" style="width:220px;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);float:left;margin-right:16px;margin-bottom:8px;" />১৯৭৯ সালের এপ্রিলে, মওদুদীর দীর্ঘস্থায়ী কিডনি রোগের অবনতি ঘটে এবং ততক্ষণে তার হৃদরোগও দেখা দেয়। তিনি চিকিৎসার জন্য আমেরিকা যান এবং নিউইয়র্কের বাফেলোর একটি হাসপাতালে ভর্তি হন, যেখানে তার দ্বিতীয় পুত্র একজন চিকিৎসক হিসেবে কাজ করতেন। বাফেলোতেও তার সময় বুদ্ধিবৃত্তিকভাবে ফলপ্রসূ ছিল। তিনি নবী মুহাম্মদের জীবনী সম্পর্কিত পশ্চিমা রচনাগুলি পর্যালোচনা এবং মুসলিম নেতা, তাদের অনুসারী এবং শুভাকাঙ্ক্ষীদের সাথে সাক্ষাত করার জন্য অনেক ঘন্টা ব্যয় করেন।</p>
+  <p>কয়েকটি অস্ত্রোপচারের পর, তিনি ১৯৭৯ সালের ২২ সেপ্টেম্বর ৭৬ বছর বয়সে মারা যান। বাফেলোতে তাঁর জানাজার নামাজ আদায় করা হয়েছিল, কিন্তু শহরে এক বিশাল জানাজার পর, লাহোরে তাঁর বাসভবনে (আছরা) একটি অচিহ্নিত কবরে তাঁকে দাফন করা হয়েছিল।</p>
+  <p>আল্লাহ তায়ালা তাঁর প্রচেষ্টাকে তাঁর রহমতের সাথে বরকত দিন এবং ইসলামী জাতির (উম্মাহ) জন্য তিনি যে ভালো কাজ করেছেন তার জন্য তাকে পুরস্কৃত করুন।</p>
+</div>
+`;
+
 const Maududi = () => {
     const { translationLanguage } = useTheme();
     const isMalayalam = translationLanguage === "mal";
     const isUrdu = translationLanguage === "ur" || translationLanguage === "urdu";
+    const isHindi = translationLanguage === "hi";
+    const isBangla = translationLanguage === "bn";
 
     const books = [
         "Jihad in Islam",
@@ -226,304 +389,304 @@ const Maududi = () => {
     }
 
     if (isUrdu) {
+        // Parse Urdu content and wrap each paragraph in a block
+        const parseUrduContent = () => {
+            // Remove the outer div wrapper
+            let cleanContent = URDU_CONTENT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+            
+            // Split content by closing tags to get individual elements
+            const regex = /(<(h2|h3|p|ol|div)[^>]*>[\s\S]*?<\/(h2|h3|p|ol|div)>)/g;
+            const blocks = [];
+            let match;
+            
+            while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+            }
+            
+            return blocks;
+        };
+        
+        const urduBlocks = parseUrduContent();
+        
         return (
             <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
                 <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-0 lg:ml-50">
                     <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
-                        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white font-urdu" dir="rtl">
+                        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white font-urdu-nastaliq" dir="rtl">
                             سید ابوالاعلیٰ مودودی (1903-1979)
                         </h1>
                     </div>
+                    <div dir="rtl" className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                        {urduBlocks.map((block, index) => {
+                            // Check if it's a heading
+                            if (block.includes('<h2') || block.includes('<h3')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        className="mb-4"
+                                        style={{
+                                            textAlign: 'right',
+                                            fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                                        }}
+                                    />
+                                );
+                            }
+                            // Check if it's an image container div
+                            if (block.includes('<div') && block.includes('display:flex')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        className="mb-4"
+                                    />
+                                );
+                            }
+                            // Check if it's a list
+                            if (block.includes('<ol')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                                        dir="rtl"
+                                    >
+                                        <div
+                                            dangerouslySetInnerHTML={{ __html: block }}
+                                            style={{
+                                                textAlign: 'right',
+                                                fontSize: '16px',
+                                                lineHeight: '2.6',
+                                                fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            }
+                            // Regular paragraph - wrap in block
+                            return (
+                                <div
+                                    key={index}
+                                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                                    dir="rtl"
+                                >
+                                    <div
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        style={{
+                                            textAlign: 'right',
+                                            fontSize: '16px',
+                                            lineHeight: '2.6',
+                                            fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (isHindi) {
+        return (
+            <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
+                <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-0 lg:ml-50">
+                    <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
+                        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white">
+                            सैय्यद अबुल अला मौदूदी (1903-1979)
+                        </h1>
+                    </div>
                     <div
-                        className="prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 font-urdu leading-7"
-                        dangerouslySetInnerHTML={{ __html: URDU_CONTENT }}
-                        dir="rtl"
-                        style={{ textAlign: 'right' }}
+                        className="prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 leading-7"
+                        dangerouslySetInnerHTML={{ __html: HINDI_CONTENT }}
                     />
                 </div>
             </div>
         );
     }
 
+    if (isBangla) {
+        // Parse Bangla content and wrap each paragraph in a block
+        const parseBanglaContent = () => {
+            // Remove the outer div wrapper
+            let cleanContent = BANGLA_CONTENT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+            
+            // Split content by closing tags to get individual elements
+            const regex = /(<(h2|h3|p|ol|div)[^>]*>[\s\S]*?<\/(h2|h3|p|ol|div)>)/g;
+            const blocks = [];
+            let match;
+            
+            while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+            }
+            
+            return blocks;
+        };
+        
+        const banglaBlocks = parseBanglaContent();
+        
+        return (
+            <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
+                <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-0 lg:ml-50">
+                    <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
+                        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white font-bengali">
+                            সৈয়দ আবুল আলা মওদুদী (1903-1979)
+                        </h1>
+                    </div>
+                    <div className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                        {banglaBlocks.map((block, index) => {
+                            // Check if it's a heading
+                            if (block.includes('<h2') || block.includes('<h3')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        className="mb-4"
+                                        style={{
+                                            textAlign: 'left',
+                                            fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                                        }}
+                                    />
+                                );
+                            }
+                            // Check if it's an image container div
+                            if (block.includes('<div') && block.includes('display:flex')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        className="mb-4"
+                                    />
+                                );
+                            }
+                            // Check if it's a list
+                            if (block.includes('<ol') || block.includes('<ul')) {
+                                return (
+                                    <div
+                                        key={index}
+                                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                                    >
+                                        <div
+                                            dangerouslySetInnerHTML={{ __html: block }}
+                                            style={{
+                                                textAlign: 'left',
+                                                fontSize: '16px',
+                                                lineHeight: '2.6',
+                                                fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            }
+                            // Regular paragraph - wrap in block
+                            return (
+                                <div
+                                    key={index}
+                                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                                >
+                                    <div
+                                        dangerouslySetInnerHTML={{ __html: block }}
+                                        style={{
+                                            textAlign: 'left',
+                                            fontSize: '16px',
+                                            lineHeight: '2.6',
+                                            fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Parse English content and wrap each paragraph in a block
+    const parseEnglishContent = () => {
+        // Remove the outer div wrapper
+        let cleanContent = ENGLISH_CONTENT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+        
+        // Split content by closing tags to get individual elements
+        const regex = /(<(h2|h3|p|div)[^>]*>[\s\S]*?<\/(h2|h3|p|div)>)/g;
+        const blocks = [];
+        let match;
+        
+        while ((match = regex.exec(cleanContent)) !== null) {
+            blocks.push(match[0]);
+        }
+        
+        return blocks;
+    };
+    
+    const englishBlocks = parseEnglishContent();
+    
     return (
         <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
-            {/* Portrait Image - Responsive positioning */}
-            <div className="block sm:block lg:absolute lg:top-40 mb-4 sm:mb-6 lg:mb-0">
-                <img 
-                    src={maududiImg} 
-                    alt="Sayyid Abul A'la Maududi"
-                    className="w-[120px] h-[120px] xs:w-[140px] xs:h-[140px] sm:w-[150px] sm:h-[150px] md:w-[156px] md:h-[186px] object-cover rounded shadow-sm mx-auto lg:mx-0"
-                />
-            </div>
-
             <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-0 lg:ml-50">
-                {/* Header */}
                 <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
-                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white ">
+                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white">
                         Sayyid Abul A'la Maududi (1903-1979)
                     </h1>
                 </div>
-
-                {/* Main Biography Section */}
-                <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 md:mb-8">
-                    {/* Biographical Text */}
-                    <div className="flex-1 lg:ml-0">
-                        <h3 className="text-blue-600 font-normal mb-2 sm:mb-3 text-sm dark:text-white">(1903-1979)</h3>
-                        <p className="text-black leading-relaxed mb-3 sm:mb-4 text-xs sm:text-sm dark:text-white">
-                            Abul A'la was born on Rajab 3, 1321 AH (September 25, 1903 AD) in Aurangabad, 
-                            a well-known town in the former princely state of Hyderabad (Deccan), presently 
-                            Maharashtra, India. Born in a respectable family, his ancestry on the paternal 
-                            side is traced back to the Holy Prophet Muhammad (peace and blessing of Allah be on him).
-                        </p>
-                        <p className="text-black leading-relaxed mb-4 sm:mb-4 lg:mb-6 text-xs sm:text-sm dark:text-white">
-                            The family had a long-standing tradition of spiritual leadership and a number of 
-                            Maududi's ancestors were outstanding leaders of Sufi Orders. One of the luminaries 
-                            among them, the one from whom he derived his family name, was Khwajah Qutb al-Din Maudud 
-                            (d. 527 AH), a renowned leader of the Chishti Sufi Order. Maududi's forefathers had moved 
-                            to the Subcontinent from Chisht towards the end of the 9th century of the Islamic calendar 
-                            (15th century of the Christian calendar). The first one to arrive was Maududi's namesake, 
-                            Abul A'la Maududi (d. 935 AH). Maududi's father, Ahmad Hasan, born in 1855 AD, a lawyer 
-                            by profession, was a highly religious and devout person. Abul A'la was the youngest of his three sons.
-                        </p>
-
-                        {/* Educational & Intellectual Growth */}
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-                            <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                Educational & Intellectual Growth
-                            </h2>
-                            <div className="flex flex-row gap-2 sm:gap-3 md:gap-4 mb-3 lg:mb-4 overflow-x-auto pb-2">
-                                <img 
-                                    src={Ed1}
-                                    alt="Historical Document"
-                                    className="w-[80px] h-[80px] xs:w-[90px] xs:h-[90px] sm:w-[108px] sm:h-[108px] md:w-[120px] md:h-[120px] lg:w-[186px] lg:h-[186px] object-cover rounded shadow-sm flex-shrink-0"
+                <div className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                    {englishBlocks.map((block, index) => {
+                        // Check if it's a heading
+                        if (block.includes('<h2') || block.includes('<h3')) {
+                            return (
+                                <div
+                                    key={index}
+                                    dangerouslySetInnerHTML={{ __html: block }}
+                                    className="mb-4"
+                                    style={{
+                                        textAlign: 'left',
+                                        fontFamily: "'Poppins', sans-serif"
+                                    }}
                                 />
-                                <img 
-                                    src={Ed2}
-                                    alt="School Building"
-                                    className="w-[80px] h-[80px] xs:w-[90px] xs:h-[90px] sm:w-[108px] sm:h-[108px] md:w-[120px] md:h-[120px] lg:w-[186px] lg:h-[186px] object-cover rounded shadow-sm flex-shrink-0"
+                            );
+                        }
+                        // Check if it's an image container div
+                        if (block.includes('<div') && block.includes('display:flex')) {
+                            return (
+                                <div
+                                    key={index}
+                                    dangerouslySetInnerHTML={{ __html: block }}
+                                    className="mb-4"
                                 />
-                                <img 
-                                    src={Ed3}
-                                    alt="Street View"
-                                    className="w-[80px] h-[80px] xs:w-[90px] xs:h-[90px] sm:w-[108px] sm:h-[108px] md:w-[120px] md:h-[120px] lg:w-[186px] lg:h-[186px] object-cover rounded shadow-sm flex-shrink-0"
+                            );
+                        }
+                        // Regular paragraph - wrap in block
+                        return (
+                            <div
+                                key={index}
+                                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                            >
+                                <div
+                                    dangerouslySetInnerHTML={{ __html: block }}
+                                    style={{
+                                        textAlign: 'left',
+                                        fontSize: '16px',
+                                        lineHeight: '1.8',
+                                        fontFamily: "'Poppins', sans-serif"
+                                    }}
                                 />
                             </div>
-                            <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                After acquiring early education at home, Abul A'la was admitted in Madrasah Furqaniyah, 
-                                a high school which attempted to combine the modern Western with the traditional Islamic 
-                                education. After successfully completing his secondary education, young Abul A'la was at 
-                                the stage of undergraduate studies at Darul Uloom, Hyderabad, when his formal education 
-                                was disrupted by the illness and eventual death of his father. This did not deter Maududi 
-                                from continuing his studies though these had to be outside of the regular educational 
-                                institutions. By the early 1920s, Abul A'la knew enough Arabic, Persian and English, 
-                                besides his mother-tongue, Urdu, to study the subjects of his interest independently. 
-                                Thus, most of what he learned was self-acquired though for short spells of time he also 
-                                received systematic instruction and guidance from some competent scholars. Thus, Maududi's 
-                                intellectual growth was largely a result of his own effort and the stimulation he received 
-                                from his teachers. Moreover, his uprightness, his profound regard for propriety and 
-                                righteousness largely reflect the religious piety of his parents and their concern for 
-                                his proper moral upbringing.
-                            </p>
-                        </div>
-
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-    <h2 className="text-blue-500 font-normal mb-2 sm:mb-3 text-sm sm:text-base dark:text-white">
-        Involvement in journalism
-    </h2>
-    <div className="block lg:flex lg:gap-4 mb-3">
-        <div className="float-left mr-2 sm:mr-3 mb-2 lg:float-none lg:mr-0 lg:mb-0 lg:flex-shrink-0">
-            <img 
-                src={Ed4}
-                alt="Historical Document"
-                className="w-[100px] h-[100px] xs:w-[110px] xs:h-[110px] sm:w-[120px] sm:h-[120px] md:w-[150px] md:h-[120px] lg:w-[186px] lg:h-[150px] object-fill rounded shadow-sm"
-            />
-        </div>
-        <div className="lg:flex-1 w-full">
-            <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white max-w-full">
-                After the interruption of his formal education, Maududi turned to journalism in order to make 
-                his living. In 1918, he was already contributing to a leading Urdu newspaper, and in 1920, at 
-                the age of 17, he was appointed editor of Taj, which was being published from Jabalpore, a 
-                city in the province now called Madhya Pradesh, India. Late in 1920, Maududi came to Delhi 
-                and first assumed the editorship of the newspaper Muslim (1921-23), and later of al-Jam'iyat 
-                (1925-28), both of which were the organs of the Jam'iyat-i 'Ulama-i Hind, an organisation of 
-                Muslim religious scholars. Under his editorship, al-Jam'iyat became the leading newspaper 
-                of the Muslims of India.
-            </p>
-        </div>
-    </div>
-</div>
-
-
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-                            <h2 className="text-blue-500 font-normal mb-2 sm:mb-3 text-sm sm:text-base dark:text-white">
-                                Interest in politics
-                            </h2>
-                            <div className="block lg:flex lg:gap-4 mb-3">
-                                <div className="float-left mr-2 sm:mr-3 mb-2 lg:float-none lg:mr-0 lg:mb-0 lg:flex-shrink-0">
-                                    <img 
-                                        src={Ed5}
-                                        alt="Political Meeting"
-                                        className="w-[120px] h-[120px] xs:w-[130px] xs:h-[130px] sm:w-[150px] sm:h-[150px] md:w-[170px] md:h-[140px] lg:w-[186px] lg:h-[150px] object-fill mx-auto lg:mx-0"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-black leading-normal text-xs sm:text-sm dark:text-white max-w-[738px]">
-                                        Around the year 1920, Maududi also began to take some interest in politics. He participated 
-                                        in the Khilafat Movement, and became associated with the Tahrik-e Hijrat, which was a 
-                                        movement in opposition to the British rule over India and urged the Muslims of that country 
-                                        to migrate en masse to Afghanistan. However, he fell foul of the leadership of the movement 
-                                        because of his insistence that the aims and strategy of the movement should be realistic 
-                                        and well-planned. Maududi withdrew more and more into academic and journalistic 
-                                        pursuits.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-                            <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                First book
-                            </h2>
-                            <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                During 1920-28, Maulana Maududi also translated four different books, one from Arabic and the rest from English. He also made his mark on the academic life of the Subcontinent by writing his first major book, al-Jihad fi al-Islam. This is a masterly treatise on the Islamic law of war and peace. It was first serialised in al-Jam'iyat in 1927 and was formally published in 1930. It was highly acclaimed both by the famous poet-philosopher Muhammad Iqbal (d. 1938) and Maulana Muhammad Ali Jauhar (d. 1931), the famous leader of the Khilafat Movement. Though written during his '20s, it is one of his major and most highly regarded works.
-                            </p>
-                        </div>
-
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-                            <h2 className="text-blue-500 font-normal mb-2 sm:mb-3 text-sm sm:text-base dark:text-white">
-                                Research and writings
-                            </h2>
-                            <div className="block lg:flex lg:gap-4 mb-3">
-                                <div className="float-left mr-2 sm:mr-3 mb-2 lg:float-none lg:mr-0 lg:mb-0 lg:flex-shrink-0">
-                                    <img 
-                                        src={Ed6}
-                                        alt="Historical Document"
-                                        className="w-[120px] h-[120px] xs:w-[130px] xs:h-[130px] sm:w-[150px] sm:h-[150px] md:w-[170px] md:h-[140px] lg:w-[186px] lg:h-[150px] object-fill mx-auto lg:mx-0"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-black leading-normal text-xs sm:text-sm dark:text-white">
-                                        After his resignation from al-Jam'iyat in 1928, Maududi moved to Hyderabad and devoted himself to research and writing. It was in this connection that he took up the editorship of the monthly Tarjuman al-Qur'an in 1933, which since then has been the main vehicle for the dissemination of Maududi's ideas. He proved to be a highly prolific writer, turning out several scores of pages every month. Initially, he concentrated on the exposition of ideas, values and basic principles of Islam. He paid special attention to the questions arising out of the conflict between the Islamic and the contemporary Western world. 
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="mb-3 sm:mb-4 lg:mb-6">
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    He also attempted to discuss some of the major problems of the modern age and sought to present Islamic solutions to those problems. He also developed a new methodology to study those problems in the context of the experience of the West and the Muslim world, judging them on the theoretical criterion of their intrinsic soundness and viability and conformity with the teachings of the Qur'an and the Sunnah. His writings revealed his erudition and scholarship, a deep perception of the significance of the teachings of the Qur'an and the Sunnah and a critical awareness of the mainstream of Western thought and history. All this brought a freshness to Muslim approach to these problems and lent a wider appeal to his message.
-                                </p>
-                            </div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    In the mid '30s, Maududi started writing on major political and cultural issues confronting the Muslims of India at that time and tried to examine them from the Islamic perspective rather than merely from the viewpoint of short-term political and economic interests. He relentlessly criticised the newfangled ideologies which had begun to cast a spell over the minds and hearts of his brethren-in-faith and attempted to show the hollowness of those ideologies. In this connection, the idea of nationalism received concerted attention from Maududi when he forcefully explained its dangerous potentialities as well as its incompatibility with the teachings of Islam. Maududi also emphasised that nationalism in the context of India meant the utter destruction of the separate identity of Muslims. In the meantime, an invitation from the philosopher-poet Allama Muhammad Iqbal persuaded him to leave Hyderabad and settle down at a place in the Eastern part of Punjab, in the district of Pathankot. Maududi established what was essentially an academic and research centre called Darul-Islam where, in collaboration with Allama Iqbal, he planned to train competent scholars in Islamics to produce works of outstanding quality on Islam, and above all, to carry out the reconstruction of Islamic Thought.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                    Jamaat-e-Islami
-                                </h2>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    Around the year 1940, Maududi developed ideas regarding the founding of a more comprehensive and ambitious movement and this led him to launch a new organisation under the name of the Jamaat-e-Islami. Maududi was elected Jamaat's first Ameer and remained so till 1972 when he withdrew from the responsibility for reasons of health.
-                                </p>
-                            </div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                    Struggle & persecution
-                                </h2>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    After migrating to Pakistan in August 1947, Maududi concentrated his efforts on establishing a truly Islamic state and society in the country. Consistent with this objective, he wrote profusely to explain the different aspects of the Islamic way of life, especially the socio-political aspects. This concern for the implementation of the Islamic way of life led Maududi to criticise and oppose the policies pursued by the successive governments of Pakistan and to blame those in power for failing to transform Pakistan into a truly Islamic state. The rulers reacted with severe reprisal measures. Maududi was often arrested and had to face long spells in prison.
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    During these years of struggle and persecution, Maududi impressed all, including his critics and opponents, by the firmness and tenacity of his will and other outstanding qualities. In 1953, when he was sentenced to death by the martial law authorities on the charge of writing a seditious pamphlet on the Qadyani problem, he resolutely turned down the opportunity to file a petition for mercy. He cheerfully expressed his preference for death to seeking clemency from those who wanted, altogether unjustly, to hang him for upholding the right. With unshakeable faith that life and death lie solely in the hands of Allah, he told his son as well as his colleagues: "If the time of my death has come, no one can keep me from it; and if it has not come, they cannot send me to the gallows even if they hang themselves upside down in trying to do so." His family also declined to make any appeal for mercy. His firmness astonished the government which was forced, under strong public pressure both from within and without, to commute the death sentence to life imprisonment and then to cancel it.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                    Intellectual contribution
-                                </h2>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    Maulana Maududi has written over 120 books and pamphlets and made over a 1000 speeches and press statements of which about 700 are available on record.
-                                </p>
-                            </div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    Maududi's pen was simultaneously prolific, forceful and versatile. The range of subjects he covered is unusually wide. Disciplines such as Tafsir, Hadith, law, philosophy and history, all have received the due share of his attention. He discussed a wide variety of problems — political, economic, cultural, social, theological etc. — and attempted to state how the teachings of Islam were related to those problems. Maududi has not delved into the technical world of the specialist, but has expounded the essentials of the Islamic approach in most of the fields of learning and inquiry. His main contribution, however, has been in the fields of the Qur'anic exegesis (Tafsir), ethics, social studies and the problems facing the movement of Islamic revival. His greatest work is his monumental tafsir in Urdu of the Qur'an, Tafhim al-Qur'an, a work he took 30 years to complete. Its chief characteristic lies in presenting the meaning and message of the Qur'an in a language and style that penetrates the hearts and minds of the men and women of today and shows the relevance of the Qur'an to their everyday problems, both on the individual and societal planes. He translated the Qur'an in direct and forceful modern Urdu idiom. His translation is much more readable and eloquent than ordinary literal translations of the Qur'an. He presented the Qur'an as a book of guidance for human life and as a guide-book for the movement to implement and enforce that guidance in human life. He attempted to explain the verses of the Qur'an in the context of its total message. This tafsir has made a far-reaching impact on contemporary Islamic thinking in the Subcontinent, and through its translations, even abroad.
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    The influence of Maulana Maududi is not confined to those associated with the Jamaat-e-Islami. His influence transcends the boundaries of parties and organisations. Maududi is very much like a father-figure for Muslims all over the world. As a scholar and writer, he is the most widely read Muslim writer of our time. His books have been translated into most of the major languages of the world Arabic, English, Turkish, Persian, Hindi, French, German, Swahili, Tamil, Bengali, etc. and are now increasingly becoming available in many more of the Asian, African and European languages.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Video Player Section */}
-                        <div className="mb-4 sm:mb-6 lg:mb-6 flex justify-center px-2 sm:px-0 m-3">
-                            {/* <div className="w-full max-w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl"> */}
-                                <VideoPlayer/>
-                            {/* </div> */}
-                        </div>
-
-                        <div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <h2 className="text-blue-600 font-normal mb-2 sm:mb-3 lg:mb-4 text-sm sm:text-base dark:text-white">
-                                    Travels & journeys abroad
-                                </h2>
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    The several journeys which Maududi undertook during the years 1956-74 enabled Muslims in many parts of the world to become acquainted with him personally and appreciate many of his qualities. At the same time, these journeys were educative for Maududi himself as well as they provided to him the opportunity to gain a great deal of first-hand knowledge of the facts of life and to get acquainted with a large number of persons in different parts of the world. During these numerous tours, he lectured in Cairo, Damascus, Amman, Makkah, Madinah, Jeddah, Kuwait, Rabat, Istanbul, London, New York, Toronto and at a host of international centres. During these years, he also participated in some 10 international conferences. He also made a study tour of Saudi Arabia, Jordan (including Jerusalem), Syria and Egypt in 1959-60 in order to study the geographical aspects of the places mentioned in the Qur'an. He was also invited to serve on the Advisory Committee which prepared the scheme for the establishment of the Islamic University of Madinah and was on its Academic Council ever since the inception of the University in 1962.
-                                </p>
-                            </div>
-                            <div className="mb-4 sm:mb-4 lg:mb-6">
-                                <p className="text-black leading-relaxed text-xs sm:text-sm dark:text-white">
-                                    He was also a member of the Foundation Committee of the Rabitah al-Alam al-Islami, Makkah, and of the Academy of Research on Islamic Law, Madinah. In short, he was a tower of inspiration for Muslims the world over and influenced the climate and pattern of thought of Muslims, as the Himalayas or the Alps influence the climate in Asia or Europe without themselves moving about.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mb-4 sm:mb-4 lg:mb-6">
-                            <h2 className="text-blue-500 font-normal mb-2 sm:mb-3 text-sm sm:text-base dark:text-white">
-                                His last days
-                            </h2>
-                            <div className="flex flex-col sm:flex-col lg:flex-row gap-2 lg:gap-4 mb-3">
-                                <div className="flex-shrink-0 self-center lg:self-start">
-                                    <img 
-                                        src={Ed7}
-                                        alt="Historical Document"
-                                        className="w-[120px] h-[120px] xs:w-[130px] xs:h-[130px] sm:w-[150px] sm:h-[150px] md:w-[170px] md:h-[140px] lg:w-[186px] lg:h-[150px] object-fill mx-auto lg:mx-0"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-black leading-normal text-xs sm:text-sm dark:text-white max-w-[738px]">
-                                        In April 1979, Maududi's long-time kidney ailment worsened and by then he also had heart problems. He went to the United States for treatment and was hospitalised in Buffalo, New York, where his second son worked as a physician. Even at Buffalo, his time was intellectually productive. He spent many hours reviewing Western works on the life of the Prophet and meeting with Muslim leaders, their followers and well-wishers. Following a few surgical operations, he died on September 22, 1979 at the age of 76. His funeral was held in Buffalo, but he was buried in an unmarked grave at his residence (Ichra) in Lahore after a very large funeral procession through the city.
-                                    </p>
-                                </div>
-                            </div>
-                            <p className="text-black leading-normal text-xs sm:text-sm dark:text-white">
-                                May Allah bless him with his mercy for his efforts and reward him amply for the good that he has rendered for the nation of Islam (Ummah).
-                            </p>
-                        </div>
-
-                        {/* Books List */}
-                        <div className="mb-4 sm:mb-6">
-                            <h2 className="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 dark:text-white">
-                                Some of his books translated into English:
-                            </h2>
-                            <ul className="list-disc p-3 sm:p-4 rounded-lg space-y-1">
-                                {books.map((book, index) => (
-                                    <li key={index} className="text-gray-800 dark:text-white text-xs sm:text-sm md:text-base">
-                                        {book}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
+                        );
+                    })}
+                </div>
+                
+                {/* Books List */}
+                <div className="mb-4 sm:mb-6 mt-6">
+                    <h2 className="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 dark:text-white">
+                        Some of his books translated into English:
+                    </h2>
+                    <ul className="list-disc p-3 sm:p-4 rounded-lg space-y-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {books.map((book, index) => (
+                            <li key={index} className="text-gray-800 dark:text-white text-xs sm:text-sm md:text-base">
+                                {book}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </div>

@@ -46,10 +46,38 @@ const MALAYALAM_CONCLUSION_CONTENT = `
 (ക്രി. 7 ജൂണ്‍- 1972)</span></p>
 `;
 
+// Hindi author's conclusion content
+const HINDI_CONCLUSION_CONTENT = `
+<p>मैं अपने दिल की गहराइयों से अल्लाह तआला का शुक्रिया अदा करता हूँ; तफ़हीम अल-कुरान लिखने का मुश्किल काम, जो मैंने मुहर्रम 1361 AH (फरवरी 1942) के महीने में शुरू किया था, अब 30 साल और चार महीने बाद खत्म हुआ है। यह अल्लाह की बहुत बड़ी मेहरबानी और उदारता है कि उसने अपने एक विनम्र बंदे को अल्लाह की पवित्र किताब की ऐसी सेवा करने के लिए अता किया है। इस किताब में जो भी सच्चाई है, वह सर्वशक्तिमान के प्रकाश और मार्गदर्शन के माध्यम से सामने आई है। अगर मैंने कुरान का अनुवाद और व्याख्या करने में कोई गलती की है, तो यह मेरे ज्ञान और समझ के कारण है। लेकिन - अल्हम्दुलिल्लाह - मैंने जानबूझकर कोई गलती नहीं की है। अगर मैंने अनजाने में कोई गलती की है, तो मुझे अल्लाह की दया की उम्मीद है; वह मुझे माफ कर देगा। अगर मेरे इस प्रयास ने उसके बंदों के मार्गदर्शन में किसी भी तरह से मदद की है, तो मैं प्रार्थना करता हूं कि वह इसे मेरे पापों के प्रायश्चित का साधन बना दे। मेरी दुनिया के जानकारों से भी एक गुज़ारिश है: वे मुझे मेरी गलतियों से जगाएँ। मैं हर उस चीज़ को ठीक करूँगा जो मुझे सबूतों के साथ यकीन दिलाएगी कि वह गलत है - इंशा अल्लाह। मैं अल्लाह की किताब में जानबूझकर गलती करने या गलती पर अड़े रहने से अल्लाह की पनाह लेता हूँ।</p>
+
+<p>जैसा कि इस किताब के टाइटल से पता चलता है, मैंने पवित्र कुरान को पढ़े-लिखे आम लोगों को वैसे ही समझाने की कोशिश की है जैसा मैंने उसे समझा है। कुरान के विचारों और दिलचस्पी को समझाना ताकि वे उसकी रूह को समझ सकें, कुरान पढ़ते समय या सिर्फ़ उसका ट्रांसलेशन पढ़ते समय मन में उठने वाले शक को दूर करना, कुरान में जो बातें शॉर्ट में और साफ़ तौर पर कही गई हैं, उनका एनालिसिस करना और उन्हें समझाना -- यही मेरा मकसद था। शुरू में ज़्यादा समझाना मेरा मकसद नहीं था। इसलिए, पहले वॉल्यूम में कमेंट्री नोट्स शॉर्ट में हैं। बाद में, जैसे-जैसे मैं आगे बढ़ा, और ज़्यादा मतलब निकालने की ज़रूरत महसूस होने लगी। इस हद तक कि जो लोग अब आखिरी वॉल्यूम पढ़ते हैं, उन्हें लगने लगा है कि पहले वॉल्यूम सूखे हैं। लेकिन, कुरान में टॉपिक को दोहराने का एक फ़ायदा यह है कि जो टॉपिक एक जगह पर सूखे तरीके से समझाए गए हैं, उन पर बाद की सूरह की कमेंट्री में दूसरी सूरह में डिटेल में बात की जाती है। मुझे उम्मीद है कि जो लोग पवित्र कुरान को एक बार पढ़ते हैं और उसे खत्म नहीं करते, बल्कि पूरी किताब को दोबारा पढ़ते हैं, उन्हें आखिरी सूरह की कमेंट्री पहली सूरह को समझने के लिए काफ़ी गाइड लगेगी।</p>
+
+<p style="margin-top: 2em;"><strong>अबुल-अला मौदूदी</strong></p>
+<p><em>लाहौर</em></p>
+<p><em>मुल्तान</em></p>
+<p><em>24 रबीउल-अक़र 1392 AH</em></p>
+<p><em>(7 जून 1972 AD)</em></p>
+`;
+
+// Bangla author's conclusion content
+const BANGLA_CONCLUSION_CONTENT = `
+<p>আমি মহান আল্লাহর প্রতি গভীর কৃতজ্ঞতা প্রকাশ করছি। ১৩৬১ হিজরির (১৯৪২ সালের ফেব্রুয়ারী) মহররম মাসে আমি যে তাফহীমুল কুরআন লেখার কাজ শুরু করেছিলাম, তা ৩০ বছর চার মাস পর এখন শেষ পর্যায়ে পৌঁছেছে। এটা মহান আল্লাহর অসীম করুণা এবং উদারতা যে তিনি তাঁর একজন বিনয়ী বান্দাকে আল্লাহর পবিত্র গ্রন্থের প্রতি এতটা সেবা প্রদানের তৌফিক দান করেছেন। এই গ্রন্থে যা কিছু সত্য তা মহান আল্লাহর নূর এবং হেদায়েত থেকে এসেছে। যদি আমি কুরআনের অনুবাদ ও ব্যাখ্যায় কোন ভুল করে থাকি, তা আমার জ্ঞান এবং বোধগম্যতার কারণে। তবে - আলহামদুলিল্লাহ - আমি জেনেশুনে কোন ভুল করিনি। যদি আমি অজান্তে কোন ভুল করে থাকি, তাহলে আমি আল্লাহর রহমতের আশা করি। তিনি আমাকে ক্ষমা করবেন। যদি আমার এই প্রচেষ্টা বান্দাদের কোনভাবে পথ দেখানোর ক্ষেত্রে কার্যকর হয়ে থাকে, তাহলে আমি প্রার্থনা করি যে তিনি যেন এটিকে আমার পাপের কাফফারা হিসেবে পরিণত করেন। আলেমদের কাছেও আমার অনুরোধ, যেন তারা আমাকে আমার ভুল থেকে জাগিয়ে তোলেন। আমি এমন যেকোনো বিষয় সংশোধন করব যা আমাকে ভুল বলে মনে করে - ইনশাআল্লাহ। আল্লাহর কিতাবে ইচ্ছাকৃত ভুল করা বা ভুল করেই চলা থেকে আমি আল্লাহর কাছে আশ্রয় প্রার্থনা করছি।</p>
+
+<p>এই বইয়ের শিরোনাম থেকেই বোঝা যাচ্ছে, আমি সাধারণ মানুষের কাছে পবিত্র কুরআন ব্যাখ্যা করার চেষ্টা করেছি। কুরআনের চিন্তাভাবনা এবং আগ্রহ ব্যাখ্যা করা যাতে তারা এর মূল চেতনা খুঁজে পেতে পারে, কুরআন পড়ার সময় বা এর নিছক অনুবাদের সময় মনের মধ্যে যে সন্দেহ তৈরি হয় তা দূর করা, কুরআনে সংক্ষেপে এবং সংক্ষিপ্তভাবে ব্যাখ্যা করা বিষয়গুলি বিশ্লেষণ এবং ব্যাখ্যা করা, এটাই ছিল আমার লক্ষ্য। আরও বিস্তারিতভাবে বলা শুরুতে আমার লক্ষ্য ছিল না। অতএব, প্রথম খণ্ডের ব্যাখ্যামূলক নোটগুলি সংক্ষিপ্ত ছিল। পরে, আমি যত এগিয়েছি, আরও ব্যাখ্যার প্রয়োজনীয়তা অনুভূত হয়েছিল। এখন যারা শেষ খণ্ডগুলি পড়েছেন তারা মনে করতে শুরু করেছেন যে প্রথম খণ্ডগুলি শুষ্ক। তবে, কুরআনে বিষয়গুলির পুনরাবৃত্তির একটি সুবিধা হল যে যে বিষয়গুলি এক জায়গায় স্পষ্টভাবে ব্যাখ্যা করা হয়েছে সেগুলি পরবর্তী সূরাগুলির ব্যাখ্যায় অন্যান্য সূরাগুলিতে বিস্তারিতভাবে আলোচনা করা হয়েছে। আমি আশা করি যারা পবিত্র কুরআন একবার পড়বেন এবং শেষ না করে পুরো বইটি পুনরায় পড়বেন, তারা শেষের সূরাগুলির ব্যাখ্যাই প্রথম সূরাগুলি বোঝার জন্য যথেষ্ট দিকনির্দেশনা পাবেন।</p>
+
+<p style="margin-top: 2em;"><strong>আবুল আলা মওদুদী</strong></p>
+<p><em>লাহোর</em></p>
+<p><em>মুলতান</em></p>
+<p><em>২৪ রবিউল আখতার ১৩৯২ হিজরি</em></p>
+<p><em>(৭ জুন ১৯৭২)</em></p>
+`;
+
 const AuthorConclusion = () => {
   const { translationLanguage } = useTheme();
   const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
   const isMalayalam = translationLanguage === 'mal';
+  const isHindi = translationLanguage === 'hi';
+  const isBangla = translationLanguage === 'bn';
 
   // Determine content based on language
   let content = CONCLUSION_CONTENT;
@@ -61,18 +89,27 @@ const AuthorConclusion = () => {
     content = URDU_CONCLUSION_CONTENT;
     title = "مصنف کا اختتامیہ";
     dir = 'rtl';
-    className += ' font-urdu';
+    className += ' font-urdu-nastaliq';
   } else if (isMalayalam) {
     content = MALAYALAM_CONCLUSION_CONTENT;
     title = "രചയിതാവിന്റെ ഉപസംഹാരം";
     dir = 'ltr';
     className += ' font-malayalam';
+  } else if (isHindi) {
+    content = HINDI_CONCLUSION_CONTENT;
+    title = "लेखक का समापन";
+    dir = 'ltr';
+  } else if (isBangla) {
+    content = BANGLA_CONCLUSION_CONTENT;
+    title = "লেখকের উপসংহার";
+    dir = 'ltr';
+    className += ' font-bengali';
   }
 
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : ''}`} dir={dir}>
+        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isBangla ? 'font-bengali' : ''}`} dir={dir}>
           {title}
         </h2>
 
@@ -89,11 +126,118 @@ const AuthorConclusion = () => {
           </div>
         )}
 
-        <div
-          className={className}
-          dangerouslySetInnerHTML={{ __html: content }}
-          dir={dir}
-        />
+        {isUrdu ? (
+          <div dir={dir}>
+            {/* Extract paragraphs from HTML and wrap each in a block */}
+            {(() => {
+              // Remove the outer div wrapper
+              let cleanContent = content.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const paragraphs = cleanContent.split(/<\/p>\s*/).filter(p => p.trim());
+              
+              return paragraphs.map((paragraph, index) => {
+                // Clean up paragraph tag and content
+                let cleanParagraph = paragraph
+                  .replace(/<p[^>]*>/g, '')
+                  .trim();
+                
+                // Skip empty paragraphs
+                if (!cleanParagraph) return null;
+                
+                return (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    dir="rtl"
+                  >
+                    <p
+                      className="dark:text-white font-urdu-nastaliq m-0"
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                      dangerouslySetInnerHTML={{ __html: cleanParagraph }}
+                    />
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : isBangla ? (
+          // Bangla content in blocks
+          (() => {
+            // Parse Bangla content and wrap each paragraph in a block
+            const parseBanglaContent = () => {
+              // Remove the outer div wrapper if exists
+              let cleanContent = content.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const regex = /(<p[^>]*>[\s\S]*?<\/p>)/g;
+              const blocks = [];
+              let match;
+              
+              while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+              }
+              
+              return blocks;
+            };
+            
+            const banglaBlocks = parseBanglaContent();
+            
+            return (
+              <div>
+                {banglaBlocks.map((block, index) => {
+                  // Check if it's a signature section (contains strong tag or specific text)
+                  if (block.includes('<strong>') || block.includes('আবুল আলা')) {
+                    return (
+                      <div
+                        key={index}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{ __html: block }}
+                          style={{
+                            textAlign: 'left',
+                            fontSize: '16px',
+                            lineHeight: '2.6',
+                            fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  // Regular paragraph - wrap in block
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{ __html: block }}
+                        style={{
+                          textAlign: 'left',
+                          fontSize: '16px',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        ) : (
+          <div
+            className={className}
+            dangerouslySetInnerHTML={{ __html: content }}
+            dir={dir}
+          />
+        )}
       </div>
     </div>
   );

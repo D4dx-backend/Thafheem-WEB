@@ -82,11 +82,45 @@ const Settings = ({ onClose }) => {
   );
   const [viewType, setViewType] = useState(contextViewType);
   const [quranAudio, setQuranAudio] = useState(true);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("playbackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1.0;
+  });
+
   const [reciter, setReciter] = useState(() => {
     const savedReciter = localStorage.getItem("reciter");
     return savedReciter || "al-afasy";
   });
+
+  // Listen for playback speed changes from other components (StickyAudioPlayer)
+  useEffect(() => {
+    const handlePlaybackSpeedChange = (event) => {
+      const newSpeed = event.detail.playbackSpeed;
+      if (newSpeed !== playbackSpeed) {
+        setPlaybackSpeed(newSpeed);
+      }
+    };
+
+    window.addEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    return () => {
+      window.removeEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    };
+  }, [playbackSpeed]);
+
+  // Listen for reciter changes from other components (StickyAudioPlayer)
+  useEffect(() => {
+    const handleReciterChange = (event) => {
+      const newReciter = event.detail.reciter;
+      if (newReciter !== reciter) {
+        setReciter(newReciter);
+      }
+    };
+
+    window.addEventListener('reciterChange', handleReciterChange);
+    return () => {
+      window.removeEventListener('reciterChange', handleReciterChange);
+    };
+  }, [reciter]);
 
   const languages = [
     "Malayalam",
@@ -115,6 +149,13 @@ const Settings = ({ onClose }) => {
     }
   }, [contextTranslationLanguage, contextViewType, viewType, setContextViewType]);
 
+  // Save playback speed to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('playbackSpeedChange', { detail: { playbackSpeed } }));
+  }, [playbackSpeed]);
+
   const handleReset = () => {
     setTheme("Light");
     if (contextTheme === "dark") {
@@ -132,8 +173,11 @@ const Settings = ({ onClose }) => {
     setContextViewType("Ayah Wise");
     setQuranAudio(true);
     setPlaybackSpeed(1.0);
+    localStorage.setItem("playbackSpeed", "1.0");
     setReciter("al-afasy");
     localStorage.setItem("reciter", "al-afasy");
+    // Dispatch event to sync reciter with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: "al-afasy" } }));
   };
 
   const handleSave = () => {
@@ -144,6 +188,9 @@ const Settings = ({ onClose }) => {
     setViewType(normalizedViewType);
     setContextViewType(normalizedViewType);
     localStorage.setItem("reciter", reciter);
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync reciter with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter } }));
     if (onClose) onClose();
   };
 
@@ -397,8 +444,11 @@ const Settings = ({ onClose }) => {
                 <select
                   value={reciter}
                   onChange={(e) => {
-                    setReciter(e.target.value);
-                    localStorage.setItem("reciter", e.target.value);
+                    const newReciter = e.target.value;
+                    setReciter(newReciter);
+                    localStorage.setItem("reciter", newReciter);
+                    // Dispatch event to sync with other components
+                    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: newReciter } }));
                   }}
                   className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >

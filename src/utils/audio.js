@@ -67,6 +67,23 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 	audio.preload = "none";
 	audio.playbackRate = playbackSpeed;
 
+	// Ensure playback speed is applied after audio metadata loads
+	const handleLoadedMetadata = () => {
+		if (audio) {
+			audio.playbackRate = playbackSpeed;
+		}
+		audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+	};
+	audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+	
+	const handleCanPlay = () => {
+		if (audio) {
+			audio.playbackRate = playbackSpeed;
+		}
+		audio.removeEventListener('canplay', handleCanPlay);
+	};
+	audio.addEventListener('canplay', handleCanPlay, { once: true });
+
 	// Set up event handlers before playing
 	audio.onplay = () => {
 		if (typeof onStart === "function") onStart();

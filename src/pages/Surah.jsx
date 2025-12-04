@@ -86,10 +86,24 @@ const Surah = () => {
     }
   }, [setContextViewType, showBlockNavigation]);
 
-  // Handle viewType from location state (e.g., when navigating from bookmarks)
+  // Handle viewType from location state or sessionStorage (e.g., when navigating from search)
   useEffect(() => {
     if (location.state?.viewType) {
       setContextViewType(location.state.viewType);
+    } else {
+      // Check sessionStorage for navigation state from search
+      const navState = sessionStorage.getItem('navigationState');
+      if (navState) {
+        try {
+          const state = JSON.parse(navState);
+          if (state.viewType) {
+            setContextViewType(state.viewType);
+          }
+          sessionStorage.removeItem('navigationState');
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
     }
   }, [location.state, setContextViewType]);
 
@@ -156,9 +170,15 @@ const Surah = () => {
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
-  const [selectedQari, setSelectedQari] = useState('al-afasy');
+  const [selectedQari, setSelectedQari] = useState(() => {
+    const savedReciter = localStorage.getItem("reciter");
+    return savedReciter || "al-afasy";
+  });
   const [audioTypes, setAudioTypes] = useState(['quran']); // Array of selected audio types
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("playbackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1.0;
+  });
   const [currentAudioTypeIndex, setCurrentAudioTypeIndex] = useState(0); // Track which audio type is currently playing
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
@@ -832,19 +852,99 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
   // Handle scroll to specific verse when navigating with anchor
   useEffect(() => {
     const handleScrollToVerse = () => {
+      // Check multiple sources for verse number: hash, location state, sessionStorage
+      let verseNumber = null;
+      
+      // First, check hash
       const hash = window.location.hash;
-
       if (hash && hash.startsWith("#verse-")) {
-        const verseNumber = parseInt(hash.replace("#verse-", ""));
+        const hashVerse = parseInt(hash.replace("#verse-", ""), 10);
+        if (!isNaN(hashVerse) && hashVerse > 0) {
+          verseNumber = hashVerse;
+        }
+      }
+      
+      // If no hash, check location state
+      if (!verseNumber && location.state?.scrollToVerse) {
+        const stateVerse = parseInt(location.state.scrollToVerse, 10);
+        if (!isNaN(stateVerse) && stateVerse > 0) {
+          verseNumber = stateVerse;
+        }
+      }
+      
+      // If still no verse, check sessionStorage (backup from search navigation)
+      if (!verseNumber) {
+        const storedVerse = sessionStorage.getItem('scrollToVerse');
+        if (storedVerse) {
+          const storedVerseNum = parseInt(storedVerse, 10);
+          if (!isNaN(storedVerseNum) && storedVerseNum > 0) {
+            verseNumber = storedVerseNum;
+            sessionStorage.removeItem('scrollToVerse'); // Clean up after use
+          }
+        }
+      }
 
-        if (verseNumber && !loading && ayahData.length > 0) {
-          // Wait for the content to fully render
-          setTimeout(() => {
-            const verseElement = document.getElementById(
-              `verse-${verseNumber}`
-            );
-
+      if (verseNumber && !loading) {
+        // Check if this is a paginated language and if the verse is beyond loaded data
+        const isPaginated = PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage);
+        const limit = isPaginated ? getPaginatedTranslationLimit() : 0;
+        // Verse elements use id={`verse-${index + 1}`} where index is array index
+        // So if we have 40 items, we have verse-1 through verse-40
+        const maxLoadedVerseIndex = ayahData.length;
+        const needsMoreData = isPaginated && verseNumber > maxLoadedVerseIndex;
+        
+        // If verse is beyond loaded data, load the required page(s)
+        if (needsMoreData && limit > 0) {
+          const targetPage = Math.ceil(verseNumber / limit);
+          console.log(`Loading page ${targetPage} to get verse ${verseNumber} (currently loaded ${maxLoadedVerseIndex} verses)`);
+          
+          // Load all pages up to the target page
+          const loadPagesUpTo = async (targetPageNum) => {
+            let currentPage = translationPagination?.page || 1;
+            const maxPage = Math.max(currentPage, targetPageNum);
+            
+            while (currentPage < maxPage) {
+              currentPage++;
+              try {
+                await fetchPaginatedTranslations({ page: currentPage, replace: false, trackLoading: false });
+                // Wait a bit for DOM to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+              } catch (error) {
+                console.error(`Error loading page ${currentPage}:`, error);
+                break;
+              }
+            }
+          };
+          
+          loadPagesUpTo(targetPage).then(() => {
+            // After loading, try to scroll with retries
+            const scrollAfterLoad = (attempt = 1) => {
+              const verseElement = document.getElementById(`verse-${verseNumber}`);
+              if (verseElement) {
+                verseElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                verseElement.style.backgroundColor = "#fef3c7";
+                setTimeout(() => {
+                  verseElement.style.backgroundColor = "";
+                }, 2000);
+              } else if (attempt < 5) {
+                // Retry if element not found yet (DOM might still be updating)
+                setTimeout(() => scrollAfterLoad(attempt + 1), attempt * 200);
+              } else {
+                console.warn(`Could not find verse element: verse-${verseNumber} after loading pages. Current array length: ${ayahData.length}`);
+              }
+            };
+            setTimeout(() => scrollAfterLoad(1), 300);
+          });
+          return;
+        }
+        
+        // If verse should be loaded, try to scroll
+        if (ayahData.length > 0) {
+          const scrollToElement = (attempt = 1) => {
+            const verseElement = document.getElementById(`verse-${verseNumber}`);
+            
             if (verseElement) {
+              // Scroll to element
               verseElement.scrollIntoView({
                 behavior: "smooth",
                 block: "center",
@@ -854,27 +954,50 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
               setTimeout(() => {
                 verseElement.style.backgroundColor = "";
               }, 2000);
+              return true;
+            } else if (attempt < 3) {
+              // Retry up to 3 times with shorter delays for faster response
+              setTimeout(() => scrollToElement(attempt + 1), attempt * 150);
+              return false;
+            } else {
+              console.warn(`Could not find verse element: verse-${verseNumber} after ${attempt} attempts. Loaded ${ayahData.length} verses (indices 0-${ayahData.length - 1} map to verse-1 through verse-${ayahData.length})`);
+              return false;
             }
-          }, 500); // Reduced delay for better responsiveness
+          };
+
+          // Start scrolling immediately using requestAnimationFrame for better performance
+          requestAnimationFrame(() => {
+            scrollToElement(1);
+          });
         }
       }
     };
 
     // Run when data is loaded or when hash changes
-    if (!loading && ayahData.length > 0) {
-      // Add a small delay to ensure DOM is ready
-      setTimeout(handleScrollToVerse, 100);
+    // Also run when pagination changes (for paginated languages)
+    if (!loading) {
+      // Use requestAnimationFrame for immediate execution when DOM is ready
+      // This is faster than setTimeout and ensures DOM is rendered
+      requestAnimationFrame(() => {
+        handleScrollToVerse();
+        // Also run once more after a brief delay to catch any late DOM updates
+        setTimeout(handleScrollToVerse, 100);
+      });
     }
 
     // Listen for hash changes and popstate (back/forward button)
     window.addEventListener("hashchange", handleScrollToVerse);
     window.addEventListener("popstate", handleScrollToVerse);
+    
+    // Also listen for load event (when page loads with hash)
+    window.addEventListener("load", handleScrollToVerse);
 
     return () => {
       window.removeEventListener("hashchange", handleScrollToVerse);
       window.removeEventListener("popstate", handleScrollToVerse);
+      window.removeEventListener("load", handleScrollToVerse);
     };
-  }, [loading, ayahData, surahId]);
+  }, [loading, ayahData, surahId, location.state, translationLanguage, translationPagination, fetchPaginatedTranslations, getPaginatedTranslationLimit]);
 
   const handleWordByWordClick = (verseNumber, event) => {
     // Check if modifier key is pressed (Ctrl/Cmd)
@@ -1708,6 +1831,28 @@ Read more: ${shareUrl}`;
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
   };
 
+  // Save reciter to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("reciter", selectedQari);
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: selectedQari } }));
+  }, [selectedQari]);
+
+  // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handleReciterChange = (event) => {
+      const newReciter = event.detail.reciter;
+      if (newReciter !== selectedQari) {
+        setSelectedQari(newReciter);
+      }
+    };
+
+    window.addEventListener('reciterChange', handleReciterChange);
+    return () => {
+      window.removeEventListener('reciterChange', handleReciterChange);
+    };
+  }, [selectedQari]);
+
   // Stop audio when Qirath or audio types change
   useEffect(() => {
     if (isSequencePlaying && audioEl && playingAyah) {
@@ -1718,6 +1863,28 @@ Read more: ${shareUrl}`;
       }, 100);
     }
   }, [selectedQari, audioTypes]);
+
+  // Save playback speed to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('playbackSpeedChange', { detail: { playbackSpeed } }));
+  }, [playbackSpeed]);
+
+  // Listen for playback speed changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handlePlaybackSpeedChange = (event) => {
+      const newSpeed = event.detail.playbackSpeed;
+      if (newSpeed !== playbackSpeed) {
+        setPlaybackSpeed(newSpeed);
+      }
+    };
+
+    window.addEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    return () => {
+      window.removeEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    };
+  }, [playbackSpeed]);
 
   // Apply playback speed when it changes
   useEffect(() => {

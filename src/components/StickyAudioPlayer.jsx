@@ -56,16 +56,29 @@ const StickyAudioPlayer = ({
 
     const handleLoadedMetadata = () => {
       setDuration(audioElement.duration);
+      // Ensure playback speed is applied after metadata loads
+      if (audioElement) {
+        audioElement.playbackRate = playbackSpeed;
+      }
+    };
+
+    const handleCanPlay = () => {
+      // Ensure playback speed is applied when audio can play
+      if (audioElement) {
+        audioElement.playbackRate = playbackSpeed;
+      }
     };
 
     audioElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audioElement.addEventListener('canplay', handleCanPlay);
     audioElement.addEventListener('timeupdate', handleTimeUpdate);
 
     return () => {
       audioElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audioElement.removeEventListener('canplay', handleCanPlay);
       audioElement.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [audioElement]);
+  }, [audioElement, playbackSpeed]);
 
   const formatTime = (time) => {
     if (isNaN(time)) return "00:00";

@@ -58,9 +58,15 @@ const BlockWise = () => {
   const [activeView, setActiveView] = useState("Block wise");
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState(null);
-  const [selectedQirath, setSelectedQirath] = useState("al-hudaify");
+  const [selectedQirath, setSelectedQirath] = useState(() => {
+    const savedReciter = localStorage.getItem("reciter");
+    return savedReciter || "al-hudaify";
+  });
   const [audioTypes, setAudioTypes] = useState(['quran']); // Selected audio types in order
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("playbackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1.0;
+  });
   const [playingBlock, setPlayingBlock] = useState(null); // Track which block is currently playing
   const [currentAudioType, setCurrentAudioType] = useState(null); // Track which audio type is playing
   const [currentAyahInBlock, setCurrentAyahInBlock] = useState(null); // Track which ayah within the block is playing
@@ -72,6 +78,7 @@ const BlockWise = () => {
   const playingBlockRef = useRef(null);
   const isContinuousPlayRef = useRef(false);
   const isProcessingNextRef = useRef(false); // Guard to prevent duplicate calls to moveToNextAyahOrBlock/playNextBlock
+  const playbackSpeedRef = useRef(playbackSpeed); // Ref to track current playback speed
 
   useEffect(() => {
     console.log("[BlockWise] audioTypes state updated", audioTypes);
@@ -118,6 +125,7 @@ const BlockWise = () => {
     quranFont,
     translationLanguage,
     theme,
+    fontSize,
     adjustedTranslationFontSize,
     viewType: contextViewType,
     setViewType: setContextViewType,
@@ -693,6 +701,10 @@ const BlockWise = () => {
     // This ensures the flag is reset before audio ends, allowing progression
     const handleCanPlay = () => {
       isProcessingNextRef.current = false;
+      // Ensure playback speed is applied after audio loads (use ref to get current value)
+      if (audioRef.current) {
+        audioRef.current.playbackRate = playbackSpeedRef.current;
+      }
       audioRef.current.removeEventListener('canplay', handleCanPlay);
     };
     audioRef.current.addEventListener('canplay', handleCanPlay, { once: true });
@@ -700,9 +712,18 @@ const BlockWise = () => {
     // Clear timeout when audio successfully loads
     audioRef.current.addEventListener('canplay', clearLoadTimeout, { once: true });
     audioRef.current.addEventListener('loadeddata', clearLoadTimeout, { once: true });
+    
+    // Also set playback rate when metadata is loaded
+    const handleLoadedMetadata = () => {
+      if (audioRef.current) {
+        audioRef.current.playbackRate = playbackSpeedRef.current;
+      }
+      audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+    audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
 
     audioRef.current.src = audioUrl;
-    audioRef.current.playbackRate = playbackSpeed;
+    audioRef.current.playbackRate = playbackSpeedRef.current;
     audioRef.current.load();
     startLoadTimeout();
     
@@ -1237,6 +1258,28 @@ const BlockWise = () => {
     };
   }, [surahId]);
 
+  // Save reciter to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("reciter", selectedQirath);
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: selectedQirath } }));
+  }, [selectedQirath]);
+
+  // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handleReciterChange = (event) => {
+      const newReciter = event.detail.reciter;
+      if (newReciter !== selectedQirath) {
+        setSelectedQirath(newReciter);
+      }
+    };
+
+    window.addEventListener('reciterChange', handleReciterChange);
+    return () => {
+      window.removeEventListener('reciterChange', handleReciterChange);
+    };
+  }, [selectedQirath]);
+
   // Restart audio when selectedQirath or audioTypes changes during playback
   useEffect(() => {
     if (playingBlock && currentAyahInBlock && audioRef.current && isContinuousPlay) {
@@ -1245,6 +1288,33 @@ const BlockWise = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedQirath, audioTypes]);
+
+  // Update playback speed ref when it changes
+  useEffect(() => {
+    playbackSpeedRef.current = playbackSpeed;
+  }, [playbackSpeed]);
+
+  // Save playback speed to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('playbackSpeedChange', { detail: { playbackSpeed } }));
+  }, [playbackSpeed]);
+
+  // Listen for playback speed changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handlePlaybackSpeedChange = (event) => {
+      const newSpeed = event.detail.playbackSpeed;
+      if (newSpeed !== playbackSpeed) {
+        setPlaybackSpeed(newSpeed);
+      }
+    };
+
+    window.addEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    return () => {
+      window.removeEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    };
+  }, [playbackSpeed]);
 
   // Apply playback speed when it changes
   useEffect(() => {
@@ -2318,7 +2388,7 @@ const BlockWise = () => {
                             fontFamily: quranFont ? `'${quranFont}', serif` : '"Amiri Quran", serif',
                             direction: 'rtl',
                             lineHeight: '2.7',
-                            fontSize: '23px',
+                            fontSize: `${fontSize}px`,
                           }}
                         >
                           {arabicSlice.length > 0
@@ -2383,7 +2453,6 @@ const BlockWise = () => {
                                   <div
                                     key={`translation-${blockId}-${idx}`}
                                     className="leading-relaxed"
-                                    style={{ fontSize: '17px' }}
                                     data-footnote-context="blockwise"
                                     dangerouslySetInnerHTML={{ __html: parsedHtml }}
                                   />
@@ -2395,7 +2464,6 @@ const BlockWise = () => {
                               translationData?.text ? (
                               <div
                                 className="leading-relaxed"
-                                style={{ fontSize: '17px' }}
                                 data-footnote-context="blockwise"
                                 dangerouslySetInnerHTML={{
                                   __html:
@@ -2970,6 +3038,10 @@ const BlockWise = () => {
           playbackSpeed={playbackSpeed}
           onPlaybackSpeedChange={(newSpeed) => {
             setPlaybackSpeed(newSpeed);
+            // Immediately apply to current audio element if it exists
+            if (audioRef.current) {
+              audioRef.current.playbackRate = newSpeed;
+            }
           }}
         />
       )}

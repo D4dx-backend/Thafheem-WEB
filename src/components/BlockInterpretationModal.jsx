@@ -710,10 +710,33 @@ const BlockInterpretationModal = ({
 
         // Apply data attributes for CSS styling and set click handlers
         if (/^N\d+$/.test(text)) {
-          // Note references
+          // Note references (N-prefixed)
           m.setAttribute("data-type", "note");
           m.setAttribute("data-value", text);
           m.onclick = handleNoteHighlightClick;
+        } else if (/^B\d+$/.test(text)) {
+          // Note references (B-prefixed)
+          m.setAttribute("data-type", "note");
+          m.setAttribute("data-value", text);
+          m.onclick = handleNoteHighlightClick;
+        } else if (/^\d+B\d+$/.test(text)) {
+          // Number followed by B note like 1B67
+          const bNoteMatch = text.match(/B(\d+)/i);
+          if (bNoteMatch) {
+            const noteId = `B${bNoteMatch[1]}`;
+            m.setAttribute("data-type", "note");
+            m.setAttribute("data-value", noteId);
+            m.onclick = handleNoteHighlightClick;
+          }
+        } else if (/^\d+,\d+B\d+$/.test(text)) {
+          // Multiple numbers followed by B note like 43,44B70
+          const bNoteMatch = text.match(/B(\d+)/i);
+          if (bNoteMatch) {
+            const noteId = `B${bNoteMatch[1]}`;
+            m.setAttribute("data-type", "note");
+            m.setAttribute("data-value", noteId);
+            m.onclick = handleNoteHighlightClick;
+          }
         } else if (
           /^\(?\d+\s*[:：]\s*\d+\)?$/.test(text) ||
           /^\d+\s*[:：]\s*\d+$/.test(text) ||
@@ -883,12 +906,27 @@ const BlockInterpretationModal = ({
     // Fallback: text-based detection
     const clickedText = target.innerText || target.textContent || "";
 
-    // Look for note patterns first (PRIORITY) - support N, H, B prefixes
-    const noteMatch = clickedText.match(/^([NHB])(\d+)$/i);
-    if (noteMatch) {
-      const prefix = noteMatch[1].toUpperCase();
-      const number = noteMatch[2];
-      const noteId = `${prefix}${number}`;
+    // Look for B-prefixed note patterns first (PRIORITY) - handle complex patterns
+    // Patterns like "1B67", "43,44B70", "B67"
+    const bNoteMatch = clickedText.match(/(\d+,\d+)?B(\d+)/i) || clickedText.match(/B(\d+)/i);
+    if (bNoteMatch) {
+      const noteId = `B${bNoteMatch[2] || bNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+
+    // Look for N-prefixed note patterns
+    const nNoteMatch = clickedText.match(/N(\d+)/i);
+    if (nNoteMatch) {
+      const noteId = `N${nNoteMatch[1]}`;
+      handleNoteClick(noteId);
+      return;
+    }
+
+    // Look for H-prefixed note patterns
+    const hNoteMatch = clickedText.match(/H(\d+)/i);
+    if (hNoteMatch) {
+      const noteId = `H${hNoteMatch[1]}`;
       handleNoteClick(noteId);
       return;
     }
@@ -1582,6 +1620,74 @@ const BlockInterpretationModal = ({
           text-decoration: underline !important;
           transform: scale(1.05) !important;
         }
+        
+        /* Urdu interpretation styling */
+        .urdu-interpretation-content p {
+          text-align: right !important;
+          font-size: 16px !important;
+          line-height: 2.6 !important;
+          margin-bottom: 10px !important;
+          font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+        }
+        
+        /* Urdu interpretation link (superscript) styling - matching Malayalam style */
+        .urdu-interpretation-content sup.interpretation-link,
+        .urdu-interpretation-content sup[data-interpretation],
+        .urdu-interpretation-content sup.urdu-footnote-link,
+        .urdu-interpretation-content sup[data-footnote-id] {
+          margin-right: 4px !important;
+          margin-left: -1px !important;
+          margin-top: -15px !important;
+          cursor: pointer !important;
+          background-color: rgb(41, 169, 199) !important;
+          color: rgb(255, 255, 255) !important;
+          font-weight: 600 !important;
+          text-decoration: none !important;
+          border: none !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-size: 12px !important;
+          vertical-align: middle !important;
+          line-height: 1 !important;
+          border-radius: 9999px !important;
+          position: relative !important;
+          z-index: 10 !important;
+          top: 0px !important;
+          min-width: 20px !important;
+          min-height: 19px !important;
+          text-align: center !important;
+          transition: 0.2s ease-in-out !important;
+          padding: 0 !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link > a,
+        .urdu-interpretation-content sup[data-interpretation] > a,
+        .urdu-interpretation-content sup.urdu-footnote-link > a,
+        .urdu-interpretation-content sup[data-footnote-id] > a {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 100% !important;
+          color: inherit !important;
+          font-weight: inherit !important;
+          text-decoration: none !important;
+          line-height: 1 !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link:hover,
+        .urdu-interpretation-content sup[data-interpretation]:hover,
+        .urdu-interpretation-content sup.urdu-footnote-link:hover,
+        .urdu-interpretation-content sup[data-footnote-id]:hover {
+          background-color: #0891b2 !important;
+          transform: scale(1.05) !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link:active,
+        .urdu-interpretation-content sup[data-interpretation]:active,
+        .urdu-interpretation-content sup.urdu-footnote-link:active,
+        .urdu-interpretation-content sup[data-footnote-id]:active {
+          background-color: #0e7490 !important;
+          transform: scale(0.95) !important;
+        }
         `}
       </style>
 
@@ -1717,24 +1823,34 @@ const BlockInterpretationModal = ({
 
             {/* Interpretation Content */}
             <div className="font-poppins space-y-6 sm:space-y-8" key={`block-${currentSurahId}-${currentRange}-${currentInterpretationNo}`}>
-              {content.map((item, idx) => (
-                <div
-                  key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
-                  className="mb-6 sm:mb-8"
-                >
+              {content.map((item, idx) => {
+                const isUrdu = currentLanguage === 'ur' || currentLanguage === 'urdu';
+                return (
                   <div
-                    className="interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none"
-                    ref={(el) => (contentRefs.current[idx] = el)}
-                    onClick={handleContentClick}
-                    style={{
-                      pointerEvents: "auto",
-                      position: "relative",
-                      zIndex: 1,
-                    }}
-                    dangerouslySetInnerHTML={{ __html: extractText(item) }}
-                  />
-                </div>
-              ))}
+                    key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
+                    className="mb-6 sm:mb-8"
+                  >
+                    <div
+                      className={`interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
+                      ref={(el) => (contentRefs.current[idx] = el)}
+                      onClick={handleContentClick}
+                      style={{
+                        pointerEvents: "auto",
+                        position: "relative",
+                        zIndex: 1,
+                        ...(isUrdu ? {
+                          textAlign: 'right',
+                          fontSize: '16px',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                        } : {})
+                      }}
+                      dir={isUrdu ? 'rtl' : 'ltr'}
+                      dangerouslySetInnerHTML={{ __html: extractText(item) }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 

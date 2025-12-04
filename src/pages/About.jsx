@@ -53,36 +53,204 @@ const URDU_ABOUT = `
   </div>
 `;
 
+const HINDI_ABOUT = `
+  <p>
+    पवित्र कुरान, दुनिया बनाने वाले अल्लाह का इंसानियत को दिया गया सबसे बड़ा मैसेज है।
+    यह हमेशा रहने वाला है। इसलिए, पवित्र कुरान को डिजिटल तरीके से पढ़ना बहुत ज़रूरी है।
+    सैय्यद अबुल-अला मौदूदी की लिखी कमेंट्री किताब 'तफ़हीम-उल-कुरान' के डिजिटल
+    एप्लीकेशन का मकसद पवित्र कुरान के कॉन्सेप्ट को पढ़ने के लिए डिजिटल सुविधाओं का ज़्यादा
+    से ज़्यादा इस्तेमाल करना है।
+  </p>
+
+  <p>
+    इस मोबाइल एप्लीकेशन में अभी तफ़हीम-उल-कुरान की छह भाषाएँ शामिल हैं, यानी उर्दू,
+    इंग्लिश, मलयालम, हिंदी, तमिल और बांग्ला। इसमें उर्दू और मलयालम ट्रांसलेशन का ऑडियो
+    भी दिया गया है। उम्मीद है कि जल्द ही इसमें दूसरी भाषाओं में भी तफ़हीम के ट्रांसलेशन
+    शामिल किए जाएँगे। यह डिजिटल सिस्टम की अलग-अलग सुविधाओं का इस्तेमाल करके पढ़ने वालों
+    तक तफ़हीम-उल-कुरान की जानकारी आसानी से पहुँचाने की एक छोटी सी कोशिश भी है।
+  </p>
+
+  <p>
+    तफ़हीम उल कुरान का पहला डिजिटल वर्शन 2008 में रिलीज़ हुआ था। इसके बाद, 2016 में
+    रिलीज़ हुए दूसरे वर्शन में तफ़हीम मलयालम ट्रांसलेशन का पूरा ऑडियो शामिल था। तफ़हीम उल
+    कुरान के विस्तार का तीसरा फ़ेज़ 2025 में पूरा होगा। हम उन सभी का शुक्रिया अदा करना
+    चाहते हैं जिन्होंने इन सभी प्रोजेक्ट्स का फ़ाइनेंशियल बोझ उठाकर वर्कर्स को प्रेरणा और
+    हिम्मत दी है। हम उन सभी का शुक्रिया अदा करना चाहते हैं जिन्होंने इस महान काम की
+    अलग-अलग एक्टिविटीज़ में सहयोग किया है। अल्लाह सभी को बड़ा इनाम दे।
+  </p>
+
+  <p>
+    हम सभी लेवल के यूज़र्स से आपके कीमती कमेंट्स और सुझावों का बेसब्री से इंतज़ार कर रहे हैं।
+    अल्लाह, जो सबसे रहम करने वाला है, इसे एक अच्छा काम माने और सभी को बड़ा इनाम दे।
+    आमीन।
+  </p>
+
+  <p style="margin-top: 2em;">
+    <strong>- शिहाब पूक्कोट्टूर, चेयरमैन, D4DX</strong>
+  </p>
+`;
+
+const BANGLA_ABOUT = `
+  <p>
+    পবিত্র কুরআন হলো বিশ্বজগতের স্রষ্টা আল্লাহর পক্ষ থেকে মানবজাতির জন্য প্রদত্ত সর্বশ্রেষ্ঠ বার্তা। এটি চিরন্তন। তাই, পবিত্র কুরআনের ডিজিটাল পাঠ অত্যন্ত গুরুত্বপূর্ণ। সৈয়দ আবুল-আলা মওদুদী রচিত তাফসীর গ্রন্থ 'তাফহীমুল কুরআন'-এর ডিজিটাল অ্যাপ্লিকেশনটির লক্ষ্য পবিত্র কুরআনের ধারণা অধ্যয়নের জন্য ডিজিটাল সুযোগ-সুবিধার সর্বাধিক ব্যবহার করা।
+  </p>
+
+  <p>
+    এই মোবাইল অ্যাপ্লিকেশনটিতে বর্তমানে তাফহীমুল কুরআনের ছয়টি ভাষা, যথা উর্দু, ইংরেজি, মালায়ালাম, হিন্দি, তামিল এবং বাংলা অন্তর্ভুক্ত রয়েছে। এটি উর্দু এবং মালায়ালাম অনুবাদের অডিওও সরবরাহ করে। আশা করা যায় যে শীঘ্রই অন্যান্য ভাষায় তাফহীমুল কুরআনের অনুবাদও অন্তর্ভুক্ত করা হবে। ডিজিটাল সিস্টেমের বিভিন্ন সুযোগ-সুবিধা ব্যবহার করে পাঠকদের কাছে তাফহীমুল কুরআনের তথ্যের ভাণ্ডার সহজেই পৌঁছে দেওয়ার জন্য সম্ভাব্য সকল উপায় ব্যবহার করার জন্য এটি একটি বিনয়ী প্রচেষ্টা।
+  </p>
+
+  <p>
+    তাফহীমুল কুরআনের প্রথম ডিজিটাল সংস্করণ ২০০৮ সালে প্রকাশিত হয়। এরপর, ২০১৬ সালে প্রকাশিত দ্বিতীয় সংস্করণে তাফহীমুল কুরআন অনুবাদের সম্পূর্ণ অডিও অন্তর্ভুক্ত ছিল। তাফহীমুল কুরআনের সম্প্রসারণের তৃতীয় পর্যায় ২০২৫ সালে সম্পন্ন হবে। এই মহান উদ্যোগের বিভিন্ন কার্যক্রমে যারা অবদান রেখেছেন তাদের সকলের প্রতি আমরা কৃতজ্ঞতা প্রকাশ করতে চাই। আল্লাহ সকলকে মহান প্রতিদান দান করুন।
+  </p>
+
+  <p>
+    সকল স্তরের ব্যবহারকারীদের কাছ থেকে আপনার মূল্যবান মন্তব্য এবং পরামর্শের জন্য আমরা অধীর আগ্রহে অপেক্ষা করছি। আল্লাহ রাব্বুল আলামীন এই প্রক্রিয়াটি কবুল করুন এবং সকলকে মহান প্রতিদানে পুরস্কৃত করুন। আমিন
+  </p>
+
+  <p style="margin-top: 2em;">
+    <strong>- শাহাব পোক্কোতুর, চেয়ারম্যান,</strong><br/>
+    <strong>D4DX Innovations LLP</strong>
+  </p>
+`;
+
+const MALAYALAM_ABOUT = `
+  <p>
+    പ്രപഞ്ച സ്രഷ്ടാവായ അല്ലാഹു മാനവരാശിക്ക് നല്‍കിയ അതിമഹത്തായ സന്ദേശമാണ് വിശുദ്ധ ഖുര്‍ആന്‍. അത് കാലാതിവര്‍ത്തിയാണ്. അതിനാല്‍ തന്നെ  പരിശുദ്ധ ഖുര്‍ആന്റെ ഡിജിറ്റല്‍ വായനക്ക് വലിയ പ്രധാന്യവുമുണ്ട്.  പരിശുദ്ധ ഖുര്‍ആന്റെ ആശയ പഠനത്തിന് ഡിജിറ്റല്‍ സൗകര്യങ്ങള്‍ പരമാവധി പ്രയോജനപ്പെടുത്തുക എന്നതാണ്, സയ്യിദ് അബുല്‍അഅ്‌ലാ മൗദൂദി രചിച്ച 'തഫ്ഹീമുല്‍ ഖുര്‍ആൻ' എന്ന വ്യാഖ്യാന ഗ്രന്ഥത്തിന്റെ  ഡിജിറ്റൽ ആപ്ലിക്കേഷനിലൂടെ ലക്ഷ്യമാക്കുന്നത്.
+  </p>
+
+  <p>
+    തഫ്ഹീമുല്‍ഖുര്‍ആന്റെ ഉർദു, ഇംഗ്ലീഷ്, മലയാളം, ഹിന്ദി, തമിഴ്, ബഗ്ല  എന്നീ ആറ് ഭാഷകളാണ് ഈ മൊബൈൽ അപ്ലിക്കേഷനിൽ ഇപ്പോൾ ഉൾപ്പെടുത്തിയിരിക്കുന്നത്. ഇതിൽ ഉർദു, മലയാളം വിവർത്തനങ്ങളുടെ ഓഡിയോ കൂടി ലഭ്യമാക്കിയിട്ടുണ്ട്. മറ്റു ഭാഷകളിലുള്ള തഫ്ഹീം വിവർത്തനങ്ങൾകൂടി  താമസിയാതെ ഇതിൽ ഉൾപ്പെടുത്താൻ സാധിക്കുമെന്നാണ് കരുതുന്നത്.  ഡിജിറ്റല്‍ സംവിധാനങ്ങളുടെ വിവിധങ്ങളായ സൗകര്യങ്ങൾ  പ്രയോജനപ്പെടുത്തി തഫ്ഹീമുല്‍ ഖൂര്‍ആന്റെ വിവര വൈപുല്യങ്ങളിലേക്ക് അനായാസം വായനക്കാരെ എത്തിക്കാൻ സാധ്യമായ എല്ലാമാര്‍ഗങ്ങളും അവലംബമാക്കാനുള്ള ഒരു എളിയ ശ്രമം കൂടിയാണിത്.
+  </p>
+
+  <p>
+    2008 ലാണ് തഫ്ഹീ മുൽ ഖുർആന്റെ ഒന്നാമത്തെ ഡിജിറ്റൽ പതിപ്പ് പുറത്തിറക്കുന്നത്.  തുടർന്ന് 2016ൽ പ്രകാശിതമായ രണ്ടാം വേർഷനിൽ തഫ്ഹീം മലയാളം വിവർത്തനത്തിന്റെ സമ്പൂർണ ഓഡിയോ കൂടി ഉൾപ്പെടുത്തുകയുണ്ടായി. 2025 ൽ പൂർത്തിയാവുന്നത് തഫ്ഹീമുൽ ഖുർആനിന്റെ മൂന്നാംഘട്ട എക്സ്പാൻഷനാണ്.  ഈ പ്രോജക്ടുകളുടെയെല്ലാം സാമ്പത്തിക ബാധ്യതകള്‍  ഏറ്റെടുത്തുകൊണ്ട് ഇതിന്റെ പ്രവര്‍ത്തകര്‍ക്ക് പ്രചോദനവും പ്രോല്‍സാഹനവും നല്‍കിയ എല്ലാവരെയും നന്ദിയോടെ പരാമര്‍ശിക്കുന്നു.  ബൃഹത്തായ ഈ സംരഭത്തിന്റെ  വിവിധ പ്രവര്‍ത്തനങ്ങളില്‍ സഹകരിച്ച എല്ലാവരോടുമുള്ള അനല്‍പമായ കടപ്പാടുകൾ നന്ദിയോടെ ഇവിടെ രേഖപ്പെടുത്തുകയാണ്. എല്ലാരെയും അല്ലാഹു അതിമഹത്തായ പ്രതിഫലം നല്‍കി അനുഗ്രഹിക്കട്ടെ.
+  </p>
+
+  <p>
+    ഇത് ഉപയോഗപ്പെടുത്തുന്ന എല്ലാ തലത്തിലുള്ളവരില്‍ നിന്നും തങ്ങളുടെ വിലപ്പെട്ട അഭിപ്രായങ്ങളും ഉപദേശ നിര്‍ദ്ദേശങ്ങളും താല്‍പര്യപൂര്‍വം പ്രതീക്ഷിക്കുന്നുണ്ട്. പരമകാരുണികനായ അല്ലാഹു ഇതൊരു സദ്കര്‍മ്മമായി സ്വീകരിച്ച് അതിമഹത്തായ പ്രതിഫലം നല്‍കി എല്ലാവരെയും അനുഗ്രഹിക്കട്ടെ. ആമീന്‍.
+  </p>
+`;
+
 const About = () => {
   const { translationLanguage } = useTheme();
   const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
+  const isHindi = translationLanguage === 'hi';
+  const isBangla = translationLanguage === 'bn';
+  const isMalayalam = translationLanguage === 'mal';
+
+  // Determine content based on language
+  let content = ENGLISH_ABOUT;
+  let title = 'About Us';
+  let languageFeatureText = 'Available in multiple language';
+  let dir = 'ltr';
+  let fontClass = '';
+
+  if (isMalayalam) {
+    content = MALAYALAM_ABOUT;
+    title = 'About Us';
+    languageFeatureText = 'ഒന്നിലധികം ഭാഷകളിൽ ലഭ്യമാണ്';
+    dir = 'ltr';
+    fontClass = '';
+  } else if (isUrdu) {
+    content = URDU_ABOUT;
+    title = 'ہمارے بارے میں';
+    languageFeatureText = 'متعدد زبانوں میں دستیاب';
+    dir = 'rtl';
+    fontClass = 'font-urdu';
+  } else if (isHindi) {
+    content = HINDI_ABOUT;
+    title = 'हमारे बारे में';
+    languageFeatureText = 'कई भाषाओं में उपलब्ध';
+    dir = 'ltr';
+    fontClass = 'font-hindi';
+  } else if (isBangla) {
+    content = BANGLA_ABOUT;
+    title = 'আমাদের সম্পর্কে';
+    languageFeatureText = 'একাধিক ভাষায় উপলব্ধ';
+    dir = 'ltr';
+    fontClass = 'font-bengali';
+  }
 
   return (
     <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-gray-900 font-poppins">
+      {isUrdu && (
+        <style>{`
+          .urdu-about-content p {
+            text-align: right !important;
+            font-size: 16px !important;
+            line-height: 2.6 !important;
+            margin-bottom: 10px !important;
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          }
+        `}</style>
+      )}
       <div className="max-w-[1070px] w-full mx-auto">
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${isUrdu ? 'font-urdu' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
-            {isUrdu ? 'ہمارے بارے میں' : 'About Us'}
+          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass} ${isUrdu ? 'font-urdu-nastaliq' : ''}`} dir={dir} style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : {}}>
+            {title}
           </h1>
           <div className=" h-px bg-gray-200 "></div>
         </div>
 
         {/* Content */}
-        <div className={`dark:text-white text-gray-800 leading-relaxed ${isUrdu ? 'font-urdu' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
-          <div
-            className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
-            dangerouslySetInnerHTML={{ __html: isUrdu ? URDU_ABOUT : ENGLISH_ABOUT }}
-          />
+        <div className={`dark:text-white text-gray-800 leading-relaxed ${fontClass}`} dir={dir}>
+          {isUrdu ? (() => {
+            // Parse Urdu content and split into paragraphs
+            const parseUrduContent = () => {
+              // Remove the outer div wrapper
+              let cleanContent = URDU_ABOUT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const regex = /<p[^>]*>[\s\S]*?<\/p>/g;
+              const blocks = [];
+              let match;
+              
+              while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+              }
+              
+              return blocks;
+            };
+            
+            const urduBlocks = parseUrduContent();
+            
+            return (
+              <div dir="rtl" className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                {urduBlocks.map((block, index) => (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 urdu-about-content"
+                    dir="rtl"
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{ __html: block }}
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })() : (
+            <div
+              className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          )}
 
           {/* Language Feature */}
           <div className={`flex items-center mt-8 pt-4 ${isUrdu ? 'flex-row-reverse' : ''}`}>
-            <div className="rounded-lg p-2 mr-3" style={{ backgroundColor: '#2AA0BF' }}>
+            <div className={`rounded-lg p-2 ${isUrdu ? 'ml-3' : 'mr-3'}`} style={{ backgroundColor: '#2AA0BF' }}>
               <Languages className="w-6 h-6 text-white" />
             </div>
             <span className="text-lg font-medium dark:text-white" style={{ color: '#2AA0BF' }}>
-              {isUrdu ? 'متعدد زبانوں میں دستیاب' : 'Available in multiple language'}
+              {languageFeatureText}
             </span>
           </div>
         </div>

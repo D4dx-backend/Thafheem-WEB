@@ -1,0 +1,1 @@
+import{s as t}from"./index-DmadXW_T.js";const o="SuraName, Amiri, serif",m=(s,i)=>{const r=parseInt(s,10);if(!Number.isNaN(r)){const e=t[String(r)];if(e){const n=e.replace("U+",""),a=parseInt(n,16);if(!Number.isNaN(a))return String.fromCodePoint(a)}}return i},N=o;export{m as g,N as s};

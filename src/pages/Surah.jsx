@@ -170,9 +170,15 @@ const Surah = () => {
 
   // Audio functionality states
   const [playingAyah, setPlayingAyah] = useState(null);
-  const [selectedQari, setSelectedQari] = useState('al-afasy');
+  const [selectedQari, setSelectedQari] = useState(() => {
+    const savedReciter = localStorage.getItem("reciter");
+    return savedReciter || "al-afasy";
+  });
   const [audioTypes, setAudioTypes] = useState(['quran']); // Array of selected audio types
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("playbackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1.0;
+  });
   const [currentAudioTypeIndex, setCurrentAudioTypeIndex] = useState(0); // Track which audio type is currently playing
   const [audioEl, setAudioEl] = useState(null);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
@@ -949,9 +955,9 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
                 verseElement.style.backgroundColor = "";
               }, 2000);
               return true;
-            } else if (attempt < 5) {
-              // Retry up to 5 times with increasing delays
-              setTimeout(() => scrollToElement(attempt + 1), attempt * 300);
+            } else if (attempt < 3) {
+              // Retry up to 3 times with shorter delays for faster response
+              setTimeout(() => scrollToElement(attempt + 1), attempt * 150);
               return false;
             } else {
               console.warn(`Could not find verse element: verse-${verseNumber} after ${attempt} attempts. Loaded ${ayahData.length} verses (indices 0-${ayahData.length - 1} map to verse-1 through verse-${ayahData.length})`);
@@ -959,8 +965,10 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
             }
           };
 
-          // Start scrolling after a brief delay to ensure DOM is ready
-          setTimeout(() => scrollToElement(1), 300);
+          // Start scrolling immediately using requestAnimationFrame for better performance
+          requestAnimationFrame(() => {
+            scrollToElement(1);
+          });
         }
       }
     };
@@ -968,12 +976,12 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
     // Run when data is loaded or when hash changes
     // Also run when pagination changes (for paginated languages)
     if (!loading) {
-      // Add a small delay to ensure DOM is ready
-      setTimeout(handleScrollToVerse, 200);
-      
-      // Also run on next frame to catch any late DOM updates
+      // Use requestAnimationFrame for immediate execution when DOM is ready
+      // This is faster than setTimeout and ensures DOM is rendered
       requestAnimationFrame(() => {
-        setTimeout(handleScrollToVerse, 300);
+        handleScrollToVerse();
+        // Also run once more after a brief delay to catch any late DOM updates
+        setTimeout(handleScrollToVerse, 100);
       });
     }
 
@@ -1823,6 +1831,28 @@ Read more: ${shareUrl}`;
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
   };
 
+  // Save reciter to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("reciter", selectedQari);
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: selectedQari } }));
+  }, [selectedQari]);
+
+  // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handleReciterChange = (event) => {
+      const newReciter = event.detail.reciter;
+      if (newReciter !== selectedQari) {
+        setSelectedQari(newReciter);
+      }
+    };
+
+    window.addEventListener('reciterChange', handleReciterChange);
+    return () => {
+      window.removeEventListener('reciterChange', handleReciterChange);
+    };
+  }, [selectedQari]);
+
   // Stop audio when Qirath or audio types change
   useEffect(() => {
     if (isSequencePlaying && audioEl && playingAyah) {
@@ -1833,6 +1863,28 @@ Read more: ${shareUrl}`;
       }, 100);
     }
   }, [selectedQari, audioTypes]);
+
+  // Save playback speed to localStorage when it changes and dispatch event
+  useEffect(() => {
+    localStorage.setItem("playbackSpeed", playbackSpeed.toString());
+    // Dispatch event to sync with other components
+    window.dispatchEvent(new CustomEvent('playbackSpeedChange', { detail: { playbackSpeed } }));
+  }, [playbackSpeed]);
+
+  // Listen for playback speed changes from other components (Settings, StickyAudioPlayer)
+  useEffect(() => {
+    const handlePlaybackSpeedChange = (event) => {
+      const newSpeed = event.detail.playbackSpeed;
+      if (newSpeed !== playbackSpeed) {
+        setPlaybackSpeed(newSpeed);
+      }
+    };
+
+    window.addEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    return () => {
+      window.removeEventListener('playbackSpeedChange', handlePlaybackSpeedChange);
+    };
+  }, [playbackSpeed]);
 
   // Apply playback speed when it changes
   useEffect(() => {

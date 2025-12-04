@@ -174,9 +174,9 @@ const HomepageNavbar = () => {
       submenuItems: [
         { label: "Appendix", path: "/appendix/malayalam", key: "appendix" },
         { label: "Jesus and Mohammed", path: "/malayalam/jesus-mohammed", key: "jesus_mohammed" },
-        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
         { label: "The Finality of Prophethood", path: "/malayalam/finality-of-prophethood", key: "finality_of_prophethood" },
-        { label: "Technical terms", path: "/technical-terms", key: "technical_terms" },
+        { label: "Technical Terms", path: "/technical-terms", key: "technical_terms" },
         { label: "Translators", path: "/translators", key: "translators" },
         { label: "History of Translation", path: "/history-of-translation", key: "history_of_translation" },
       ],
@@ -217,7 +217,7 @@ const HomepageNavbar = () => {
       submenuItems: [
         { label: "Appendix", path: "/appendix/english", key: "appendix" },
         { label: "Jesus and Mohammed", path: "/english/jesus-mohammed", key: "jesus_mohammed" },
-        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
         { label: "The Finality of Prophethood", path: "/english/finality-of-prophethood", key: "finality_of_prophethood" },
         { label: "English Translation", path: "/englishtranslate", key: "english_translation" },
       ],
@@ -255,7 +255,7 @@ const HomepageNavbar = () => {
       submenuItems: [
         { label: "Appendix", path: "/appendix/urdu", key: "appendix" },
         { label: "Jesus and Mohammed", path: "/urdu/jesus-mohammed", key: "jesus_mohammed" },
-        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
         { label: "The Finality of Prophethood", path: "/urdu/finality-of-prophethood", key: "finality_of_prophethood" },
       ],
     },
@@ -292,7 +292,7 @@ const HomepageNavbar = () => {
       submenuItems: [
         { label: "Appendix", path: "/appendix/hindi", key: "appendix" },
         { label: "Jesus and Mohammed", path: "/hindi/jesus-mohammed", key: "jesus_mohammed" },
-        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
         { label: "The Finality of Prophethood", path: "/hindi/finality-of-prophethood", key: "finality_of_prophethood" },
       ],
     },
@@ -329,7 +329,7 @@ const HomepageNavbar = () => {
       submenuItems: [
         { label: "Appendix", path: "/appendix/bangla", key: "appendix" },
         { label: "Jesus and Mohammed", path: "/bangla/jesus-mohammed", key: "jesus_mohammed" },
-        { label: "An Introduction to Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
         { label: "The Finality of Prophethood", path: "/bangla/finality-of-prophethood", key: "finality_of_prophethood" },
       ],
     },
@@ -647,7 +647,11 @@ const HomepageNavbar = () => {
 
             {(location.pathname === '/' || location.pathname === '/sign' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise') || isBookmarkPage) && (
               <button
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  navigate('/');
+                  // Scroll to top when navigating to home
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"
                 aria-label="Go to home page"
               >

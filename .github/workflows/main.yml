@@ -1,58 +1,41 @@
-name: Deploy React App to Server
+name: Deploy to Server
+
 on:
   push:
     branches:
       - production
-  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build React app
-        run: npm run build
-        env:
-          CI: false
-          VITE_BASE_PATH: /new_thafheem_web/
+          cd /home/thafheem/public_html/thafheem_multilang_backend
           
-      - name: Create deployment archive
-        run: |
-          cd dist
-          tar -czf ../deploy.tar.gz .
-          cd ..
+          # Set up git with token for authentication
+          if [ ! -d .git ]; then
+            git init
+            git remote add origin https://${{ secrets.GH_PAT }}@github.com/D4dx-backend/Thafheem-WEB.git
+          else
+            git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/D4dx-backend/Thafheem-WEB.git
+          fi
           
-      - name: Deploy to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "deploy.tar.gz"
-          target: "/home/thafheem/"
+          # Fetch and reset to latest production
+          git fetch origin production
+          git reset --hard origin/production
           
-      - name: Extract and Set Permissions
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            rm -rf ./*
-            tar -xzf /home/thafheem/deploy.tar.gz -C .
-            rm /home/thafheem/deploy.tar.gz
-            chown -R thafheem:thafheem .
-            find . -type d -exec chmod 755 {} \;
-            find . -type f -exec chmod 644 {} \;
+          # Install dependencies
+          npm install
+          
+          # Restart the application with PM2
+          pm2 restart thafheem-backend || pm2 start npm --name "Thafheem-WEB" -- start

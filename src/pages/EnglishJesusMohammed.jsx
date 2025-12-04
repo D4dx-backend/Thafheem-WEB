@@ -65,9 +65,7 @@ const EnglishJesusMohammed = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2 dark:text-white">
             Jesus and Mohammed
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            English content from Thafheem resources.
-          </p>
+         
           <div className="mt-4 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 

@@ -93,6 +93,26 @@ const EnglishFinalityOfProphethood = () => {
           overflow-wrap: break-word;
           word-wrap: break-word;
         }
+        .prose-content,
+        .prose-content *,
+        .prose-content p,
+        .prose-content h1,
+        .prose-content h2,
+        .prose-content h3,
+        .prose-content h4,
+        .prose-content h5,
+        .prose-content h6,
+        .prose-content span,
+        .prose-content div,
+        .prose-content li,
+        .prose-content ul,
+        .prose-content ol,
+        .prose-content strong,
+        .prose-content em,
+        .prose-content a,
+        .prose-content blockquote {
+          font-family: 'Poppins', sans-serif !important;
+        }
       `}</style>
       <div className="min-h-screen bg-white dark:bg-gray-900 font-poppins overflow-x-hidden">
         <div className="max-w-[1070px] w-full mx-auto px-4 sm:px-6 py-8">
@@ -109,9 +129,7 @@ const EnglishFinalityOfProphethood = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2 dark:text-white">
             The Finality of Prophethood
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            English content from Thafheem resources.
-          </p>
+          
           <div className="mt-4 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
@@ -146,6 +164,9 @@ const EnglishFinalityOfProphethood = () => {
                   <div
                     className="mb-4 prose prose-lg dark:prose-invert max-w-none break-words overflow-wrap-anywhere prose-content font-poppins"
                     dangerouslySetInnerHTML={{ __html: section.title }}
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
                   />
                 )}
                 <div

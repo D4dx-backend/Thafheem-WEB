@@ -8,10 +8,10 @@ import { SurahViewCacheProvider } from "./context/SurahViewCacheContext";
 import HomepageNavbar from "./components/HomeNavbar";
 import Footer from "./components/Footer";
 import LazyLoadFallback from "./components/LazyLoadFallback";
+import Home from "./pages/Home"; // Load Home immediately since it's the main landing page
 
 // Lazy load all route components to reduce initial bundle size
 // These will only load when the user navigates to them
-const Home = lazy(() => import("./pages/Home"));
 const Juz = lazy(() => import("./pages/Juz"));
 const Sign = lazy(() => import("./pages/Sign"));
 const Surah = lazy(() => import("./pages/Surah"));

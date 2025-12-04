@@ -173,11 +173,22 @@ const About = () => {
 
   return (
     <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-gray-900 font-poppins">
+      {isUrdu && (
+        <style>{`
+          .urdu-about-content p {
+            text-align: right !important;
+            font-size: 16px !important;
+            line-height: 2.6 !important;
+            margin-bottom: 10px !important;
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          }
+        `}</style>
+      )}
       <div className="max-w-[1070px] w-full mx-auto">
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass}`} dir={dir}>
+          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass} ${isUrdu ? 'font-urdu-nastaliq' : ''}`} dir={dir} style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : {}}>
             {title}
           </h1>
           <div className=" h-px bg-gray-200 "></div>
@@ -185,10 +196,53 @@ const About = () => {
 
         {/* Content */}
         <div className={`dark:text-white text-gray-800 leading-relaxed ${fontClass}`} dir={dir}>
-          <div
-            className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
+          {isUrdu ? (() => {
+            // Parse Urdu content and split into paragraphs
+            const parseUrduContent = () => {
+              // Remove the outer div wrapper
+              let cleanContent = URDU_ABOUT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const regex = /<p[^>]*>[\s\S]*?<\/p>/g;
+              const blocks = [];
+              let match;
+              
+              while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+              }
+              
+              return blocks;
+            };
+            
+            const urduBlocks = parseUrduContent();
+            
+            return (
+              <div dir="rtl" className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                {urduBlocks.map((block, index) => (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 urdu-about-content"
+                    dir="rtl"
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{ __html: block }}
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })() : (
+            <div
+              className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          )}
 
           {/* Language Feature */}
           <div className={`flex items-center mt-8 pt-4 ${isUrdu ? 'flex-row-reverse' : ''}`}>

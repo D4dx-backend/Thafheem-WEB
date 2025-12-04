@@ -337,15 +337,20 @@ const HomepageSearch = () => {
           return null;
         }
         
+        // Include sourceType in subText for Malayalam (translation/interpretation)
+        const sourceType = item.sourceType || '';
+        const sourceLabel = sourceType ? ` • ${sourceType}` : '';
+        
         return {
           type: 'word_search',
           language: wordSearchResult.language,
           surah: surah,
           ayah: ayah,
           displayText: item.matchedText || '',
-          subText: `${wordSearchResult.language} • Surah ${surah}:${ayah}`,
+          subText: `${wordSearchResult.language}${sourceLabel} • Surah ${surah}:${ayah}`,
           arabicWord: item.arabicWord || '',
-          matchedText: item.matchedText || ''
+          matchedText: item.matchedText || '',
+          sourceType: sourceType || undefined
         };
       }).filter(result => result !== null && result.surah > 0 && result.ayah > 0); // Filter out invalid results
 
@@ -505,37 +510,52 @@ const HomepageSearch = () => {
       // This works reliably for all languages
       window.location.href = targetUrl;
     } else if (result.type === 'surah') {
+      // Try to extract surah number from various possible locations and types
       let surahNumber =
         result.data?.number ??
         result.data?.id ??
         result.data?.chapter_id ??
         result.data?.code ??
+        result.number ??
+        result.id ??
+        result.chapter_id ??
+        result.code ??
         null;
 
-      if (typeof surahNumber === "string") {
-        surahNumber = surahNumber.replace(/^0+/, "");
-      }
-
-      if (!surahNumber) {
+      // Normalize the surah number - handle both string and number types
+      if (surahNumber != null) {
+        // Convert to string first to handle leading zeros
+        let surahStr = String(surahNumber).replace(/^0+/, "");
+        
+        // Convert to number for validation
+        const surahNum = parseInt(surahStr, 10);
+        
+        // Validate the surah number
+        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+          console.warn("Invalid surah number:", { surahNumber, surahNum, result });
+          return;
+        }
+        
+        // Use the validated number as string for URL
+        const targetSurahId = surahNum.toString();
+        const url = `/surah/${targetSurahId}`;
+        
+        if (isModifierPressed) {
+          event?.preventDefault();
+          window.open(url, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        
+        // Close the popup before navigation
+        setShowSearchResults(false);
+        setSearchQuery("");
+        setSearchResults([]);
+        
+        navigate(url);
+      } else {
         console.warn("Unable to determine surah number from search result:", result);
         return;
       }
-
-      const targetSurahId = surahNumber.toString();
-      const url = `/surah/${targetSurahId}`;
-      
-      if (isModifierPressed) {
-        event?.preventDefault();
-        window.open(url, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      
-      // Close the popup before navigation
-      setShowSearchResults(false);
-      setSearchQuery("");
-      setSearchResults([]);
-      
-      navigate(url);
     } else if (result.type === 'verse' || result.type === 'verse_reference') {
       const surah = result.surah || (result.verse_key ? parseInt(result.verse_key.split(':')[0], 10) : null);
       const verse = result.ayah || result.verse || (result.verse_key ? parseInt(result.verse_key.split(':')[1], 10) : null);

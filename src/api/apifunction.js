@@ -3498,18 +3498,24 @@ export const searchMalEngTranslations = async ({
   throw new Error("Failed to fetch legacy search results");
 };
 
-const ARABIC_PHRASE_SEARCH_ENDPOINTS = Array.from(
-  new Set(
-    [
-      LEGACY_TFH_BASE ? `${LEGACY_TFH_BASE}/phrasesearch` : null,
-      LEGACY_TFH_REMOTE_BASE ? `${LEGACY_TFH_REMOTE_BASE}/phrasesearch` : null,
-    ].filter(Boolean)
-  )
-);
+// Helper function to check if a string contains Arabic characters
+const containsArabic = (text) => {
+  if (!text) return false;
+  // Arabic Unicode range: \u0600-\u06FF
+  // Also includes Arabic presentation forms: \uFB50-\uFDFF and \uFE70-\uFEFF
+  const arabicRegex = /[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  return arabicRegex.test(text);
+};
 
 export const searchArabicPhrases = async (query, limit = 40) => {
   const trimmedQuery = query?.toString().trim();
   if (!trimmedQuery) {
+    return [];
+  }
+
+  // Only search Arabic if the query contains Arabic characters
+  // This prevents unnecessary API calls and 404 errors for non-Arabic queries
+  if (!containsArabic(trimmedQuery)) {
     return [];
   }
 
@@ -3518,36 +3524,49 @@ export const searchArabicPhrases = async (query, limit = 40) => {
       ? Math.min(limit, 100)
       : 40;
 
-  const encodedQuery = encodeURIComponent(trimmedQuery);
-  let lastError = null;
+  try {
+    // Reuse the new API-based word search for Arabic
+    const apiBase = (CONFIG_API_BASE_PATH || API_BASE_PATH || API_BASE_URL || "").replace(
+      /\/+$/,
+      ""
+    );
+    const encodedQuery = encodeURIComponent(trimmedQuery);
+    const url = `${apiBase}/arabic/word-search?q=${encodedQuery}`;
 
-  for (const baseUrl of ARABIC_PHRASE_SEARCH_ENDPOINTS) {
-    const url = `${baseUrl}/${encodedQuery}`;
-    try {
-      const response = await fetchWithTimeout(url, {}, 10000);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetchWithTimeout(url, {}, 10000);
+    if (!response.ok) {
+      // Don't log 404 errors as they're expected for invalid queries
+      if (response.status === 404) {
+        return [];
       }
-      const payload = await response.json();
-      if (Array.isArray(payload)) {
-        return safeLimit ? payload.slice(0, safeLimit) : payload;
-      }
-      if (Array.isArray(payload?.data)) {
-        const data = payload.data;
-        return safeLimit ? data.slice(0, safeLimit) : data;
-      }
-      return [];
-    } catch (error) {
-      lastError = error;
-      continue;
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  }
 
-  console.error("Error searching Arabic phrase data:", lastError);
-  if (lastError) {
-    throw lastError;
+    const data = await response.json();
+    const results = Array.isArray(data?.results) ? data.results : [];
+
+    // Return in array form expected by HomeSearch (it handles multiple field names)
+    const sliced = safeLimit ? results.slice(0, safeLimit) : results;
+    return sliced.map((row) => ({
+      // multiple variants so the consumer can read whatever it expects
+      surah: row.surah,
+      ayah: row.ayah,
+      SuraID: row.surah,
+      AyaID: row.ayah,
+      AyaHText: row.arabicWord || "",
+      Text: row.matchedText || "",
+    }));
+  } catch (error) {
+    // Only log non-404 errors to avoid console spam
+    // Check both error message and status code
+    const is404 = error.message?.includes('404') || 
+                  (error.response && error.response.status === 404) ||
+                  (error.status === 404);
+    if (!is404) {
+      console.error("Error searching Arabic phrase data via API:", error);
+    }
+    return [];
   }
-  throw new Error("Failed to fetch Arabic phrase search results");
 };
 
 // Word search for 6 languages (Bangla, Hindi, Tamil, Urdu, English, Malayalam)

@@ -89,7 +89,7 @@ const AuthorConclusion = () => {
     content = URDU_CONCLUSION_CONTENT;
     title = "مصنف کا اختتامیہ";
     dir = 'rtl';
-    className += ' font-urdu';
+    className += ' font-urdu-nastaliq';
   } else if (isMalayalam) {
     content = MALAYALAM_CONCLUSION_CONTENT;
     title = "രചയിതാവിന്റെ ഉപസംഹാരം";
@@ -126,11 +126,118 @@ const AuthorConclusion = () => {
           </div>
         )}
 
-        <div
-          className={className}
-          dangerouslySetInnerHTML={{ __html: content }}
-          dir={dir}
-        />
+        {isUrdu ? (
+          <div dir={dir}>
+            {/* Extract paragraphs from HTML and wrap each in a block */}
+            {(() => {
+              // Remove the outer div wrapper
+              let cleanContent = content.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const paragraphs = cleanContent.split(/<\/p>\s*/).filter(p => p.trim());
+              
+              return paragraphs.map((paragraph, index) => {
+                // Clean up paragraph tag and content
+                let cleanParagraph = paragraph
+                  .replace(/<p[^>]*>/g, '')
+                  .trim();
+                
+                // Skip empty paragraphs
+                if (!cleanParagraph) return null;
+                
+                return (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    dir="rtl"
+                  >
+                    <p
+                      className="dark:text-white font-urdu-nastaliq m-0"
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                      dangerouslySetInnerHTML={{ __html: cleanParagraph }}
+                    />
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : isBangla ? (
+          // Bangla content in blocks
+          (() => {
+            // Parse Bangla content and wrap each paragraph in a block
+            const parseBanglaContent = () => {
+              // Remove the outer div wrapper if exists
+              let cleanContent = content.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const regex = /(<p[^>]*>[\s\S]*?<\/p>)/g;
+              const blocks = [];
+              let match;
+              
+              while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+              }
+              
+              return blocks;
+            };
+            
+            const banglaBlocks = parseBanglaContent();
+            
+            return (
+              <div>
+                {banglaBlocks.map((block, index) => {
+                  // Check if it's a signature section (contains strong tag or specific text)
+                  if (block.includes('<strong>') || block.includes('আবুল আলা')) {
+                    return (
+                      <div
+                        key={index}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{ __html: block }}
+                          style={{
+                            textAlign: 'left',
+                            fontSize: '16px',
+                            lineHeight: '2.6',
+                            fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  // Regular paragraph - wrap in block
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{ __html: block }}
+                        style={{
+                          textAlign: 'left',
+                          fontSize: '16px',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        ) : (
+          <div
+            className={className}
+            dangerouslySetInnerHTML={{ __html: content }}
+            dir={dir}
+          />
+        )}
       </div>
     </div>
   );

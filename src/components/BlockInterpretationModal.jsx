@@ -1620,6 +1620,74 @@ const BlockInterpretationModal = ({
           text-decoration: underline !important;
           transform: scale(1.05) !important;
         }
+        
+        /* Urdu interpretation styling */
+        .urdu-interpretation-content p {
+          text-align: right !important;
+          font-size: 16px !important;
+          line-height: 2.6 !important;
+          margin-bottom: 10px !important;
+          font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+        }
+        
+        /* Urdu interpretation link (superscript) styling - matching Malayalam style */
+        .urdu-interpretation-content sup.interpretation-link,
+        .urdu-interpretation-content sup[data-interpretation],
+        .urdu-interpretation-content sup.urdu-footnote-link,
+        .urdu-interpretation-content sup[data-footnote-id] {
+          margin-right: 4px !important;
+          margin-left: -1px !important;
+          margin-top: -15px !important;
+          cursor: pointer !important;
+          background-color: rgb(41, 169, 199) !important;
+          color: rgb(255, 255, 255) !important;
+          font-weight: 600 !important;
+          text-decoration: none !important;
+          border: none !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-size: 12px !important;
+          vertical-align: middle !important;
+          line-height: 1 !important;
+          border-radius: 9999px !important;
+          position: relative !important;
+          z-index: 10 !important;
+          top: 0px !important;
+          min-width: 20px !important;
+          min-height: 19px !important;
+          text-align: center !important;
+          transition: 0.2s ease-in-out !important;
+          padding: 0 !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link > a,
+        .urdu-interpretation-content sup[data-interpretation] > a,
+        .urdu-interpretation-content sup.urdu-footnote-link > a,
+        .urdu-interpretation-content sup[data-footnote-id] > a {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 100% !important;
+          color: inherit !important;
+          font-weight: inherit !important;
+          text-decoration: none !important;
+          line-height: 1 !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link:hover,
+        .urdu-interpretation-content sup[data-interpretation]:hover,
+        .urdu-interpretation-content sup.urdu-footnote-link:hover,
+        .urdu-interpretation-content sup[data-footnote-id]:hover {
+          background-color: #0891b2 !important;
+          transform: scale(1.05) !important;
+        }
+        .urdu-interpretation-content sup.interpretation-link:active,
+        .urdu-interpretation-content sup[data-interpretation]:active,
+        .urdu-interpretation-content sup.urdu-footnote-link:active,
+        .urdu-interpretation-content sup[data-footnote-id]:active {
+          background-color: #0e7490 !important;
+          transform: scale(0.95) !important;
+        }
         `}
       </style>
 
@@ -1755,24 +1823,34 @@ const BlockInterpretationModal = ({
 
             {/* Interpretation Content */}
             <div className="font-poppins space-y-6 sm:space-y-8" key={`block-${currentSurahId}-${currentRange}-${currentInterpretationNo}`}>
-              {content.map((item, idx) => (
-                <div
-                  key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
-                  className="mb-6 sm:mb-8"
-                >
+              {content.map((item, idx) => {
+                const isUrdu = currentLanguage === 'ur' || currentLanguage === 'urdu';
+                return (
                   <div
-                    className="interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none"
-                    ref={(el) => (contentRefs.current[idx] = el)}
-                    onClick={handleContentClick}
-                    style={{
-                      pointerEvents: "auto",
-                      position: "relative",
-                      zIndex: 1,
-                    }}
-                    dangerouslySetInnerHTML={{ __html: extractText(item) }}
-                  />
-                </div>
-              ))}
+                    key={`${currentSurahId}-${currentRange}-${currentInterpretationNo}-${item?.ID || item?.id || idx}`}
+                    className="mb-6 sm:mb-8"
+                  >
+                    <div
+                      className={`interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
+                      ref={(el) => (contentRefs.current[idx] = el)}
+                      onClick={handleContentClick}
+                      style={{
+                        pointerEvents: "auto",
+                        position: "relative",
+                        zIndex: 1,
+                        ...(isUrdu ? {
+                          textAlign: 'right',
+                          fontSize: '16px',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                        } : {})
+                      }}
+                      dir={isUrdu ? 'rtl' : 'ltr'}
+                      dangerouslySetInnerHTML={{ __html: extractText(item) }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 

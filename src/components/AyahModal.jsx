@@ -171,6 +171,15 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     const loadVerseData = async () => {
       if (!activeSurahId || !currentVerseId) return;
 
+      console.log(
+        "[AyahModal] 🔄 Loading data",
+        {
+          surahId: activeSurahId,
+          verseId: currentVerseId,
+          translationLanguage,
+        }
+      );
+
       try {
         setLoading(true);
         setError(null);
@@ -185,19 +194,59 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
         const interpretationPromise = translationLanguage === 'mal'
           ? (async () => {
               try {
-                const interpretations = await fetchAllInterpretations(activeSurahId, verseNumberForRequest, 'mal');
+                console.log(
+                  "[AyahModal] 🌐 Fetching Malayalam interpretations via fetchAllInterpretations",
+                  {
+                    surahId: activeSurahId,
+                    verseId: verseNumberForRequest,
+                  }
+                );
+                const interpretations = await fetchAllInterpretations(
+                  activeSurahId,
+                  verseNumberForRequest,
+                  "mal"
+                );
+                console.log(
+                  "[AyahModal] ✅ Raw Malayalam interpretations from fetchAllInterpretations",
+                  {
+                    count: interpretations?.length ?? 0,
+                    sample: interpretations?.[0],
+                  }
+                );
                 // Transform to match expected format
-                return interpretations && interpretations.length > 0 ? interpretations.map(i => ({
-                  interpretation: i.Interpretation || '',
-                  AudioIntrerptn: i.Interpretation || '',
-                  text: i.Interpretation || '',
-                  content: i.Interpretation || '',
-                  InterpretationNo: i.InterpretationNo || String(i.resolvedInterpretationNo || 1),
-                  interptn_no: i.resolvedInterpretationNo || parseInt(i.InterpretationNo || '1', 10),
-                  number: i.resolvedInterpretationNo || parseInt(i.InterpretationNo || '1', 10)
-                })) : [];
+                const transformed =
+                  interpretations && interpretations.length > 0
+                    ? interpretations.map((i, idx) => ({
+                        interpretation: i.Interpretation || "",
+                        AudioIntrerptn: i.Interpretation || "",
+                        text: i.Interpretation || "",
+                        content: i.Interpretation || "",
+                        InterpretationNo:
+                          i.InterpretationNo ||
+                          String(i.resolvedInterpretationNo || idx + 1 || 1),
+                        interptn_no:
+                          i.resolvedInterpretationNo ||
+                          parseInt(i.InterpretationNo || String(idx + 1 || 1), 10),
+                        number:
+                          i.resolvedInterpretationNo ||
+                          parseInt(i.InterpretationNo || String(idx + 1 || 1), 10),
+                      }))
+                    : [];
+
+                console.log(
+                  "[AyahModal] 🧾 Transformed Malayalam interpretations for modal",
+                  {
+                    count: transformed.length,
+                    firstThree: transformed.slice(0, 3),
+                  }
+                );
+
+                return transformed;
               } catch (error) {
-                console.error(`[AyahModal] Error fetching Malayalam interpretations for Surah ${activeSurahId}, Ayah ${verseNumberForRequest}:`, error);
+                console.error(
+                  `[AyahModal] ❌ Error fetching Malayalam interpretations for Surah ${activeSurahId}, Ayah ${verseNumberForRequest}:`,
+                  error
+                );
                 return [];
               }
             })()
@@ -362,19 +411,26 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
           return data;
         };
 
-        const [
-          surahsData,
-          arabicVerses,
-          translationData,
-          interpretationResponse,
-        ] = await Promise.all([
+        const [surahsData, arabicVerses, translationData, interpretationResponse] =
+          await Promise.all([
           getSurahsData(),
           fetchArabicVerses(activeSurahId),
           translationPromise,
           interpretationPromise,
         ]);
-        
-        console.log(`[AyahModal] After Promise.all - interpretationResponse:`, interpretationResponse, `type:`, typeof interpretationResponse, `isArray:`, Array.isArray(interpretationResponse));
+
+        console.log("[AyahModal] 📦 After Promise.all", {
+          surahId: activeSurahId,
+          verseId: verseNumberForRequest,
+          translationLanguage,
+          hasArabic: !!arabicVerses?.length,
+          hasTranslationData: !!translationData,
+          interpretationType: typeof interpretationResponse,
+          isArray: Array.isArray(interpretationResponse),
+          interpretationCount: Array.isArray(interpretationResponse)
+            ? interpretationResponse.length
+            : interpretationResponse?.data?.length ?? 0,
+        });
 
         if (isCancelled) return;
 
@@ -396,6 +452,28 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             : translationData)
           : null;
 
+        // For Malayalam ayah-wise view, prefer using the quranaya-style API response
+        // so that the interpretation shown matches the exact ayah translation
+        let malAyahInterpretation = null;
+        if (translationLanguage === 'mal' && translationVerse) {
+          const malInterpCandidates = [
+            translationVerse.AudioIntrerptn,
+            translationVerse.audioIntrerptn,
+            translationVerse.Interpretation,
+            translationVerse.interpretation,
+          ];
+          malAyahInterpretation = malInterpCandidates.find(
+            (value) => typeof value === 'string' && value.trim().length > 0
+          ) || null;
+
+          console.log('[AyahModal] 🇲🇻 Malayalam quranaya-based interpretation candidate', {
+            surahId: activeSurahId,
+            verseId: verseNumberForRequest,
+            hasMalAyahInterpretation: !!malAyahInterpretation,
+            preview: malAyahInterpretation ? malAyahInterpretation.substring(0, 200) : 'N/A',
+          });
+        }
+
         let englishTranslation = "";
         if (translationLanguage === 'E') {
           try {
@@ -414,38 +492,85 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
         if (isCancelled) return;
 
-        setVerseData({
+        const versePayload = {
           number: verseNumberForRequest,
           arabic: arabicVerse?.text_uthmani || "",
-          translation: translationLanguage === 'E'
-            ? englishTranslation
-            : (translationVerse?.AudioText
+          translation:
+            translationLanguage === "E"
+              ? englishTranslation
+              : translationVerse?.AudioText
               ? translationVerse.AudioText
-                .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
-                .replace(/\s+/g, " ")
-                .trim()
-              : ""),
+                  .replace(/<sup[^>]*foot_note[^>]*>\d+<\/sup>/g, "")
+                  .replace(/\s+/g, " ")
+                  .trim()
+              : "",
           verseKey: `${activeSurahId}:${verseNumberForRequest}`,
-        });
+        };
+
+        console.log("[AyahModal] 📖 Set verseData for modal", versePayload);
+
+        setVerseData(versePayload);
 
         if (isCancelled) return;
 
-        // Process interpretation data - for Malayalam, use the fetched interpretations from MySQL API
-        if (interpretationResponse) {
+        // Process interpretation data
+        // For Malayalam ayah-wise, FIRST try to use the quranaya AudioIntrerptn (1-to-1 with translation)
+        if (translationLanguage === 'mal' && malAyahInterpretation) {
+          const malInterpObject = {
+            interpretation: malAyahInterpretation,
+            AudioIntrerptn: malAyahInterpretation,
+            text: malAyahInterpretation,
+            content: malAyahInterpretation,
+            surahId: activeSurahId,
+            verseId: verseNumberForRequest,
+          };
+
+          console.log('[AyahModal] ✅ Using quranaya-based Malayalam interpretation for ayah-wise view', {
+            surahId: activeSurahId,
+            verseId: verseNumberForRequest,
+            preview: malAyahInterpretation.substring(0, 200),
+          });
+
+          setInterpretationData([malInterpObject]);
+        } else if (interpretationResponse) {
           if (Array.isArray(interpretationResponse)) {
+            // Debug: Log the actual interpretation text to see if it's different between verses
+            const firstInterpretationText = interpretationResponse[0]?.Interpretation || interpretationResponse[0]?.interpretation || "";
+            console.log("[AyahModal] 🧠 setInterpretationData (array)", {
+              surahId: activeSurahId,
+              verseId: currentVerseId,
+              count: interpretationResponse.length,
+              firstInterpretationPreview: firstInterpretationText.substring(0, 200),
+              firstInterpretationLength: firstInterpretationText.length,
+              firstInterpretationNo: interpretationResponse[0]?.InterpretationNo || interpretationResponse[0]?.interptn_no || "N/A",
+            });
             setInterpretationData(interpretationResponse);
           } else if (
             interpretationResponse.data &&
             Array.isArray(interpretationResponse.data)
           ) {
             setInterpretationData(interpretationResponse.data);
+            console.log("[AyahModal] 🧠 setInterpretationData (response.data array)", {
+              count: interpretationResponse.data.length,
+              first: interpretationResponse.data[0],
+            });
           } else if (typeof interpretationResponse === "object") {
             setInterpretationData([interpretationResponse]);
+            console.log("[AyahModal] 🧠 setInterpretationData (single object)", {
+              value: interpretationResponse,
+            });
           } else {
             setInterpretationData(null);
+            console.warn(
+              "[AyahModal] ⚠️ interpretationResponse was not in a supported format",
+              interpretationResponse
+            );
           }
         } else {
           setInterpretationData(null);
+          console.warn(
+            "[AyahModal] ⚠️ interpretationResponse is empty/null, clearing interpretationData"
+          );
         }
       } catch (err) {
         if (isCancelled) return;
@@ -463,6 +588,17 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
       isCancelled = true;
     };
   }, [activeSurahId, currentVerseId, translationLanguage]);
+
+  // Debug: Log when interpretationData state actually changes
+  useEffect(() => {
+    console.log("[AyahModal] 🔍 interpretationData STATE CHANGED", {
+      surahId: activeSurahId,
+      verseId: currentVerseId,
+      hasData: !!interpretationData,
+      count: interpretationData?.length || 0,
+      firstInterpretationText: interpretationData?.[0]?.Interpretation?.substring(0, 100) || interpretationData?.[0]?.interpretation?.substring(0, 100) || "N/A",
+    });
+  }, [interpretationData, activeSurahId, currentVerseId]);
 
   // Handle clicks on Bangla explanation numbers
   useEffect(() => {
@@ -864,13 +1000,19 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
           {/* Interpretation */}
           {(() => {
-
+            // Debug: Log what interpretationData contains at render time
             if (interpretationData && interpretationData.length > 0) {
+              console.log(`[AyahModal] 🖼️ RENDER CHECK - About to render interpretation section for Surah ${activeSurahId}, Ayah ${currentVerseId}`, {
+                interpretationDataLength: interpretationData.length,
+                firstInterpretation: interpretationData[0],
+                firstInterpretationText: interpretationData[0]?.Interpretation?.substring(0, 150) || interpretationData[0]?.interpretation?.substring(0, 150) || "N/A",
+                willShowFirstOnly: translationLanguage === 'mal',
+              });
             }
             return null;
           })()}
           {interpretationData && interpretationData.length > 0 && (
-            <div className="mb-6 sm:mb-8">
+            <div key={`interpretation-${activeSurahId}-${currentVerseId}`} className="mb-6 sm:mb-8">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-primary dark:text-primary-light mb-4 flex items-center gap-2">
                 <span className="w-8 h-[1px] bg-primary dark:bg-primary-light"></span>
                 Tafheem-ul-Quran
@@ -901,11 +1043,22 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                 </style>
               )}
               <div
+                key={`interpretation-content-${activeSurahId}-${currentVerseId}`}
                 className="space-y-4 ayah-interpretation-content"
                 onClick={handleInterpretationContentClick}
               >
                 {/* For Malayalam in ayah-wise view, show only the first interpretation (corresponds to translation) */}
                 {(translationLanguage === 'mal' ? interpretationData.slice(0, 1) : interpretationData).map((interpretation, index) => {
+                  // Debug: Log what we're rendering
+                  if (translationLanguage === 'mal' && index === 0) {
+                    console.log(`[AyahModal] 🎨 RENDERING interpretation for Surah ${activeSurahId}, Ayah ${currentVerseId}`, {
+                      interpretationObject: interpretation,
+                      hasInterpretation: !!interpretation.Interpretation,
+                      interpretationLength: interpretation.Interpretation?.length || 0,
+                      interpretationPreview: interpretation.Interpretation?.substring(0, 150) || "N/A",
+                    });
+                  }
+
                   const interpretationTextCandidates = [
                     interpretation.AudioIntrerptn,
                     interpretation.interpretation,
@@ -951,9 +1104,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                             interpretation.requestedInterpretationNo ||
                             index + 1;
 
+                  // Create a unique key that includes verse ID to ensure proper re-rendering when verse changes
+                  const uniqueKey = `${activeSurahId}-${currentVerseId}-${interpretation.InterpretationNo || interpretation.interptn_no || interpretation.number || index}`;
+
                   return (
                     <div
-                      key={index}
+                      key={uniqueKey}
                       className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700"
                     >
                       {(translationLanguage === "hi" ||

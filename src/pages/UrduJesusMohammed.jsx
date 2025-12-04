@@ -51,6 +51,15 @@ const UrduJesusMohammed = () => {
 
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen" dir="rtl">
+      <style>{`
+        .urdu-jesus-mohammed-content p {
+          text-align: right !important;
+          font-size: 16px !important;
+          line-height: 2.6 !important;
+          margin-bottom: 10px !important;
+          font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+        }
+      `}</style>
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         <button
           onClick={handleBack}
@@ -63,9 +72,7 @@ const UrduJesusMohammed = () => {
         <h2 className="text-2xl font-bold mb-2 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2" dir="rtl">
           Jesus and Mohammed
         </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-6" dir="rtl">
-          Jesus and Mohammed - Urdu content from Thafheem resources.
-        </p>
+    
 
         {loading && (
           <div className="py-10 text-center text-gray-600 dark:text-gray-300">
@@ -110,12 +117,13 @@ const UrduJesusMohammed = () => {
                     prose-blockquote:text-right prose-blockquote:border-r-4 prose-blockquote:border-gray-300 dark:prose-blockquote:border-gray-600
                     prose-h1:text-right prose-h2:text-right prose-h3:text-right prose-h4:text-right
                     prose-h1:font-bold prose-h2:font-bold prose-h3:font-semibold
-                    text-gray-800 dark:text-gray-200"
+                    text-gray-800 dark:text-gray-200 font-urdu-nastaliq urdu-jesus-mohammed-content"
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
                   style={{ 
-                    fontFamily: 'inherit',
-                    lineHeight: '1.8',
-                    textAlign: 'right'
+                    textAlign: 'right',
+                    fontSize: '16px',
+                    lineHeight: '2.6',
+                    fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
                   }}
                 />
               </section>

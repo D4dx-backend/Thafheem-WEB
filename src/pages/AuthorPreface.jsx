@@ -162,31 +162,59 @@ const AuthorPreface = () => {
         </h2>
 
         {isUrdu ? (
-          // Urdu content
-        <div className="text-justify leading-7">
-          {urduParagraphs.map((paragraph, index) => {
-            // Check if it's the separator line
-            if (paragraph.trim() === '_________________________________') {
-              return <hr key={index} className="my-6 border-gray-300 dark:border-gray-600" />;
-            }
-            // Check if it's the signature section
-            if (paragraph.includes('ابُو الاعْلیٰ') || paragraph.includes('نیو سینٹرل جیل')) {
+          // Urdu content in blocks
+          <div>
+            {urduParagraphs.map((paragraph, index) => {
+              // Check if it's the separator line
+              if (paragraph.trim() === '_________________________________') {
+                return <hr key={index} className="my-6 border-gray-300 dark:border-gray-600" />;
+              }
+              // Check if it's the signature section
+              if (paragraph.includes('ابُو الاعْلیٰ') || paragraph.includes('نیو سینٹرل جیل')) {
+                return (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    dir="rtl"
+                  >
+                    <p 
+                      className="dark:text-white font-urdu-nastaliq m-0" 
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                    >
+                      {paragraph.split('\n').map((line, lineIndex) => (
+                        <React.Fragment key={lineIndex}>
+                          {line.trim() && <>{line.trim()}<br /></>}
+                        </React.Fragment>
+                      ))}
+                    </p>
+                  </div>
+                );
+              }
               return (
-                <p key={index} className="mt-8 dark:text-white font-urdu" dir="rtl">
-                  {paragraph.split('\n').map((line, lineIndex) => (
-                    <React.Fragment key={lineIndex}>
-                      {line.trim() && <>{line.trim()}<br /></>}
-                    </React.Fragment>
-                  ))}
-                </p>
+                <div
+                  key={index}
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                  dir="rtl"
+                >
+                  <p 
+                    className="dark:text-white font-urdu-nastaliq m-0" 
+                    style={{
+                      textAlign: 'right',
+                      fontSize: '16px',
+                      lineHeight: '2.6',
+                      fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                    }}
+                  >
+                    {paragraph.trim()}
+                  </p>
+                </div>
               );
-            }
-            return (
-              <p key={index} className="mb-4 dark:text-white font-urdu" dir="rtl">
-                {paragraph.trim()}
-              </p>
-            );
-          })}
+            })}
           </div>
         ) : isMalayalam ? (
           // Malayalam content
@@ -214,11 +242,70 @@ const AuthorPreface = () => {
             dangerouslySetInnerHTML={{ __html: HINDI_AUTHOR_PREFACE }}
           />
         ) : isBangla ? (
-          // Bangla content
-          <div
-            className="prose prose-base dark:prose-invert max-w-none leading-7 font-bengali text-gray-800 dark:text-gray-100"
-            dangerouslySetInnerHTML={{ __html: BANGLA_AUTHOR_PREFACE }}
-          />
+          // Bangla content in blocks
+          (() => {
+            // Parse Bangla content and wrap each paragraph in a block
+            const parseBanglaContent = () => {
+              // Remove the outer div wrapper if exists
+              let cleanContent = BANGLA_AUTHOR_PREFACE.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+              
+              // Split by paragraph tags
+              const regex = /(<p[^>]*>[\s\S]*?<\/p>)/g;
+              const blocks = [];
+              let match;
+              
+              while ((match = regex.exec(cleanContent)) !== null) {
+                blocks.push(match[0]);
+              }
+              
+              return blocks;
+            };
+            
+            const banglaBlocks = parseBanglaContent();
+            
+            return (
+              <div>
+                {banglaBlocks.map((block, index) => {
+                  // Check if it's a signature section (contains strong tag or specific text)
+                  if (block.includes('<strong>') || block.includes('আবুল আ')) {
+                    return (
+                      <div
+                        key={index}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{ __html: block }}
+                          style={{
+                            textAlign: 'left',
+                            fontSize: '16px',
+                            lineHeight: '2.6',
+                            fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  // Regular paragraph - wrap in block
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{ __html: block }}
+                        style={{
+                          textAlign: 'left',
+                          fontSize: '16px',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
         ) : (
           // English content (existing)
           <>

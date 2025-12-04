@@ -102,6 +102,17 @@ const IntroductionToQuran = () => {
 
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
+      {isUrdu && (
+        <style>{`
+          .urdu-introduction-content p {
+            text-align: right !important;
+            font-size: 16px !important;
+            line-height: 2.6 !important;
+            margin-bottom: 10px !important;
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          }
+        `}</style>
+      )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
           {getTitle()}
@@ -157,13 +168,56 @@ const IntroductionToQuran = () => {
         )}
 
         {/* Urdu static content */}
-        {isUrdu && (
-          <div
-            className="prose prose-base dark:prose-invert prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7 text-justify font-urdu"
-            dangerouslySetInnerHTML={{ __html: URDU_INTRODUCTION }}
-            dir="rtl"
-          />
-        )}
+        {isUrdu && (() => {
+          // Parse Urdu content and split into paragraphs
+          const parseUrduContent = () => {
+            // Remove the outer div wrapper
+            let cleanContent = URDU_INTRODUCTION.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+            
+            // Split by paragraph tags and hr tags
+            const regex = /(<p[^>]*>[\s\S]*?<\/p>|<hr[^>]*>)/g;
+            const blocks = [];
+            let match;
+            
+            while ((match = regex.exec(cleanContent)) !== null) {
+              blocks.push(match[0]);
+            }
+            
+            return blocks;
+          };
+          
+          const urduBlocks = parseUrduContent();
+          
+          return (
+            <div dir="rtl" className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+              {urduBlocks.map((block, index) => {
+                // Check if it's an hr (separator)
+                if (block.includes('<hr')) {
+                  return <hr key={index} className="my-6 border-gray-300 dark:border-gray-600" />;
+                }
+                
+                // Regular paragraph - wrap in block
+                return (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 urdu-introduction-content"
+                    dir="rtl"
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{ __html: block }}
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '16px',
+                        lineHeight: '2.6',
+                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

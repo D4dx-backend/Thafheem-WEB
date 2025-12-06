@@ -84,22 +84,51 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 	};
 	audio.addEventListener('canplay', handleCanPlay, { once: true });
 
+	// Track if error has been handled to prevent duplicate callbacks
+	let errorHandled = false;
+	const handleError = (e) => {
+		if (errorHandled) return;
+		errorHandled = true;
+		
+		// For interpretation audio, missing files are expected for some ayahs
+		// Only log errors for unexpected failures or non-interpretation audio
+		if (audioType !== "interpretation") {
+			console.error(`Audio error for ${audioType}:`, e);
+		} else {
+			// For interpretation, only log in dev mode to reduce console noise
+			if (import.meta?.env?.DEV) {
+				console.warn(`Interpretation audio not available for ayah ${ayahNumber} in surah ${surahNumber}`);
+			}
+		}
+		if (typeof onError === "function") onError(e);
+	};
+
 	// Set up event handlers before playing
 	audio.onplay = () => {
 		if (typeof onStart === "function") onStart();
 	};
 	if (typeof onEnd === "function") audio.onended = onEnd;
 	if (typeof onError === "function") {
-		audio.onerror = (e) => {
-			console.error(`Audio error for ${audioType}:`, e);
-			if (typeof onError === "function") onError(e);
-		};
+		audio.onerror = handleError;
 	}
 
 	// Start loading and playing
 	audio.play().catch((e) => {
-		console.error(`Error playing audio for ${audioType}:`, e);
-		if (typeof onError === "function") onError(e);
+		// Check if it's a NotSupportedError or network error (expected for missing files)
+		const isExpectedError = e.name === 'NotSupportedError' || 
+		                         e.name === 'NotAllowedError' ||
+		                         (audioType === "interpretation" && e.message?.includes('no supported source'));
+		
+		// For interpretation audio, missing files are expected for some ayahs
+		if (audioType !== "interpretation" || !isExpectedError) {
+			console.error(`Error playing audio for ${audioType}:`, e);
+		} else {
+			// For interpretation, only log in dev mode to reduce console noise
+			if (import.meta?.env?.DEV) {
+				console.warn(`Interpretation audio not available for ayah ${ayahNumber} in surah ${surahNumber}`);
+			}
+		}
+		handleError(e);
 	});
 
 	return audio;

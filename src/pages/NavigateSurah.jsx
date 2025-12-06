@@ -206,7 +206,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
     };
 
     return (
-      <div className="flex flex-col h-full font-poppins">
+      <div className="bg-white dark:bg-[#2A2C38] flex flex-col h-full font-poppins">
         {/* Search Bar */}
         <div className="px-5 pt-3 pb-4">
           <input
@@ -214,14 +214,14 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
             placeholder="Search Surah"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full px-4 py-2.5 text-sm text-gray-600 dark:text-white bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
         {/* Surah List */}
         <div className="flex-1 overflow-y-auto px-5 pb-3">
           {loading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading surahs...</p>
+            <p className="text-sm text-gray-400 text-center py-4">Loading surahs...</p>
           ) : filteredSurahs.length > 0 ? (
             <ol className="list-decimal list-outside space-y-2 pl-6">
               {filteredSurahs.map((surah) => {
@@ -236,7 +236,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
                   <li
                     key={surah.id || surah.number}
                     onClick={() => handleSurahClick(surah)}
-                    className="cursor-pointer text-gray-800 dark:text-white hover:text-primary dark:hover:text-primary-light transition-colors py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg"
+                    className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
                   >
                     <div className="flex items-center">
                       <span className="flex-1 min-w-0 pr-2">{surah.english || surah.name}</span>
@@ -251,7 +251,7 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
               })}
             </ol>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-400 text-center py-4">
               No surahs found
             </p>
           )}
@@ -326,14 +326,6 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           {renderTabContent()}
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Tip: try navigating with{" "}
-            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs">Ctrl K</kbd>
-          </p>
         </div>
 
       </div>

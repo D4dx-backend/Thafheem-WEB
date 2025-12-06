@@ -69,19 +69,7 @@ const HistoryOfTranslation = () => {
           ← Back
         </button>
 
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className={`text-3xl font-bold text-gray-900 mb-2 dark:text-white ${isMalayalam ? 'font-malayalam' : ''}`}>
-            {isMalayalam ? 'വിവർത്തന ചരിത്രം' : 'History of Translation'}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {isMalayalam
-              ? 'തഫ്ഹീമിന്റെ മലയാളം സ്രോതസുകളില്‍നിന്നുള്ള ഉള്ളടക്കം.'
-              : 'History of the Malayalam translation of Thafheem.'}
-          </p>
-          <div className="mt-4 h-px bg-gray-200 dark:bg-gray-700" />
-        </div>
-
+       
         {/* Malayalam content from API */}
         {isMalayalam && (
           <>
@@ -104,34 +92,76 @@ const HistoryOfTranslation = () => {
             )}
 
             {!loading && !error && content && content.text && (() => {
-              // Process image URLs - convert relative paths to absolute if needed
+              // Process image URLs - keep public folder paths as-is
+              // This runs after HTML entities are decoded
               const processImageUrls = (html) => {
                 if (!html) return html;
                 
-                // Base URL for articles assets - adjust this to match your server setup
-                const baseUrl = import.meta.env.PROD 
-                  ? 'https://thafheem.net' 
-                  : 'http://localhost:5000';
+                // Get base path from Vite config (defaults to '/')
+                const basePath = import.meta.env.BASE_URL || '/';
                 
-                // Replace relative image paths with absolute URLs
-                return html.replace(
-                  /src=["'](\/articles\/[^"']+)["']/g,
+                let processed = html;
+                
+                // Pattern 1: Handle /articles/... paths (with or without quotes, with extra spaces)
+                // Match: <img   src="/articles/..."> or <img src="/articles/..."> or <img src='/articles/...'>
+                // Also handle unquoted: <img src=/articles/...>
+                processed = processed.replace(
+                  /src\s*=\s*["']?(\/articles\/[^"'\s>]+)["']?/gi,
                   (match, path) => {
-                    // If path already starts with http/https, keep it as is
+                    // Normalize to src="/path" format (or with base path if configured)
+                    const normalizedPath = basePath === '/' ? path : `${basePath}${path.substring(1)}`;
+                    return `src="${normalizedPath}"`;
+                  }
+                );
+                
+                // Pattern 2: Handle articles/... (without leading slash) - add leading slash
+                processed = processed.replace(
+                  /src\s*=\s*["']?(articles\/[^"'\s>]+)["']?/gi,
+                  (match, path) => {
+                    // Skip if already absolute URL
                     if (path.startsWith('http://') || path.startsWith('https://')) {
                       return match;
                     }
-                    // Convert relative path to absolute
-                    return `src="${baseUrl}${path}"`;
+                    // Add leading slash for public folder paths (or base path)
+                    const normalizedPath = basePath === '/' ? `/${path}` : `${basePath}${path}`;
+                    return `src="${normalizedPath}"`;
                   }
                 );
+                
+                // Pattern 3: Handle other image paths that start with / (absolute paths)
+                processed = processed.replace(
+                  /src\s*=\s*["']?(\/[^"'\s>]+\.(png|jpg|jpeg|gif|webp|svg))["']?/gi,
+                  (match, path) => {
+                    // Skip if already absolute URL
+                    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+                      return match;
+                    }
+                    // Normalize to src="/path" format (or with base path if configured)
+                    const normalizedPath = basePath === '/' ? path : `${basePath}${path.substring(1)}`;
+                    return `src="${normalizedPath}"`;
+                  }
+                );
+                
+                return processed;
               };
 
               // Process HTML to remove borders and clean up styling
               const processHtml = (html) => {
                 if (!html) return html;
                 
-                let processed = html;
+                // First, protect image tags by temporarily replacing them
+                // Handle images with extra spaces and various formats (including <img   src=...>)
+                const imagePlaceholders = [];
+                let imageIndex = 0;
+                
+                // Match img tags with any amount of whitespace and attributes
+                // This handles: <img src=...>, <img   src=...>, <img src=.../>, etc.
+                let processed = html.replace(/<img\s+[^>]*(?:\/>|>)/gi, (match) => {
+                  const placeholder = `__IMG_PLACEHOLDER_${imageIndex}__`;
+                  imagePlaceholders.push(match);
+                  imageIndex++;
+                  return placeholder;
+                });
                 
                 // Remove inline border styles
                 processed = processed.replace(/\s*style=["'][^"']*border[^"']*["']/gi, '');
@@ -141,11 +171,56 @@ const HistoryOfTranslation = () => {
                 processed = processed.replace(/\s*border=["'][^"']*["']/gi, '');
                 processed = processed.replace(/\s*border=\d+/gi, '');
                 
+                // Restore image tags in reverse order to avoid index conflicts
+                for (let i = imagePlaceholders.length - 1; i >= 0; i--) {
+                  processed = processed.replace(`__IMG_PLACEHOLDER_${i}__`, imagePlaceholders[i]);
+                }
+                
                 return processed;
               };
 
-              const processedTitle = content.title ? processImageUrls(processHtml(content.title)) : null;
-              const processedText = processImageUrls(processHtml(content.text));
+              // Ensure content is a string and not escaped
+              const ensureString = (value) => {
+                if (!value) return '';
+                if (typeof value !== 'string') return String(value);
+                return value;
+              };
+
+              // Decode HTML entities FIRST before any other processing
+              const decodeHtmlEntities = (html) => {
+                if (!html) return html;
+                if (typeof html !== 'string') return html;
+                
+                // Check if HTML is escaped (contains entities like &lt; or &gt;)
+                if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;') || html.includes('&quot;')) {
+                  // Use textarea to decode HTML entities while preserving the structure
+                  const textarea = document.createElement('textarea');
+                  textarea.innerHTML = html;
+                  const decoded = textarea.value;
+                  // If decoding didn't work, try manual replacement
+                  if (decoded === html || decoded.includes('&lt;')) {
+                    return html
+                      .replace(/&lt;/g, '<')
+                      .replace(/&gt;/g, '>')
+                      .replace(/&amp;/g, '&')
+                      .replace(/&quot;/g, '"')
+                      .replace(/&#39;/g, "'")
+                      .replace(/&#x27;/g, "'");
+                  }
+                  return decoded;
+                }
+                
+                // If not escaped, return as-is
+                return html;
+              };
+
+              // Get raw content and decode HTML entities first
+              const titleContent = decodeHtmlEntities(ensureString(content.title));
+              const textContent = decodeHtmlEntities(ensureString(content.text));
+              
+              // Process images, then clean HTML
+              const processedTitle = titleContent ? processHtml(processImageUrls(titleContent)) : null;
+              const processedText = processHtml(processImageUrls(textContent));
 
               return (
                 <div className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7">
@@ -176,12 +251,45 @@ const HistoryOfTranslation = () => {
                       outline: none !important;
                     }
                     .prose img {
-                      max-width: 100%;
-                      height: auto;
-                      margin: 1rem 0;
+                      max-width: 100% !important;
+                      width: auto !important;
+                      height: auto !important;
+                      margin: 1rem auto !important;
+                      padding: 0.75rem !important;
                       border: none !important;
                       outline: none !important;
-                      display: block;
+                      display: block !important;
+                      object-fit: contain !important;
+                      visibility: visible !important;
+                      opacity: 1 !important;
+                    }
+                    /* Ensure images in paragraphs with thafheem class are displayed */
+                    .prose p.thafheem img,
+                    p.thafheem img,
+                    .prose p.thafheem img[src*="/articles/"],
+                    p.thafheem img[src*="/articles/"] {
+                      max-width: 100% !important;
+                      width: auto !important;
+                      height: auto !important;
+                      margin: 1rem auto !important;
+                      padding: 0.75rem !important;
+                      border: none !important;
+                      outline: none !important;
+                      display: block !important;
+                      visibility: visible !important;
+                      opacity: 1 !important;
+                    }
+                    /* Ensure all images with /articles/ paths are visible */
+                    .prose img[src*="/articles/"],
+                    img[src*="/articles/"] {
+                      display: block !important;
+                      visibility: visible !important;
+                      opacity: 1 !important;
+                    }
+                    /* Handle broken images gracefully */
+                    .prose img[src=""],
+                    .prose img:not([src]) {
+                      display: none !important;
                     }
                     .prose strong {
                       font-weight: 600;

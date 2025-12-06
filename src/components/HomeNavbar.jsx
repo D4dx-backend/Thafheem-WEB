@@ -580,7 +580,10 @@ const HomepageNavbar = () => {
       )}
       {/* Search Console Popup */}
       {isSearchOpen && (
-        <SearchConsole onClose={() => setIsSearchOpen(false)} />
+        <SearchConsole 
+          onClose={() => setIsSearchOpen(false)} 
+          translationLanguage={translationLanguage}
+        />
       )}
 
       {/* Language Console Popup */}
@@ -794,7 +797,7 @@ const HomepageNavbar = () => {
                 title="Sign in"
               >
                 <span className="relative z-10 hidden xs:inline font-semibold text-sm sm:text-base">Sign In</span>
-                <span className="relative z-10 xs:hidden text-[9px] font-semibold">Sign</span>
+                <span className="relative z-10 xs:hidden text-[15px] font-semibold">Sign in</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-[#62C3DC] to-[#2596be] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
               </button>
             )}

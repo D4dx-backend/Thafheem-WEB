@@ -1120,8 +1120,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                         )}
                       {isEnglishTranslation && null}
                       <div
-                        className="text-gray-700 leading-[1.8] font-poppins dark:text-gray-300 text-sm sm:text-base"
-                        style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                        className="text-gray-700 leading-[1.8] font-poppins dark:text-gray-300 text-sm sm:text-base text-justify"
+                        style={{ fontSize: `${adjustedTranslationFontSize}px`, textAlign: 'justify' }}
                         dangerouslySetInnerHTML={{ __html: interpretationHtml }}
                       />
                     </div>

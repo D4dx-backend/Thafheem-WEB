@@ -514,11 +514,6 @@ const BlockInterpretationModal = ({
         const isEmpty = !hasContent;
 
         if (isEmpty) {
-          console.warn(`[BlockInterpretationModal] ⚠️ No interpretation ${currentInterpretationNo} available for range ${currentRange}`, {
-            language: currentLanguage,
-            items: items
-          });
-
           // Find the first available interpretation for this range
           // Parse the range to get first and last verse
           const rangeMatch = currentRange.match(/^(\d+)(?:-(\d+))?$/);
@@ -610,10 +605,15 @@ const BlockInterpretationModal = ({
                     return (index + 1) <= 20 ? (index + 1) : 1;
                   };
                   
-                  // Try each available interpretation until we find one that works for the range
+                  // FIRST: Try to find the REQUESTED interpretation number (currentInterpretationNo)
                   for (let idx = 0; idx < availableInterpretations.length; idx++) {
                     const interpretation = availableInterpretations[idx];
                     const interpretationNo = getInterpretationNumber(interpretation, idx);
+                    
+                    // Only check if this is the requested interpretation number
+                    if (interpretationNo !== currentInterpretationNo) {
+                      continue;
+                    }
                     
                     try {
                       // Use appropriate language code
@@ -632,8 +632,7 @@ const BlockInterpretationModal = ({
                         return; // Successfully loaded, exit early
                       }
                     } catch (rangeError) {
-                      // Continue to next interpretation
-                      continue;
+                      // Continue - will proceed to Step 2
                     }
                   }
                 }
@@ -643,7 +642,89 @@ const BlockInterpretationModal = ({
             }
           }
 
-          // If we didn't find an available interpretation, try interpretation 1 as fallback
+          // If we didn't find an available interpretation, search across all blocks
+          if (!foundAvailable && currentInterpretationNo && blockRanges && blockRanges.length > 0) {
+            try {
+              // Search across all blocks to find where this interpretation exists
+              const langCode = currentLanguage === 'E' || currentLanguage === 'en' ? 'E' : 'mal';
+              
+              for (const block of blockRanges) {
+                const blockFrom = block.AyaFrom || block.ayafrom || block.from || 1;
+                const blockTo = block.AyaTo || block.ayato || block.to || blockFrom;
+                const blockRange = blockFrom === blockTo ? String(blockFrom) : `${blockFrom}-${blockTo}`;
+                
+                // Skip if this is the current range (already checked)
+                if (blockRange === currentRange) {
+                  continue;
+                }
+                
+                try {
+                  // Check if interpretation exists in this block
+                  let blockData = null;
+                  if (blockFrom === blockTo) {
+                    // Single verse block
+                    const interpretations = await fetchAllInterpretations(currentSurahId, blockFrom, langCode);
+                    if (interpretations && interpretations.length > 0) {
+                      const getInterpretationNumber = (item, index) => {
+                        const candidates = [
+                          item.InterpretationNo,
+                          item.interpretationNo,
+                          item.interptn_no,
+                          item.resolvedInterpretationNo,
+                          index + 1
+                        ];
+                        for (const candidate of candidates) {
+                          const num = parseInt(String(candidate), 10);
+                          if (!isNaN(num) && num >= 1 && num <= 20) {
+                            return num;
+                          }
+                        }
+                        return (index + 1) <= 20 ? (index + 1) : 1;
+                      };
+                      
+                      const found = interpretations.find((i, idx) => {
+                        const iNo = getInterpretationNumber(i, idx);
+                        return iNo === currentInterpretationNo;
+                      });
+                      
+                      if (found) {
+                        blockData = [found];
+                      }
+                    }
+                  } else {
+                    // Range block
+                    blockData = await fetchInterpretationRange(currentSurahId, blockRange, currentInterpretationNo, langCode);
+                    const rangeItems = Array.isArray(blockData) ? blockData : [blockData];
+                    
+                    // Validate data
+                    if (rangeItems.length > 0 && 
+                        rangeItems[0] && 
+                        Object.keys(rangeItems[0]).length > 0 &&
+                        (rangeItems[0].Interpretation || rangeItems[0].interpret_text || rangeItems[0].text || '').trim() !== '') {
+                      blockData = rangeItems;
+                    } else {
+                      blockData = null;
+                    }
+                  }
+                  
+                  // If found in this block, navigate to it
+                  if (blockData && blockData.length > 0) {
+                    setCurrentRange(blockRange);
+                    setContent(blockData);
+                    foundAvailable = true;
+                    return; // Successfully found and navigated
+                  }
+                } catch (blockErr) {
+                  // Continue searching other blocks
+                  continue;
+                }
+              }
+            } catch (searchErr) {
+              console.warn('Failed to search across blocks:', searchErr);
+            }
+          }
+          
+          // If we still didn't find an available interpretation, try interpretation 1 as fallback
           if (!foundAvailable) {
           if (currentInterpretationNo !== 1) {
             setCurrentInterpretationNo(1);
@@ -1831,7 +1912,7 @@ const BlockInterpretationModal = ({
                     className="mb-6 sm:mb-8"
                   >
                     <div
-                      className={`interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
+                      className={`interpretation-content text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none text-justify ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
                       ref={(el) => (contentRefs.current[idx] = el)}
                       onClick={handleContentClick}
                       style={{
@@ -1843,7 +1924,9 @@ const BlockInterpretationModal = ({
                           fontSize: '16px',
                           lineHeight: '2.6',
                           fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                        } : {})
+                        } : {
+                          textAlign: 'justify'
+                        })
                       }}
                       dir={isUrdu ? 'rtl' : 'ltr'}
                       dangerouslySetInnerHTML={{ __html: extractText(item) }}

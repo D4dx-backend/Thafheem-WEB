@@ -3,12 +3,9 @@
 import {
   SURA_NAMES_API,
   PAGE_RANGES_API,
-  AYAH_AUDIO_TRANSLATION_API,
-  AYA_RANGES_API,
   QURAN_TEXT_API,
   INTERPRETATION_API,
   QUIZ_API,
-  NOTES_API,
   DIRECTUS_BASE_URL,
   API_BASE_URL,
   AYAH_TRANSLATION_API,
@@ -18,10 +15,8 @@ import {
   AYA_TRANSLATION_API,
   LEGACY_TFH_BASE,
   LEGACY_TFH_REMOTE_BASE,
-  WORD_MEANINGS_API,
   TAJWEED_RULES_API,
   API_BASE_PATH,
-  MALAYALAM_QURANAYA_API,
 } from "./apis";
 import { API_BASE_PATH as CONFIG_API_BASE_PATH } from "../config/apiConfig.js";
 import { getFallbackTajweedData } from "../data/tajweedFallback";
@@ -180,16 +175,13 @@ const inMemoryTranslationCache = new Map();
 const IN_MEMORY_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
 export const fetchAyaTranslation = async (surahId, range, language = 'mal', retries = 1) => {
-  // Malayalam uses legacy base; others use new backend
-  const isMalayalam = !language || language === 'mal';
+  // Use new MySQL backend API for all languages
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
-  const baseCandidates = isMalayalam
-    ? Array.from(new Set([LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE].filter(Boolean)))
-    : [apiBase];
-  const langSuffix = isMalayalam ? '' : `/${language}`;
-
+  // Normalize language code (mal -> malayalam)
+  const normalizedLang = !language || language === 'mal' ? 'malayalam' : language;
+  
   // Check in-memory cache first (faster than IndexedDB for recent requests)
-  const cacheKey = `${surahId}_${range}_${language || 'mal'}`;
+  const cacheKey = `${surahId}_${range}_${normalizedLang}`;
   const cached = inMemoryTranslationCache.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp) < IN_MEMORY_CACHE_MAX_AGE) {
     return cached.data;
@@ -199,71 +191,62 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
   // Still sufficient for slow connections, but fails faster to allow retry or fallback
   const timeout = 6000;
 
+  // Use new MySQL backend endpoint: /api/ayatransl/:surah/:range/:language
+  const url = `${apiBase}/ayatransl/${surahId}/${range}/${normalizedLang}`;
+
   let lastError = null;
 
-  for (let baseIndex = 0; baseIndex < baseCandidates.length; baseIndex++) {
-    const base = baseCandidates[baseIndex];
-    const url = `${base}/ayatransl/${surahId}/${range}${langSuffix}`;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, {}, timeout);
+      
+      // Check if response is HTML (likely an error page)
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Store in in-memory cache for faster subsequent access
+      inMemoryTranslationCache.set(cacheKey, {
+        data,
+        timestamp: Date.now()
+      });
+      
+      // Limit cache size to prevent memory issues (keep last 100 entries)
+      if (inMemoryTranslationCache.size > 100) {
+        const firstKey = inMemoryTranslationCache.keys().next().value;
+        inMemoryTranslationCache.delete(firstKey);
+      }
+      
+      return data;
+    } catch (error) {
+      lastError = error;
+      const isLastAttempt = attempt === retries;
+      const isTimeout = error.message?.includes('timeout');
 
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await fetchWithTimeout(url, {}, timeout);
-        
-        // Check if response is HTML (likely an error page)
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
-        }
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        // Store in in-memory cache for faster subsequent access
-        inMemoryTranslationCache.set(cacheKey, {
-          data,
-          timestamp: Date.now()
-        });
-        
-        // Limit cache size to prevent memory issues (keep last 100 entries)
-        if (inMemoryTranslationCache.size > 100) {
-          const firstKey = inMemoryTranslationCache.keys().next().value;
-          inMemoryTranslationCache.delete(firstKey);
-        }
-        
-        return data;
-      } catch (error) {
-        lastError = error;
-        const isLastAttempt = attempt === retries;
-        const isTimeout = error.message?.includes('timeout');
+      // Only log errors on the last attempt or if not a timeout (to reduce spam)
+      if (isLastAttempt || !isTimeout) {
+        console.error(`Error fetching translation from ${url} for ${surahId}:${range}:${normalizedLang}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
+      }
 
-        // Only log errors on the last attempt or if not a timeout (to reduce spam)
-        if (isLastAttempt || !isTimeout) {
-          console.error(`Error fetching translation from ${url} for ${surahId}:${range}${language ? ':' + language : ''}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ''}:`, error.message);
-        }
+      if (isLastAttempt) {
+        break;
+      }
 
-        if (isLastAttempt) {
-          // If this was the primary proxy and we still have another base candidate, warn once
-          const hasAnotherBase = baseIndex < baseCandidates.length - 1;
-          if (isMalayalam && hasAnotherBase) {
-            logWarningOnce(
-              'malayalam-legacy-fallback',
-              '⚠️ Malayalam translation proxy unavailable, retrying direct legacy API.'
-            );
-          }
-          break;
-        }
-
-        // Exponential backoff: wait 1s, then 2s before retries
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
+      // Exponential backoff: wait 1s, then 2s before retries
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
       }
     }
   }
 
-  throw lastError || new Error('Failed to fetch translation');
+  throw lastError || new Error('Failed to fetch translation from MySQL API');
 };
 export const fetchSurahs = async (options = {}) => {
   const { includePageRanges = false } = options;
@@ -319,89 +302,67 @@ export const fetchSurahs = async (options = {}) => {
   // Create new request
   surahsCache.promise = (async () => {
     try {
-      // Skip Thafheem API if endpoint doesn't exist (default prod backend)
-      const shouldSkipThafheemAPI = !import.meta.env.VITE_API_BASE_URL && 
-                                     !import.meta.env.DEV && 
-                                     SURA_NAMES_API.includes('thafheemapi.thafheem.net');
+      // Fetch from new MySQL backend API
+      const surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
       
-      let surahResponse = null;
-      let surahData = null;
-      
-      if (!shouldSkipThafheemAPI) {
-        try {
-          // Increased timeout to 15 seconds for Thafheem API (server may be slow)
-          // This gives more time for the server to respond, especially under load
-          surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
-          
-          // Check if response is HTML (likely 404 error page)
-          const contentType = surahResponse.headers.get('content-type');
-          if (contentType && contentType.includes('text/html')) {
-            throw new Error('Received HTML response, endpoint likely unavailable');
-          }
-          
-          if (!surahResponse.ok) {
-            throw new Error(`HTTP error! status: ${surahResponse.status}`);
-          }
-          
-          surahData = await surahResponse.json();
-          // Reset availability state on success
-          apiAvailabilityState.thafheemApiUnavailable = false;
-        } catch (apiError) {
-          // API failed - log error and throw
-          apiAvailabilityState.thafheemApiUnavailable = true;
-          console.error('❌ Failed to fetch surahs from MySQL API:', apiError.message);
-          surahResponse = null;
-        }
+      // Check if response is HTML (likely 404 error page)
+      const contentType = surahResponse.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        throw new Error('Received HTML response, endpoint likely unavailable');
       }
       
-      // If we got data from API, use it; otherwise fallback
-      if (surahData && Array.isArray(surahData) && surahData.length > 0) {
-        let pageRangesResponse = [];
-        
-        // Only fetch page ranges if explicitly requested
-        if (includePageRanges) {
-          pageRangesResponse = await fetchPageRanges().catch(() => []); // Don't fail if page ranges unavailable
-        }
+      if (!surahResponse.ok) {
+        throw new Error(`HTTP error! status: ${surahResponse.status}`);
+      }
+      
+      const surahData = await surahResponse.json();
+      
+      if (!Array.isArray(surahData) || surahData.length === 0) {
+        throw new Error('Invalid response format or empty data');
+      }
 
-        // Create a function to get accurate ayah count from page ranges
-        const getAyahCountFromPageRanges = (surahId, pageRanges) => {
-          const surahRanges = pageRanges.filter(
-            (range) => range.SuraId === surahId
-          );
-          if (surahRanges.length === 0) return null;
+      let pageRangesResponse = [];
+      
+      // Only fetch page ranges if explicitly requested
+      if (includePageRanges) {
+        pageRangesResponse = await fetchPageRanges().catch(() => []); // Don't fail if page ranges unavailable
+      }
 
-          // Find the maximum ayato value for this surah
-          return Math.max(...surahRanges.map((range) => range.ayato));
+      // Create a function to get accurate ayah count from page ranges
+      const getAyahCountFromPageRanges = (surahId, pageRanges) => {
+        const surahRanges = pageRanges.filter(
+          (range) => range.SuraId === surahId
+        );
+        if (surahRanges.length === 0) return null;
+
+        // Find the maximum ayato value for this surah
+        return Math.max(...surahRanges.map((range) => range.ayato));
+      };
+
+      const result = surahData.map((surah) => {
+        // Get ayah count from page ranges API if available, otherwise use original data
+        const ayahCountFromPageRanges = getAyahCountFromPageRanges(
+          surah.SuraID,
+          pageRangesResponse
+        );
+        const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
+
+        return {
+          number: surah.SuraID,
+          arabic: surah.ASuraName?.trim(),
+          name: surah.ESuraName?.trim(),
+          ayahs: ayahCount,
+          type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
         };
+      });
 
-        const result = surahData.map((surah) => {
-          // Get ayah count from page ranges API if available, otherwise use original data
-          const ayahCountFromPageRanges = getAyahCountFromPageRanges(
-            surah.SuraID,
-            pageRangesResponse
-          );
-          const ayahCount = ayahCountFromPageRanges || surah.TotalAyas;
+      // Cache the result
+      surahsCache.data = result;
+      surahsCache.timestamp = Date.now();
+      surahsCache.promise = null;
 
-          return {
-            number: surah.SuraID,
-            arabic: surah.ASuraName?.trim(),
-            name: surah.ESuraName?.trim(),
-            ayahs: ayahCount,
-            type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
-          };
-        });
-
-        // Cache the result
-        surahsCache.data = result;
-        surahsCache.timestamp = Date.now();
-        surahsCache.promise = null;
-
-        // Successfully fetched surahs with accurate ayah counts
-        return result;
-      }
-
-      // If no data from API, throw error
-      throw new Error('Failed to fetch surahs from MySQL API');
+      // Successfully fetched surahs with accurate ayah counts
+      return result;
     } catch (error) {
       // Clear promise on error so it can be retried
       surahsCache.promise = null;
@@ -1171,50 +1132,29 @@ export const fetchSurahs = async (options = {}) => {
  */
 export const listSurahNames = async () => {
   try {
-    // Increased timeout to 15 seconds to match fetchSurahs
+    // Fetch from new MySQL backend API
     const response = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
     const data = await response.json();
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('Invalid response format or empty data');
+    }
+    
     const result = data.map((surah) => ({
       id: surah.SuraID,
       arabic: surah.ASuraName?.trim(),
       english: surah.ESuraName?.trim(),
     }));
+    
     return result;
   } catch (error) {
-    apiAvailabilityState.thafheemApiUnavailable = true;
-    // Suppress timeout warnings - they're expected when API is slow
-    if (!error.message?.includes('timeout')) {
-      logWarningOnce(
-        'surah-names-api-unavailable',
-        '⚠️ Thafheem API unavailable for surah names, using fallback',
-        error.message
-      );
-    }
-    
-    // No fallback - throw error if API fails
-    console.error('Failed to fetch surah names from MySQL API:', error.message);
+    console.error('❌ Failed to fetch surah names from MySQL API:', error.message);
     throw error;
-    
-    // Return basic fallback data when all APIs are unavailable
-    logWarningOnce(
-      'surah-names-hardcoded-fallback',
-      '📋 Using hardcoded fallback data for surah names'
-    );
-    return [
-      { id: 1, arabic: "الفاتحة", english: "Al-Fatiha", ayahs: 7 },
-      { id: 2, arabic: "البقرة", english: "Al-Baqarah", ayahs: 286 },
-      { id: 3, arabic: "آل عمران", english: "Ali 'Imran", ayahs: 200 },
-      { id: 4, arabic: "النساء", english: "An-Nisa", ayahs: 176 },
-      { id: 5, arabic: "المائدة", english: "Al-Ma'idah", ayahs: 120 },
-      { id: 6, arabic: "الأنعام", english: "Al-An'am", ayahs: 165 },
-      { id: 7, arabic: "الأعراف", english: "Al-A'raf", ayahs: 206 },
-      { id: 8, arabic: "الأنفال", english: "Al-Anfal", ayahs: 75 },
-      { id: 9, arabic: "التوبة", english: "At-Tawbah", ayahs: 129 },
-      { id: 10, arabic: "يونس", english: "Yunus", ayahs: 109 },
-    ];
   }
 };
 /**
@@ -1542,31 +1482,7 @@ const fetchFromMysqlQuranaya = async (surahId, ayahNumber = null) => {
   return normalizeQuranayaResponse(data);
 };
 
-const fetchFromLegacyQuranaya = async (surahId, ayahNumber = null) => {
-  const endpoint = ayahNumber
-    ? `${MALAYALAM_QURANAYA_API}/${surahId}:${ayahNumber}`
-    : `${MALAYALAM_QURANAYA_API}/${surahId}`;
-
-  const response = await fetchWithTimeout(endpoint, {}, 8000);
-  if (!response.ok) {
-    throw new Error(`Legacy quranaya error: ${response.status}`);
-  }
-  const data = await response.json();
-  return normalizeQuranayaResponse(data);
-};
-
-const fetchFromLegacyAudioTranslation = async (surahId, ayahNumber = null) => {
-  const endpoint = ayahNumber
-    ? `${AYAH_AUDIO_TRANSLATION_API}/${surahId}/${ayahNumber}`
-    : `${AYAH_AUDIO_TRANSLATION_API}/${surahId}`;
-
-  const response = await fetchWithTimeout(endpoint, {}, 8000);
-  if (!response.ok) {
-    throw new Error(`Legacy audio translation error: ${response.status}`);
-  }
-  const data = await response.json();
-  return normalizeQuranayaResponse(data);
-};
+// Legacy quranaya functions removed - now using MySQL API only
 
 export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
   const normalizedSurah = Number.parseInt(suraId, 10);
@@ -1583,28 +1499,9 @@ export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
     return rows;
   };
 
-  try {
-    const data = await fetchFromMysqlQuranaya(normalizedSurah, normalizedAyah);
-    return toReturnShape(data);
-  } catch (mysqlError) {
-    console.warn('MySQL quranaya API failed, falling back to legacy endpoint:', mysqlError.message);
-  }
-
-  try {
-    const data = await fetchFromLegacyQuranaya(normalizedSurah, normalizedAyah);
-    return toReturnShape(data);
-  } catch (legacyQuranayaError) {
-    console.warn('Legacy quranaya endpoint failed:', legacyQuranayaError.message);
-  }
-
-  try {
-    const data = await fetchFromLegacyAudioTranslation(normalizedSurah, normalizedAyah);
-    return toReturnShape(data);
-  } catch (legacyAudioError) {
-    console.warn('Legacy audio translation fallback failed:', legacyAudioError.message);
-  }
-
-  return shouldReturnSingleRecord ? null : [];
+  // Use new MySQL API only
+  const data = await fetchFromMysqlQuranaya(normalizedSurah, normalizedAyah);
+  return toReturnShape(data);
 };
 
 // Fetch Urdu translation audio URL from API
@@ -1882,36 +1779,30 @@ export const fetchCompleteSurahInfo = async (surahId, language = "en") => {
     const { quranLanguage, prefaceLanguage } =
       normalizeSurahInfoLanguages(language);
 
-    console.log("[SurahInfo] fetch languages", {
-      surahId,
-      requested: language,
-      quranLanguage,
-      prefaceLanguage,
-    });
 
     // Fetch surahs once and reuse for both basicChapter and surahsData
     const surahs = await fetchSurahs();
     const surahsData = surahs.find((s) => s.number === parseInt(surahId));
 
-    const [basicChapter, detailedInfo, thafheemInfo] =
-      await Promise.all([
-        fetchBasicChapterData(surahId, quranLanguage, surahs),
-        fetchChapterInfo(surahId, quranLanguage).catch(() => null),
-        fetchThafheemPreface(surahId, prefaceLanguage).catch(() => null),
-      ]);
+    // Only fetch preface + metadata from MySQL (suratable)
+    const [surahMeta, thafheemInfo, hindiIntro] = await Promise.all([
+      fetchSurahMetadata(surahId, quranLanguage).catch(() => null),
+      fetchThafheemPreface(surahId, prefaceLanguage).catch(() => null),
+      quranLanguage === "hi"
+        ? fetchHindiSurahIntro(surahId).catch(() => null)
+        : Promise.resolve(null),
+    ]);
 
-    console.log("[SurahInfo] fetch result summary", {
-      surahId,
-      hasThafheemPreface: Boolean(thafheemInfo?.PrefaceText),
-      prefacePreview: thafheemInfo?.PrefaceText
-        ? `${thafheemInfo.PrefaceText.slice(0, 80)}...`
-        : null,
-      prefaceSubTitle: thafheemInfo?.PrefaceSubTitle,
-    });
 
     return {
-      basic: basicChapter,
-      detailed: detailedInfo,
+      basic: surahMeta,
+      detailed:
+        quranLanguage === "hi" && hindiIntro
+          ? {
+              text: hindiIntro.intro || "",
+              language: "hi",
+            }
+          : null, // chapter-info endpoint intentionally skipped
       thafheem: thafheemInfo,
       surah: surahsData,
     };
@@ -1958,21 +1849,10 @@ export const fetchChapterInfo = async (chapterId, language = "en") => {
     
     const url = `${apiBase}/chapter-info/${chapterId}/${normalizedLang}`;
     
-    console.log("[ChapterInfo] fetching", {
-      chapterId,
-      language,
-      normalizedLang,
-      url
-    });
 
     const response = await fetchWithTimeout(url, {}, 8000);
 
     if (response.status === 404) {
-      console.log("[ChapterInfo] not found", {
-        chapterId,
-        language,
-        url
-      });
       return null;
     }
 
@@ -1982,12 +1862,6 @@ export const fetchChapterInfo = async (chapterId, language = "en") => {
 
     const data = await response.json();
     
-    console.log("[ChapterInfo] success", {
-      chapterId,
-      language,
-      hasShortText: Boolean(data?.short_text),
-      hasText: Boolean(data?.text)
-    });
 
     return data;
   } catch (error) {
@@ -2008,17 +1882,13 @@ export const fetchThafheemPreface = async (suraId, language = "E") => {
   const cacheKey = `${suraId}|${preferredLanguage}`;
   if (thafheemPrefaceCache.has(cacheKey)) {
     const cached = thafheemPrefaceCache.get(cacheKey);
-    console.log("[ThafheemPreface] cache hit", {
-      suraId,
-      preferredLanguage,
-      cached,
-    });
     return cached;
   }
 
+  // Preface is a new API, so prioritize API_BASE_PATH over legacy bases
   const baseCandidates = Array.from(
     new Set(
-      [LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE, apiBase].filter(Boolean)
+      [apiBase, LEGACY_TFH_BASE, LEGACY_TFH_REMOTE_BASE].filter(Boolean)
     )
   );
 
@@ -2034,11 +1904,6 @@ export const fetchThafheemPreface = async (suraId, language = "E") => {
       const response = await fetchWithTimeout(url, {}, 8000);
 
       if (response.status === 404) {
-        console.log("[ThafheemPreface] 404", {
-          suraId,
-          url,
-          logLabel,
-        });
         return { notFound: true };
       }
 
@@ -2090,15 +1955,6 @@ export const fetchThafheemPreface = async (suraId, language = "E") => {
         PrefaceEntries: data,
       };
 
-      console.log("[ThafheemPreface] success", {
-        suraId,
-        url,
-        logLabel,
-        language,
-        resultPreview: enrichedResult?.PrefaceText
-          ? `${enrichedResult.PrefaceText.slice(0, 80)}...`
-          : null,
-      });
       return { data: enrichedResult };
     } catch (error) {
       console.warn(
@@ -2116,12 +1972,6 @@ export const fetchThafheemPreface = async (suraId, language = "E") => {
       for (const variant of languageVariants) {
         const url = buildPrefaceUrl(base, suraId, variant);
         const logLabel = variant ? `lang=${variant}` : "lang=default";
-        console.log("[ThafheemPreface] trying", {
-          suraId,
-          base,
-          variant,
-          url,
-        });
         const result = await tryFetch(url, logLabel);
 
         if (result?.data) {
@@ -2186,8 +2036,6 @@ export const fetchAyaRanges = async (surahId, language = 'mal') => {
   // Use longer timeout for English as it may take longer to query the database
   const timeout = (apiLanguage.toLowerCase() === 'english' || apiLanguage.toLowerCase() === 'e') ? 30000 : 10000;
   
-  console.log(`[fetchAyaRanges] Fetching ayaranges for surah ${surahId}, language: ${apiLanguage}, timeout: ${timeout}ms, URL: ${url}`);
-  
   const response = await fetchWithTimeout(url, {}, timeout);
   
   // Check if response is HTML (likely an error page)
@@ -2208,7 +2056,6 @@ export const fetchAyaRanges = async (surahId, language = 'mal') => {
       throw new Error('Received HTML response instead of JSON - endpoint likely unavailable or CORS blocked');
     }
     const data = JSON.parse(text);
-    console.log(`[fetchAyaRanges] Successfully fetched ${data?.length || 0} ayaranges for surah ${surahId}, language: ${apiLanguage}`);
     return data;
   } catch (parseError) {
     if (parseError.message?.includes('HTML')) {
@@ -2219,10 +2066,13 @@ export const fetchAyaRanges = async (surahId, language = 'mal') => {
 };
 
 // Fetch translation for a specific ayah range
-// Fetch translations for specified ayah range using the new API
-export const fetchAyahTranslations = async (surahId, range, language = "E") => {
+// Fetch translations for specified ayah range using the new MySQL backend API
+export const fetchAyahTranslations = async (surahId, range, language = "english") => {
   try {
-    const url = `${AYAH_TRANSLATION_API}/${surahId}/${range}/${language}`;
+    // Normalize language code (E -> english, mal -> malayalam)
+    const normalizedLang = language === "E" ? "english" : (language === "mal" ? "malayalam" : language);
+    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+    const url = `${apiBase}/ayatransl/${surahId}/${range}/${normalizedLang}`;
 
     const response = await fetchWithTimeout(url, {}, 8000);
 
@@ -2234,7 +2084,7 @@ export const fetchAyahTranslations = async (surahId, range, language = "E") => {
 
     return data;
   } catch (error) {
-    console.error(`Error fetching translation for ${surahId}:${range}:`, error.message);
+    console.error(`Error fetching translation for ${surahId}:${range}:${language}:`, error.message);
     return null; // return fallback or null instead of throwing
   }
 };
@@ -2383,27 +2233,7 @@ export const fetchNoteById = async (noteId) => {
   // Use new API endpoint from API_BASE_PATH (MySQL database)
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
   if (!apiBase) {
-    console.warn("API base path not configured, falling back to legacy API");
-    // Fallback to legacy API if new API is not configured
-    const legacyUrl = `${NOTES_API}/${encodeURIComponent(id)}`;
-    try {
-      const response = await fetchWithTimeout(
-        legacyUrl,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        },
-        5000
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.warn("Error fetching note from legacy API:", error.message);
-      throw error;
-    }
+    throw new Error("API base path not configured");
   }
 
   const url = `${apiBase.replace(/\/+$/, '')}/notes/${encodeURIComponent(id)}`;
@@ -2638,7 +2468,6 @@ export const fetchAllInterpretations = async (
     try {
       // Fetch all interpretations for the verse from MySQL API
       const url = `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${verseId}`;
-      console.log(`[fetchAllInterpretations] Fetching from: ${url}`);
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -2646,10 +2475,8 @@ export const fetchAllInterpretations = async (
       }
 
       const data = await response.json();
-      console.log(`[fetchAllInterpretations] API response for Surah ${surahId}, Ayah ${verseId}:`, data);
       
       if (!data.explanations || data.explanations.length === 0) {
-        console.log(`[fetchAllInterpretations] No explanations found in response`);
         return [];
       }
 
@@ -2662,7 +2489,6 @@ export const fetchAllInterpretations = async (
         surahId: parseInt(surahId),
         verseId: parseInt(verseId)
       }));
-      console.log(`[fetchAllInterpretations] Transformed ${transformed.length} interpretations:`, transformed);
       return transformed;
     } catch (error) {
       console.error(`[fetchAllInterpretations] Error fetching interpretations for Surah ${surahId}, Ayah ${verseId}:`, error);
@@ -3324,6 +3150,44 @@ export const createFallbackQuizData = (surahId) => {
   };
 };
 
+// Fetch surah metadata (name, type, verses) from MySQL suratable
+export const fetchSurahMetadata = async (surahId, language = "en") => {
+  try {
+    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+    const lang = (language || "en").toLowerCase();
+    const url = `${apiBase}/surah-metadata/${surahId}/${lang}`;
+    const response = await fetchWithTimeout(url, {}, 8000);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn(`Surah metadata fetch failed for ${surahId}:`, error.message);
+    return null;
+  }
+};
+
+// Fetch Hindi surah intro (fallback table)
+export const fetchHindiSurahIntro = async (surahId) => {
+  try {
+    const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
+    const url = `${apiBase}/hindi/surah-intro/${surahId}`;
+    const response = await fetchWithTimeout(url, {}, 8000);
+
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn(`Hindi surah intro fetch failed for ${surahId}:`, error.message);
+    return null;
+  }
+};
+
 // Direct API test function to inspect raw response
 export const testQuizAPI = async (surahId = 1, range = "1-7") => {
   const url = `${QUIZ_API}/${surahId}/${range}`;
@@ -3918,6 +3782,20 @@ export const fetchPopularChapters = async (language = "en") => {
       .map((id) => {
         const chapter = surahs.find((ch) => ch.number === id);
         if (chapter) {
+          // Special handling for Surah Al-Baqarah (ID 2) - show Ayatul Kursi
+          if (id === 2) {
+            return {
+              id: chapter.number,
+              name: "Ayatul Kursi",
+              arabic: chapter.arabic,
+              verses: "Verse 255",
+              type: chapter.type,
+              translated_name: "Ayatul Kursi",
+              verseNumber: 255,
+              verseKey: "2:255",
+            };
+          }
+          
           return {
             id: chapter.number,
             name: chapter.name,
@@ -3938,7 +3816,7 @@ export const fetchPopularChapters = async (language = "en") => {
     // Return fallback data
     return [
       { id: 67, name: "Al-Mulk", verses: "30 verses", type: "Makki" },
-      { id: 2, name: "Al-Baqarah", verses: "286 verses", type: "Madani" },
+      { id: 2, name: "Ayatul Kursi", verses: "Verse 255", type: "Madani", verseNumber: 255, verseKey: "2:255" },
       { id: 1, name: "Al-Fatiha", verses: "7 verses", type: "Makki" },
       { id: 18, name: "Al-Kahf", verses: "110 verses", type: "Makki" },
       { id: 36, name: "Ya-Sin", verses: "83 verses", type: "Makki" },
@@ -3957,17 +3835,12 @@ export const fetchTajweedRules = async (ruleNo = "0") => {
   const apiBase = CONFIG_API_BASE_PATH || API_BASE_PATH;
 
   // Build list of candidate endpoints (handles older misspelled route and new route)
-  const remoteBase = LEGACY_TFH_REMOTE_BASE;
   const baseCandidates = Array.from(
     new Set(
       [
         TAJWEED_RULES_API,
         `${apiBase}/thajweedrules`,
         `${apiBase}/tajweedrules`,
-        `${LEGACY_TFH_BASE}/thajweedrules`,
-        `${LEGACY_TFH_BASE}/tajweedrules`,
-        `${remoteBase}/thajweedrules`,
-        `${remoteBase}/tajweedrules`,
       ].filter(Boolean)
     )
   );
@@ -4856,6 +4729,43 @@ export const fetchMalayalamTechnicalTerms = async () => {
       text: '',
       raw_title: null,
       raw_text: '',
+      error: error.message,
+    };
+  }
+};
+
+// Fetch note by ID (uses /api/notes/:noteId)
+export const fetchMalayalamFootnote = async (footnoteId) => {
+  try {
+    const id = String(footnoteId || '').trim();
+    if (!id) {
+      throw new Error('Invalid note id');
+    }
+
+    const response = await fetch(`${API_BASE_PATH}/notes/${id}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const noteContent =
+      data?.NoteText ||
+      data?.note_text ||
+      data?.content ||
+      data?.html ||
+      data?.text ||
+      '';
+
+    return {
+      footnote_id: data?.id ?? data?.note_id ?? id,
+      footnote_text: noteContent,
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Malayalam footnote:', error.message);
+    return {
+      footnote_id: footnoteId ?? null,
+      footnote_text: '',
       error: error.message,
     };
   }

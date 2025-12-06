@@ -55,6 +55,8 @@ const Appendix = () => {
   }, [normalized]);
 
   const isUrdu = normalized.startsWith("urdu") || normalized === "u" || translationLanguage === "ur" || translationLanguage === "urdu";
+  const isMalayalam = normalized.startsWith("mal") || translationLanguage === "mal";
+  const isEnglish = normalized.startsWith("english") || normalized === "e" || (!normalized.startsWith("mal") && !normalized.startsWith("urdu") && !normalized.startsWith("hindi") && !normalized.startsWith("bangla"));
 
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +126,26 @@ const Appendix = () => {
           }
         `}</style>
       )}
+      {isEnglish && (
+        <style>{`
+          .english-appendix-content {
+            text-align: justify !important;
+          }
+          .english-appendix-content p {
+            text-align: justify !important;
+          }
+        `}</style>
+      )}
+      {isMalayalam && (
+        <style>{`
+          .malayalam-appendix-content {
+            font-family: 'Noto Sans Malayalam', sans-serif !important;
+          }
+          .malayalam-appendix-content p {
+            font-family: 'Noto Sans Malayalam', sans-serif !important;
+          }
+        `}</style>
+      )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         <button
           onClick={handleBack}
@@ -166,19 +188,24 @@ const Appendix = () => {
               >
                 {section.title && (
                   <h3 
-                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''}`}
+                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''} ${isMalayalam ? 'font-malayalam' : ''}`}
                     dangerouslySetInnerHTML={{ __html: fixQuestionMarkPosition(section.title) }}
-                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : {}}
+                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'Noto Sans Malayalam', sans-serif" } : {}}
                   />
                 )}
                 <div
-                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''}`}
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''} ${isEnglish ? 'english-appendix-content' : ''} ${isMalayalam ? 'malayalam-appendix-content' : ''}`}
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
                   style={isUrdu ? {
                     textAlign: 'right',
                     fontSize: '16px',
                     lineHeight: '2.6',
                     fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                  } : isEnglish ? {
+                    textAlign: 'justify',
+                    fontFamily: "'Poppins', sans-serif"
+                  } : isMalayalam ? {
+                    fontFamily: "'Noto Sans Malayalam', sans-serif"
                   } : {}}
                 />
               </section>

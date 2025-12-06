@@ -34,11 +34,12 @@ export const LEGACY_TFH_REMOTE_BASE = REMOTE_LEGACY_BASE;
 
 // Legacy endpoints - use LEGACY_TFH_BASE (thafheem.net/thafheem-api)
 export const AYA_TRANSLATION_API = `${LEGACY_TFH_BASE}/ayatransl`;
-export const SURA_NAMES_API = `${LEGACY_TFH_BASE}/suranames/all`;
-// Use legacy public endpoint for page ranges (supports /pageranges/:pageId)
-export const PAGE_RANGES_API = `${LEGACY_TFH_BASE}/pageranges`;
+// New MySQL backend endpoint for surah names
+export const SURA_NAMES_API = `${API_BASE_PATH}/suranames/all`;
+// New MySQL backend endpoint for page ranges
+export const PAGE_RANGES_API = `${API_BASE_PATH}/pageranges`;
 export const AYAH_AUDIO_TRANSLATION_API = `${LEGACY_TFH_BASE}/ayaaudiotransl`;
-export const AYA_RANGES_API = `${LEGACY_TFH_BASE}/ayaranges`;
+// AYA_RANGES_API - Removed: Now using new API at ${API_BASE_PATH}/{language}/ayaranges/{surahId}
 export const QURAN_TEXT_API = `${LEGACY_TFH_BASE}/qurantext`;
 export const QURAN_API_BASE_URL = QURAN_API_BASE;
 export const INTERPRETATION_API = `${LEGACY_TFH_BASE}/interpret`;
@@ -52,8 +53,7 @@ export const DIRECTUS_APP_SETTINGS_API = `${DIRECTUS_BASE_URL}/items/thafheem_ap
 export const DIRECTUS_AI_API_CONFIG = `${DIRECTUS_BASE_URL}/items/thafheem_ai_api`;
 // Add this to your existing apis.js file
 export const TAJWEED_RULES_API = `${API_BASE_PATH}/thajweedrules`;
-// Word meanings is a legacy endpoint
-export const WORD_MEANINGS_API = `${LEGACY_TFH_BASE}/wordmeanings`;
+// WORD_MEANINGS_API - Removed: Now using new API at ${API_BASE_PATH}/{language}/word-by-word/{surahId}/{verseId}
 export const MALARTICLES_API = isDevelopment ? '/api/old-thaf-api/malarticles' : "https://old.thafheem.net/thaf-api/malarticles";
 export const ENGARTICLES_API = isDevelopment ? '/api/old-thaf-api/engarticles' : "https://old.thafheem.net/thaf-api/engarticles";
 export const ARTICLES_API = isDevelopment ? '/api/old-thaf-api/articles' : "https://old.thafheem.net/thaf-api/articles";

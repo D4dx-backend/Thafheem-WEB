@@ -18,7 +18,6 @@ const API_ENDPOINTS = [
 // Static assets to cache
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/fonts/',
   '/assets/',
@@ -26,10 +25,10 @@ const STATIC_ASSETS = [
 
 // Cache duration (in milliseconds)
 const CACHE_DURATIONS = {
-  translations: 7 * 24 * 60 * 60 * 1000, // 7 days
-  ranges: 24 * 60 * 60 * 1000, // 1 day
-  audio: 30 * 24 * 60 * 60 * 1000, // 30 days
-  static: 24 * 60 * 60 * 1000, // 1 day
+  translations: 12 * 60 * 60 * 1000, // 12 hours
+  ranges: 6 * 60 * 60 * 1000, // 6 hours
+  audio: 7 * 24 * 60 * 60 * 1000, // 7 days
+  static: 6 * 60 * 60 * 1000, // 6 hours
 };
 
 // Install event - cache static assets
@@ -198,6 +197,11 @@ async function handleStaticRequest(request) {
  * Handle other requests with network-first strategy
  */
 async function handleNetworkFirst(request) {
+  // Don't cache index.html
+  if (request.url.includes('/index.html') || request.url.endsWith('/')) {
+    return fetch(request);
+  }
+  
   try {
     // Try network first
     const networkResponse = await fetch(request);
@@ -231,14 +235,15 @@ async function handleNetworkFirst(request) {
 async function fetchAndCache(request, cache) {
   const response = await fetch(request);
   
-  // Don't cache partial responses (206) or audio files
+  // Don't cache partial responses (206), audio files, or index.html
   const isAudioFile = request.url.includes('/audio/') || 
                       request.url.includes('.mp3') || 
                       request.url.includes('.ogg') || 
                       request.url.includes('.wav');
+  const isIndexHtml = request.url.includes('/index.html') || request.url.endsWith('/');
   const isPartialResponse = response.status === 206;
   
-  if (response.ok && !isPartialResponse && !isAudioFile) {
+  if (response.ok && !isPartialResponse && !isAudioFile && !isIndexHtml) {
     // Clone the response before caching
     const responseToCache = response.clone();
     

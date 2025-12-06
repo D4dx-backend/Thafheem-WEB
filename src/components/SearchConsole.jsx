@@ -8,7 +8,7 @@ import {
   fetchGlossaryEntries,
 } from "../api/apifunction";
 
-const SearchConsole = ({ onClose }) => {
+const SearchConsole = ({ onClose, translationLanguage = 'mal' }) => {
   const [englishPhraseType, setEnglishPhraseType] = useState("Translation");
   const [englishPhraseSearch, setEnglishPhraseSearch] = useState("");
   const [malayalamPhraseType, setMalayalamPhraseType] = useState("Translation");
@@ -35,6 +35,13 @@ const SearchConsole = ({ onClose }) => {
   const [showSubjectResults, setShowSubjectResults] = useState(false);
   const [subjectDisplayCount, setSubjectDisplayCount] = useState(20);
   const [glossaryLanguage, setGlossaryLanguage] = useState("Arabic");
+
+  // Set glossary language to Arabic when translation language is not English or Malayalam
+  useEffect(() => {
+    if (translationLanguage !== 'E' && translationLanguage !== 'mal') {
+      setGlossaryLanguage("Arabic");
+    }
+  }, [translationLanguage]);
   const [glossarySearch, setGlossarySearch] = useState("");
   const [glossaryEntries, setGlossaryEntries] = useState([]);
   const [glossaryLoading, setGlossaryLoading] = useState(false);
@@ -368,6 +375,16 @@ const SearchConsole = ({ onClose }) => {
     return () => clearTimeout(debounceId);
   }, [arabicPhraseSearch]);
 
+  // Sync Quran Subject language with translation language
+  useEffect(() => {
+    if (translationLanguage === 'E') {
+      setQuranSubjectLanguage('E');
+      setQuranSubjectCategory(1); // English only supports Translation Subjects
+    } else if (translationLanguage === 'mal') {
+      setQuranSubjectLanguage('M');
+    }
+  }, [translationLanguage]);
+
   useEffect(() => {
     if (quranSubjectLanguage === "E" && quranSubjectCategory !== 1) {
       setQuranSubjectCategory(1);
@@ -486,115 +503,119 @@ const SearchConsole = ({ onClose }) => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <div className="mt-6 space-y-5">
-            {/* English Phrase Section */}
-            <div>
-              <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
-                English phrase
-              </h3>
+            {/* English Phrase Section - Only show when English is selected */}
+            {translationLanguage === 'E' && (
+              <div>
+                <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
+                  English phrase
+                </h3>
 
-              {/* Radio buttons */}
-              <div className="flex items-center space-x-8 mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="Translation"
-                    checked={englishPhraseType === "Translation"}
-                    onChange={(e) => setEnglishPhraseType(e.target.value)}
-                    className="w-4 h-4 text-blue-600 dark:text-white dark:focus:ring-white focus:ring-blue-500"
+                {/* Radio buttons */}
+                <div className="flex items-center space-x-8 mb-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="Translation"
+                      checked={englishPhraseType === "Translation"}
+                      onChange={(e) => setEnglishPhraseType(e.target.value)}
+                      className="w-4 h-4 text-blue-600 dark:text-white dark:focus:ring-white focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-white">Translation</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="Interpretation"
+                      checked={englishPhraseType === "Interpretation"}
+                      onChange={(e) => setEnglishPhraseType(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-white dark:text-white dark:focus:ring-white"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-white">Interpretation</span>
+                  </label>
+                </div>
+
+                {/* Search input */}
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white"
                   />
-                  <span className="text-sm text-gray-700 dark:text-white">Translation</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
                   <input
-                    type="radio"
-                    value="Interpretation"
-                    checked={englishPhraseType === "Interpretation"}
-                    onChange={(e) => setEnglishPhraseType(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-white dark:text-white dark:focus:ring-white"
+                    type="text"
+                    placeholder="Search..."
+                    value={englishPhraseSearch}
+                    onChange={(e) => setEnglishPhraseSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 text-sm bg-gray-50 dark:text-white dark:bg-black dark:placeholder-white border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                   />
-                  <span className="text-sm text-gray-700 dark:text-white">Interpretation</span>
-                </label>
+                </div>
+                {renderResultSection({
+                  id: "english",
+                  languageLabel: `English ${englishPhraseType}`,
+                  query: englishPhraseSearch,
+                  isLoading: englishLoading,
+                  error: englishError,
+                  results: englishResults,
+                  hasSearched: englishHasSearched,
+                })}
               </div>
+            )}
 
-              {/* Search input */}
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={englishPhraseSearch}
-                  onChange={(e) => setEnglishPhraseSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-sm bg-gray-50 dark:text-white dark:bg-black dark:placeholder-white border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                />
-              </div>
-              {renderResultSection({
-                id: "english",
-                languageLabel: `English ${englishPhraseType}`,
-                query: englishPhraseSearch,
-                isLoading: englishLoading,
-                error: englishError,
-                results: englishResults,
-                hasSearched: englishHasSearched,
-              })}
-            </div>
+            {/* Malayalam Phrase Section - Only show when Malayalam is selected */}
+            {translationLanguage === 'mal' && (
+              <div>
+                <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
+                  Malayalam phrase
+                </h3>
 
-            {/* Malayalam Phrase Section */}
-            <div>
-              <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
-                Malayalam phrase
-              </h3>
+                <div className="flex items-center space-x-8 mb-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="Translation"
+                      checked={malayalamPhraseType === "Translation"}
+                      onChange={(e) => setMalayalamPhraseType(e.target.value)}
+                      className="w-4 h-4 text-blue-600 dark:text-white dark:focus:ring-white focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-white">Translation</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="Interpretation"
+                      checked={malayalamPhraseType === "Interpretation"}
+                      onChange={(e) => setMalayalamPhraseType(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-white dark:text-white dark:focus:ring-white"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-white">Interpretation</span>
+                  </label>
+                </div>
 
-              <div className="flex items-center space-x-8 mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white"
+                  />
                   <input
-                    type="radio"
-                    value="Translation"
-                    checked={malayalamPhraseType === "Translation"}
-                    onChange={(e) => setMalayalamPhraseType(e.target.value)}
-                    className="w-4 h-4 text-blue-600 dark:text-white dark:focus:ring-white focus:ring-blue-500"
+                    type="text"
+                    placeholder="Search in Malayalam..."
+                    value={malayalamPhraseSearch}
+                    onChange={(e) => setMalayalamPhraseSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 text-sm bg-gray-50 dark:text-white dark:bg-black dark:placeholder-white border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                    dir="auto"
                   />
-                  <span className="text-sm text-gray-700 dark:text-white">Translation</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="Interpretation"
-                    checked={malayalamPhraseType === "Interpretation"}
-                    onChange={(e) => setMalayalamPhraseType(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-white dark:text-white dark:focus:ring-white"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-white">Interpretation</span>
-                </label>
+                </div>
+                {renderResultSection({
+                  id: "malayalam",
+                  languageLabel: `Malayalam ${malayalamPhraseType}`,
+                  query: malayalamPhraseSearch,
+                  isLoading: malayalamLoading,
+                  error: malayalamError,
+                  results: malayalamResults,
+                  hasSearched: malayalamHasSearched,
+                  isMalayalam: true,
+                })}
               </div>
-
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Search in Malayalam..."
-                  value={malayalamPhraseSearch}
-                  onChange={(e) => setMalayalamPhraseSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-sm bg-gray-50 dark:text-white dark:bg-black dark:placeholder-white border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                  dir="auto"
-                />
-              </div>
-              {renderResultSection({
-                id: "malayalam",
-                languageLabel: `Malayalam ${malayalamPhraseType}`,
-                query: malayalamPhraseSearch,
-                isLoading: malayalamLoading,
-                error: malayalamError,
-                results: malayalamResults,
-                hasSearched: malayalamHasSearched,
-                isMalayalam: true,
-              })}
-            </div>
+            )}
 
             {/* Arabic Phrase Section */}
             <div>
@@ -627,21 +648,24 @@ const SearchConsole = ({ onClose }) => {
               })}
             </div>
 
-            {/* Quran Subject Section */}
-            <div>
-              <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
-                Quran Subject
-              </h3>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    value={quranSubjectLanguage}
-                    onChange={(e) => setQuranSubjectLanguage(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-black text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="E">English</option>
-                    <option value="M">Malayalam</option>
-                  </select>
+            {/* Quran Subject Section - Only show when English or Malayalam is selected */}
+            {(translationLanguage === 'E' || translationLanguage === 'mal') && (
+              <div>
+                <h3 className="text-sm text-gray-500 dark:text-white mb-4 italic">
+                  Quran Subject
+                </h3>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    {/* Language dropdown - locked to match translation language */}
+                    <select
+                      value={quranSubjectLanguage}
+                      onChange={(e) => setQuranSubjectLanguage(e.target.value)}
+                      disabled={true}
+                      className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-white opacity-60 cursor-not-allowed"
+                    >
+                      {translationLanguage === 'E' && <option value="E">English</option>}
+                      {translationLanguage === 'mal' && <option value="M">Malayalam</option>}
+                    </select>
                   <select
                     value={quranSubjectCategory}
                     onChange={(e) => setQuranSubjectCategory(Number(e.target.value))}
@@ -716,7 +740,8 @@ const SearchConsole = ({ onClose }) => {
                     Load more subjects
                   </button>
                 )}
-            </div>
+              </div>
+            )}
 
             {/* Glossary Search Section */}
             <div>
@@ -724,18 +749,20 @@ const SearchConsole = ({ onClose }) => {
                 Glossary Search
               </h3>
 
-              {/* Radio buttons */}
+              {/* Radio buttons - Show both English and Arabic only when English or Malayalam is selected, otherwise only Arabic */}
               <div className="flex items-center space-x-8 mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="English"
-                    checked={glossaryLanguage === "English"}
-                    onChange={(e) => setGlossaryLanguage(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-white">English</span>
-                </label>
+                {(translationLanguage === 'E' || translationLanguage === 'mal') && (
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="English"
+                      checked={glossaryLanguage === "English"}
+                      onChange={(e) => setGlossaryLanguage(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-white">English</span>
+                  </label>
+                )}
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="radio"

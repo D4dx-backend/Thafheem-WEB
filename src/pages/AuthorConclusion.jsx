@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { Play, Pause } from "lucide-react";
 
 const CONCLUSION_CONTENT = `
 <p class="eng">
@@ -21,7 +22,7 @@ const URDU_CONCLUSION_CONTENT = `
   
   <p>جیسا کہ اس کتاب کے عنوان سے اندازہ ہوتا ہے کہ میں نے قرآن پاک کو عام فہم لوگوں تک سمجھانے کی کوشش کی ہے۔ قرآن کے خیالات اور دلچسپیوں کو بیان کرنا تاکہ وہ اس کی روح کو تلاش کر سکیں، قرآن یا اس کا محض ترجمہ پڑھتے ہوئے ذہن میں پیدا ہونے والے شکوک کا ازالہ کرنا، قرآن مجید میں مختصر اور اختصار کے ساتھ بیان کردہ چیزوں کا تجزیہ اور وضاحت کرنا، یہ میرا مقصد تھا۔ مزید وضاحت کرنا شروع میں میرا مقصد نہیں تھا۔ اس لیے پہلی جلدوں میں تفسیری نوٹ مختصر ہیں۔ بعد میں، جیسے جیسے میں ترقی کرتا گیا، مزید تشریح کی ضرورت محسوس ہوتی گئی۔ اس حد تک کہ اب آخری جلدیں پڑھنے والوں کو محسوس ہونے لگتا ہے کہ پہلی جلدیں خشک ہیں۔ البتہ قرآن مجید میں موضوعات کی تکرار کا ایک فائدہ یہ ہے کہ جن موضوعات کو ایک جگہ صاف صاف بیان کیا گیا ہے ان پر بعد میں آنے والی سورتوں کی تفسیر میں تفصیل کے ساتھ دوسری سورتوں میں بحث کی گئی ہے۔ مجھے امید ہے کہ وہ لوگ جو قرآن پاک کو ایک بار پڑھتے ہیں اور اسے ختم نہیں کرتے بلکہ پوری کتاب کو دوبارہ پڑھتے ہیں، وہ آخری سورتوں کی تفسیر پہلی سورتوں کو سمجھنے کے لیے کافی رہنمائی پائیں گے۔</p>
   
-  <p style="margin-top: 2em;"><strong>ابوالاعلیٰ مودودی</strong></p>
+  <p style="margin-top: 0.6em;"><strong>ابوالاعلیٰ مودودی</strong></p>
   <p><em>لاہور</em></p>
   <p><em>ملتان</em></p>
   <p><em>24 ربیع الاخر 1392ھ</em></p>
@@ -79,6 +80,21 @@ const AuthorConclusion = () => {
   const isHindi = translationLanguage === 'hi';
   const isBangla = translationLanguage === 'bn';
 
+  // Audio player state for Malayalam
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const handlePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   // Determine content based on language
   let content = CONCLUSION_CONTENT;
   let title = "Author's Conclusion";
@@ -109,63 +125,108 @@ const AuthorConclusion = () => {
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isBangla ? 'font-bengali' : ''}`} dir={dir}>
-          {title}
-        </h2>
-
-        {isMalayalam && (
-          // Audio player for Malayalam author's conclusion
-          <div className="mb-6">
-            <audio
-              controls
-              className="w-full max-w-md"
-              src="https://thafheem.net/audio/library/samapanam.ogg"
-            >
-              നിങ്ങളുടെ ബ്രൗസർ ഓഡിയോ പ്ലേബാക്ക് പിന്തുണയ്ക്കുന്നില്ല.
-            </audio>
+        {isMalayalam ? (
+          <div className="flex items-center justify-between mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">
+            <h2 className="text-2xl font-bold dark:text-white font-malayalam">
+              രചയിതാവിന്റെ ഉപസംഹാരം
+            </h2>
+            <div className="relative group">
+              <button
+                onClick={handlePlayPause}
+                className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 shadow-lg ${
+                  isPlaying
+                    ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 scale-105'
+                    : 'bg-gradient-to-br from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 hover:scale-110'
+                }`}
+                style={{
+                  boxShadow: isPlaying 
+                    ? '0 4px 15px rgba(6, 182, 212, 0.4), 0 0 20px rgba(6, 182, 212, 0.2)' 
+                    : '0 4px 12px rgba(6, 182, 212, 0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-full bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></div>
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white relative z-10" fill="currentColor" />
+                ) : (
+                  <Play className="w-5 h-5 text-white relative z-10 ml-0.5" fill="currentColor" />
+                )}
+                {isPlaying && (
+                  <span className="absolute inset-0 rounded-full border-2 border-white border-opacity-30 animate-ping"></span>
+                )}
+              </button>
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                <div className="absolute -top-1 right-4 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
+              </div>
+              <audio
+                ref={audioRef}
+                src="https://thafheem.net/audio/library/samapanam.ogg"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+              />
+            </div>
           </div>
+        ) : (
+          <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isBangla ? 'font-bengali' : ''}`} dir={dir}>
+            {title}
+          </h2>
         )}
 
         {isUrdu ? (
-          <div dir={dir}>
-            {/* Extract paragraphs from HTML and wrap each in a block */}
-            {(() => {
-              // Remove the outer div wrapper
-              let cleanContent = content.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
-              
-              // Split by paragraph tags
-              const paragraphs = cleanContent.split(/<\/p>\s*/).filter(p => p.trim());
-              
-              return paragraphs.map((paragraph, index) => {
-                // Clean up paragraph tag and content
-                let cleanParagraph = paragraph
-                  .replace(/<p[^>]*>/g, '')
-                  .trim();
-                
-                // Skip empty paragraphs
-                if (!cleanParagraph) return null;
-                
-                return (
-                  <div
-                    key={index}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                    dir="rtl"
-                  >
-                    <p
-                      className="dark:text-white font-urdu-nastaliq m-0"
-                      style={{
-                        textAlign: 'right',
-                        fontSize: '16px',
-                        lineHeight: '2.6',
-                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                      }}
-                      dangerouslySetInnerHTML={{ __html: cleanParagraph }}
-                    />
-                  </div>
-                );
-              });
-            })()}
-          </div>
+          <>
+            <style>{`
+              .urdu-conclusion-content {
+                direction: rtl;
+                text-align: right !important;
+              }
+              .urdu-conclusion-content p {
+                text-align: right !important;
+                margin-bottom: 1.2em !important;
+                line-height: 2.4 !important;
+                font-size: 16px;
+              }
+              .urdu-conclusion-content em,
+              .urdu-conclusion-content strong {
+                display: block;
+                margin-top: 0.15em;
+                margin-bottom: 0.15em;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 sm:p-6 md:p-8" dir="rtl">
+              <div
+                className="urdu-conclusion-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 font-urdu-nastaliq"
+                style={{ fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" }}
+                dangerouslySetInnerHTML={{ __html: URDU_CONCLUSION_CONTENT.replace(/\n/g, '<br />') }}
+              />
+            </div>
+          </>
+        ) : isHindi ? (
+          <>
+            <style>{`
+              .hindi-conclusion-content {
+                text-align: left !important;
+              }
+              .hindi-conclusion-content h3 {
+                font-weight: 700 !important;
+                margin-top: 1.4em !important;
+                margin-bottom: 1em !important;
+              }
+              .hindi-conclusion-content p {
+                margin-bottom: 1.1em !important;
+                line-height: 1.95 !important;
+                font-size: 16px;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="hindi-conclusion-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
+                style={{ fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif" }}
+                dangerouslySetInnerHTML={{ __html: HINDI_CONCLUSION_CONTENT }}
+              />
+            </div>
+          </>
         ) : isBangla ? (
           // Bangla content in blocks
           (() => {
@@ -231,6 +292,49 @@ const AuthorConclusion = () => {
               </div>
             );
           })()
+        ) : isMalayalam ? (
+          // Malayalam content
+          <>
+            <style>{`
+              .malayalam-conclusion-content {
+                text-align: justify !important;
+                text-justify: inter-word !important;
+                word-spacing: normal !important;
+                letter-spacing: normal !important;
+              }
+              .malayalam-conclusion-content p {
+                text-align: justify !important;
+                text-justify: inter-word !important;
+                margin-bottom: 1.2em !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
+                line-height: 1.8 !important;
+                word-spacing: normal !important;
+                letter-spacing: normal !important;
+                white-space: normal !important;
+                orphans: 2 !important;
+                widows: 2 !important;
+              }
+              .malayalam-conclusion-content p:last-child {
+                margin-bottom: 0 !important;
+              }
+              .malayalam-conclusion-content br {
+                display: none !important;
+              }
+              .malayalam-conclusion-content p br {
+                display: none !important;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="malayalam-conclusion-content prose prose-base dark:prose-invert max-w-none leading-7 font-malayalam text-gray-800 dark:text-gray-100"
+                style={{
+                  fontFamily: "'Noto Sans Malayalam', sans-serif"
+                }}
+                dangerouslySetInnerHTML={{ __html: MALAYALAM_CONCLUSION_CONTENT }}
+              />
+            </div>
+          </>
         ) : (
           <div
             className={className}

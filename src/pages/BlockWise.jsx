@@ -79,10 +79,8 @@ const BlockWise = () => {
   const isContinuousPlayRef = useRef(false);
   const isProcessingNextRef = useRef(false); // Guard to prevent duplicate calls to moveToNextAyahOrBlock/playNextBlock
   const playbackSpeedRef = useRef(playbackSpeed); // Ref to track current playback speed
+  const preservedAudioTypesRef = useRef(null); // Ref to preserve audioTypes when block playback starts
 
-  useEffect(() => {
-    console.log("[BlockWise] audioTypes state updated", audioTypes);
-  }, [audioTypes]);
 
   // State management for API data
   const [blockData, setBlockData] = useState(null);
@@ -139,6 +137,7 @@ const BlockWise = () => {
   const hydratedBlockCacheRef = useRef(false);
   const previousLanguageRef = useRef(translationLanguage);
   const previousSurahRef = useRef(surahId);
+  const processedBlocksRef = useRef(new Set()); // Track blocks that are being/have been processed
 
   useSequentialEnglishFootnotes({
     enabled: translationLanguage === 'E' && contextViewType === 'Block Wise',
@@ -307,7 +306,13 @@ const BlockWise = () => {
     if (!audioRef.current) return;
 
     // Preserve audioTypes when moving to next block
-    const audioTypesToUse = preservedAudioTypes || audioTypes;
+    // If preservedAudioTypes is provided, use it; otherwise use state; if fromContinuous, use ref
+    const audioTypesToUse = preservedAudioTypes || (fromContinuous && preservedAudioTypesRef.current) || audioTypes;
+    
+    // Update the ref when starting a new block (not from continuous)
+    if (!fromContinuous) {
+      preservedAudioTypesRef.current = audioTypesToUse;
+    }
 
     console.log("[BlockWise] playBlockAudio start", {
       blockId,
@@ -1058,8 +1063,10 @@ const BlockWise = () => {
       setTimeout(() => {
         try {
           // Preserve audioTypes when moving to next block
+          // Use the ref to preserve original audioTypes, fallback to state if ref is null
+          const audioTypesToPreserve = preservedAudioTypesRef.current || audioTypes;
           // playBlockAudio will reset the guard flag when starting the new block
-          playBlockAudio(nextBlockId, true, audioTypes); // Keep continuous mode active and preserve audioTypes
+          playBlockAudio(nextBlockId, true, audioTypesToPreserve); // Keep continuous mode active and preserve audioTypes
         } catch (error) {
           console.error('[BlockWise] Error playing next block:', error);
           // Stop playback on error
@@ -1429,6 +1436,14 @@ const BlockWise = () => {
             const ayaFrom = hasNumericRange ? normalizedAyaFrom : rawAyaFrom;
             const ayaTo = hasNumericRange ? normalizedAyaTo : rawAyaTo;
 
+            // Check if this block is already being processed (prevent duplicate API calls)
+            if (processedBlocksRef.current.has(blockId)) {
+              return; // Skip if already processed
+            }
+
+            // Mark as being processed
+            processedBlocksRef.current.add(blockId);
+
             try {
               // Mark this specific block as loading
               setLoadingBlocks(prev => new Set([...prev, blockId]));
@@ -1445,15 +1460,22 @@ const BlockWise = () => {
               );
 
               // IMMEDIATE UI UPDATE: Update this block's translation as soon as it loads
-              setBlockTranslations(prev => ({
-                ...prev,
-                [blockId]: {
-                  range: range,
-                  ayaFrom: ayaFrom,
-                  ayaTo: ayaTo,
-                  data: translationData,
+              // Only update if blockId doesn't already have data (prevent overwriting)
+              setBlockTranslations(prev => {
+                if (prev[blockId]?.data) {
+                  // Already has data, don't overwrite
+                  return prev;
                 }
-              }));
+                return {
+                  ...prev,
+                  [blockId]: {
+                    range: range,
+                    ayaFrom: ayaFrom,
+                    ayaTo: ayaTo,
+                    data: translationData,
+                  }
+                };
+              });
 
               // Remove from loading set
               setLoadingBlocks(prev => {
@@ -1479,9 +1501,14 @@ const BlockWise = () => {
             }
           };
 
-          // REQUEST THROTTLING: Increased concurrent requests for faster first load
-          // Higher limit for better performance on first load, but still prevents server overload
-          const MAX_CONCURRENT_REQUESTS = 5;
+          // REQUEST THROTTLING: Adaptive - Start conservative (2), increase to 5 after first successful loads
+          // This prevents timeouts on first load when database is cold, then speeds up after connections warm up
+          const INITIAL_CONCURRENT = 2;  // Start with 2 for reliable first load
+          const MAX_CONCURRENT = 5;      // Increase to 5 after first few succeed
+          const SUCCESS_THRESHOLD = 3;   // Increase concurrency after 3 successful loads
+          
+          let MAX_CONCURRENT_REQUESTS = INITIAL_CONCURRENT;  // Start conservative
+          let successfulLoads = 0;  // Track successful background block loads
           const requestQueue = [];
           let activeRequests = 0;
 
@@ -1491,6 +1518,12 @@ const BlockWise = () => {
                 activeRequests++;
                 try {
                   await processBlockTranslation(block, blockIndex);
+                  // Track successful loads and increase concurrency after threshold
+                  successfulLoads++;
+                  if (successfulLoads === SUCCESS_THRESHOLD && MAX_CONCURRENT_REQUESTS < MAX_CONCURRENT) {
+                    MAX_CONCURRENT_REQUESTS = MAX_CONCURRENT;
+                    console.log(`🚀 Increased concurrent requests from ${INITIAL_CONCURRENT} to ${MAX_CONCURRENT} after ${SUCCESS_THRESHOLD} successful loads`);
+                  }
                 } catch (error) {
                   // Error already handled in processBlockTranslation
                 } finally {
@@ -1655,6 +1688,7 @@ const BlockWise = () => {
     }
 
     setBlockTranslations({});
+    processedBlocksRef.current.clear(); // Clear processed blocks when surah/language changes
     hasFetchedRef.current = false;
     setSelectedInterpretation(null);
     setShowInterpretation(false);
@@ -1938,59 +1972,104 @@ const BlockWise = () => {
   };
 
   // Helper function to parse translation HTML and make sup tags clickable
+  // Extracts interpretation numbers from various formats: (1), .1, text1, etc.
   const parseTranslationWithClickableSup = (htmlContent, blockRange) => {
     if (!htmlContent) return "";
 
-    // Create a temporary div to parse HTML
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = htmlContent;
-
-    // Find all sup tags and make them clickable with badge styling
-    const supTags = tempDiv.querySelectorAll("sup");
-    supTags.forEach((sup) => {
-      const number = sup.textContent.trim();
-      if (/^\d+$/.test(number)) {
-        // Style as rounded badge with cyan background
-        sup.style.cssText = `
-          cursor: pointer !important;
-          background-color: rgb(41 169 199) !important;
-          color: rgb(255, 255, 255) !important;
-          font-weight: 600 !important;
-          text-decoration: none !important;
-          border: none !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          font-size: 12px !important;
-          vertical-align: middle !important;
-          line-height: 1 !important;
-          border-radius: 9999px !important;
-          position: relative !important;
-          z-index: 10 !important;
-          top: 0px !important;
-          min-width: 20px !important;
-          min-height: 19px !important;
-          text-align: center !important;
-          transition: 0.2s ease-in-out !important;
-          padding-top: 3px !important;
-          margin-right: 4px;
-          margin-left: -1px;
-          margin-top: -15px;
-          padding-left: 2px !important;
-          padding-right: 2px !important;
-        `;
-        sup.setAttribute("data-interpretation", number);
-        sup.setAttribute("data-range", blockRange);
-        // Pass current language into dataset so handler can use it
-        sup.setAttribute("data-lang", translationLanguage === 'E' ? 'en' : 'mal');
-        sup.setAttribute("title", `Click to view interpretation ${number}`);
-        sup.setAttribute("aria-label", `Interpretation ${number}`);
-        sup.setAttribute("data-interpretation-label", number);
-        sup.className = "interpretation-link";
+    let processedContent = String(htmlContent);
+    
+    const lang = translationLanguage === 'E' ? 'en' : 'mal';
+    const supTagStyle = 'cursor:pointer!important;background-color:rgb(41,169,199)!important;color:rgb(255,255,255)!important;font-weight:600!important;text-decoration:none!important;border:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:12px!important;vertical-align:middle!important;line-height:1!important;border-radius:9999px!important;position:relative!important;z-index:10!important;top:0!important;min-width:20px!important;min-height:19px!important;text-align:center!important;transition:0.2s ease-in-out!important;padding-top:3px!important;margin-right:4px!important;margin-left:-1px!important;margin-top:-15px!important;padding-left:2px!important;padding-right:2px!important;';
+    
+    // Create a helper function to generate the sup tag
+    const createSupTag = (number) => {
+      return `<sup class="interpretation-link" data-interpretation="${number}" data-range="${blockRange}" data-lang="${lang}" data-interpretation-number="${number}" data-interpretation-label="${number}" title="Click to view interpretation ${number}" aria-label="Interpretation ${number}" style="${supTagStyle}">${number}</sup>`;
+    };
+    
+    // Pattern 1: Numbers in parentheses: (1), (2), (10), etc.
+    const parenthesesPattern = /\((\d+)\)/g;
+    processedContent = processedContent.replace(parenthesesPattern, (match, number) => {
+      const num = parseInt(number, 10);
+      if (num >= 1 && num <= 99) {
+        return createSupTag(number);
       }
+      return match;
     });
+    
+    // Pattern 2: Numbers after period or single quote: .1, .2, '8, '9, etc. (MOST COMMON in Malayalam)
+    // Match: period OR any single quote variant followed by 1-2 digits, then space, Malayalam char, punctuation, or end
+    // Process from right to left to avoid index issues
+    // Handle: period (.), straight apostrophe ('), right single quotation mark ('), left single quotation mark (')
+    // Use alternation for better matching of quote variants
+    const periodNumberPattern = /(\.|'|'|'|\u2018|\u2019)(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
+    const periodMatches = [];
+    let periodMatch;
+    while ((periodMatch = periodNumberPattern.exec(processedContent)) !== null) {
+      const num = parseInt(periodMatch[2], 10);
+      if (num >= 1 && num <= 99) {
+        periodMatches.push({
+          index: periodMatch.index,
+          number: periodMatch[2],
+          fullMatch: periodMatch[0],
+          prefix: periodMatch[1] // The period or single quote character
+        });
+      }
+    }
+    
+    // Replace from right to left to maintain correct indices
+    for (let i = periodMatches.length - 1; i >= 0; i--) {
+      const match = periodMatches[i];
+      const before = processedContent.substring(0, match.index);
+      const after = processedContent.substring(match.index + match.fullMatch.length);
+      // Preserve the original character (period or single quote)
+      processedContent = before + match.prefix + createSupTag(match.number) + after;
+    }
+    
+    // Pattern 3: Numbers directly after Malayalam text (no period): text1, text2, etc.
+    // Only match if NOT already inside a sup tag and NOT after a period
+    const directNumberPattern = /([\u0D00-\u0D7F])(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
+    const directMatches = [];
+    let directMatch;
+    // Reset the regex lastIndex
+    directNumberPattern.lastIndex = 0;
+    while ((directMatch = directNumberPattern.exec(processedContent)) !== null) {
+      const num = parseInt(directMatch[2], 10);
+      if (num >= 1 && num <= 99) {
+        // Check if character before is a period or single quote (skip if so - already handled by Pattern 2)
+        if (directMatch.index > 0) {
+          const charBefore = processedContent[directMatch.index - 1];
+          // Check for period or any quote variant (straight apostrophe, curly quotes, Unicode quotes)
+          if (charBefore === '.' || charBefore === "'" || charBefore === "'" || charBefore === "'" || charBefore === '\u2018' || charBefore === '\u2019') {
+            continue;
+          }
+        }
+        
+        // Check if already inside a sup tag
+        const beforeText = processedContent.substring(Math.max(0, directMatch.index - 100), directMatch.index);
+        const lastSupOpen = beforeText.lastIndexOf('<sup');
+        const lastSupClose = beforeText.lastIndexOf('</sup>');
+        if (lastSupOpen > lastSupClose) {
+          continue; // Already inside a sup tag
+        }
+        
+        directMatches.push({
+          index: directMatch.index,
+          before: directMatch[1],
+          number: directMatch[2],
+          fullMatch: directMatch[0]
+        });
+      }
+    }
+    
+    // Replace from right to left
+    for (let i = directMatches.length - 1; i >= 0; i--) {
+      const match = directMatches[i];
+      const before = processedContent.substring(0, match.index);
+      const after = processedContent.substring(match.index + match.fullMatch.length);
+      processedContent = before + match.before + createSupTag(match.number) + after;
+    }
 
-    return tempDiv.innerHTML;
+    return processedContent;
   };
 
   // Handle clicks on interpretation numbers in the rendered HTML
@@ -2352,6 +2431,17 @@ const BlockWise = () => {
                 // Get translation data for this block
                 const translationInfo = blockTranslations[blockId] || null;
                 const translationData = translationInfo?.data;
+                
+                // For Malayalam blockwise, check if we have AudioText (single block format from audiotranslation)
+                // Only treat as blockwise if it's NOT an array and has AudioText
+                const isMalayalamBlockwise = translationLanguage === 'mal' && 
+                  !Array.isArray(translationData) &&
+                  !Array.isArray(translationData?.translations) &&
+                  !Array.isArray(translationData?.data) &&
+                  (translationData?.AudioText || 
+                   translationData?.translation_text ||
+                   translationData?.TranslationText);
+                
                 const translationEntries = Array.isArray(translationData)
                   ? translationData
                   : Array.isArray(translationData?.translations)
@@ -2417,7 +2507,19 @@ const BlockWise = () => {
                             style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                           >
                             {/* Render translation text with HTML and clickable interpretation numbers */}
-                            {translationEntries.length > 0 ? (
+                            {isMalayalamBlockwise ? (
+                              // Malayalam blockwise: Single AudioText from audiotranslation table
+                              <div
+                                className="leading-relaxed"
+                                data-footnote-context="blockwise"
+                                dangerouslySetInnerHTML={{
+                                  __html: parseTranslationWithClickableSup(
+                                    translationData.AudioText || translationData.translation_text || translationData.TranslationText || '',
+                                    `${start}-${end}`
+                                  ),
+                                }}
+                              />
+                            ) : translationEntries.length > 0 ? (
                               translationEntries.map((item, idx) => {
                                 const translationText =
                                   item.TranslationText ||
@@ -3007,6 +3109,8 @@ const BlockWise = () => {
               isPaused
             });
             setAudioTypes(newTypes);
+            // Update the preserved ref when user changes audio types
+            preservedAudioTypesRef.current = newTypes;
             // If audio is currently playing, restart with new audio types
             if (currentBlock && currentAyah) {
               if (audioRef.current) {

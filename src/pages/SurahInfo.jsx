@@ -484,9 +484,6 @@ const SurahInfo = () => {
           {/* Malayalam Thafheem Preface */}
           {shouldShowMalayalamPrefaceOnly && (
             <div className="mb-6 sm:mb-8">
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-600 mb-3 sm:mb-4">
-                Thafheem Preface (Malayalam)
-              </h3>
               {translationLanguage === "mal" && (
                 <style>
                   {`

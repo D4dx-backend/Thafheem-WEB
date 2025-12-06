@@ -1747,10 +1747,13 @@ Read more: ${shareUrl}`;
         },
         onError: () => {
           // If audio fails, skip to next audio type or next ayah
-          setIsSequencePlaying(false);
-          setPlayingAyah(null);
-          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
-          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+          // Use setTimeout to prevent race conditions and ensure smooth transitions
+          setTimeout(() => {
+            setIsSequencePlaying(false);
+            setPlayingAyah(null);
+            window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+            playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+          }, 100);
         },
       });
       
@@ -1758,17 +1761,23 @@ Read more: ${shareUrl}`;
         setAudioEl(audioElement);
       } else {
         // If audio element is null (URL not available), skip to next
+        // Use setTimeout to prevent race conditions
+        setTimeout(() => {
+          setIsSequencePlaying(false);
+          setPlayingAyah(null);
+          window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      // Use setTimeout to prevent race conditions
+      setTimeout(() => {
         setIsSequencePlaying(false);
         setPlayingAyah(null);
         window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
         playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
-      }
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      setIsSequencePlaying(false);
-      setPlayingAyah(null);
-      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
-      playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+      }, 100);
     }
   };
 

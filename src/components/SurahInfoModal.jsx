@@ -30,41 +30,6 @@ const SurahInfoModal = ({ surahId, onClose }) => {
     return textContent.replace(/\s+/g, ' ').trim();
   };
 
-  // Function to parse content into sections based on headings
-  const parseContentSections = (htmlString) => {
-    if (!htmlString) return [];
-    const sections = [];
-    const parts = htmlString.split(/<h2[^>]*>/);
-
-    parts.forEach((part, index) => {
-      if (index === 0 && !part.includes('</h2>')) {
-        if (part.trim()) {
-          const cleanContent = cleanHtmlContent(part);
-          if (cleanContent) {
-            sections.push({
-              title: 'Introduction',
-              content: cleanContent
-            });
-          }
-        }
-      } else {
-        const h2End = part.indexOf('</h2>');
-        if (h2End !== -1) {
-          const title = part.substring(0, h2End).trim();
-          const content = part.substring(h2End + 5).trim();
-          const cleanContent = cleanHtmlContent(content);
-          if (title && cleanContent) {
-            sections.push({
-              title: cleanHtmlContent(title),
-              content: cleanContent
-            });
-          }
-        }
-      }
-    });
-    return sections;
-  };
-
   useEffect(() => {
     const loadSurahInfo = async () => {
       if (!surahId) return;
@@ -112,9 +77,80 @@ const SurahInfoModal = ({ surahId, onClose }) => {
     []
   );
 
+  // Parse HTML content into titled sections (keeps <h2> headings from API)
+  const parseContentSections = useMemo(
+    () => (htmlString) => {
+      if (!htmlString) return [];
+
+      const sections = [];
+      const parts = htmlString.split(/<h2[^>]*>/);
+
+      parts.forEach((part, index) => {
+        if (index === 0 && !part.includes("</h2>")) {
+          // Intro text before any h2
+          const intro = cleanHtmlContent(part);
+          if (intro) {
+            sections.push({ title: "Introduction", content: intro });
+          }
+        } else {
+          const h2End = part.indexOf("</h2>");
+          if (h2End !== -1) {
+            const title = part.substring(0, h2End).trim();
+            const content = part.substring(h2End + 5).trim();
+            const cleanContent = cleanHtmlContent(content);
+
+            if (cleanHtmlContent(title) || cleanContent) {
+              sections.push({
+                title: cleanHtmlContent(title) || "Section",
+                content: cleanContent,
+              });
+            }
+          }
+        }
+      });
+
+      return sections;
+    },
+    []
+  );
+
   const parsedThafheemSections = surahInfo?.thafheem?.PrefaceText
     ? parseContentSections(surahInfo.thafheem.PrefaceText)
     : [];
+
+  // Fallback: parse detailed.text (chapter-info) into sections if preface not available
+  const parsedDetailedSections =
+    !parsedThafheemSections.length && surahInfo?.detailed?.text
+      ? parseContentSections(surahInfo.detailed.text)
+      : [];
+
+  // Metric helpers
+  const revelationPlace =
+    surahInfo?.basic?.revelation_place ||
+    surahInfo?.thafheem?.SuraType ||
+    surahInfo?.surah?.type ||
+    "Unknown";
+
+  const revelationOrder =
+    surahInfo?.basic?.revelation_order ||
+    surahInfo?.thafheem?.RevOrder ||
+    surahInfo?.surah?.revelation_order ||
+    "Unknown";
+
+  const versesCount =
+    surahInfo?.basic?.verses_count ||
+    surahInfo?.thafheem?.TotalAyas ||
+    surahInfo?.surah?.ayahs ||
+    "Unknown";
+
+  const thafheemVolume = (() => {
+    const vol =
+      surahInfo?.thafheem?.ThafVolume ||
+      surahInfo?.basic?.ThafVolume ||
+      null;
+    if (!vol || vol === "0") return "—";
+    return vol;
+  })();
 
   const malayalamPrefaceSections = Array.isArray(surahInfo?.thafheem?.PrefaceSections)
     ? surahInfo.thafheem.PrefaceSections.filter(
@@ -123,6 +159,27 @@ const SurahInfoModal = ({ surahId, onClose }) => {
     : [];
 
   const shouldShowMalayalamPrefaceOnly = translationLanguage === "mal" && malayalamPrefaceSections.length > 0;
+
+  const paragraphCount =
+    (Array.isArray(surahInfo?.thafheem?.PrefaceSections) &&
+      surahInfo.thafheem.PrefaceSections.length) ||
+    (Array.isArray(surahInfo?.thafheem?.PrefaceEntries) &&
+      surahInfo.thafheem.PrefaceEntries.length) ||
+    parsedThafheemSections.length ||
+    "—";
+
+  // Hide English preface sections when Hindi is selected so Hindi intro can show
+  const hasPrefaceSections =
+    translationLanguage !== "hi" && parsedThafheemSections.length > 0;
+  const hasDetailed = Boolean(surahInfo?.detailed?.text);
+  const shouldShowOverview =
+    !shouldShowMalayalamPrefaceOnly &&
+    surahInfo?.detailed?.short_text &&
+    !hasPrefaceSections; // avoid duplicate headings when preface sections present
+  const shouldShowDetailed =
+    !shouldShowMalayalamPrefaceOnly &&
+    hasDetailed &&
+    !hasPrefaceSections; // avoid showing the same content twice
 
   const handlePrefaceContentClick = (event) => {
     if (translationLanguage !== "mal") return;
@@ -348,18 +405,26 @@ const SurahInfoModal = ({ surahId, onClose }) => {
                     {surahInfo?.basic?.name_arabic || surahInfo?.surah?.arabic || `Surah ${surahId}`}
                   </h2>
 
-                  <div className="flex flex-wrap justify-center gap-x-6 sm:gap-x-8 gap-y-2 sm:gap-y-4 text-xs sm:text-sm text-center">
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Revelation: </span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {surahInfo?.basic?.revelation_place || surahInfo?.thafheem?.SuraType || surahInfo?.surah?.type || 'Unknown'}
-                      </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 text-center">
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 sm:px-4 sm:py-3">
+                      <div className="text-cyan-500 text-xs sm:text-sm">Revelation</div>
+                      <div className="text-gray-900 font-semibold text-sm sm:text-base capitalize">{revelationPlace}</div>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Verses: </span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {surahInfo?.basic?.verses_count || surahInfo?.thafheem?.TotalAyas || surahInfo?.surah?.ayahs || 'Unknown'}
-                      </span>
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 sm:px-4 sm:py-3">
+                      <div className="text-cyan-500 text-xs sm:text-sm">Revelation Order</div>
+                      <div className="text-gray-900 font-semibold text-sm sm:text-base">{revelationOrder}</div>
+                    </div>
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 sm:px-4 sm:py-3">
+                      <div className="text-cyan-500 text-xs sm:text-sm">Verses</div>
+                      <div className="text-gray-900 font-semibold text-sm sm:text-base">{versesCount}</div>
+                    </div>
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 sm:px-4 sm:py-3">
+                      <div className="text-cyan-500 text-xs sm:text-sm">Thafheem Vol</div>
+                      <div className="text-gray-900 font-semibold text-sm sm:text-base">{thafheemVolume}</div>
+                    </div>
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 sm:px-4 sm:py-3">
+                      <div className="text-cyan-500 text-xs sm:text-sm">Paragraphs</div>
+                      <div className="text-gray-900 font-semibold text-sm sm:text-base">{paragraphCount}</div>
                     </div>
                   </div>
                 </div>
@@ -367,7 +432,6 @@ const SurahInfoModal = ({ surahId, onClose }) => {
                 {/* Content Sections */}
                 {shouldShowMalayalamPrefaceOnly && (
                   <div className="mb-6 sm:mb-8">
-                    <h3 className="text-lg sm:text-xl font-semibold text-cyan-600 mb-3 sm:mb-4">Thafheem Preface (Malayalam)</h3>
                     {translationLanguage === "mal" && (
                       <style>{`
                         .surah-preface-content sup.f-noteno, .surah-preface-content a.crs { color: #2AA0BF !important; cursor: pointer !important; text-decoration: none !important; }
@@ -395,15 +459,35 @@ const SurahInfoModal = ({ surahId, onClose }) => {
                 {!shouldShowMalayalamPrefaceOnly && surahInfo?.detailed?.text && (
                   <div className="mb-6 sm:mb-8">
                     <h3 className="text-lg sm:text-xl font-semibold text-cyan-600 mb-3 sm:mb-4">Detailed Information</h3>
-                    <div className="text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base space-y-4">
-                      {cleanHtmlContent(surahInfo.detailed.text).split('\n\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
+                    <div className="text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base space-y-6">
+                      {parsedDetailedSections.length > 0
+                        ? parsedDetailedSections.map((section, index) => (
+                            <div key={index} className="space-y-2">
+                              {section.title && (
+                                <h4 className="text-base sm:text-lg font-semibold text-cyan-500">
+                                  {section.title}
+                                </h4>
+                              )}
+                              {section.content
+                                .split('\n')
+                                .filter((p) => p.trim())
+                                .map((p, i) => (
+                                  <p key={i} className="mb-2">
+                                    {p.trim()}
+                                  </p>
+                                ))}
+                            </div>
+                          ))
+                        : cleanHtmlContent(surahInfo.detailed.text)
+                            .split('\n\n')
+                            .map((p, i) => <p key={i}>{p.trim()}</p>)}
                     </div>
                   </div>
                 )}
 
-                {!shouldShowMalayalamPrefaceOnly && parsedThafheemSections.length > 0 && (
+                {!shouldShowMalayalamPrefaceOnly && parsedThafheemSections.length > 0 && translationLanguage !== "hi" && (
                   <div className="mb-6 sm:mb-8">
-                    <h3 className="text-lg sm:text-xl font-semibold text-cyan-600 mb-3 sm:mb-4">Thafheem Commentary</h3>
+                
                     <div className="space-y-6">
                       {parsedThafheemSections.map((section, index) => (
                         <div key={index}>

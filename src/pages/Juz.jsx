@@ -6,6 +6,7 @@ import StarNumber from "../components/StarNumber";
 import { Play, Book, Circle, BookOpen, ArrowLeft } from "lucide-react";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import { fetchPageRanges } from "../api/apifunction";
+import { API_BASE_PATH } from "../config/apiConfig";
 //mee
 const Juz = () => {
   // State management
@@ -60,8 +61,8 @@ const Juz = () => {
         // Fetch page ranges data using the API function
         const pageRangesData = await fetchPageRanges();
 
-        // Fetch surah names for mapping using the proxy
-        const surahNamesResponse = await fetch("/api/thafheem/suranames/all");
+        // Fetch surah names using the new API endpoint
+        const surahNamesResponse = await fetch(`${API_BASE_PATH}/suranames/all`);
         if (!surahNamesResponse.ok) {
           throw new Error(`HTTP error! status: ${surahNamesResponse.status}`);
         }

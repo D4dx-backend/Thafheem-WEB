@@ -66,8 +66,8 @@ const Transition = ({ showPageInfo = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { surahs: surahNames } = useSurahData();
   const { translationLanguage } = useTheme();
+  const { surahs: surahNames } = useSurahData(translationLanguage);
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);

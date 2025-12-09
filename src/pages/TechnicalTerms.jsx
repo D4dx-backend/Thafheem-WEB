@@ -74,11 +74,7 @@ const TechnicalTerms = () => {
           <h1 className={`text-3xl font-bold text-gray-900 mb-2 dark:text-white ${isMalayalam ? 'font-malayalam' : ''}`}>
             {isMalayalam ? 'സാങ്കേതിക പദങ്ങൾ' : 'Technical Terms'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {isMalayalam
-              ? 'തഫ്ഹീമിന്റെ മലയാളം സ്രോതസുകളില്‍നിന്നുള്ള ഉള്ളടക്കം.'
-              : 'Technical terms and definitions.'}
-          </p>
+         
           <div className="mt-4 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
@@ -108,10 +104,9 @@ const TechnicalTerms = () => {
               const processImageUrls = (html) => {
                 if (!html) return html;
                 
-                // Base URL for articles assets - adjust this to match your server setup
-                const baseUrl = import.meta.env.PROD 
-                  ? 'https://thafheem.net' 
-                  : 'http://localhost:5000';
+                // Serve from same origin (public/) unless explicitly overridden
+                const baseUrl =
+                  import.meta.env.VITE_ASSET_BASE || window.location.origin;
                 
                 // Replace relative image paths with absolute URLs
                 return html.replace(

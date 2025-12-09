@@ -1,6 +1,7 @@
 // AuthorPreface.jsx
-import React from "react";
+import React, { useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { Play, Pause } from "lucide-react";
 
 // Urdu author's preface content
 const URDU_AUTHOR_PREFACE = `قرآن مجید کے ترجمہ و تفسیر پر ہماری زبان میں اب تک اتنا کام ہو چکا ہے کہ اب کسی شخص کا محض برکت و سعادت کی خاطر ایک نیا ترجمہ یا ایک نئی تفسیر شائع کر دینا وقت اور محنت کا کوئی صحیح مَصرف نہیں ہے۔ اِ س راہ میں مزید کوشش اگر معقول ہو سکتی ہے تو صرف اُس صورت میں جبکہ آدمی کسی ایسی کسر کو پُورا کر رہا ہو جو سابق مترجمین و مفسّرین کے کام میں رہ گئی ہو، یا طالبینِ قرآن کی کسی ایسی ضرورت کو پورا کرے جو پچھلے تراجم و تفاسیر سے پوری نہ ہوتی ہو۔ اِن صفحات میں ترجمانی و تفہیمِ قرآن کی جو سعی کی گئی ہے وہ دراصل اسی بُنیاد پر ہے۔ میں ایک مدّت سے محسُوس کر رہا تحا کہ ہمارے عام تعلیم یافتہ لوگوں میں رُوحِ قرآن تک پہنچنے اور اس کتابِ پاک کے حقیقی مدّعا سے رُوشناس ہونے کی جو طلب پیدا ہوگئی ہے اور روز بروز بڑھ رہی ہے وہ مترجمین و مفسّرین کی قابلِ قدر مساعی کے باوجود ہنوز تشنہ ہے۔ اس کے ساتھ میں یہ احساس بھی اپنے اندر پا رہا تھا کہ اس تشنگی کو بُجھانے کے لیے کچھ نہ کچھ خدمت میں بھی کر سکتا ہوں۔ انہی دونوں احساسات نے مجھے اُس کوشش پر مجبُور کیا جس کے ثمرات ہدیہء ناظرین کیے جارہے ہیں۔ اگر فی الواقع میری یہ حقیر پیش کش لوگوں کے لیے فہمِ قرآن میں کچھ بھی مددگار ثابت ہوئی تو یہ میری بہت بڑی خوش نصیبی ہو گی۔ اِ س کام میں میرے پیشِ نظر علماء اور محققین کی ضروریات نہیں ہیں، اور نہ اُن لوگوں کی ضروریات ہیں جو عربی زبان اور علوم ِ دینیہ کی تحصیل سے فارغ ہونے کے بعد قرآن مجید کا گہرا تحقیقی مطالعہ کرنا چاہتے ہیں۔ ایسے حضرات کی پیاس بُجھانے کے لیے بہت کچھ سامان پہلے سے موجود ہے۔ میں جن لوگوں کی خدمت کرنا چاہتا ہوں وہ اوسط درجے کے تعلیم یافتہ لوگ ہیں جو عربی سے اچھی طرح واقف نہیں ہیں اور علومِ قرآن کے وسیع ذخیرے سے استفادہ کرنا جن کے لیے ممکن نہیں ہے۔ اُنہی کی ضروریات کو میں نے پیشِ نظر رکھا ہے۔ اس وجہ سے بہت سے اُن تفسیری مباحث کو میں نے سرے سے ہاتھ ہی نہیں لگایا جو علمِ تفسیر میں بڑی اہمیت رکھتے ہیں مگر اس طبقے کے لیے غیر ضروری ہیں۔پھر جو مقصد میں نے اِ س کام میں اپنے سامنے رکھا ہے وہ یہ ہے کہ ایک عام ناظِر اس کتاب کو پڑھتے ہوئے قرآن کا مفہُوم و مدّعا بالکل صاف صاف سمجھتا چلا جائے، اور اس سے وہی اثر قبول کرے جو قرآن اُس پر ڈالنا چاہتا ہے۔ نیز دَورانِ مطالعہ میں جہاں جہاں اسے اُلجھنیں پیش آسکتی ہوں وہ صاف کر دی جائیں اور جہاں کچھ سوالات اس کے ذہم میں پیدا ہوں ان کا جواب اُسے بر وقت مِل جائے۔ یہ میری کوشش ہے۔ اب اس امر کا فیصلہ عام ناظرین ہی کر سکتے ہیں کہ میں اس میں کہاں تک کامیاب ہوا ہوں۔ بہر ھال یہ حرفِ آخر نہیں ہے۔ ہر ناظر سے میری درخواست ہے کہ جہاں کوئی تشنگی محسوس ہو، یا کسی سوال کا جواب نہ ملے، یا مدّعا اچھی طرھ واضح نہ ہو رہا ہو، اس سے مجھے مطلع کیا جائے تاکہ میں اس خدمت کو زیادہ سے زیادہ مفید بنا سکوں۔ علماء کرام سے بھی میں گزارش کرتا ہوں کہ مجھے میری غلطیوں سے آگاہ فرمائیں۔
@@ -143,104 +144,180 @@ const AuthorPreface = () => {
   const isHindi = translationLanguage === 'hi';
   const isBangla = translationLanguage === 'bn';
 
-  // Split Urdu content into paragraphs for better formatting
-  const urduParagraphs = isUrdu ? URDU_AUTHOR_PREFACE.split('\n\n').filter(p => p.trim()) : [];
+  // Audio player state for Malayalam
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const handlePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   return (
     <div className="p-6 dark:bg-gray-900">
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <h2 className="text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2">
-          {isUrdu
-            ? "مصنف کا دیباچہ"
-            : isMalayalam
-              ? "രചയിതാവിന്റെ ആമുഖം"
+        {isMalayalam ? (
+          <div className="flex items-center justify-between mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">
+            <h2 className="text-2xl font-bold dark:text-white">
+              രചയിതാവിന്റെ ആമുഖം
+            </h2>
+            <div className="relative group">
+              <button
+                onClick={handlePlayPause}
+                className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 shadow-lg ${
+                  isPlaying
+                    ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 scale-105'
+                    : 'bg-gradient-to-br from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 hover:scale-110'
+                }`}
+                style={{
+                  boxShadow: isPlaying 
+                    ? '0 4px 15px rgba(6, 182, 212, 0.4), 0 0 20px rgba(6, 182, 212, 0.2)' 
+                    : '0 4px 12px rgba(6, 182, 212, 0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-full bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></div>
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white relative z-10" fill="currentColor" />
+                ) : (
+                  <Play className="w-5 h-5 text-white relative z-10 ml-0.5" fill="currentColor" />
+                )}
+                {isPlaying && (
+                  <span className="absolute inset-0 rounded-full border-2 border-white border-opacity-30 animate-ping"></span>
+                )}
+              </button>
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                <div className="absolute -top-1 right-4 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
+              </div>
+              <audio
+                ref={audioRef}
+                src="https://thafheem.net/audio/library/amugham.ogg"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+              />
+            </div>
+          </div>
+        ) : (
+          <h2 className="text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2">
+            {isUrdu
+              ? "مصنف کا دیباچہ"
               : isHindi
                 ? "लेखक की प्रस्तावना"
                 : isBangla
                   ? "লেখকের ভূমিকা"
                   : "Author's Preface"}
-        </h2>
+          </h2>
+        )}
 
         {isUrdu ? (
-          // Urdu content in blocks
-          <div>
-            {urduParagraphs.map((paragraph, index) => {
-              // Check if it's the separator line
-              if (paragraph.trim() === '_________________________________') {
-                return <hr key={index} className="my-6 border-gray-300 dark:border-gray-600" />;
+          <>
+            <style>{`
+              .urdu-preface-content {
+                direction: rtl;
+                text-align: right !important;
               }
-              // Check if it's the signature section
-              if (paragraph.includes('ابُو الاعْلیٰ') || paragraph.includes('نیو سینٹرل جیل')) {
-                return (
-                  <div
-                    key={index}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                    dir="rtl"
-                  >
-                    <p 
-                      className="dark:text-white font-urdu-nastaliq m-0" 
-                      style={{
-                        textAlign: 'right',
-                        fontSize: '16px',
-                        lineHeight: '2.6',
-                        fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                      }}
-                    >
-                      {paragraph.split('\n').map((line, lineIndex) => (
-                        <React.Fragment key={lineIndex}>
-                          {line.trim() && <>{line.trim()}<br /></>}
-                        </React.Fragment>
-                      ))}
-                    </p>
-                  </div>
-                );
+              .urdu-preface-content p {
+                text-align: right !important;
+                margin-bottom: 1.75em !important;
+                line-height: 2.4 !important;
+                font-size: 16px;
               }
-              return (
-                <div
-                  key={index}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                  dir="rtl"
-                >
-                  <p 
-                    className="dark:text-white font-urdu-nastaliq m-0" 
-                    style={{
-                      textAlign: 'right',
-                      fontSize: '16px',
-                      lineHeight: '2.6',
-                      fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                    }}
-                  >
-                    {paragraph.trim()}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+              .urdu-preface-content hr {
+                margin: 1.5rem 0;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 sm:p-6 md:p-8" dir="rtl">
+              <div
+                className="urdu-preface-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 font-urdu-nastaliq"
+                style={{ fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" }}
+                dangerouslySetInnerHTML={{ __html: URDU_AUTHOR_PREFACE.replace(/\n/g, '<br />') }}
+              />
+            </div>
+          </>
         ) : isMalayalam ? (
           // Malayalam content
           <>
-            {/* Audio player for Malayalam author's preface */}
-            <div className="mb-6">
-              <audio
-                controls
-                className="w-full max-w-md"
-                src="https://thafheem.net/audio/library/amugham.ogg"
-              >
-                നിങ്ങളുടെ ബ്രൗസർ ഓഡിയോ പ്ലേബാക്ക് പിന്തുണയ്ക്കുന്നില്ല.
-              </audio>
+            <style>{`
+              .malayalam-preface-content {
+                text-align: justify !important;
+                text-justify: inter-word !important;
+                word-spacing: normal !important;
+                letter-spacing: normal !important;
+              }
+              .malayalam-preface-content p {
+                text-align: justify !important;
+                text-justify: inter-word !important;
+                margin-bottom: 1.2em !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
+                line-height: 1.8 !important;
+                word-spacing: normal !important;
+                letter-spacing: normal !important;
+                white-space: normal !important;
+                orphans: 2 !important;
+                widows: 2 !important;
+              }
+              .malayalam-preface-content p:last-child {
+                margin-bottom: 0 !important;
+              }
+              .malayalam-preface-content br {
+                display: none !important;
+              }
+              .malayalam-preface-content p br {
+                display: none !important;
+              }
+              /* Allow br tags in signature section (paragraphs with m1 class span) */
+              .malayalam-preface-content p .m1 br {
+                display: inline !important;
+              }
+              .malayalam-preface-content p span.m1 br {
+                display: inline !important;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="malayalam-preface-content prose prose-base dark:prose-invert max-w-none leading-7 font-malayalam text-gray-800 dark:text-gray-100"
+                style={{
+                  fontFamily: "'Noto Sans Malayalam', sans-serif"
+                }}
+                dangerouslySetInnerHTML={{ __html: MALAYALAM_AUTHOR_PREFACE }}
+              />
             </div>
-
-            <div
-              className="prose prose-base dark:prose-invert max-w-none leading-7 font-malayalam text-gray-800 dark:text-gray-100"
-              dangerouslySetInnerHTML={{ __html: MALAYALAM_AUTHOR_PREFACE }}
-            />
           </>
         ) : isHindi ? (
-          // Hindi content
-          <div
-            className="prose prose-base dark:prose-invert max-w-none leading-7 text-gray-800 dark:text-gray-100"
-            dangerouslySetInnerHTML={{ __html: HINDI_AUTHOR_PREFACE }}
-          />
+          <>
+            <style>{`
+              .hindi-preface-content {
+                text-align: justify !important;
+              }
+              .hindi-preface-content h3 {
+                font-weight: 700 !important;
+                margin-top: 1.4em !important;
+                margin-bottom: 1em !important;
+              }
+              .hindi-preface-content p {
+                text-align: justify !important;
+                margin-bottom: 1em !important;
+                line-height: 1.9 !important;
+                font-size: 16px;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="hindi-preface-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
+                style={{ fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif" }}
+                dangerouslySetInnerHTML={{ __html: HINDI_AUTHOR_PREFACE }}
+              />
+            </div>
+          </>
         ) : isBangla ? (
           // Bangla content in blocks
           (() => {
@@ -264,19 +341,45 @@ const AuthorPreface = () => {
             const banglaBlocks = parseBanglaContent();
             
             return (
-              <div>
-                {banglaBlocks.map((block, index) => {
-                  // Check if it's a signature section (contains strong tag or specific text)
-                  if (block.includes('<strong>') || block.includes('আবুল আ')) {
+              <>
+                <style>{`
+                  .bangla-preface-block p {
+                    text-align: justify !important;
+                  }
+                `}</style>
+                <div>
+                  {banglaBlocks.map((block, index) => {
+                    // Check if it's a signature section (contains strong tag or specific text)
+                    if (block.includes('<strong>') || block.includes('আবুল আ')) {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                        >
+                          <div
+                            className="bangla-preface-block"
+                            dangerouslySetInnerHTML={{ __html: block }}
+                            style={{
+                              textAlign: 'justify',
+                              fontSize: '16px',
+                              lineHeight: '2.6',
+                              fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                            }}
+                          />
+                        </div>
+                      );
+                    }
+                    // Regular paragraph - wrap in block
                     return (
                       <div
                         key={index}
                         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
                       >
                         <div
+                          className="bangla-preface-block"
                           dangerouslySetInnerHTML={{ __html: block }}
                           style={{
-                            textAlign: 'left',
+                            textAlign: 'justify',
                             fontSize: '16px',
                             lineHeight: '2.6',
                             fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
@@ -284,234 +387,232 @@ const AuthorPreface = () => {
                         />
                       </div>
                     );
-                  }
-                  // Regular paragraph - wrap in block
-                  return (
-                    <div
-                      key={index}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                    >
-                      <div
-                        dangerouslySetInnerHTML={{ __html: block }}
-                        style={{
-                          textAlign: 'left',
-                          fontSize: '16px',
-                          lineHeight: '2.6',
-                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              </>
             );
           })()
         ) : (
-          // English content (existing)
+          // English content in a single block with justified text
           <>
-            <p className="dark:text-white">
-              When so many translations of, and commentaries on, the Holy Qur'an
-              already exist, a desire for spiritual blessing and grace is not in
-              itself sufficient justification for undertaking a fresh venture in this
-              field. The effort will only be worthwhile if it fills gaps left by
-              earlier works, or satisfies some unmet need felt by those interested in
-              studying the Holy Book.
-            </p>
-            <p className="dark:text-white">
-        The present work is neither directed at scholars and researchers, nor is
-        it aimed at assisting those who, having mastered the Arabic language and
-        the Islamic religious sciences, now wish to embark upon a thorough and
-        elaborate study of the Qur'ãn. Such people already have plenty of
-        material at their disposal. Instead it is intended for the lay reader,
-        the average educated person, who is not well-versed in Arabic and so is
-        unable to make full use of the vast treasures to be found in classical
-        works on the Qur'an. For this reason many subjects prominent in the more
-        technical works of Qur'anic exegesis have not been treated. The
-        principal aims throughout have been to help the reader to acquire a
-        clear grasp of the Qur'ãn, to clarify ambiguities which he may encounter
-        in his study, and to solve problems which may arise in his mind. It is
-        for the reader to judge how far these aims have been achieved. Literal
-        translation has been abandoned in favour of a relatively free
-        interpretative rendering of the Qur'ãn. This does not imply any
-        objection to literal translation as such. Several distinguished scholars
-        have already used this approach admirably. For example, the translation
-        of Shah Wall Allah in Persian and the translations of Shah 'Abd
-        al-Qadir, Shah RafT' al-Din, Mawlãnã MahmUd al-Hasan, Mawlãna Ashraf
-        'All and Hãfiz Fath Muhammad Jãlandhari in Urdu. For this reason little
-        useful remains to be done in this sphere. There are, however, certain
-        needs which are not, and cannot, be met by a literal translation and it
-        is to these that this work seeks to respond. Literal translations of the
-        Qur'an tend inevitably to lack literary force, fluency, eloquence and
-        stylistic charm. Such lifelessness is incapable of either arousing the
-        reader to ecstasy, stirring his being, making his eyes flow with tears,
-        or raising a storm of emotion within his soul. Literal translations
-        often leave one doubting whether the original book could indeed have
-        been that which challenged the whole world to produce another like it.
-        What filters through is merely the dry husk of its contents, stripped of
-        all literary enchantm ent. The violent, soul-shaking spirit which
-        permeates the original text is thus evaporated into thin air. This is a
-        serious drawback, for the literary force of the Our'an plays possibly as
-        important a role in conveying its message as the teachings themselves.
-        It was the literary quality of the Our'ãn — a quality acknowledged even
-        by its opponents — which first melted the hearts of its opponents, and
-        shook the length and breadth of Arabia like a thunderbolt.
-      </p>
+            <style>{`
+              .english-preface-content p {
+                text-align: justify !important;
+              }
+            `}</style>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="english-preface-content prose prose-base dark:prose-invert max-w-none leading-7 text-gray-800 dark:text-gray-100"
+                style={{
+                  textAlign: 'justify',
+                  fontFamily: "'Poppins', sans-serif"
+                }}
+              >
+                <p className="dark:text-white">
+                  When so many translations of, and commentaries on, the Holy Qur'an
+                  already exist, a desire for spiritual blessing and grace is not in
+                  itself sufficient justification for undertaking a fresh venture in this
+                  field. The effort will only be worthwhile if it fills gaps left by
+                  earlier works, or satisfies some unmet need felt by those interested in
+                  studying the Holy Book.
+                </p>
+                <p className="dark:text-white">
+                  The present work is neither directed at scholars and researchers, nor is
+                  it aimed at assisting those who, having mastered the Arabic language and
+                  the Islamic religious sciences, now wish to embark upon a thorough and
+                  elaborate study of the Qur'ãn. Such people already have plenty of
+                  material at their disposal. Instead it is intended for the lay reader,
+                  the average educated person, who is not well-versed in Arabic and so is
+                  unable to make full use of the vast treasures to be found in classical
+                  works on the Qur'an. For this reason many subjects prominent in the more
+                  technical works of Qur'anic exegesis have not been treated. The
+                  principal aims throughout have been to help the reader to acquire a
+                  clear grasp of the Qur'ãn, to clarify ambiguities which he may encounter
+                  in his study, and to solve problems which may arise in his mind. It is
+                  for the reader to judge how far these aims have been achieved. Literal
+                  translation has been abandoned in favour of a relatively free
+                  interpretative rendering of the Qur'ãn. This does not imply any
+                  objection to literal translation as such. Several distinguished scholars
+                  have already used this approach admirably. For example, the translation
+                  of Shah Wall Allah in Persian and the translations of Shah 'Abd
+                  al-Qadir, Shah RafT' al-Din, Mawlãnã MahmUd al-Hasan, Mawlãna Ashraf
+                  'All and Hãfiz Fath Muhammad Jãlandhari in Urdu. For this reason little
+                  useful remains to be done in this sphere. There are, however, certain
+                  needs which are not, and cannot, be met by a literal translation and it
+                  is to these that this work seeks to respond. Literal translations of the
+                  Qur'an tend inevitably to lack literary force, fluency, eloquence and
+                  stylistic charm. Such lifelessness is incapable of either arousing the
+                  reader to ecstasy, stirring his being, making his eyes flow with tears,
+                  or raising a storm of emotion within his soul. Literal translations
+                  often leave one doubting whether the original book could indeed have
+                  been that which challenged the whole world to produce another like it.
+                  What filters through is merely the dry husk of its contents, stripped of
+                  all literary enchantm ent. The violent, soul-shaking spirit which
+                  permeates the original text is thus evaporated into thin air. This is a
+                  serious drawback, for the literary force of the Our'an plays possibly as
+                  important a role in conveying its message as the teachings themselves.
+                  It was the literary quality of the Our'ãn — a quality acknowledged even
+                  by its opponents — which first melted the hearts of its opponents, and
+                  shook the length and breadth of Arabia like a thunderbolt.
+                </p>
 
-      <p className=" dark:text-white">
-        Another reason why literal translations fail to inspire the reader is
-        the manner is which they are set for printing. Either the interlinear
-        style is followed or, according to a more recent fashion, a page is
-        bisected and the Quranic text is printed on one half of the page, with
-        the translation on the other half. This practice certainly has its uses,
-        but jts drawback is that the reader, being unable to read passages with
-        continuity, often fails to receive their full impact as chunks of Arabic
-        constantly interrupt the flow of his reading. Most English translations
-        of the Qur'an make particularly lifeless reading because, following the
-        Biblical pattern, the translation of each verse is numbered, and begins
-        on a new line. Take any piece of great literature, break it into
-        fragments, put one sentence over another, give each one a number, and
-        then try to read it. It will soon become obvious that the impact is
-        nothing like that created by reading a coherent and continuous text.
-      </p>
-      <p className=" dark:text-white">
-        Again, an orator may often switch from one grammatical person to
-        another, while referring both to himself and to his audience. He will
-        sometimes mention his audience in the third person, while at other times
-        address them directly in the second. He may similarly alternate between
-        the singular and the plural. He will sometimes speak on his own behalf,
-        and sometimes on behalf of a group of people. At other times he will
-        speak as if representing some power on high, and on yet other occasions
-        that power will speak through his tongue. This undoubtedly makes speech
-        more effective, but when that speech appears in book form, an element of
-        incoherence is bound to be noticeable; the farther one is removed from
-        the original context and environment the greater the sense of
-        incoherence. This explains why people who do not fully appreciate this
-        fact and, despite their knowledge of Arabic, complain of a lack of
-        coherence between various parts of the Qur'an. Since the Qur'an is
-        literally the Word of God, it would obviously be sacrilegious to add a
-        single syllable to the original text, even with the intention of
-        enabling the reader to have a better perception of its inner coherence.
-        Hence the only service that Qur'anic scholars can render to
-        Arabic-knowing readers is to provide explanatory notes wherever needed.
-        However, when we attempt to convey the meaning of the Qur'an in another
-        language, it seems justifiable to take a little liberty — though
-        exercising the utmost care and circumspection — and replace the oral by
-        the written style, thereby easing the problem of those who have
-        difficulty in perceiving its inner coherence.
-      </p>
-      <p className=" dark:text-white">
-        A further important reason why literal translations of the Qur'an tend
-        to be ineffective is that the Qur'anic style is oratorical rather than
-        narrative. If the translator retains the original oratorical style,
-        rather than replacing it with straightforward prose, passages are bound
-        to appear somewhat incoherent. It is well known that the Qur'ãn was not
-        originally revealed as a set of written treatises. What actually
-        happened was that various discourses were revealed to the Prophet (peace
-        be on him) in the context of the circumstances and problems which he
-        encountered in the course of his mission, and these he delivered to the
-        people in spoken form. Oral language and style naturally differ greatly
-        from written composition. For example, suppose a person were to write
-        something to clarify a misunderstanding. He would first have to refer
-        explicitly to the misunderstanding, then say things which might clarify
-        it. But a man delivering a speech for the purpose of clarifying that
-        same misunderstanding would not need to make specific reference to it,
-        for his audience would consist largely of the very people concerned.
-      </p>
-      <p className=" dark:text-white">
-        As already pointed out, every sürah of the Qur'an is in fact a segment
-        of speech, revealed at a certain stage of the Islamic movement. Each
-        revelation was occasioned by the demands of certain circumstances, and
-        had certain purposes to fulfil. Every surãh is so vitally linked with
-        its situational background and its circumstant ial setting that anyone
-        reading a mere verbal translation, divorced from its context, would fail
-        to appreciate many of the points being made. It therefore also seems
-        reasonable to occasionally add a few words in such a way that the
-        translated text reflects the situational context, even if only to a very
-        limited extent, and thus renders the passages more comprehensive and
-        more meaningful to the reader.
-      </p>
-      <p className=" dark:text-white">
-        A final problem with literal translations is that even though the Qur'ãn
-        was revealed in 'clear Arabic' (Qur'an 6: 2), it also has its own
-        special terminology. It often uses words with meanings other than their
-        literal ones and this in itself may give rise to many ambiguities. Take,
-        for instance, the word 'kufr', which in the Qur'Anic usage has a
-        different meaning not only from its ordinary Arabic linguistic usage,
-        but also from its terminological connotation in the works of later
-        theologians and jurists, in addition the word is not used uniformly in
-        the same sense throughout the Qur'an. Sometimes it denotes a state of
-        absolute lack of faith and sometimes it signifies merely rejection or
-        denial. At other times, it is used for an attitude of ingratitude and
-        thanklessness. It is aLso used to denote non-fulfilment of certain
-        requirements of faith. Yet again, it is used in the sense that, despite
-        the profession of faith, a person's life at a practical level
-        essentially exhibits rejection and disobedience. The same word is
-        further used to signify external obedience unaccomp anied by true,
-        inner, conviction. If we were invariably to use the word 'kufr' in a
-        language such as Urdu. In which it is currently in use, or its
-        equivalent in other languages, the translation would doubtless be
-        correct, but it might fail to convey the full import of the original; it
-        might even give a wrong impression, or create unnecessary confusion in
-        the mind of the reader.
-      </p>
-      <p className=" dark:text-white" >
-        Consideration of these shortcomings has led me to attempt what I would
-        prefer to call an explanatory or interpretative exposition, rather than
-        a literal translation. In other words, I have not tried to render the
-        Arabic text of the Qur'an into another language. Instead I have tried to
-        express in my own words, and as faithfully as possible, the meaning
-        conveyed to me by the Qur'anic passages and the impression they make
-        upon me. As far as the form of the work is concerned, I have tried to
-        ensure that this translation does not make dull reading or lack literary
-        elegance and that it reflects something of the force and candour of the
-        'clear Arabic' of the Qur'án. I have also tried to help the reader to
-        appreciate the natural continuity of the various parts of the Qur'anic
-        sürahs, so that as well as embodying the meaning and purport of the Word
-        of God, this work also mirrors something of its majestic grandeur and
-        literary brilliance. I have prefaced every sürah with careful notes on
-        the period of a particular revelation, the circumstances obtaining at
-        the time, the stage through which the Islamic movement was then passing,
-        and its chief needs and problems. Moreover, wherever specific background
-        information is relevant to the understanding of a particular verse or
-        group of verses, such information is supplied in the explanatory notes.
-        In the explanatory notes, every effort has been made to avoid
-        distracting the reader's attention from the Qur'än itself. These notes
-        have a two-fold purpose: first, to elucidate and clarify and, second, to
-        highlight the spirit and aim of the Qur'anic passages. The reader is
-        advised to go through the introductory sections of each sürah before
-        beginning to study the sürah itself, and to refer back to them eyen
-        during his study.
-      </p>
-      <p className=" dark:text-white">
-        Muslim readers are further advised to go through whatever portion of the
-        Qur'an they usually recite each day, along with any literal translation
-        of its meaning, then to read our interpretative rendering of the same
-        passage without reference to the notes, focusing on the passage as a
-        whole. Only then should they proceed to study it verse by verse, reading
-        the explanatory notes as well for a more thorough understanding. It is
-        hoped that such study will enable the ordinary reader — God willing — to
-        acquire a considerable, if not scholarly, understanding of the Qur'an.
-      </p>
-      <p className=" dark:text-white">
-        This work was begun in Muharram, 1361 A.H./February, 1942. The work
-        continued for just over five years, during which time interpretative
-        rendering and explanatory notes were completed up to Sürah 12. Then
-        several events, occurring in quick succession, not only prevented me
-        from proceeding with the work, but even from revising what had been thus
-        far accomplished. In October, 1948, by a stroke of luck, good or bad, I
-        was arrested under the Public Safety Act and imprisoned. I was thus able
-        to find the time needed to prepare this work for the press. I now pray
-        to Allah that He may fulfil the purpose for which this work was
-        undertaken, and make it useful for developing a better and fuller
-        understanding of the Holy Qur'ãn.
-            </p>
+                <p className=" dark:text-white">
+                  Another reason why literal translations fail to inspire the reader is
+                  the manner is which they are set for printing. Either the interlinear
+                  style is followed or, according to a more recent fashion, a page is
+                  bisected and the Quranic text is printed on one half of the page, with
+                  the translation on the other half. This practice certainly has its uses,
+                  but jts drawback is that the reader, being unable to read passages with
+                  continuity, often fails to receive their full impact as chunks of Arabic
+                  constantly interrupt the flow of his reading. Most English translations
+                  of the Qur'an make particularly lifeless reading because, following the
+                  Biblical pattern, the translation of each verse is numbered, and begins
+                  on a new line. Take any piece of great literature, break it into
+                  fragments, put one sentence over another, give each one a number, and
+                  then try to read it. It will soon become obvious that the impact is
+                  nothing like that created by reading a coherent and continuous text.
+                </p>
+                <p className=" dark:text-white">
+                  Again, an orator may often switch from one grammatical person to
+                  another, while referring both to himself and to his audience. He will
+                  sometimes mention his audience in the third person, while at other times
+                  address them directly in the second. He may similarly alternate between
+                  the singular and the plural. He will sometimes speak on his own behalf,
+                  and sometimes on behalf of a group of people. At other times he will
+                  speak as if representing some power on high, and on yet other occasions
+                  that power will speak through his tongue. This undoubtedly makes speech
+                  more effective, but when that speech appears in book form, an element of
+                  incoherence is bound to be noticeable; the farther one is removed from
+                  the original context and environment the greater the sense of
+                  incoherence. This explains why people who do not fully appreciate this
+                  fact and, despite their knowledge of Arabic, complain of a lack of
+                  coherence between various parts of the Qur'an. Since the Qur'an is
+                  literally the Word of God, it would obviously be sacrilegious to add a
+                  single syllable to the original text, even with the intention of
+                  enabling the reader to have a better perception of its inner coherence.
+                  Hence the only service that Qur'anic scholars can render to
+                  Arabic-knowing readers is to provide explanatory notes wherever needed.
+                  However, when we attempt to convey the meaning of the Qur'an in another
+                  language, it seems justifiable to take a little liberty — though
+                  exercising the utmost care and circumspection — and replace the oral by
+                  the written style, thereby easing the problem of those who have
+                  difficulty in perceiving its inner coherence.
+                </p>
+                <p className=" dark:text-white">
+                  A further important reason why literal translations of the Qur'an tend
+                  to be ineffective is that the Qur'anic style is oratorical rather than
+                  narrative. If the translator retains the original oratorical style,
+                  rather than replacing it with straightforward prose, passages are bound
+                  to appear somewhat incoherent. It is well known that the Qur'ãn was not
+                  originally revealed as a set of written treatises. What actually
+                  happened was that various discourses were revealed to the Prophet (peace
+                  be on him) in the context of the circumstances and problems which he
+                  encountered in the course of his mission, and these he delivered to the
+                  people in spoken form. Oral language and style naturally differ greatly
+                  from written composition. For example, suppose a person were to write
+                  something to clarify a misunderstanding. He would first have to refer
+                  explicitly to the misunderstanding, then say things which might clarify
+                  it. But a man delivering a speech for the purpose of clarifying that
+                  same misunderstanding would not need to make specific reference to it,
+                  for his audience would consist largely of the very people concerned.
+                </p>
+                <p className=" dark:text-white">
+                  As already pointed out, every sürah of the Qur'an is in fact a segment
+                  of speech, revealed at a certain stage of the Islamic movement. Each
+                  revelation was occasioned by the demands of certain circumstances, and
+                  had certain purposes to fulfil. Every surãh is so vitally linked with
+                  its situational background and its circumstant ial setting that anyone
+                  reading a mere verbal translation, divorced from its context, would fail
+                  to appreciate many of the points being made. It therefore also seems
+                  reasonable to occasionally add a few words in such a way that the
+                  translated text reflects the situational context, even if only to a very
+                  limited extent, and thus renders the passages more comprehensive and
+                  more meaningful to the reader.
+                </p>
+                <p className=" dark:text-white">
+                  A final problem with literal translations is that even though the Qur'ãn
+                  was revealed in 'clear Arabic' (Qur'an 6: 2), it also has its own
+                  special terminology. It often uses words with meanings other than their
+                  literal ones and this in itself may give rise to many ambiguities. Take,
+                  for instance, the word 'kufr', which in the Qur'Anic usage has a
+                  different meaning not only from its ordinary Arabic linguistic usage,
+                  but also from its terminological connotation in the works of later
+                  theologians and jurists, in addition the word is not used uniformly in
+                  the same sense throughout the Qur'an. Sometimes it denotes a state of
+                  absolute lack of faith and sometimes it signifies merely rejection or
+                  denial. At other times, it is used for an attitude of ingratitude and
+                  thanklessness. It is aLso used to denote non-fulfilment of certain
+                  requirements of faith. Yet again, it is used in the sense that, despite
+                  the profession of faith, a person's life at a practical level
+                  essentially exhibits rejection and disobedience. The same word is
+                  further used to signify external obedience unaccomp anied by true,
+                  inner, conviction. If we were invariably to use the word 'kufr' in a
+                  language such as Urdu. In which it is currently in use, or its
+                  equivalent in other languages, the translation would doubtless be
+                  correct, but it might fail to convey the full import of the original; it
+                  might even give a wrong impression, or create unnecessary confusion in
+                  the mind of the reader.
+                </p>
+                <p className=" dark:text-white" >
+                  Consideration of these shortcomings has led me to attempt what I would
+                  prefer to call an explanatory or interpretative exposition, rather than
+                  a literal translation. In other words, I have not tried to render the
+                  Arabic text of the Qur'an into another language. Instead I have tried to
+                  express in my own words, and as faithfully as possible, the meaning
+                  conveyed to me by the Qur'anic passages and the impression they make
+                  upon me. As far as the form of the work is concerned, I have tried to
+                  ensure that this translation does not make dull reading or lack literary
+                  elegance and that it reflects something of the force and candour of the
+                  'clear Arabic' of the Qur'án. I have also tried to help the reader to
+                  appreciate the natural continuity of the various parts of the Qur'anic
+                  sürahs, so that as well as embodying the meaning and purport of the Word
+                  of God, this work also mirrors something of its majestic grandeur and
+                  literary brilliance. I have prefaced every sürah with careful notes on
+                  the period of a particular revelation, the circumstances obtaining at
+                  the time, the stage through which the Islamic movement was then passing,
+                  and its chief needs and problems. Moreover, wherever specific background
+                  information is relevant to the understanding of a particular verse or
+                  group of verses, such information is supplied in the explanatory notes.
+                  In the explanatory notes, every effort has been made to avoid
+                  distracting the reader's attention from the Qur'än itself. These notes
+                  have a two-fold purpose: first, to elucidate and clarify and, second, to
+                  highlight the spirit and aim of the Qur'anic passages. The reader is
+                  advised to go through the introductory sections of each sürah before
+                  beginning to study the sürah itself, and to refer back to them eyen
+                  during his study.
+                </p>
+                <p className=" dark:text-white">
+                  Muslim readers are further advised to go through whatever portion of the
+                  Qur'an they usually recite each day, along with any literal translation
+                  of its meaning, then to read our interpretative rendering of the same
+                  passage without reference to the notes, focusing on the passage as a
+                  whole. Only then should they proceed to study it verse by verse, reading
+                  the explanatory notes as well for a more thorough understanding. It is
+                  hoped that such study will enable the ordinary reader — God willing — to
+                  acquire a considerable, if not scholarly, understanding of the Qur'an.
+                </p>
+                <p className=" dark:text-white">
+                  This work was begun in Muharram, 1361 A.H./February, 1942. The work
+                  continued for just over five years, during which time interpretative
+                  rendering and explanatory notes were completed up to Sürah 12. Then
+                  several events, occurring in quick succession, not only prevented me
+                  from proceeding with the work, but even from revising what had been thus
+                  far accomplished. In October, 1948, by a stroke of luck, good or bad, I
+                  was arrested under the Public Safety Act and imprisoned. I was thus able
+                  to find the time needed to prepare this work for the press. I now pray
+                  to Allah that He may fulfil the purpose for which this work was
+                  undertaken, and make it useful for developing a better and fuller
+                  understanding of the Holy Qur'ãn.
+                </p>
 
-            <p className="mt-8 dark:text-white">
-              Abul A'la Maududi <br />
-              New Central Jail, Multan, <br />
-              17 Dhu al-Qadah, 1368 A.H. <br />
-              11 September, 1949
-            </p>
+                <p className="mt-8 dark:text-white">
+                  Abul A'la Maududi <br />
+                  New Central Jail, Multan, <br />
+                  17 Dhu al-Qadah, 1368 A.H. <br />
+                  11 September, 1949
+                </p>
+              </div>
+            </div>
           </>
         )}
       </div>

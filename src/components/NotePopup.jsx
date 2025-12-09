@@ -164,10 +164,10 @@ const NotePopup = ({
         `}
       </style>
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4 animate-backdrop-fade-in">
-        <div className={`bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] overflow-hidden transition-all duration-200 animate-modal-slide-up border border-gray-200 dark:border-gray-700`}>
+        <div className={`bg-white dark:bg-[#2A2C38] rounded-xl shadow-2xl w-full sm:w-auto ${containerWidthClass} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden transition-all duration-200 animate-modal-slide-up border border-gray-200 dark:border-gray-700`}>
 
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center space-x-3">
               <button
                 onClick={onClose}
@@ -213,51 +213,54 @@ const NotePopup = ({
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[80vh]">
-            {loading && (
-              <div className="flex items-center justify-center py-6">
-                <div className="text-gray-600 dark:text-gray-300 text-sm">
-                  Loading note…
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div className="p-6 overflow-y-auto flex-1">
+              {loading && (
+                <div className="flex items-center justify-center py-6">
+                  <div className="text-gray-600 dark:text-gray-300 text-sm">
+                    Loading note…
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {!loading && error && (
-              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300">
-                {error}
-              </div>
-            )}
+              {!loading && error && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300">
+                  {error}
+                </div>
+              )}
 
-            {!loading && !error && (
-              <>
-                {showSuccessMessage && (
-                  <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center space-x-2 animate-fade-in">
-                    <div className="text-green-600 dark:text-green-400">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
+              {!loading && !error && (
+                <>
+                  {showSuccessMessage && (
+                    <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center space-x-2 animate-fade-in">
+                      <div className="text-green-600 dark:text-green-400">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-green-800 dark:text-green-200 font-medium">
+                        Note content copied to clipboard successfully!
+                      </span>
                     </div>
-                    <span className="text-green-800 dark:text-green-200 font-medium">
-                      Note content copied to clipboard successfully!
-                    </span>
-                  </div>
-                )}
+                  )}
 
-                {typeof noteContent === 'string' ? (
-                  <div
-                    className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white"
-                    dangerouslySetInnerHTML={{ __html: noteContent }}
-                  />
-                ) : (
-                  <div
-                    className="text-gray-800 dark:text-white leading-relaxed text-justify"
-                    style={{ fontFamily: "serif" }}
-                  >
-                    {noteContent}
-                  </div>
-                )}
-              </>
-            )}
+                  {typeof noteContent === 'string' ? (
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white break-words text-justify"
+                      style={{ textAlign: 'justify' }}
+                      dangerouslySetInnerHTML={{ __html: noteContent }}
+                    />
+                  ) : (
+                    <div
+                      className="text-gray-800 dark:text-white leading-relaxed text-justify break-words"
+                      style={{ fontFamily: "serif", textAlign: 'justify' }}
+                    >
+                      {noteContent}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -113,7 +113,7 @@ const BlockWise = () => {
   };
 
   // Use cached surah data
-  const { surahs } = useSurahData();
+  const { surahs } = useSurahData(translationLanguage);
 
   // Function to convert Western numerals to Arabic-Indic numerals
   const toArabicNumber = (num) => {

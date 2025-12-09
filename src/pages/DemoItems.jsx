@@ -38,6 +38,12 @@ const DemoItems = ({ onClose }) => {
         const pageMap = {};
         pageRangesData.forEach((range) => {
           const pageId = range.PageId;
+          
+          // Skip pages with null, undefined, or pageId <= 0 (start from page 1)
+          if (!pageId || pageId <= 0) {
+            return;
+          }
+          
           if (!pageMap[pageId]) {
             pageMap[pageId] = {
               id: pageId,
@@ -67,8 +73,10 @@ const DemoItems = ({ onClose }) => {
           }
         });
 
-        // Convert to array and sort by page number
-        const pageList = Object.values(pageMap).sort((a, b) => a.number - b.number);
+        // Convert to array, filter out invalid pages, and sort by page number
+        const pageList = Object.values(pageMap)
+          .filter(page => page.id && page.id > 0) // Ensure valid page numbers
+          .sort((a, b) => a.number - b.number);
         setPages(pageList);
       } catch (err) {
         setError(err.message);
@@ -148,14 +156,14 @@ const DemoItems = ({ onClose }) => {
                   className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors py-2 px-2 rounded-lg"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{page.name}</span>
-                    {page.surahs && page.surahs.length > 0 && (
+                    <span className="font-medium">Page {page.number || page.id}</span>
+                    {page.surahs && page.surahs.length > 0 && page.surahs[0].surahName && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {page.surahs[0].surahName}
                       </span>
                     )}
                   </div>
-                  {page.surahs && page.surahs.length > 0 && (
+                  {page.surahs && page.surahs.length > 0 && page.surahs[0].startVerse != null && page.surahs[0].endVerse != null && (
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {page.surahs.length > 1
                         ? `${page.surahs.length} surahs`

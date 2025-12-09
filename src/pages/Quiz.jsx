@@ -17,6 +17,7 @@ import {
   createFallbackQuizData,
 } from "../api/apifunction";
 import { useSurahData } from "../hooks/useSurahData";
+import { useTheme } from "../context/ThemeContext";
 
 const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(1);
@@ -41,8 +42,9 @@ const Quiz = () => {
   const [isEntireSurah, setIsEntireSurah] = useState(true);
   const [isEntireThafheem, setIsEntireThafheem] = useState(false);
   
+  const { translationLanguage } = useTheme();
   // Use cached surah data hook
-  const { surahs: surahList } = useSurahData();
+  const { surahs: surahList } = useSurahData(translationLanguage);
 
   // Load quiz data when surah or range changes
   useEffect(() => {

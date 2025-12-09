@@ -188,7 +188,7 @@ const HomepageNavbar = () => {
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
     { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
     { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // English menu items
@@ -226,7 +226,7 @@ const HomepageNavbar = () => {
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
     { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
     { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // Urdu menu items
@@ -263,7 +263,7 @@ const HomepageNavbar = () => {
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
     { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
     { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // Hindi menu items
@@ -300,7 +300,7 @@ const HomepageNavbar = () => {
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
     { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
     { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // Bangla menu items
@@ -337,7 +337,7 @@ const HomepageNavbar = () => {
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
     { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
     { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // Base menu items with English labels (for non-Malayalam languages)
@@ -392,7 +392,7 @@ const HomepageNavbar = () => {
     { icon: MessageCircleQuestion, label: "Share App", onClick: handleShareApp, key: "share_app" },
     { icon: User, label: "About Us", path: "/about", key: "about_us" },
     { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
-    { icon: Shield, label: "Privacy", path: "/privacy", key: "privacy" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
   // Helper function to get translated label
@@ -580,7 +580,10 @@ const HomepageNavbar = () => {
       )}
       {/* Search Console Popup */}
       {isSearchOpen && (
-        <SearchConsole onClose={() => setIsSearchOpen(false)} />
+        <SearchConsole 
+          onClose={() => setIsSearchOpen(false)} 
+          translationLanguage={translationLanguage}
+        />
       )}
 
       {/* Language Console Popup */}
@@ -794,7 +797,7 @@ const HomepageNavbar = () => {
                 title="Sign in"
               >
                 <span className="relative z-10 hidden xs:inline font-semibold text-sm sm:text-base">Sign In</span>
-                <span className="relative z-10 xs:hidden text-[9px] font-semibold">Sign</span>
+                <span className="relative z-10 xs:hidden text-[15px] font-semibold">Sign in</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-[#62C3DC] to-[#2596be] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
               </button>
             )}

@@ -1,34 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchSurahs, listSurahNames } from '../api/apifunction';
 
-// In-memory cache for surah data
-let surahCache = null;
-let surahNamesCache = null;
-let surahCachePromise = null;
-let surahNamesCachePromise = null;
+// In-memory cache for surah data (language-specific)
+const surahCache = {};
+const surahNamesCache = {};
+const surahCachePromise = {};
+const surahNamesCachePromise = {};
 
 /**
  * Custom hook for fetching and caching surah data
  * Prevents duplicate API calls across components
+ * @param {string} language - Optional language code to fetch language-specific surah names
  */
-export const useSurahData = () => {
-  const [surahs, setSurahs] = useState(surahCache || []);
-  const [loading, setLoading] = useState(!surahCache);
+export const useSurahData = (language = null) => {
+  const cacheKey = language || 'default';
+  const [surahs, setSurahs] = useState(surahCache[cacheKey] || []);
+  const [loading, setLoading] = useState(!surahCache[cacheKey]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadSurahs = async () => {
-      // Return cached data if available
-      if (surahCache) {
-        setSurahs(surahCache);
+      // Return cached data if available for this language
+      if (surahCache[cacheKey]) {
+        setSurahs(surahCache[cacheKey]);
         setLoading(false);
         return;
       }
 
-      // If a fetch is already in progress, wait for it
-      if (surahCachePromise) {
+      // If a fetch is already in progress for this language, wait for it
+      if (surahCachePromise[cacheKey]) {
         try {
-          const data = await surahCachePromise;
+          const data = await surahCachePromise[cacheKey];
           setSurahs(data);
           setLoading(false);
         } catch (err) {
@@ -43,42 +45,42 @@ export const useSurahData = () => {
         setLoading(true);
         setError(null);
         
-        surahCachePromise = fetchSurahs();
-        const data = await surahCachePromise;
+        surahCachePromise[cacheKey] = fetchSurahs({ language });
+        const data = await surahCachePromise[cacheKey];
         
-        surahCache = data;
+        surahCache[cacheKey] = data;
         setSurahs(data);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching surahs:', err);
       } finally {
         setLoading(false);
-        surahCachePromise = null;
+        surahCachePromise[cacheKey] = null;
       }
     };
 
     loadSurahs();
-  }, []);
+  }, [language, cacheKey]);
 
   const retry = useCallback(async () => {
-    surahCache = null;
-    surahCachePromise = null;
+    surahCache[cacheKey] = null;
+    surahCachePromise[cacheKey] = null;
     setLoading(true);
     setError(null);
     
     try {
-      surahCachePromise = fetchSurahs();
-      const data = await surahCachePromise;
-      surahCache = data;
+      surahCachePromise[cacheKey] = fetchSurahs({ language });
+      const data = await surahCachePromise[cacheKey];
+      surahCache[cacheKey] = data;
       setSurahs(data);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching surahs:', err);
     } finally {
       setLoading(false);
-      surahCachePromise = null;
+      surahCachePromise[cacheKey] = null;
     }
-  }, []);
+  }, [language, cacheKey]);
 
   return { surahs, loading, error, retry };
 };
@@ -86,25 +88,27 @@ export const useSurahData = () => {
 /**
  * Custom hook for fetching and caching surah names only
  * More lightweight for components that only need names
+ * @param {string} language - Optional language code to fetch language-specific surah names
  */
-export const useSurahNames = () => {
-  const [surahNames, setSurahNames] = useState(surahNamesCache || []);
-  const [loading, setLoading] = useState(!surahNamesCache);
+export const useSurahNames = (language = null) => {
+  const cacheKey = language || 'default';
+  const [surahNames, setSurahNames] = useState(surahNamesCache[cacheKey] || []);
+  const [loading, setLoading] = useState(!surahNamesCache[cacheKey]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadSurahNames = async () => {
-      // Return cached data if available
-      if (surahNamesCache) {
-        setSurahNames(surahNamesCache);
+      // Return cached data if available for this language
+      if (surahNamesCache[cacheKey]) {
+        setSurahNames(surahNamesCache[cacheKey]);
         setLoading(false);
         return;
       }
 
-      // If a fetch is already in progress, wait for it
-      if (surahNamesCachePromise) {
+      // If a fetch is already in progress for this language, wait for it
+      if (surahNamesCachePromise[cacheKey]) {
         try {
-          const data = await surahNamesCachePromise;
+          const data = await surahNamesCachePromise[cacheKey];
           setSurahNames(data);
           setLoading(false);
         } catch (err) {
@@ -119,42 +123,42 @@ export const useSurahNames = () => {
         setLoading(true);
         setError(null);
         
-        surahNamesCachePromise = listSurahNames();
-        const data = await surahNamesCachePromise;
+        surahNamesCachePromise[cacheKey] = listSurahNames(language);
+        const data = await surahNamesCachePromise[cacheKey];
         
-        surahNamesCache = data;
+        surahNamesCache[cacheKey] = data;
         setSurahNames(data);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching surah names:', err);
       } finally {
         setLoading(false);
-        surahNamesCachePromise = null;
+        surahNamesCachePromise[cacheKey] = null;
       }
     };
 
     loadSurahNames();
-  }, []);
+  }, [language, cacheKey]);
 
   const retry = useCallback(async () => {
-    surahNamesCache = null;
-    surahNamesCachePromise = null;
+    surahNamesCache[cacheKey] = null;
+    surahNamesCachePromise[cacheKey] = null;
     setLoading(true);
     setError(null);
     
     try {
-      surahNamesCachePromise = listSurahNames();
-      const data = await surahNamesCachePromise;
-      surahNamesCache = data;
+      surahNamesCachePromise[cacheKey] = listSurahNames(language);
+      const data = await surahNamesCachePromise[cacheKey];
+      surahNamesCache[cacheKey] = data;
       setSurahNames(data);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching surah names:', err);
     } finally {
       setLoading(false);
-      surahNamesCachePromise = null;
+      surahNamesCachePromise[cacheKey] = null;
     }
-  }, []);
+  }, [language, cacheKey]);
 
   return { surahNames, loading, error, retry };
 };
@@ -163,10 +167,10 @@ export const useSurahNames = () => {
  * Clear all caches (useful for logout or data refresh)
  */
 export const clearSurahCache = () => {
-  surahCache = null;
-  surahNamesCache = null;
-  surahCachePromise = null;
-  surahNamesCachePromise = null;
+  Object.keys(surahCache).forEach(key => delete surahCache[key]);
+  Object.keys(surahNamesCache).forEach(key => delete surahNamesCache[key]);
+  Object.keys(surahCachePromise).forEach(key => delete surahCachePromise[key]);
+  Object.keys(surahNamesCachePromise).forEach(key => delete surahNamesCachePromise[key]);
 };
 
 

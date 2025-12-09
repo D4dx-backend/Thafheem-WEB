@@ -207,7 +207,7 @@ const HomepageSearch = () => {
       // Set fallback data on error
       setPopularChapters([
         { id: 67, name: "Al-Mulk", verses: "30 verses", type: "Makki" },
-        { id: 2, name: "Al-Baqarah", verses: "286 verses", type: "Madani" },
+        { id: 2, name: "Ayatul Kursi", verses: "Verse 255", type: "Madani", verseNumber: 255, verseKey: "2:255" },
         { id: 1, name: "Al-Fatiha", verses: "7 verses", type: "Makki" },
         { id: 18, name: "Al-Kahf", verses: "110 verses", type: "Makki" },
         { id: 36, name: "Ya-Sin", verses: "83 verses", type: "Makki" },
@@ -1194,7 +1194,7 @@ const HomepageSearch = () => {
                             {chapter.id}. {chapter.name}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {chapter.verses} • {chapter.type}
+                            {chapter.verseNumber ? `Surah Al-Baqra ${chapter.verses}` : chapter.verses} • {chapter.type}
                           </span>
                         </div>
                         <ChevronRightIcon className="h-3.5 w-3.5 ml-1.5" />

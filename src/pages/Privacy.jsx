@@ -406,58 +406,51 @@
 
 
 import React from "react";
-import { ArrowLeft } from "lucide-react";
 
 const Privacy = () => {
-  const handleBack = () => {
-    // Handle navigation back
-};
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-poppins">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 dark:bg-gray-900">
-        <div className="w-full max-w-[1070.01px] mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 sm:pb-3 mb-3 sm:mb-4">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-              D4media Privacy Policy
-            </h1>
-          </div>
+    <div className="min-h-screen bg-white dark:bg-gray-900 font-poppins">
+      <div className="max-w-[1070px] w-full mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-white">
+            D4DX Innovations LLP Privacy Policy
+          </h1>
+          <div className="h-px bg-gray-200 dark:bg-gray-700"></div>
         </div>
-        <div className="w-full max-w-[1070.01px] mx-auto px-3 sm:px-6">
-          <div className="bg-white dark:bg-gray-900">
-            <div className="prose prose-gray max-w-none">
-              {/* Introduction */}
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  Introduction:
-                </h3>
 
-                <p className="text-sm sm:text-base text-black leading-relaxed mb-3 sm:mb-4 dark:text-white">
-                  The D4media (Dharmadhara Division for Digital Media), Kerala,
-                  India (referred to as "D4media", "we", "us" and "our") takes
-                  individuals' privacy seriously. This Statement explains our
-                  policies and practices and applies to information collection and
-                  use including but not limited to while you are visiting and
-                  using Thafheem ul Quran (the "Application") and our Apps. For
-                  the purposes of the relevant data protection laws in force in
-                  places including but not limited to India, D4media, is
-                  controller and/or data user which control the collection,
-                  holding, processing or use of your personal data on our behalf.
-                  This Statement is privacy policy for the Site and our Apps.
-                </p>
-              </div>
+        {/* Content - Single Block */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg p-6 sm:p-8 shadow-sm">
+          <div className="prose prose-base dark:prose-invert max-w-none text-justify">
+            {/* Introduction */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                Introduction:
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed mb-4 dark:text-gray-300">
+                D4DX Innovations LLP, Kerala, India (referred to as "D4DX Innovations", "we", "us" and "our") takes
+                individuals' privacy seriously. This Statement explains our
+                policies and practices and applies to information collection and
+                use including but not limited to while you are visiting and
+                using our website and mobile applications (the "Platform") and our services.
+                For the purposes of the relevant data protection laws in force in
+                places including but not limited to India, D4DX Innovations LLP is
+                controller and/or data user which control the collection,
+                holding, processing or use of your personal data on our behalf.
+                This Statement is privacy policy for our Platform and services.
+              </p>
+            </div>
 
-              {/* Section 1 */}
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  1. Collection of Data
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed mb-2 sm:mb-3 dark:text-white">
-                  We may collect and process the following information about you:
-                </p>
-
-                <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-sm sm:text-base text-black dark:text-white m-2">
+            {/* Section 1 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                1. Information Collection
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed mb-3 dark:text-gray-300">
+                In order to provide a better service to you, we may, in the course of and in relation to provision of our services or products, collect and process the following information about you:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-base text-gray-800 dark:text-gray-300">
                   <li>
                     Information (such as your name, email address, mailing
                     address, phone number, date of birth, photograph,
@@ -485,23 +478,24 @@ const Privacy = () => {
                     on the Site for research purposes, if you choose to respond
                     to, or participate in, them
                   </li>
-                </ul>
-                <p className="text-sm sm:text-base text-black leading-relaxed mb-2 sm:mb-3 dark:text-white">
-                  You are under no obligation to provide any such information.
-                  However, if you should choose to withhold requested information,
-                  we may not be able to provide you with certain services.
-                </p>
-              </div>
+              </ul>
+              <p className="text-base text-gray-800 leading-relaxed mb-3 dark:text-gray-300">
+                The provision of personal data by you is necessary in order for us to provide you with the requested services and for us to perform our contractual obligations (if any) to you (as one of the legitimate interests of D4DX Innovations). If you do not supply such data, we may be unable to provide the requested service.
+              </p>
+              <p className="text-base text-gray-800 leading-relaxed mb-3 dark:text-gray-300">
+                We only retain personal data for so long as it is necessary for the fulfilment of the purpose (including any directly related purpose) for which the data is or is to be used.
+              </p>
+            </div>
 
-              {/* Additional sections can be added here */}
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  2. Uses of Data:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed mb-2 sm:mb-3 dark:text-white">
-                  We use information held about you in the following ways:
-                </p>
-                <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-sm sm:text-base text-black dark:text-white m-2">
+            {/* Section 2 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                2. Use of Information
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed mb-3 dark:text-gray-300">
+                The purposes for which information may be used by us in and outside India include:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-base text-gray-800 dark:text-gray-300">
                   <li>
                     To ensure that content from our site is presented in the most
                     effective manner for you and for your computer;
@@ -549,18 +543,18 @@ const Privacy = () => {
                     Subject to your consent, to notify you of products or special
                     offers that may be of interest to you.
                   </li>
-                </ul>
-              </div>
+              </ul>
+            </div>
 
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3 dark:text-white">
-                  3. Disclosure of Data:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  We will keep your personal data we hold confidential but you
-                  agree we may provide information to:
-                </p>
-                <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-sm sm:text-base text-black dark:text-white m-2">
+            {/* Section 3 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                3. Disclosure
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                We will keep the personal data we hold confidential but may provide your personal data to:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-base text-gray-800 dark:text-gray-300">
                   <li>
                     Any member of our group, which means our subsidiaries, our
                     ultimate holding company and its subsidiaries, as defined in
@@ -589,200 +583,144 @@ const Privacy = () => {
                     Parties or entities from whom we receive subsidies or special
                     funding support for audit purpose
                   </li>
-                </ul>
+              </ul>
+              <p className="text-base text-gray-800 leading-relaxed mt-4 dark:text-gray-300">
+                We may provide your personal data as required or permitted by
+                law to comply with a summons, subpoena or similar legal process
+                or government request, or when we believe in good faith that
+                disclosure is legally required or otherwise necessary to protect
+                our rights and property, or the rights, property or safety of
+                others, including advisers, law enforcement,
+                judicial and regulatory authorities in or outside India.
+              </p>
+              <p className="text-base text-gray-800 leading-relaxed mt-4 dark:text-gray-300">
+                We may also transfer your personal data to a third party that acquires
+                all or part of our assets or shares, or that succeeds us in
+                carrying on all or a part of our business, whether by merger,
+                acquisition, reorganisation or otherwise.
+              </p>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  We may provide your personal data as required or permitted by
-                  law to comply with a summons, subpoena or similar legal process
-                  or government request, or when we believe in good faith that
-                  disclosure is legally required or otherwise necessary to protect
-                  our rights and property, or the rights, property or safety of
-                  others, including but not limited to advisers, law enforcement,
-                  judicial and regulatory authorities in or outside India. We may
-                  also transfer your personal data to a third party that acquires
-                  all or part of our assets or shares, or that succeeds us in
-                  carrying on all or a part of our business, whether by merger,
-                  acquisition, reorganisation or otherwise.
-                </p>
+            {/* Section 4 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                4. Cookies
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                Cookies are small, sometimes encrypted text files that are
+                stored on computer hard drives by websites that you visit. They
+                are used to help you to navigate on websites efficiently as well
+                as to provide information to the owner of the website. Cookies
+                do not contain any software programs. There are two general
+                types of cookies, session cookies and persistent cookies.
+                Session cookies are only used during a session online and will
+                be deleted once you leave a website. Persistent cookies have a
+                longer life and will be retained by the website and used each
+                time you visit a website. Both session and persistent cookies
+                can be deleted by you at anytime through your browser settings
+                and in any event, will not be kept longer than necessary.
+              </p>
+              <p className="text-base text-gray-800 leading-relaxed mt-4 dark:text-gray-300">
+                We use cookies to understand how our Platform is used and improve our services, store your preferences and settings, provide personalized content and recommendations, measure the effectiveness of our communications, and maintain security and prevent fraud.
+              </p>
+              <p className="text-base text-gray-800 leading-relaxed mt-4 dark:text-gray-300">
+                You can control cookies through your browser settings. However, blocking cookies may limit your ability to use certain features of our Platform.
+              </p>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  To prevent and detect crimes and to protect the security and
-                  safety of our events and trade fairs, we may provide your
-                  personal identification data such as your full passport/identity
-                  card no., date of birth and nationality to the law enforcement
-                  authorities in India including the India Police Force,
-                  Immigration Department, Customs and Excise Department and other
-                  similar authorities upon their lawful request (but not to any
-                  other third party save as expressly specified below).
-                </p>
+            {/* Section 5 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                5. Security
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                We implement comprehensive security measures to protect your personal data:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-base text-gray-800 dark:text-gray-300 mt-3">
+                <li>Electronic data is password-protected and encrypted</li>
+                <li>Our computer systems are located in restricted areas</li>
+                <li>Only authorized employees can access personal data</li>
+                <li>All employees receive training on our privacy policies</li>
+                <li>We regularly review and update our security practices</li>
+              </ul>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  We may also provide your passport or identity card number to
-                  personnel, agents, auditors, contractors and service providers
-                  in connection with the organisation of our events, persons under
-                  a duty of confidentiality to us and/or persons to whom we are
-                  required to make disclosure under applicable laws in or outside
-                  India.
-                </p>
-              </div>
+            {/* Section 6 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                6. Third-Party Links
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                Our Platform may contain links to external websites operated by third parties. We have no control over and are not responsible for these third-party sites or their content. Once you leave our Platform, we cannot be responsible for the protection and privacy of any information you provide to these sites. You should exercise caution and review the privacy policies of websites you visit.
+              </p>
+            </div>
 
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  4. Cookies:
-                </h3>
-                <p className="text-sm sm:text-base text-black dark:text-white">
-                  Cookies are small, sometimes encrypted text files that are
-                  stored on computer hard drives by websites that you visit. They
-                  are used to help you to navigate on websites efficiently as well
-                  as to provide information to the owner of the website. Cookies
-                  do not contain any software programs. There are two general
-                  types of cookies, session cookies and persistent cookies.
-                  Session cookies are only used during a session online and will
-                  be deleted once you leave a website. Persistent cookies have a
-                  longer life and will be retained by the website and used each
-                  time you visit a website. Both session and persistent cookies
-                  can be deleted by you at anytime through your browser settings
-                  and in any event, will not be kept longer than necessary.
-                </p>
+            {/* Section 7 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                7. Changes to This Policy
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                We may update this Privacy Policy from time to time. When we do, the changes will be posted on our website with an updated "Last Modified" date. We encourage you to review this policy periodically to stay informed about how we protect your information.
+              </p>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  We use cookies to find out more about the use of our Site and
-                  user preferences to improve our services. We may provide
-                  summarised traffic data to advertisers solely for the purpose of
-                  customising the advertising to you. We note traffic, pages
-                  visited and time spent. We store your shopping cart and wish
-                  list for your later use. We may link the information to you, so
-                  that you may receive information more suited to your interests.
-                </p>
+            {/* Section 8 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                8. Data Transfers
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                We generally hold your data on servers located in India. However, we may transfer data to other locations for processing or to service providers who may be located elsewhere. If you are located in the European Economic Area (EEA) or UK, your personal data may be transferred to countries outside the EEA/UK. Such transfers will only be made in accordance with applicable laws and with appropriate safeguards to protect your data.
+              </p>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  Web browsers often allow you to erase existing cookies from your
-                  hard drive, block the use of cookies and/or be notified when
-                  cookies are encountered. If you elect to block cookies, please
-                  note that you may not be able to take full advantage of the
-                  features and functions of the Site. Cookies are necessary for
-                  some features of the website to work, e.g., to maintain
-                  continuity during a browser session.
-                </p>
+            {/* Section 9 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-[#2AA0BF] mb-3">
+                9. Your Data Privacy Rights
+              </h3>
+              <p className="text-base text-gray-800 leading-relaxed dark:text-gray-300">
+                By using our services or visiting our Platform, you acknowledge the collection and use of your personal data as outlined in this Statement. If you do not agree with our practices, please do not use our Platform or services.
+              </p>
+              <p className="text-base text-gray-800 leading-relaxed mt-3 dark:text-gray-300">
+                <strong>Your Rights Include:</strong>
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-base text-gray-800 dark:text-gray-300 mt-2">
+                <li>Right to access your personal data</li>
+                <li>Right to correct or update your information</li>
+                <li>Right to delete your data (subject to legal requirements)</li>
+                <li>Right to restrict processing</li>
+                <li>Right to data portability</li>
+                <li>Right to object to processing</li>
+                <li>Right to withdraw consent</li>
+              </ul>
+              <p className="text-base text-gray-800 leading-relaxed mt-4 dark:text-gray-300">
+                If you wish to exercise any of the above rights, stop marketing communications, or have questions or complaints, please contact us at:
+              </p>
+            </div>
 
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  We use an email delivery and marketing company to send emails
-                  that you have agreed to receive. Pixels tags and cookies are
-                  used in those emails and at our Site to help us measure the
-                  effectiveness of our advertising and how visitors use our web
-                  site.
-                </p>
-
-                <p className="text-sm sm:text-base text-black mt-3 sm:mt-4 dark:text-white">
-                  We use a third-party advertising company to serve ads when you
-                  visit our Site. This company may use information (not including
-                  your name, address, email address or telephone number) about
-                  your visit to this Site in order to provide advertisements about
-                  goods and services that may be of interest to you. In the course
-                  of serving advertisements to this site, our third-party
-                  advertiser may place or recognise a unique "cookie" on your
-                  browser. If you would like more information about this practice
-                  and to know your choices about not having this information used
-                  by this company, please refer to the cookie policy of respective
-                  company directly.
-                </p>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  5. Security:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  Personal data stored electronically are password-protected.
-                  Encryption technology is used on our secured web areas. Our
-                  computer systems are placed in restricted areas. We only permit
-                  authorised employees to access personal data. These employees
-                  are trained on our privacy policies.
-                </p>
-              </div>
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  6. Hyperlinks:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  The Site may, from time to time, contain links to external sites
-                  operated by third parties for your convenience. We have no
-                  control of and are not responsible for these third party sites
-                  or the content thereof. Once you leave the Site, we cannot be
-                  responsible for the protection and privacy of any information
-                  which you provide to these third party sites. You should
-                  exercise caution and look at the privacy statement for the
-                  website you visit.
-                </p>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  7. Changes:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  We may update this Statement. When we do, the changes will be
-                  posted on www.d4media.in/privacy-policy/.
-                </p>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  8. Data transfers:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  We will generally hold your data on our servers hosted in India.
-                  However, we may transfer it to elsewhere in the world for the
-                  purpose of processing into our database or to any of the people
-                  listed at paragraph 3 above, who may be located elsewhere. If
-                  you are located in the European Economic Area ("EEA") /"UK" your
-                  personal data may be transferred to countries located outside
-                  the EEA /"UK" which do not provide a similar or adequate level
-                  of protection to that provided by countries in the EEA /"UK".
-                  Such transfers will only be made in accordance with applicable
-                  laws including where necessary for us to comply with our
-                  contractual obligations with you. We will take all steps
-                  reasonably necessary to ensure that any personal data are
-                  treated securely and in accordance with this Statement.
-                </p>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-sm sm:text-base font-semibold text-[#2AA0BF] mb-2 sm:mb-3">
-                  9. Your data privacy rights:
-                </h3>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  By using our service, making an application or visiting our
-                  Site, you acknowledge the collection and use of your personal
-                  data by us as outlined in this Statement. If you do not agree
-                  with the use of your personal data as set out in this Statement,
-                  please do not use this Site or our Apps.
-                </p>
-                <p className="text-sm sm:text-base text-black leading-relaxed dark:text-white">
-                  If you wish to exercise one of the above mentioned rights, cease
-                  marketing communications, and/or raise questions or complaints,
-                  please contact us at:
-                </p>
-              </div>
-
-              <div className="text-sm sm:text-base text-black mt-6 sm:mt-8 dark:text-white">
-                <p className="font-semibold">Data Privacy Officer</p>
-                <p className="font-semibold">D4Media</p>
-                <p>Hira Centre, Mavoor Road, Kozhikode, Kerala, India</p>
-
-                <p className="mt-2 text-[#2AA0BF]">
-                  Tel: <a href="tel:+91994668139" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]">(+91) 99466 68139</a>
-                </p>
-                <p className="text-[#2AA0BF]">
-                  E-mail: <a href="mailto:info@d4media.in" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]">info@d4media.in</a>
-                </p>
-                <p className="text-[#2AA0BF]">
-                  Website: <a href="https://d4media.in/" target="_blank" rel="noopener noreferrer" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7] break-all">https://d4media.in/</a>
-                </p>
-
-                <p className="mt-3 sm:mt-4 dark:text-white">Last updated on 10-02-2024</p>
-                <p className="mt-2 font-semibold dark:text-white">© 2025 D4Media</p>
-              </div>
+            {/* Contact Information */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+             
+              <p className="font-semibold text-base text-gray-900 dark:text-white mb-4">D4DX Innovations LLP</p>
+              <p className="text-base text-gray-800 dark:text-gray-300 mb-4">
+                Atharwala Apartment,<br />
+                First Floor, 5/3520G, (44/1342),<br />
+                Mavoor Road, Thiruthiyad,<br />
+                Kozhikode, Kerala 673004
+              </p>
+              <p className="text-base text-[#2AA0BF] mb-2">
+                Tel: <a href="tel:+919946666139" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]">(+91) 9946 666 139</a>
+              </p>
+              <p className="text-base text-[#2AA0BF] mb-2">
+                E-mail: <a href="mailto:mail@d4dx.co" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]">mail@d4dx.co</a>
+              </p>
+              <p className="text-base text-[#2AA0BF] mb-4">
+                Website: <a href="https://d4dx.co" target="_blank" rel="noopener noreferrer" className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]">d4dx.co</a>
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">Last updated: 05/06/2025</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mt-2">© 2025 D4DX Innovations LLP</p>
             </div>
           </div>
         </div>

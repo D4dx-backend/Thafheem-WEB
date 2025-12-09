@@ -482,7 +482,7 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
                   return (
                     <div key={index} className="mb-6 sm:mb-8">
                       <div
-                        className={`text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
+                        className={`text-gray-700 leading-relaxed dark:text-gray-300 text-sm sm:text-base prose dark:prose-invert max-w-none text-justify ${isUrdu ? 'font-urdu-nastaliq urdu-interpretation-content' : ''}`}
                         style={{ 
                           fontSize: `${adjustedTranslationFontSize}px`,
                           ...(isUrdu ? {
@@ -490,7 +490,9 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
                             fontSize: '16px',
                             lineHeight: '2.6',
                             fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                          } : {})
+                          } : {
+                            textAlign: 'justify'
+                          })
                         }}
                         dir={isUrdu ? 'rtl' : 'ltr'}
                         onClick={(e) => {

@@ -70,11 +70,7 @@ const MalayalamJesusMohammed = () => {
           >
             {isMalayalam ? 'യേശുവും മുഹമ്മദും' : 'Jesus and Mohammed'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {isMalayalam
-              ? 'തഫ്ഹീമിന്റെ മലையாளം സ്രോതസുകളില്‍നിന്നുള്ള ഉള്ളടക്കം.'
-              : 'Malayalam content from Thafheem resources.'}
-          </p>
+          
           <div className="mt-4 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 

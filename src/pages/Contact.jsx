@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Globe, ExternalLink } from 'lucide-react';
 
 const Contact = () => {
   const { translationLanguage } = useTheme();
@@ -35,10 +35,10 @@ const Contact = () => {
                     {isMalayalam ? 'ഇമെയിൽ' : 'Email'}
                   </h3>
                   <a 
-                    href="mailto:info@d4media.in" 
+                    href="mailto:mail@d4dx.co" 
                     className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]"
                   >
-                    info@d4media.in
+                    mail@d4dx.co
                   </a>
                 </div>
               </div>
@@ -50,25 +50,59 @@ const Contact = () => {
                     {isMalayalam ? 'ഫോൺ' : 'Phone'}
                   </h3>
                   <a 
-                    href="tel:+91994668139" 
+                    href="tel:+919946666139" 
                     className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7]"
                   >
-                    (+91) 99466 68139
+                    (+91) 9946 666 139
                   </a>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg md:col-span-2">
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Globe className="w-6 h-6 text-[#2AA0BF] flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                    {isMalayalam ? 'വെബ്സൈറ്റ്' : 'Website'}
+                  </h3>
+                  <a 
+                    href="https://d4dx.co" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7] flex items-center gap-1"
+                  >
+                    d4dx.co
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <MapPin className="w-6 h-6 text-[#2AA0BF] flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                     {isMalayalam ? 'വിലാസം' : 'Address'}
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300">
-                    Hira Centre, Mavoor Road, Kozhikode, Kerala, India
+                    Atharwala Apartment,<br />
+                    First Floor, 5/3520G, (44/1342),<br />
+                    Mavoor Road, Thiruthiyad,<br />
+                    Kozhikode, Kerala 673004
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Privacy Policy Link */}
+            <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <a 
+                href="https://d4dx.co/privacy-policy/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#2AA0BF] hover:underline dark:text-[#4FAEC7] flex items-center gap-2"
+              >
+                <span>{isMalayalam ? 'സ്വകാര്യതാ നയം' : 'Privacy Policy'}</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>

@@ -74,14 +74,6 @@ const NavigateQuran = ({ onClose }) => {
       <div className="flex-1 overflow-y-auto">
         {renderTabContent()}
       </div>
-
-      {/* Footer tip */}
-      <div className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-        <span className="flex items-center gap-2">
-          <span>Tip: try navigating with</span>
-          <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs font-mono shadow-sm">Ctrl K</kbd>
-        </span>
-      </div>
     </div>
   );
 };

@@ -3,99 +3,148 @@ name: Deploy Frontend
 on:
   push:
     branches:
-      - main  # Adjust to your branch name
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      # Add your build steps here if needed
-      # - name: Build
-      #   run: npm run build
-      
-      # Add step to create tar.gz if needed
-      # - name: Create deployment archive
-      #   run: tar -czf deploy.tar.gz dist/
-      
-      - name: Extract and Replace Frontend Files Only
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Create deployment archive
+        run: |
+          cd dist
+          tar -czf ../deploy.tar.gz .
+
+      - name: Upload archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy.tar.gz"
+          target: "/home/thafheem/"
+
+      - name: Deploy Frontend with Atomic Replacement
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Extract to temporary directory
-            mkdir -p /home/thafheem/temp_deploy
-            tar -xzf /home/thafheem/deploy.tar.gz -C /home/thafheem/temp_deploy
+            set -e  # Exit on any error
             
-            # Navigate to website folder
-            cd ${{ secrets.DEPLOY_PATH }}
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            TEMP_DEPLOY="/home/thafheem/temp_deploy"
+            ARCHIVE="/home/thafheem/deploy.tar.gz"
             
-            # Backup existing .htaccess if it exists
-            if [ -f ".htaccess" ]; then
-              cp .htaccess .htaccess.backup
+            # Cleanup function
+            cleanup() {
+              rm -rf "$TEMP_DEPLOY" 2>/dev/null || true
+              rm -f "$ARCHIVE" 2>/dev/null || true
+            }
+            
+            # Rollback function - just restore .htaccess and cleanup
+            rollback() {
+              echo ""
+              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+              echo "ERROR: Deployment failed!"
+              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+              
+              cd "$DEPLOY_PATH"
+              
+              # Restore .htaccess if backup exists
+              if [ -f ".htaccess.backup" ]; then
+                mv .htaccess.backup .htaccess
+                echo "✓ Restored .htaccess"
+              fi
+              
+              cleanup
+              
+              echo ""
+              echo "Please check the error above and redeploy."
+              echo "Old files remain on server until successful deployment."
+              exit 1
+            }
+            
+            # Set trap to catch errors
+            trap rollback ERR
+            
+            echo "Starting deployment..."
+            
+            # Verify archive exists
+            if [ ! -f "$ARCHIVE" ]; then
+              echo "ERROR: deploy.tar.gz not found!"
+              exit 1
+            fi
+            echo "✓ Archive found"
+            
+            # Clean and create temp directory
+            rm -rf "$TEMP_DEPLOY"
+            mkdir -p "$TEMP_DEPLOY"
+            
+            # Extract
+            tar -xzf "$ARCHIVE" -C "$TEMP_DEPLOY"
+            echo "✓ Extracted"
+            
+            # Verify extraction
+            if [ ! "$(ls -A $TEMP_DEPLOY)" ]; then
+              echo "ERROR: Extraction failed!"
+              exit 1
             fi
             
-            # Remove old frontend files
+            # Verify critical files exist in extracted content
+            if [ ! -f "$TEMP_DEPLOY/index.html" ]; then
+              echo "ERROR: index.html not found in build!"
+              exit 1
+            fi
+            echo "✓ Verified build contents"
+            
+            # Navigate to deploy directory
+            cd "$DEPLOY_PATH"
+            
+            # Backup .htaccess only
+            if [ -f ".htaccess" ]; then
+              cp .htaccess .htaccess.backup
+              echo "✓ Backed up .htaccess"
+            fi
+            
+            # Atomic replacement: remove old, copy new
             rm -rf ./assets ./fonts ./articles
             rm -f ./index.html ./service-worker.js ./manifest.json ./robots.txt ./favicon.ico ./vite.svg
             
-            # Copy ONLY frontend files from temp directory
-            if [ -d /home/thafheem/temp_deploy/assets ]; then
-              cp -r /home/thafheem/temp_deploy/assets .
-              echo "✓ Copied assets/"
-            fi
-            if [ -d /home/thafheem/temp_deploy/fonts ]; then
-              cp -r /home/thafheem/temp_deploy/fonts .
-              echo "✓ Copied fonts/"
-            fi
-            if [ -d /home/thafheem/temp_deploy/articles ]; then
-              cp -r /home/thafheem/temp_deploy/articles .
-              echo "✓ Copied articles/"
-            fi
-            if [ -f /home/thafheem/temp_deploy/index.html ]; then
-              cp /home/thafheem/temp_deploy/index.html .
-              echo "✓ Copied index.html"
-            fi
-            if [ -f /home/thafheem/temp_deploy/service-worker.js ]; then
-              cp /home/thafheem/temp_deploy/service-worker.js .
-              echo "✓ Copied service-worker.js"
-            fi
-            if [ -f /home/thafheem/temp_deploy/manifest.json ]; then
-              cp /home/thafheem/temp_deploy/manifest.json .
-              echo "✓ Copied manifest.json"
-            fi
-            if [ -f /home/thafheem/temp_deploy/robots.txt ]; then
-              cp /home/thafheem/temp_deploy/robots.txt .
-              echo "✓ Copied robots.txt"
-            fi
-            if [ -f /home/thafheem/temp_deploy/favicon.ico ]; then
-              cp /home/thafheem/temp_deploy/favicon.ico .
-              echo "✓ Copied favicon.ico"
-            fi
-            if [ -f /home/thafheem/temp_deploy/vite.svg ]; then
-              cp /home/thafheem/temp_deploy/vite.svg .
-              echo "✓ Copied vite.svg"
-            fi
+            cp -r "$TEMP_DEPLOY"/* .
+            echo "✓ Files deployed"
             
-            # Restore .htaccess if it was backed up
+            # Restore .htaccess
             if [ -f ".htaccess.backup" ]; then
               mv .htaccess.backup .htaccess
+              echo "✓ Restored .htaccess"
             fi
             
-            # Cleanup temporary files
-            rm -rf /home/thafheem/temp_deploy
-            rm /home/thafheem/deploy.tar.gz
+            # Set permissions
+            find . -type d -exec chmod 755 {} \; 2>/dev/null || true
+            find . -type f -exec chmod 644 {} \; 2>/dev/null || true
+            echo "✓ Permissions set"
             
-            # Set correct permissions for frontend files
-            chown -R thafheem:thafheem ./assets ./fonts ./articles ./index.html ./service-worker.js ./manifest.json ./robots.txt ./favicon.ico ./vite.svg 2>/dev/null || true
-            find ./assets ./fonts ./articles -type d -exec chmod 755 {} \; 2>/dev/null || true
-            find ./assets ./fonts ./articles -type f -exec chmod 644 {} \; 2>/dev/null || true
-            chmod 644 ./index.html ./service-worker.js ./manifest.json ./robots.txt ./favicon.ico ./vite.svg 2>/dev/null || true
+            # Cleanup
+            cleanup
             
-            echo "Deployment completed successfully"
+            echo ""
+            echo "================================"
+            echo "✓ Deployment successful!"
+            echo "================================"

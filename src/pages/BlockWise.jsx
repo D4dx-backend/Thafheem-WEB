@@ -177,7 +177,7 @@ const BlockWise = () => {
   };
 
   // Use cached surah data
-  const { surahs } = useSurahData();
+  const { surahs } = useSurahData(translationLanguage);
 
   const buildBlockIdSet = useCallback((ranges = []) => {
     if (!Array.isArray(ranges) || ranges.length === 0) {

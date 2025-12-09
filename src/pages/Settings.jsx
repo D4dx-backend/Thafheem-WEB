@@ -37,6 +37,32 @@ const getLanguageCodeFromName = (name) => {
   return codeMap[name] || 'mal';
 };
 
+// Helper function to get example text in selected language (Al-Fatihah 1st ayah)
+const getExampleTextByLanguage = (languageName) => {
+  const exampleTexts = {
+    'Malayalam': 'പരമദയാലുവും കരുണാവാരിധിയുമായ അല്ലാഹുവിന്റെ നാമത്തില്‍',
+    'English': 'In the name of Allah, the Merciful, the Compassionate.',
+    'Hindi': 'अल्लाह के नाम से जो बेइन्तिहा मेहरबान और रहम फ़रमानेवाला है।',
+    'Bangla': 'পরম করুণাময় মেহেরবান আল্লাহর নামে',
+    'Urdu': 'اللہ کےنام سے جو رحمان و رحیم ہے',
+    'Tamil': 'அளவற்ற அருளாளனும், நிகரற்ற அன்புடையோனுமாகிய அல்லாஹ்வின் திருப்பெயரால்(துவங்குகிறேன்)',
+  };
+  return exampleTexts[languageName] || exampleTexts['English'];
+};
+
+// Helper function to get font family for each language
+const getFontFamilyByLanguage = (languageName) => {
+  const fontFamilies = {
+    'Malayalam': 'NotoSansMalayalam, sans-serif',
+    'English': 'Poppins, sans-serif',
+    'Hindi': 'NotoSansDevanagari, sans-serif',
+    'Bangla': 'SutonnyMJ, serif',
+    'Urdu': "'Noto Nastaliq Urdu', 'JameelNoori', serif",
+    'Tamil': 'Bamini, serif',
+  };
+  return fontFamilies[languageName] || fontFamilies['English'];
+};
+
 const VIEW_TYPE_SUPPORTED_LANGUAGES = ["mal", "E"];
 
 const Settings = ({ onClose }) => {
@@ -377,9 +403,13 @@ const Settings = ({ onClose }) => {
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
               <p
                 className="text-gray-700 dark:text-gray-300 transition-all duration-200"
-                style={{ fontSize: `${translationFontSize}px` }}
+                style={{ 
+                  fontSize: `${translationFontSize}px`,
+                  fontFamily: getFontFamilyByLanguage(language)
+                }}
+                dir={language === 'Urdu' ? 'rtl' : 'ltr'}
               >
-                In the name of Allah, the Entirely Merciful, the Especially Merciful.
+                {getExampleTextByLanguage(language)}
               </p>
             </div>
           </div>

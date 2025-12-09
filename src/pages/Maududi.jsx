@@ -376,10 +376,32 @@ const Maududi = () => {
                 <style>{`
                     .malayalam-maududi-content {
                         text-align: justify !important;
+                        font-family: 'NotoSansMalayalam' !important;
                     }
-                    .malayalam-maududi-content p {
+                    /* Target all paragraphs with maximum specificity */
+                    .malayalam-maududi-content p,
+                    .malayalam-maududi-content p.photo,
+                    .malayalam-maududi-content p[class],
+                    .malayalam-maududi-content .prose p,
+                    .malayalam-maududi-content .prose p.prose-sm,
+                    .malayalam-maududi-content .prose p.prose-base,
+                    .malayalam-maududi-content div p,
+                    .malayalam-maududi-content > div > p,
+                    .malayalam-maududi-content * p,
+                    div.malayalam-maududi-content.prose p,
+                    div.malayalam-maududi-content.prose.prose-sm p,
+                    div.malayalam-maududi-content.prose.prose-base p,
+                    .prose.malayalam-maududi-content p,
+                    .prose.prose-sm.malayalam-maududi-content p,
+                    .prose.prose-base.malayalam-maududi-content p,
+                    .malayalam-maududi-content.prose p,
+                    .malayalam-maududi-content.prose.prose-sm p,
+                    .malayalam-maududi-content.prose.prose-base p {
                         text-align: justify !important;
                         margin-bottom: 2em !important;
+                        font-family: 'NotoSansMalayalam' !important;
+                        font-size: 16px !important;
+                        line-height: 1.7 !important;
                     }
                     .malayalam-maududi-content h3 {
                         font-weight: bold !important;
@@ -405,7 +427,7 @@ const Maududi = () => {
                             <div
                                 className="malayalam-maududi-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 font-malayalam leading-7"
                                 style={{
-                                    fontFamily: "'Noto Sans Malayalam', sans-serif"
+                                    fontFamily: "'NotoSansMalayalam'"
                                 }}
                                 dangerouslySetInnerHTML={{ __html: MALAYALAM_CONTENT }}
                             />
@@ -479,11 +501,11 @@ const Maududi = () => {
                     }
                     .hindi-maududi-content h3 {
                         font-weight: 700 !important;
-                        margin-top: 1.4em !important;
+                        margin-top: .5em !important;
                         margin-bottom: 1em !important;
                     }
                     .hindi-maududi-content p {
-                        margin-bottom: 1em !important;
+                        margin-bottom: .5em !important;
                         line-height: 1.9 !important;
                         font-size: 16px;
                     }
@@ -523,20 +545,42 @@ const Maududi = () => {
             <>
                 <style>{`
                     .bangla-maududi-content {
-                        text-align: left !important;
+                        text-align: justify !important;
+                        font-family: 'Noto Sans Bengali', 'Kalpurush', sans-serif !important;
+                    }
+                    /* Target all paragraphs with maximum specificity */
+                    .bangla-maududi-content p,
+                    .bangla-maududi-content p.photo,
+                    .bangla-maududi-content p[class],
+                    .bangla-maududi-content .prose p,
+                    .bangla-maududi-content .prose p.prose-sm,
+                    .bangla-maududi-content .prose p.prose-base,
+                    .bangla-maududi-content div p,
+                    .bangla-maududi-content > div > p,
+                    .bangla-maududi-content * p,
+                    div.bangla-maududi-content.prose p,
+                    div.bangla-maududi-content.prose.prose-sm p,
+                    div.bangla-maududi-content.prose.prose-base p,
+                    .prose.bangla-maududi-content p,
+                    .prose.prose-sm.bangla-maududi-content p,
+                    .prose.prose-base.bangla-maududi-content p,
+                    .bangla-maududi-content.prose p,
+                    .bangla-maududi-content.prose.prose-sm p,
+                    .bangla-maududi-content.prose.prose-base p {
+                        text-align: justify !important;
+                        margin-bottom: .5em !important;
+                        font-family: 'Noto Sans Bengali', 'Kalpurush', sans-serif !important;
+                        font-size: 16px !important;
+                        line-height: 1.7 !important;
                     }
                     .bangla-maududi-content h3 {
-                        font-weight: 700 !important;
-                    }
-                    .bangla-maududi-content p {
-                        margin-bottom: .3em !important;
-                        line-height: 2.6 !important;
-                        font-size: 16px;
+                        font-weight: bold !important;
+                        margin-top: .5em !important;
+                        margin-bottom: .5em !important;
                     }
                     .bangla-maududi-content img {
-                        display: block;
-                        margin: 16px auto 24px;
-                        float: none !important;
+                        display: block !important;
+                        margin: 16px auto !important;
                     }
                     .bangla-maududi-content div[style*="display:flex"] {
                         justify-content: center;

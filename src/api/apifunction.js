@@ -2,6 +2,7 @@
 
 import {
   SURA_NAMES_API,
+  getSurahNamesByLanguageAPI,
   PAGE_RANGES_API,
   QURAN_TEXT_API,
   INTERPRETATION_API,
@@ -36,6 +37,8 @@ const surahsCache = {
   promise: null,
   timestamp: null,
   maxAge: 5 * 60 * 1000, // 5 minutes cache
+  language: null, // Track which language the cache is for
+  pendingLanguage: null, // Track which language is being fetched
 };
 
 // Cache for page ranges data to prevent duplicate API calls
@@ -248,13 +251,44 @@ export const fetchAyaTranslation = async (surahId, range, language = 'mal', retr
 
   throw lastError || new Error('Failed to fetch translation from MySQL API');
 };
+// Helper function to map language code to API language parameter
+const mapLanguageToAPI = (languageCode) => {
+  const langMap = {
+    'E': 'english',
+    'en': 'english',
+    'english': 'english',
+    'mal': 'malayalam',
+    'ml': 'malayalam',
+    'malayalam': 'malayalam',
+    'bn': 'bangla',
+    'bangla': 'bangla',
+    'hi': 'hindi',
+    'hindi': 'hindi',
+    'ta': 'tamil',
+    'tamil': 'tamil',
+    'ur': 'urdu',
+    'urdu': 'urdu'
+  };
+  return langMap[languageCode?.toLowerCase()] || 'english';
+};
+
 export const fetchSurahs = async (options = {}) => {
-  const { includePageRanges = false } = options;
+  const { includePageRanges = false, language = null } = options;
   
-  // Check cache first
+  // Determine which API endpoint to use based on language
+  const apiLanguage = language ? mapLanguageToAPI(language) : null;
+  const apiUrl = apiLanguage 
+    ? getSurahNamesByLanguageAPI(apiLanguage)
+    : SURA_NAMES_API;
+  
+  // Create cache key based on language
+  const cacheKey = apiLanguage || 'default';
+  
+  // Check cache first (language-specific cache)
   const now = Date.now();
   if (
     surahsCache.data &&
+    surahsCache.language === cacheKey &&
     surahsCache.timestamp &&
     now - surahsCache.timestamp < surahsCache.maxAge
   ) {
@@ -294,8 +328,8 @@ export const fetchSurahs = async (options = {}) => {
     return surahsCache.data;
   }
 
-  // If there's already a pending request, return that promise
-  if (surahsCache.promise) {
+  // If there's already a pending request for this language, return that promise
+  if (surahsCache.promise && surahsCache.pendingLanguage === cacheKey) {
     return surahsCache.promise;
   }
 
@@ -303,7 +337,7 @@ export const fetchSurahs = async (options = {}) => {
   surahsCache.promise = (async () => {
     try {
       // Fetch from new MySQL backend API
-      const surahResponse = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
+      const surahResponse = await fetchWithTimeout(apiUrl, {}, 15000);
       
       // Check if response is HTML (likely 404 error page)
       const contentType = surahResponse.headers.get('content-type');
@@ -350,26 +384,31 @@ export const fetchSurahs = async (options = {}) => {
         return {
           number: surah.SuraID,
           arabic: surah.ASuraName?.trim(),
-          name: surah.ESuraName?.trim(),
+          name: surah.SuraName?.trim() || surah.ESuraName?.trim(), // Use SuraName for language-specific, fallback to ESuraName
           ayahs: ayahCount,
           type: surah.SuraType === "Makkan" ? "Makki" : "Madani",
         };
       });
 
-      // Cache the result
+      // Cache the result with language key
       surahsCache.data = result;
+      surahsCache.language = cacheKey;
       surahsCache.timestamp = Date.now();
       surahsCache.promise = null;
+      surahsCache.pendingLanguage = null;
 
       // Successfully fetched surahs with accurate ayah counts
       return result;
     } catch (error) {
       // Clear promise on error so it can be retried
       surahsCache.promise = null;
-      console.error('❌ Error fetching surahs from MySQL API:', error.message);
+      surahsCache.pendingLanguage = null;
+      console.error(`❌ Error fetching surahs from MySQL API (language: ${apiLanguage}):`, error.message);
       throw error;
     }
   })();
+  
+  surahsCache.pendingLanguage = cacheKey;
 
   return surahsCache.promise;
 };
@@ -1126,14 +1165,42 @@ export const fetchSurahs = async (options = {}) => {
         name: "Al-Falaq",
         ayahs: 5,
         type: "Makki",
+// Helper function to map language code to API language parameter
+const mapLanguageToAPIForList = (languageCode) => {
+  const langMap = {
+    'E': 'english',
+    'en': 'english',
+    'english': 'english',
+    'mal': 'malayalam',
+    'ml': 'malayalam',
+    'malayalam': 'malayalam',
+    'bn': 'bangla',
+    'bangla': 'bangla',
+    'hi': 'hindi',
+    'hindi': 'hindi',
+    'ta': 'tamil',
+    'tamil': 'tamil',
+    'ur': 'urdu',
+    'urdu': 'urdu'
+  };
+  return langMap[languageCode?.toLowerCase()] || null;
+};
+
 /**
  * List surah names with minimal fields for UI dropdowns or lists
- * Returns: [{ id, arabic, english, ayahs }]
+ * Returns: [{ id, arabic, name, ayahs }]
+ * @param {string} language - Optional language code to fetch language-specific surah names
  */
-export const listSurahNames = async () => {
+export const listSurahNames = async (language = null) => {
   try {
+    // Determine which API endpoint to use based on language
+    const apiLanguage = language ? mapLanguageToAPIForList(language) : null;
+    const apiUrl = apiLanguage 
+      ? getSurahNamesByLanguageAPI(apiLanguage)
+      : SURA_NAMES_API;
+    
     // Fetch from new MySQL backend API
-    const response = await fetchWithTimeout(SURA_NAMES_API, {}, 15000);
+    const response = await fetchWithTimeout(apiUrl, {}, 15000);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -1148,12 +1215,13 @@ export const listSurahNames = async () => {
     const result = data.map((surah) => ({
       id: surah.SuraID,
       arabic: surah.ASuraName?.trim(),
-      english: surah.ESuraName?.trim(),
+      name: surah.SuraName?.trim() || surah.ESuraName?.trim(), // Use SuraName for language-specific, fallback to ESuraName
+      english: surah.ESuraName?.trim(), // Keep for backward compatibility
     }));
     
     return result;
   } catch (error) {
-    console.error('❌ Failed to fetch surah names from MySQL API:', error.message);
+    console.error(`❌ Failed to fetch surah names from MySQL API (language: ${language}):`, error.message);
     throw error;
   }
 };

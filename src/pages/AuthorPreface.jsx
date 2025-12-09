@@ -274,6 +274,13 @@ const AuthorPreface = () => {
               .malayalam-preface-content p br {
                 display: none !important;
               }
+              /* Allow br tags in signature section (paragraphs with m1 class span) */
+              .malayalam-preface-content p .m1 br {
+                display: inline !important;
+              }
+              .malayalam-preface-content p span.m1 br {
+                display: inline !important;
+              }
             `}</style>
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
               <div
@@ -289,7 +296,7 @@ const AuthorPreface = () => {
           <>
             <style>{`
               .hindi-preface-content {
-                text-align: left !important;
+                text-align: justify !important;
               }
               .hindi-preface-content h3 {
                 font-weight: 700 !important;
@@ -297,26 +304,18 @@ const AuthorPreface = () => {
                 margin-bottom: 1em !important;
               }
               .hindi-preface-content p {
+                text-align: justify !important;
                 margin-bottom: 1em !important;
                 line-height: 1.9 !important;
                 font-size: 16px;
               }
             `}</style>
-            <div className="mx-auto bg-white dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8 font-poppins">
-              <div className="max-w-[959.01px] mx-auto px-2 sm:px-4 lg:px-4">
-                <div className="mb-4 sm:mb-6 md:mb-8 border-b border-gray-300 dark:border-gray-600 pb-2">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black dark:text-white">
-                    लेखक की प्रस्तावना
-                  </h1>
-                </div>
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
-                  <div
-                    className="hindi-preface-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
-                    style={{ fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif" }}
-                    dangerouslySetInnerHTML={{ __html: HINDI_AUTHOR_PREFACE }}
-                  />
-                </div>
-              </div>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
+              <div
+                className="hindi-preface-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
+                style={{ fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif" }}
+                dangerouslySetInnerHTML={{ __html: HINDI_AUTHOR_PREFACE }}
+              />
             </div>
           </>
         ) : isBangla ? (
@@ -342,19 +341,45 @@ const AuthorPreface = () => {
             const banglaBlocks = parseBanglaContent();
             
             return (
-              <div>
-                {banglaBlocks.map((block, index) => {
-                  // Check if it's a signature section (contains strong tag or specific text)
-                  if (block.includes('<strong>') || block.includes('আবুল আ')) {
+              <>
+                <style>{`
+                  .bangla-preface-block p {
+                    text-align: justify !important;
+                  }
+                `}</style>
+                <div>
+                  {banglaBlocks.map((block, index) => {
+                    // Check if it's a signature section (contains strong tag or specific text)
+                    if (block.includes('<strong>') || block.includes('আবুল আ')) {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                        >
+                          <div
+                            className="bangla-preface-block"
+                            dangerouslySetInnerHTML={{ __html: block }}
+                            style={{
+                              textAlign: 'justify',
+                              fontSize: '16px',
+                              lineHeight: '2.6',
+                              fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                            }}
+                          />
+                        </div>
+                      );
+                    }
+                    // Regular paragraph - wrap in block
                     return (
                       <div
                         key={index}
                         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
                       >
                         <div
+                          className="bangla-preface-block"
                           dangerouslySetInnerHTML={{ __html: block }}
                           style={{
-                            textAlign: 'left',
+                            textAlign: 'justify',
                             fontSize: '16px',
                             lineHeight: '2.6',
                             fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
@@ -362,26 +387,9 @@ const AuthorPreface = () => {
                         />
                       </div>
                     );
-                  }
-                  // Regular paragraph - wrap in block
-                  return (
-                    <div
-                      key={index}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                    >
-                      <div
-                        dangerouslySetInnerHTML={{ __html: block }}
-                        style={{
-                          textAlign: 'left',
-                          fontSize: '16px',
-                          lineHeight: '2.6',
-                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              </>
             );
           })()
         ) : (

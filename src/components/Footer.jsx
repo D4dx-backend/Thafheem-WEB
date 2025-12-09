@@ -9,7 +9,7 @@ const Footer = () => {
 
   const quickLinks = [
     { label: 'About', path: '/about' },
-    { label: 'Privacy Policy', path: '/privacy' },
+    { label: 'Privacy Policy', path: '/privacy', external: 'https://d4dx.co/privacy-policy/' },
     { label: 'Contact', path: '/contact' },
   ];
 
@@ -76,7 +76,13 @@ const Footer = () => {
               {quickLinks.map((link, index) => (
                 <button
                   key={index}
-                  onClick={() => navigate(link.path)}
+                  onClick={() => {
+                    if (link.external) {
+                      window.open(link.external, '_blank');
+                    } else {
+                      navigate(link.path);
+                    }
+                  }}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#2596be] dark:hover:text-[#62C3DC] transition-colors duration-200 text-center md:text-left hover:translate-x-1 transform"
                 >
                   {link.label}

@@ -183,8 +183,8 @@ const AuthorConclusion = () => {
               }
               .urdu-conclusion-content p {
                 text-align: right !important;
-                margin-bottom: 1.2em !important;
-                line-height: 2.4 !important;
+                margin-bottom: 0.6em !important;
+                line-height: 2 !important;
                 font-size: 16px;
               }
               .urdu-conclusion-content em,
@@ -250,19 +250,45 @@ const AuthorConclusion = () => {
             const banglaBlocks = parseBanglaContent();
             
             return (
-              <div>
-                {banglaBlocks.map((block, index) => {
-                  // Check if it's a signature section (contains strong tag or specific text)
-                  if (block.includes('<strong>') || block.includes('আবুল আলা')) {
+              <>
+                <style>{`
+                  .bangla-conclusion-block p {
+                    text-align: justify !important;
+                  }
+                `}</style>
+                <div>
+                  {banglaBlocks.map((block, index) => {
+                    // Check if it's a signature section (contains strong tag or specific text)
+                    if (block.includes('<strong>') || block.includes('আবুল আলা')) {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+                        >
+                          <div
+                            className="bangla-conclusion-block"
+                            dangerouslySetInnerHTML={{ __html: block }}
+                            style={{
+                              textAlign: 'justify',
+                              fontSize: '16px',
+                              lineHeight: '2.6',
+                              fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                            }}
+                          />
+                        </div>
+                      );
+                    }
+                    // Regular paragraph - wrap in block
                     return (
                       <div
                         key={index}
                         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
                       >
                         <div
+                          className="bangla-conclusion-block"
                           dangerouslySetInnerHTML={{ __html: block }}
                           style={{
-                            textAlign: 'left',
+                            textAlign: 'justify',
                             fontSize: '16px',
                             lineHeight: '2.6',
                             fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
@@ -270,26 +296,9 @@ const AuthorConclusion = () => {
                         />
                       </div>
                     );
-                  }
-                  // Regular paragraph - wrap in block
-                  return (
-                    <div
-                      key={index}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
-                    >
-                      <div
-                        dangerouslySetInnerHTML={{ __html: block }}
-                        style={{
-                          textAlign: 'left',
-                          fontSize: '16px',
-                          lineHeight: '2.6',
-                          fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              </>
             );
           })()
         ) : isMalayalam ? (

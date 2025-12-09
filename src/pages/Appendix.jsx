@@ -139,10 +139,29 @@ const Appendix = () => {
       {isMalayalam && (
         <style>{`
           .malayalam-appendix-content {
-            font-family: 'Noto Sans Malayalam', sans-serif !important;
+            font-family: 'NotoSansMalayalam' !important;
           }
           .malayalam-appendix-content p {
-            font-family: 'Noto Sans Malayalam', sans-serif !important;
+            text-align: justify !important;
+            margin-bottom: 2em !important;
+            font-family: 'NotoSansMalayalam';
+            font-size: 16px;
+            line-height: 1.7;
+          }
+        `}</style>
+      )}
+      {isBangla && (
+        <style>{`
+          .bangla-appendix-content {
+            text-align: justify !important;
+            font-family: 'Noto Sans Bengali', 'Kalpurush', sans-serif !important;
+          }
+          .bangla-appendix-content p {
+            text-align: justify !important;
+            margin-bottom: 1em !important;
+            font-family: 'Noto Sans Bengali', 'Kalpurush', sans-serif !important;
+            font-size: 16px !important;
+            line-height: 1.7 !important;
           }
         `}</style>
       )}
@@ -190,11 +209,11 @@ const Appendix = () => {
                   <h3 
                     className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''} ${isMalayalam ? 'font-malayalam' : ''}`}
                     dangerouslySetInnerHTML={{ __html: fixQuestionMarkPosition(section.title) }}
-                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'Noto Sans Malayalam', sans-serif" } : {}}
+                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
                   />
                 )}
                 <div
-                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''} ${isEnglish ? 'english-appendix-content' : ''} ${isMalayalam ? 'malayalam-appendix-content' : ''}`}
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali bangla-appendix-content' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''} ${isEnglish ? 'english-appendix-content' : ''} ${isMalayalam ? 'malayalam-appendix-content' : ''}`}
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
                   style={isUrdu ? {
                     textAlign: 'right',
@@ -205,7 +224,10 @@ const Appendix = () => {
                     textAlign: 'justify',
                     fontFamily: "'Poppins', sans-serif"
                   } : isMalayalam ? {
-                    fontFamily: "'Noto Sans Malayalam', sans-serif"
+                    fontFamily: "'NotoSansMalayalam'"
+                  } : isBangla ? {
+                    textAlign: 'justify',
+                    fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
                   } : {}}
                 />
               </section>

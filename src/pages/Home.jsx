@@ -49,7 +49,7 @@ const Home = () => {
   const location = useLocation();
   
   // Use cached surah data hook - prevents duplicate API calls
-  const { surahs, loading, error, retry: handleRetry } = useSurahData();
+  const { surahs, loading, error, retry: handleRetry } = useSurahData(translationLanguage);
   const handleSurahClick = (surahNumber, event) => {
     // Check if modifier key is pressed (Ctrl/Cmd)
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
@@ -162,7 +162,14 @@ const Home = () => {
 
                     {/* Name + meta column */}
                     <div className="flex flex-col justify-center min-w-0">
-                      <h3 className="text-base sm:text-[16px] font-semibold text-gray-900 dark:text-white truncate font-poppins transition-colors duration-200 group-hover:text-[#3FA5C0]">
+                      <h3 className={`text-base sm:text-[16px] font-medium text-gray-900 dark:text-white truncate transition-colors duration-200 group-hover:text-[#3FA5C0] ${
+                        translationLanguage === 'mal' ? 'font-malayalam' :
+                        translationLanguage === 'ur' ? 'font-urdu' :
+                        translationLanguage === 'hi' ? 'font-hindi' :
+                        translationLanguage === 'bn' ? 'font-bengali' :
+                        translationLanguage === 'ta' ? 'font-tamil' :
+                        'font-poppins'
+                      }`}>
                         {surah.name}
                       </h3>
 

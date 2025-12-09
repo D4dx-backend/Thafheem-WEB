@@ -36,6 +36,8 @@ export const LEGACY_TFH_REMOTE_BASE = REMOTE_LEGACY_BASE;
 export const AYA_TRANSLATION_API = `${LEGACY_TFH_BASE}/ayatransl`;
 // New MySQL backend endpoint for surah names
 export const SURA_NAMES_API = `${API_BASE_PATH}/suranames/all`;
+// New MySQL backend endpoint for surah names by language
+export const getSurahNamesByLanguageAPI = (language) => `${API_BASE_PATH}/suranames/${language}`;
 // New MySQL backend endpoint for page ranges
 export const PAGE_RANGES_API = `${API_BASE_PATH}/pageranges`;
 export const AYAH_AUDIO_TRANSLATION_API = `${LEGACY_TFH_BASE}/ayaaudiotransl`;

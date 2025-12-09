@@ -5,6 +5,7 @@ import Verse from '../pages/Verse';
 import JuzNavigate from '../pages/JuzNavigate';
 import DemoItems from '../pages/DemoItems';
 import { useSurahData } from '../hooks/useSurahData';
+import { useTheme } from '../context/ThemeContext';
 
 // Custom Kaaba Icon Component (Makkah)
 const KaabaIcon = ({ className }) => (
@@ -44,9 +45,10 @@ const MadinaIcon = ({ className }) => (
 const NavigateSurah = ({ onClose, onSurahSelect }) => {
   const [activeTab, setActiveTab] = useState('Surah');
   const navigate = useNavigate();
+  const { translationLanguage } = useTheme();
 
   // Use cached surah data hook to get type information
-  const { surahs, loading } = useSurahData();
+  const { surahs, loading } = useSurahData(translationLanguage);
 
   const tabs = ['Surah', 'Verse', 'Juz', 'Page'];
 

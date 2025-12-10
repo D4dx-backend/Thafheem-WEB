@@ -97,7 +97,7 @@ const IntroductionToQuran = () => {
   // Determine title based on language
   const getTitle = () => {
     if (isUrdu) return "قرآن سے تعارف";
-    if (isMalayalam) return "ഖുര്‍ആനിലേക്കുള്ള ആമുഖം";
+    if (isMalayalam) return "ഖുര്‍ആന്‍പഠനത്തിന് ഒരു മുഖവുര";
     if (isHindi) return "कुरान का परिचय";
     if (isBangla) return "কুরআনের পরিচিতি";
     if (isTamil) return "குர்ஆன் - ஓர் அறிமுகம்";

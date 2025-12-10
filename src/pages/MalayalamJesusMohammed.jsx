@@ -67,6 +67,7 @@ const MalayalamJesusMohammed = () => {
         <div className="mb-6">
           <h1
             className={`text-3xl font-bold text-gray-900 mb-2 dark:text-white ${isMalayalam ? 'font-malayalam' : ''}`}
+            style={isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
           >
             {isMalayalam ? 'യേശുവും മുഹമ്മദും' : 'Jesus and Mohammed'}
           </h1>
@@ -108,6 +109,7 @@ const MalayalamJesusMohammed = () => {
                     className={`mb-4 prose prose-lg dark:prose-invert max-w-none ${
                       isMalayalam ? 'font-malayalam' : ''
                     }`}
+                    style={isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
                     dangerouslySetInnerHTML={{ __html: section.title }}
                   />
                 )}
@@ -119,6 +121,7 @@ const MalayalamJesusMohammed = () => {
                   style={{
                     lineHeight: 1.8,
                     textAlign: 'justify',
+                    ...(isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}),
                   }}
                 />
               </section>

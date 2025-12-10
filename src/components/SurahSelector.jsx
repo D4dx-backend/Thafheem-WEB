@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { ChevronRight, X } from "lucide-react";
 import { fetchSurahs, fetchPageRanges } from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
 
 const SurahSelector = ({ isOpen, onClose, onSelect, currentSurahId }) => {
+  const { translationLanguage } = useTheme();
   const [surahs, setSurahs] = useState([]);
   const [pageRanges, setPageRanges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,13 @@ const SurahSelector = ({ isOpen, onClose, onSelect, currentSurahId }) => {
       <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+          <h2 
+            className={`text-lg font-semibold text-gray-800 dark:text-white ${
+              translationLanguage === 'ur' && showRanges ? 'font-urdu-nastaliq' : 
+              translationLanguage === 'mal' ? 'font-malayalam' : ''
+            }`}
+            style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+          >
             {showRanges ? `${selectedSurah?.name} - Verse Ranges` : "Select Surah"}
           </h2>
           <button
@@ -123,7 +131,13 @@ const SurahSelector = ({ isOpen, onClose, onSelect, currentSurahId }) => {
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="font-medium text-gray-800 dark:text-white">
+                      <div 
+                        className={`font-medium text-gray-800 dark:text-white ${
+                          translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
+                          translationLanguage === 'mal' ? 'font-malayalam' : ''
+                        }`}
+                        style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                      >
                         {surah.number}. {surah.name}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">

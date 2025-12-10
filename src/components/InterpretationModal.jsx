@@ -334,6 +334,13 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
             margin-bottom: 10px !important;
             font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
           }
+          .urdu-interpretation-content a {
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+            text-align: right !important;
+          }
+          .urdu-interpretation-content * {
+            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          }
           .urdu-interpretation-content sup.interpretation-link,
           .urdu-interpretation-content sup[data-interpretation],
           .urdu-interpretation-content sup.urdu-footnote-link,

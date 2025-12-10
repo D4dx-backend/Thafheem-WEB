@@ -55,6 +55,14 @@ import {
   getCalligraphicSurahName,
   surahNameFontFamily,
 } from "../utils/surahNameUtils.js";
+
+// Helper function to decode HTML entities
+const decodeHTML = (html) => {
+  if (!html) return html;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = html;
+  return textarea.value;
+};
 import { useSurahViewCache } from "../context/SurahViewCacheContext";
 import useSequentialEnglishFootnotes from "../hooks/useSequentialEnglishFootnotes";
 
@@ -1340,7 +1348,9 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
 
           try {
             const explanation = await urduTranslationService.getFootnoteExplanation(footnoteId);
-            setUrduFootnoteContent(explanation);
+            // Decode HTML entities to ensure links render properly
+            const decodedExplanation = explanation ? decodeHTML(explanation) : explanation;
+            setUrduFootnoteContent(decodedExplanation);
           } catch (error) {
             console.error('❌ Error loading Urdu footnote:', error);
             setUrduFootnoteContent(`Error loading explanation: ${error.message}`);
@@ -2253,7 +2263,7 @@ Read more: ${shareUrl}`;
                             />
                           ) : translationLanguage === 'ur' ? (
                             <div
-                              className="font-urdu leading-relaxed text-right"
+                              className="font-urdu-nastaliq leading-relaxed text-right"
                               dir="rtl"
                               style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ __html: verse.Translation }}
@@ -2593,13 +2603,23 @@ Read more: ${shareUrl}`;
 
         {/* Urdu Footnote Modal */}
         {showUrduFootnoteModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-2 sm:p-4 lg:p-6 bg-black/60 dark:bg-black/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-            <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden my-auto">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Urdu Explanation
-                </h2>
+          <>
+            <style>{`
+              .urdu-footnote-modal-content * {
+                font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+              }
+              .urdu-footnote-modal-content a {
+                font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+                text-align: right !important;
+              }
+            `}</style>
+            <div className="fixed inset-0 flex items-center justify-center z-[9999] p-2 sm:p-4 lg:p-6 bg-black/60 dark:bg-black/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+              <div className="bg-white dark:bg-[#2A2C38] rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-[1073px] max-h-[90vh] flex flex-col overflow-hidden my-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Urdu Explanation
+                  </h2>
                 <button
                   onClick={() => setShowUrduFootnoteModal(false)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -2624,8 +2644,18 @@ Read more: ${shareUrl}`;
                 ) : (
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                     <div
-                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                      className={`text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none urdu-footnote-modal-content ${
+                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 'font-poppins'
+                      }`}
+                      style={{ 
+                        fontSize: `${adjustedTranslationFontSize}px`,
+                        ...(translationLanguage === 'ur' ? {
+                          textAlign: 'right',
+                          lineHeight: '2.6',
+                          fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                        } : {})
+                      }}
+                      dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}
                     >
                       {urduFootnoteContent}
                     </div>
@@ -2634,6 +2664,7 @@ Read more: ${shareUrl}`;
               </div>
             </div>
           </div>
+          </>
         )}
 
         {/* English Footnote Modal */}

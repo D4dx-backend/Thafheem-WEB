@@ -4005,19 +4005,14 @@ export const fetchWordMeanings = async (
     
     const data = await response.json();
     
-    // Transform to match expected format for quiz
+    // Return words array with all original database fields preserved
+    // This allows components to access WordPhrase, WordMeaning, MalMeaning, EngMeaning, etc.
     return {
-      words: data.words?.map((word, index) => ({
-        id: word.WordId || word.id || index + 1,
-        position: word.WordId || word.id || index + 1,
-        text_uthmani: word.text_uthmani || word.WordPhrase || '',
-        text_simple: word.text_simple || word.WordPhrase || '',
-        translation: {
-          text: word.WordMeaning || word.MalMeaning || word.EngMeaning || word.translation?.text || '',
-          language_name: apiLanguage,
-          resource_name: `Thafheem ${apiLanguage} Database`
-        }
-      })) || []
+      words: data.words || [],
+      language: data.language || apiLanguage,
+      surah: data.surah || surahId,
+      ayah: data.ayah || ayahNumber,
+      count: data.count || (data.words?.length || 0)
     };
   } catch (error) {
     console.error("Error fetching word meanings from MySQL API:", error);
@@ -4390,7 +4385,9 @@ const APPENDIX_LANGUAGE_MAP = {
   hindi: 'hindi',
   hi: 'hindi',
   bangla: 'bangla',
-  bn: 'bangla'
+  bn: 'bangla',
+  tamil: 'tamil',
+  ta: 'tamil'
 };
 
 export const fetchAppendix = async (language = 'english') => {
@@ -4440,6 +4437,35 @@ export const fetchUrduFinalityOfProphethood = async () => {
       language: 'urdu',
       count: 0,
       sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Urdu Finality of Prophethood Footnote by ID
+export const fetchUrduFinalityFootnote = async (footnoteId) => {
+  try {
+    const id = parseInt(footnoteId, 10);
+    if (isNaN(id) || id <= 0) {
+      throw new Error('Invalid footnote ID');
+    }
+
+    const response = await fetch(`${API_BASE_PATH}/urdu/finality-of-prophethood/footnote/${id}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      footnote_id: data?.footnote_id ?? id,
+      footnote_text: data?.footnote_text || '',
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Urdu Finality of Prophethood footnote:', error.message);
+    return {
+      footnote_id: footnoteId ?? null,
+      footnote_text: '',
       error: error.message,
     };
   }
@@ -4670,6 +4696,31 @@ export const fetchBanglaIntroductionToQuran = async () => {
   }
 };
 
+// Fetch Tamil Introduction to Quran
+export const fetchTamilIntroductionToQuran = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/tamil/introduction-to-quran`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'tamil',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Tamil Introduction to Quran:', error.message);
+    return {
+      language: 'tamil',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
 // Fetch English Finality of Prophethood
 export const fetchEnglishFinalityOfProphethood = async () => {
   try {
@@ -4745,6 +4796,31 @@ export const fetchBanglaJesusMohammed = async () => {
   }
 };
 
+// Fetch Tamil Jesus and Mohammed
+export const fetchTamilJesusMohammed = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/tamil/jesus-mohammed`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'tamil',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Tamil Jesus and Mohammed:', error.message);
+    return {
+      language: 'tamil',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
 // Fetch Bangla Finality of Prophethood
 export const fetchBanglaFinalityOfProphethood = async () => {
   try {
@@ -4763,6 +4839,31 @@ export const fetchBanglaFinalityOfProphethood = async () => {
     console.error('Failed to fetch Bangla Finality of Prophethood:', error.message);
     return {
       language: 'bangla',
+      count: 0,
+      sections: [],
+      error: error.message,
+    };
+  }
+};
+
+// Fetch Tamil Finality of Prophethood
+export const fetchTamilFinalityOfProphethood = async () => {
+  try {
+    const response = await fetch(`${API_BASE_PATH}/tamil/finality-of-prophethood`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      language: data?.language || 'tamil',
+      count: data?.count ?? data?.sections?.length ?? 0,
+      sections: data?.sections || [],
+    };
+  } catch (error) {
+    console.error('Failed to fetch Tamil Finality of Prophethood:', error.message);
+    return {
+      language: 'tamil',
       count: 0,
       sections: [],
       error: error.message,
@@ -4831,6 +4932,35 @@ export const fetchMalayalamFootnote = async (footnoteId) => {
     };
   } catch (error) {
     console.error('Failed to fetch Malayalam footnote:', error.message);
+    return {
+      footnote_id: footnoteId ?? null,
+      footnote_text: '',
+      error: error.message,
+    };
+  }
+};
+
+// Fetch English Finality of Prophethood Footnote by ID
+export const fetchEnglishFinalityFootnote = async (footnoteId) => {
+  try {
+    const id = parseInt(footnoteId, 10);
+    if (isNaN(id) || id <= 0) {
+      throw new Error('Invalid footnote ID');
+    }
+
+    const response = await fetch(`${API_BASE_PATH}/english/finality-of-prophethood/footnote/${id}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      footnote_id: data?.footnote_id ?? id,
+      footnote_text: data?.footnote_text || '',
+      error: data?.error || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch English Finality of Prophethood footnote:', error.message);
     return {
       footnote_id: footnoteId ?? null,
       footnote_text: '',

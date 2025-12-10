@@ -369,7 +369,7 @@ const WordByWord = ({
                 </h4>
                 <p
                   className={`text-gray-700 leading-[1.8] dark:text-gray-200 px-2 sm:px-0 ${translationLanguage === 'hi' ? 'font-hindi' :
-                    translationLanguage === 'ur' ? 'font-urdu' :
+                    translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
                       translationLanguage === 'bn' ? 'font-bengali' :
                         translationLanguage === 'ta' ? 'font-tamil' :
                           translationLanguage === 'mal' ? 'font-malayalam' :
@@ -438,7 +438,7 @@ const WordByWord = ({
                           <p
                             className={`text-gray-700 leading-[1.6] sm:leading-[1.7] lg:leading-[1.8] dark:text-gray-200 mb-1 font-medium ${
                               translationLanguage === 'hi' ? 'font-hindi' :
-                              translationLanguage === 'ur' ? 'font-urdu' :
+                              translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
                               translationLanguage === 'bn' ? 'font-bengali' :
                               translationLanguage === 'ta' ? 'font-tamil' :
                               translationLanguage === 'mal' ? 'font-malayalam' :

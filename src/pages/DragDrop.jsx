@@ -11,8 +11,10 @@ import {
   fetchAyaRanges,
   fetchWordMeanings,
 } from "../api/apifunction";
+import { useTheme } from "../context/ThemeContext";
 
 const DragDropQuiz = () => {
+  const { translationLanguage } = useTheme();
   const [score, setScore] = useState(0);
   const [currentAyah, setCurrentAyah] = useState(1);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -26,7 +28,7 @@ const DragDropQuiz = () => {
     range: "1-7",
   });
   const [dynamicArabicTexts, setDynamicArabicTexts] = useState([]);
-  const [dynamicMalayalamOptions, setDynamicMalayalamOptions] = useState([]);
+  const [dynamicTranslationOptions, setDynamicTranslationOptions] = useState([]);
   const [loadingWordMeanings, setLoadingWordMeanings] = useState(false);
 
   // Pagination states
@@ -41,6 +43,37 @@ const DragDropQuiz = () => {
   const [loadingRanges, setLoadingRanges] = useState(false);
 
   const quranFont = "Amiri Quran";
+
+  // Get font class based on language
+  const getTranslationFontClass = () => {
+    if (translationLanguage === 'hi') return 'font-hindi';
+    if (translationLanguage === 'ur') return 'font-urdu-nastaliq';
+    if (translationLanguage === 'bn') return 'font-bengali';
+    if (translationLanguage === 'ta') return 'font-tamil';
+    if (translationLanguage === 'mal') return 'font-malayalam';
+    return 'font-poppins';
+  };
+
+  // Get language label
+  const getLanguageLabel = () => {
+    if (translationLanguage === 'E' || translationLanguage === 'en') return 'English';
+    if (translationLanguage === 'hi') return 'Hindi';
+    if (translationLanguage === 'ur') return 'Urdu';
+    if (translationLanguage === 'bn') return 'Bangla';
+    if (translationLanguage === 'ta') return 'Tamil';
+    return 'Malayalam';
+  };
+
+  // Get score label based on language
+  const getScoreLabel = () => {
+    if (translationLanguage === 'mal') return 'മാർക്ക്';
+    if (translationLanguage === 'E' || translationLanguage === 'en') return 'Score';
+    if (translationLanguage === 'hi') return 'स्कोर';
+    if (translationLanguage === 'ur') return 'اسکور';
+    if (translationLanguage === 'bn') return 'স্কোর';
+    if (translationLanguage === 'ta') return 'மதிப்பெண்';
+    return 'Score';
+  };
 
   // Fetch surahs data from API
   useEffect(() => {
@@ -67,7 +100,7 @@ const DragDropQuiz = () => {
 
       try {
         setLoadingRanges(true);
-        const ranges = await fetchAyaRanges(selectedSurahId);
+        const ranges = await fetchAyaRanges(selectedSurahId, translationLanguage);
 
         // Ensure ranges is an array
         const rangesArray = Array.isArray(ranges) ? ranges : [];
@@ -89,7 +122,7 @@ const DragDropQuiz = () => {
     };
 
     loadAyahRanges();
-  }, [selectedSurahId]);
+  }, [selectedSurahId, translationLanguage]);
 
   // Fetch word meanings when current ayah changes
   useEffect(() => {
@@ -98,24 +131,45 @@ const DragDropQuiz = () => {
 
       try {
         setLoadingWordMeanings(true);
-const wordMeanings = await fetchWordMeanings(
+        const response = await fetchWordMeanings(
           currentSurah.id,
           currentAyah,
-          "M"
-        ); // M for Malayalam
-if (
-          wordMeanings &&
-          Array.isArray(wordMeanings) &&
-          wordMeanings.length > 0
-        ) {
+          translationLanguage
+        );
+        
+        // Handle the API response format: { words: [...] }
+        const wordsArray = response?.words || [];
+        
+        if (wordsArray && Array.isArray(wordsArray) && wordsArray.length > 0) {
           // Filter out empty meanings and verse numbers
-          const validWords = wordMeanings.filter(
-            (word) =>
-              word.WordPhrase &&
-              word.Meaning &&
-              word.Meaning.trim() !== "" &&
-              !word.WordPhrase.includes("﴿") // Filter out verse numbers
-          );
+          // The API returns raw database rows with fields like WordPhrase, WordMeaning, MalMeaning, EngMeaning
+          const validWords = wordsArray
+            .map((word) => {
+              // Extract WordPhrase (Arabic text)
+              const wordPhrase = word.WordPhrase || '';
+              
+              // Extract meaning based on language
+              // For Malayalam: MalMeaning or WordMeaning
+              // For English: EngMeaning or WordMeaning
+              // For other languages: WordMeaning
+              const meaning = word.MalMeaning || 
+                              word.EngMeaning || 
+                              word.WordMeaning || 
+                              '';
+              
+              return {
+                WordPhrase: wordPhrase,
+                Meaning: meaning
+              };
+            })
+            .filter(
+              (word) =>
+                word.WordPhrase &&
+                word.Meaning &&
+                word.Meaning.trim() !== "" &&
+                !word.WordPhrase.includes("﴿") && // Filter out verse numbers
+                !word.WordPhrase.trim().match(/^[\d\s]+$/) // Filter out pure numbers
+            );
 
           if (validWords.length > 0) {
             // Transform API data to component format
@@ -132,31 +186,31 @@ if (
             const shuffledMeanings = [...allMeanings].sort(
               () => Math.random() - 0.5
             );
-            const malayalamOptions = shuffledMeanings.map((meaning, index) => ({
+            const translationOptions = shuffledMeanings.map((meaning, index) => ({
               id: `opt${index + 1}`,
               text: meaning,
             }));
 
             setDynamicArabicTexts(arabicTexts);
-            setDynamicMalayalamOptions(malayalamOptions);
+            setDynamicTranslationOptions(translationOptions);
             setCurrentWordPage(0); // Reset to first page when new data loads
           } else {
             // No valid words found
             setDynamicArabicTexts([]);
-            setDynamicMalayalamOptions([]);
+            setDynamicTranslationOptions([]);
             setCurrentWordPage(0);
           }
         } else {
           // Reset to fallback data if no API data
           setDynamicArabicTexts([]);
-          setDynamicMalayalamOptions([]);
+          setDynamicTranslationOptions([]);
           setCurrentWordPage(0);
         }
       } catch (error) {
         console.error("Failed to load word meanings:", error);
         // Reset to fallback data on error
         setDynamicArabicTexts([]);
-        setDynamicMalayalamOptions([]);
+        setDynamicTranslationOptions([]);
         setCurrentWordPage(0);
       } finally {
         setLoadingWordMeanings(false);
@@ -164,8 +218,9 @@ if (
     };
 
     loadWordMeanings();
-  }, [currentSurah.id, currentAyah]);
+  }, [currentSurah.id, currentAyah, translationLanguage]);
 
+  // Fallback data (Malayalam) - used when API data is not available
   const arabicTexts = [
     {
       id: "word_1",
@@ -177,7 +232,7 @@ if (
     { id: "word_4", text: "الرَّحِيمِ", correctTranslation: "പരമദയാലുവായ" },
   ];
 
-  const malayalamOptions = [
+  const fallbackTranslationOptions = [
     { id: "opt1", text: "നിദ്രാനിമഗ്നമായവനു" },
     { id: "opt2", text: "പരമകാരുണികനായവനു" },
     { id: "opt3", text: "അല്ലാഹുവിന്റെ നാമത്തിൽ" },
@@ -188,21 +243,21 @@ if (
 
   const allArabicTexts =
     dynamicArabicTexts.length > 0 ? dynamicArabicTexts : arabicTexts;
-  const allMalayalamOptions =
-    dynamicMalayalamOptions.length > 0
-      ? dynamicMalayalamOptions
-      : malayalamOptions;
+  const allTranslationOptions =
+    dynamicTranslationOptions.length > 0
+      ? dynamicTranslationOptions
+      : fallbackTranslationOptions;
 
   // Get current page words
   const startIndex = currentWordPage * wordsPerPage;
   const endIndex = startIndex + wordsPerPage;
   const currentArabicTexts = allArabicTexts.slice(startIndex, endIndex);
 
-  // Get corresponding Malayalam options for current page
+  // Get corresponding translation options for current page
   const currentPageMeanings = currentArabicTexts.map(
     (word) => word.correctTranslation
   );
-  const currentMalayalamOptions = allMalayalamOptions.filter((option) =>
+  const currentTranslationOptions = allTranslationOptions.filter((option) =>
     currentPageMeanings.includes(option.text)
   );
 
@@ -306,7 +361,7 @@ if (
 
   const getAvailableOptions = () => {
     const usedTexts = Object.values(droppedItems).map((item) => item.text);
-    return currentMalayalamOptions.filter(
+    return currentTranslationOptions.filter(
       (option) => !usedTexts.includes(option.text)
     );
   };
@@ -543,7 +598,7 @@ if (
                   Page: {currentWordPage + 1}/{totalPages}
                 </span>
               )}
-              <span className="ml-4">മാർക്ക്: {score}</span>
+              <span className="ml-4">{getScoreLabel()}: {score}</span>
             </div>
           </div>
           <div className="sm:hidden border-t border-gray-300 mt-2 pt-2 text-xs text-gray-600 dark:text-white flex justify-end gap-4">
@@ -553,7 +608,7 @@ if (
                 Page: {currentWordPage + 1}/{totalPages}
               </span>
             )}
-            <span>മാർക്ക്: {score}</span>
+            <span>{getScoreLabel()}: {score}</span>
           </div>
         </div>
       </div>
@@ -606,7 +661,7 @@ if (
                             onDragStart={(e) =>
                               droppedItem && handleDragStart(e, droppedItem)
                             }
-                            className={`w-full font-malayalam sm:w-56 lg:w-64 h-10 sm:h-12 border rounded-lg flex items-center justify-center text-xs sm:text-sm transition-colors ${
+                            className={`w-full ${getTranslationFontClass()} sm:w-56 lg:w-64 h-10 sm:h-12 border rounded-lg flex items-center justify-center text-xs sm:text-sm transition-colors ${
                               droppedItem
                                 ? droppedItem.correct
                                   ? "border-green-400 bg-green-100 text-green-700"
@@ -629,9 +684,9 @@ if (
 
                   <div className="flex flex-col gap-2 sm:gap-3 order-3">
                     <h3 className="text-sm sm:text-base font-medium text-center mb-2 text-gray-700 dark:text-white lg:hidden">
-                      Malayalam Options
+                      {getLanguageLabel()} Options
                     </h3>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-1 font-malayalam">
+                    <div className={`grid grid-cols-2 gap-4 sm:grid-cols-1 ${getTranslationFontClass()}`}>
                       {getAvailableOptions().map((option) => {
                         const handleOptionDrop = (e) => {
                           e.preventDefault();

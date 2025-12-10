@@ -1078,7 +1078,7 @@ const BlockWise = () => {
                       {translationData ? (
                         <div className={`text-gray-700 max-w-[1081px] dark:text-white leading-relaxed text-xs sm:text-sm md:text-base lg:text-base ${
                           translationLanguage === 'hi' ? 'font-hindi' :
-                          translationLanguage === 'ur' ? 'font-urdu' :
+                          translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
                           translationLanguage === 'bn' ? 'font-bengali' :
                           translationLanguage === 'ta' ? 'font-tamil' :
                           translationLanguage === 'mal' ? 'font-malayalam' :

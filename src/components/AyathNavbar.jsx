@@ -13,6 +13,7 @@ import { fetchSurahs } from "../api/apifunction";
 import { useAuth } from "../context/AuthContext";
 import BookmarkService from "../services/bookmarkService";
 import { useToast } from "../hooks/useToast";
+import { useTheme } from "../context/ThemeContext";
 
 const AyathNavbar = ({
   surahId,
@@ -28,6 +29,7 @@ const AyathNavbar = ({
   selectedQari,
   onQariChange,
 }) => {
+  const { translationLanguage } = useTheme();
   const [visible, setVisible] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [verseDropdownOpen, setVerseDropdownOpen] = useState(false);
@@ -363,7 +365,15 @@ const AyathNavbar = ({
                     }`}
                     onClick={() => handleSurahChange(surah.number)}
                   >
-                    {surah.number} - {surah.name}
+                    <span 
+                      className={
+                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
+                        translationLanguage === 'mal' ? 'font-malayalam' : ''
+                      }
+                      style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                    >
+                      {surah.number} - {surah.name}
+                    </span>
                   </div>
                 ))}
               </div>

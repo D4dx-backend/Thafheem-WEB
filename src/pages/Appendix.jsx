@@ -29,6 +29,11 @@ const PAGE_CONFIG = {
 
     apiLanguage: "bangla",
   },
+  tamil: {
+    title: "Tamil Appendix",
+
+    apiLanguage: "tamil",
+  },
 };
 
 const Appendix = () => {
@@ -36,9 +41,13 @@ const Appendix = () => {
   const navigate = useNavigate();
   const { translationLanguage } = useTheme();
   const normalized = String(lang || "english").toLowerCase();
-  const isBangla = normalized.startsWith("bangla") || normalized === "bn" || translationLanguage === "bn";
-
+  
+  // Priority: URL parameter over theme context for language detection
   const pageConfig = useMemo(() => {
+    // Check Tamil first to avoid conflicts with other languages
+    if (normalized === "ta" || normalized === "tamil") {
+      return PAGE_CONFIG.tamil;
+    }
     if (normalized.startsWith("mal")) {
       return PAGE_CONFIG.malayalam;
     }
@@ -54,9 +63,13 @@ const Appendix = () => {
     return PAGE_CONFIG.english;
   }, [normalized]);
 
-  const isUrdu = normalized.startsWith("urdu") || normalized === "u" || translationLanguage === "ur" || translationLanguage === "urdu";
-  const isMalayalam = normalized.startsWith("mal") || translationLanguage === "mal";
-  const isEnglish = normalized.startsWith("english") || normalized === "e" || (!normalized.startsWith("mal") && !normalized.startsWith("urdu") && !normalized.startsWith("hindi") && !normalized.startsWith("bangla"));
+  // Language flags based on URL parameter (not theme context) to avoid conflicts
+  const isTamil = normalized === "ta" || normalized === "tamil" || normalized.startsWith("tamil");
+  const isUrdu = normalized.startsWith("urdu") || normalized === "u";
+  const isMalayalam = normalized.startsWith("mal");
+  const isBangla = normalized.startsWith("bangla") || normalized === "bn";
+  const isHindi = normalized.startsWith("hindi") || normalized === "hi";
+  const isEnglish = !isTamil && !isUrdu && !isMalayalam && !isBangla && !isHindi;
 
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -165,6 +178,34 @@ const Appendix = () => {
           }
         `}</style>
       )}
+      {isTamil && (
+        <style>{`
+          .tamil-appendix-content {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            line-height: 1.8 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+          .tamil-appendix-content p {
+            margin-bottom: 1.5em !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            font-family: 'Bamini', serif !important;
+            font-size: 16px !important;
+            line-height: 1.8 !important;
+          }
+          .tamil-appendix-content h1,
+          .tamil-appendix-content h2,
+          .tamil-appendix-content h3,
+          .tamil-appendix-content h4,
+          .tamil-appendix-content strong {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+          }
+        `}</style>
+      )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         <button
           onClick={handleBack}
@@ -207,13 +248,13 @@ const Appendix = () => {
               >
                 {section.title && (
                   <h3 
-                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''} ${isMalayalam ? 'font-malayalam' : ''}`}
+                    className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''} ${isMalayalam ? 'font-malayalam' : ''} ${isTamil ? 'font-tamil' : ''}`}
                     dangerouslySetInnerHTML={{ __html: fixQuestionMarkPosition(section.title) }}
-                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : isTamil ? { fontFamily: "'Bamini', serif", textAlign: 'justify' } : {}}
                   />
                 )}
                 <div
-                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali bangla-appendix-content' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''} ${isEnglish ? 'english-appendix-content' : ''} ${isMalayalam ? 'malayalam-appendix-content' : ''}`}
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-7 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 ${isBangla ? 'font-bengali bangla-appendix-content' : ''} ${isUrdu ? 'font-urdu-nastaliq urdu-appendix-content' : ''} ${isEnglish ? 'english-appendix-content' : ''} ${isMalayalam ? 'malayalam-appendix-content' : ''} ${isTamil ? 'tamil-appendix-content' : ''}`}
                   dangerouslySetInnerHTML={{ __html: section.text || "" }}
                   style={isUrdu ? {
                     textAlign: 'right',
@@ -228,6 +269,13 @@ const Appendix = () => {
                   } : isBangla ? {
                     textAlign: 'justify',
                     fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"
+                  } : isTamil ? {
+                    textAlign: 'justify',
+                    textJustify: 'inter-word',
+                    fontFamily: "'Bamini', serif",
+                    lineHeight: '1.8',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word'
                   } : {}}
                 />
               </section>

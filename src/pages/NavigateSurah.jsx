@@ -241,7 +241,9 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
                     className="cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
                   >
                     <div className="flex items-center">
-                      <span className="flex-1 min-w-0 pr-2">{surah.english || surah.name}</span>
+                      <span className={`flex-1 min-w-0 pr-2 ${
+                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : ''
+                      }`}>{surah.english || surah.name}</span>
                       {surahIcon && (
                         <span className="flex items-center justify-center w-5 h-5 flex-shrink-0 self-center">
                           {surahIcon}

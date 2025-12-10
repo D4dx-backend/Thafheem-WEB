@@ -1,5 +1,6 @@
 // AuthorPreface.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Play, Pause } from "lucide-react";
 
@@ -139,10 +140,24 @@ const BANGLA_AUTHOR_PREFACE = `
 
 const AuthorPreface = () => {
   const { translationLanguage } = useTheme();
+  const navigate = useNavigate();
   const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
   const isMalayalam = translationLanguage === 'mal';
   const isHindi = translationLanguage === 'hi';
   const isBangla = translationLanguage === 'bn';
+  const isTamil = translationLanguage === 'ta';
+
+  // Redirect to Tamil Author Preface page when Tamil is selected
+  useEffect(() => {
+    if (isTamil) {
+      navigate("/tamil/author-preface", { replace: true });
+    }
+  }, [isTamil, navigate]);
+
+  // Return null while redirecting to Tamil page
+  if (isTamil) {
+    return null;
+  }
 
   // Audio player state for Malayalam
   const [isPlaying, setIsPlaying] = useState(false);
@@ -164,7 +179,7 @@ const AuthorPreface = () => {
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         {isMalayalam ? (
           <div className="flex items-center justify-between mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">
-            <h2 className="text-2xl font-bold dark:text-white">
+            <h2 className="text-2xl font-bold dark:text-white font-malayalam" style={{ fontFamily: "'NotoSansMalayalam'" }}>
               രചയിതാവിന്റെ ആമുഖം
             </h2>
             <div className="relative group">
@@ -251,6 +266,7 @@ const AuthorPreface = () => {
                 text-justify: inter-word !important;
                 word-spacing: normal !important;
                 letter-spacing: normal !important;
+                font-family: 'NotoSansMalayalam' !important;
               }
               .malayalam-preface-content p {
                 text-align: justify !important;
@@ -264,6 +280,7 @@ const AuthorPreface = () => {
                 white-space: normal !important;
                 orphans: 2 !important;
                 widows: 2 !important;
+                font-family: 'NotoSansMalayalam' !important;
               }
               .malayalam-preface-content p:last-child {
                 margin-bottom: 0 !important;
@@ -286,7 +303,7 @@ const AuthorPreface = () => {
               <div
                 className="malayalam-preface-content prose prose-base dark:prose-invert max-w-none leading-7 font-malayalam text-gray-800 dark:text-gray-100"
                 style={{
-                  fontFamily: "'Noto Sans Malayalam', sans-serif"
+                  fontFamily: "'NotoSansMalayalam'"
                 }}
                 dangerouslySetInnerHTML={{ __html: MALAYALAM_AUTHOR_PREFACE }}
               />

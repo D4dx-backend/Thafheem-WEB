@@ -131,12 +131,36 @@ const MALAYALAM_ABOUT = `
   </p>
 `;
 
+const TAMIL_ABOUT = `
+  <p>
+    புனித குர்ஆன் என்பது அகிலங்களின் படைப்பாளனாகிய அல்லாஹ் மனிதகுலத்திற்கு வழங்கிய மகத்தான செய்தியாகும். இது காலங்களுக்கு அப்பாற்பட்டது. எனவே, புனித குர்ஆனின் டிஜிட்டல் வாசிப்பு மிகுந்த முக்கியத்துவம் வாய்ந்ததாகும். சையத் அபுல் அஃலா மௌதூதி எழுதிய 'தஃபீமுல் குர்ஆன்' விளக்கவுரை நூலின் இந்த டிஜிட்டல் செயலி (Application), புனித குர்ஆனின் கருத்துக்களைப் படிப்பதற்கு டிஜிட்டல் வசதிகளை அதிகபட்சமாகப் பயன்படுத்துவதை நோக்கமாகக் கொண்டுள்ளது.
+  </p>
+
+  <p>
+    இந்த மொபைல் செயலி தற்போது உருது, ஆங்கிலம், மலையாளம், இந்தி, தமிழ் மற்றும் வங்கம் (பெங்காலி) ஆகிய ஆறு மொழிகளிலான தஃபீமுல் குர்ஆனை உள்ளடக்கியுள்ளது. இதில் உருது மற்றும் மலையாள மொழிபெயர்ப்புகளின் ஆடியோ (ஒலி) வடிவமும் வழங்கப்பட்டுள்ளது. பிற மொழிகளிலான தஃபீம் மொழிபெயர்ப்புகளும் விரைவில் இதில் சேர்க்கப்படும் என்று எதிர்பார்க்கப்படுகிறது. டிஜிட்டல் அமைப்புகளின் பல்வேறு வசதிகளைப் பயன்படுத்தி, தஃபீமுல் குர்ஆனின் தகவல் வளத்தை வாசகர்களுக்கு எளிதாகக் கொண்டு சேர்க்க, சாத்தியமான அனைத்து வழிகளையும் பயன்படுத்துவதற்கான ஓர் எளிய முயற்சியாகவும் இது அமைகிறது.
+  </p>
+
+  <p>
+    தஃபீமுல் குர்ஆனின் முதல் டிஜிட்டல் பதிப்பு 2008 இல் வெளியிடப்பட்டது. அதைத் தொடர்ந்து, 2016 இல் வெளியிடப்பட்ட இரண்டாவது பதிப்பில், தஃபீம் மலையாள மொழிபெயர்ப்பின் முழுமையான ஆடியோ சேர்க்கப்பட்டது. தஃபீமுல் குர்ஆன் விரிவாக்கத்தின் மூன்றாம் கட்டம் 2025 இல் நிறைவடையும். இத்திட்டங்கள் அனைத்தினதும் பொருளாதாரச் சுமைகளை ஏற்றுக்கொண்டு, ஊழியர்களுக்கு உத்வேகமும் ஊக்கமும் அளித்த அனைவருக்கும் எங்கள் நன்றியைத் தெரிவித்துக் கொள்கிறோம். இந்த மகத்தான முயற்சியின் பல்வேறு செயல்பாடுகளில் ஒத்துழைப்பு நல்கிய அனைவருக்கும் நன்றியுடன் எங்கள் கடப்பாட்டைப் பதிவு செய்ய விரும்புகிறோம். அல்லாஹ் அனைவருக்கும் சிறந்த நற்கூலியை வழங்குவானாக.
+  </p>
+
+  <p>
+    அனைத்துத் தரப்பு பயனர்களிடமிருந்தும் உங்கள் மதிப்புமிக்க கருத்துக்களையும் ஆலோசனைகளையும் நாங்கள் ஆவலுடன் எதிர்பார்க்கிறோம். அளவற்ற அருளாளனாகிய அல்லாஹ், இதனை ஒரு நற்செயலாக ஏற்றுக்கொண்டு, அனைவருக்கும் மகத்தான நற்கூலியை வழங்குவானாக. ஆமீன்.
+  </p>
+
+  <p style="margin-top: 2em;">
+    <strong>- ஷிஹாப் பூக்கோட்டூர்,</strong><br/>
+    <strong>சேர்மன், D4DX</strong>
+  </p>
+`;
+
 const About = () => {
   const { translationLanguage } = useTheme();
   const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
   const isHindi = translationLanguage === 'hi';
   const isBangla = translationLanguage === 'bn';
   const isMalayalam = translationLanguage === 'mal';
+  const isTamil = translationLanguage === 'ta' || translationLanguage === 'tamil';
 
   // Determine content based on language
   let content = ENGLISH_ABOUT;
@@ -169,6 +193,12 @@ const About = () => {
     languageFeatureText = 'একাধিক ভাষায় উপলব্ধ';
     dir = 'ltr';
     fontClass = 'font-bengali';
+  } else if (isTamil) {
+    content = TAMIL_ABOUT;
+    title = 'எங்களைப் பற்றி';
+    languageFeatureText = 'பல மொழிகளில் கிடைக்கிறது';
+    dir = 'ltr';
+    fontClass = 'font-tamil';
   }
 
   return (
@@ -184,11 +214,39 @@ const About = () => {
           }
         `}</style>
       )}
+      {isTamil && (
+        <style>{`
+          .tamil-about-content {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            line-height: 1.8 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+          .tamil-about-content p {
+            margin-bottom: 1.5em !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            font-family: 'Bamini', serif !important;
+            font-size: 16px !important;
+            line-height: 1.8 !important;
+          }
+          .tamil-about-content h1,
+          .tamil-about-content h2,
+          .tamil-about-content h3,
+          .tamil-about-content h4,
+          .tamil-about-content strong {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+          }
+        `}</style>
+      )}
       <div className="max-w-[1070px] w-full mx-auto">
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass} ${isUrdu ? 'font-urdu-nastaliq' : ''}`} dir={dir} style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : {}}>
+          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass} ${isUrdu ? 'font-urdu-nastaliq' : ''}`} dir={dir} style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isTamil ? { fontFamily: "'Bamini', serif" } : {}}>
             {title}
           </h1>
           <div className=" h-px bg-gray-200 "></div>
@@ -237,7 +295,22 @@ const About = () => {
                 ))}
               </div>
             );
-          })() : (
+          })() : isTamil ? (
+            <div className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7 tamil-about-content">
+              <div
+                dangerouslySetInnerHTML={{ __html: TAMIL_ABOUT }}
+                style={{
+                  textAlign: 'justify',
+                  textJustify: 'inter-word',
+                  fontFamily: "'Bamini', serif",
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  fontSize: '16px'
+                }}
+              />
+            </div>
+          ) : (
             <div
               className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
               dangerouslySetInnerHTML={{ __html: content }}
@@ -249,7 +322,7 @@ const About = () => {
             <div className={`rounded-lg p-2 ${isUrdu ? 'ml-3' : 'mr-3'}`} style={{ backgroundColor: '#2AA0BF' }}>
               <Languages className="w-6 h-6 text-white" />
             </div>
-            <span className="text-lg font-medium dark:text-white" style={{ color: '#2AA0BF' }}>
+            <span className={`text-lg font-medium dark:text-white ${isTamil ? 'font-tamil' : ''}`} style={{ color: '#2AA0BF', fontFamily: isTamil ? "'Bamini', serif" : 'inherit' }}>
               {languageFeatureText}
             </span>
           </div>

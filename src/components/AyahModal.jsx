@@ -25,6 +25,14 @@ import {
   surahNameFontFamily,
 } from "../utils/surahNameUtils.js";
 
+// Helper function to decode HTML entities
+const decodeHTML = (html) => {
+  if (!html) return html;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = html;
+  return textarea.value;
+};
+
 // Cache for surahs data to prevent redundant API calls
 let surahsCache = null;
 let surahsCacheTime = 0;
@@ -699,11 +707,13 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
             const explanation = await urduTranslationService.getFootnoteExplanation(footnoteId);
 
             if (explanation && explanation.trim() !== '' && explanation !== 'Explanation not available') {
+              // Decode HTML entities to ensure links render properly
+              const decodedExplanation = decodeHTML(explanation);
               setInterpretationData([{
-                interpretation: explanation,
-                AudioIntrerptn: explanation,
-                text: explanation,
-                content: explanation
+                interpretation: decodedExplanation,
+                AudioIntrerptn: decodedExplanation,
+                text: decodedExplanation,
+                content: decodedExplanation
               }]);
               setShowInterpretationModal(true);
             } else {
@@ -1017,6 +1027,17 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                 <span className="w-8 h-[1px] bg-primary dark:bg-primary-light"></span>
                 Tafheem-ul-Quran
               </h4>
+              {translationLanguage === "ur" && (
+                <style>{`
+                  .ayah-interpretation-content.font-urdu-nastaliq * {
+                    font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+                  }
+                  .ayah-interpretation-content.font-urdu-nastaliq a {
+                    font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+                    text-align: right !important;
+                  }
+                `}</style>
+              )}
               {translationLanguage === "mal" && (
                 <style>
                   {`
@@ -1044,7 +1065,7 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
               )}
               <div
                 key={`interpretation-content-${activeSurahId}-${currentVerseId}`}
-                className="space-y-4 ayah-interpretation-content"
+                className={`space-y-4 ayah-interpretation-content ${translationLanguage === 'ur' ? 'font-urdu-nastaliq' : ''}`}
                 onClick={handleInterpretationContentClick}
               >
                 {/* For Malayalam in ayah-wise view, show only the first interpretation (corresponds to translation) */}
@@ -1075,10 +1096,15 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                         typeof value === "string" && value.trim().length > 0
                     ) || "No interpretation available";
 
-                  const interpretationHtml =
+                  let interpretationHtml =
                     typeof interpretationText === "string"
                       ? interpretationText
                       : String(interpretationText ?? "");
+                  
+                  // Decode HTML entities for Urdu interpretations to ensure links render properly
+                  if (translationLanguage === 'ur') {
+                    interpretationHtml = decodeHTML(interpretationHtml);
+                  }
 
                   // For Hindi, Urdu, and English, show explanation/interpretation numbers
                   const explanationNumber =
@@ -1120,8 +1146,18 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                         )}
                       {isEnglishTranslation && null}
                       <div
-                        className="text-gray-700 leading-[1.8] font-poppins dark:text-gray-300 text-sm sm:text-base text-justify"
-                        style={{ fontSize: `${adjustedTranslationFontSize}px`, textAlign: 'justify' }}
+                        className={`text-gray-700 leading-[1.8] dark:text-gray-300 text-sm sm:text-base text-justify ${
+                          translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 'font-poppins'
+                        }`}
+                        style={{ 
+                          fontSize: `${adjustedTranslationFontSize}px`, 
+                          textAlign: translationLanguage === 'ur' ? 'right' : 'justify',
+                          ...(translationLanguage === 'ur' ? {
+                            lineHeight: '2.6',
+                            fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
+                          } : {})
+                        }}
+                        dir={translationLanguage === 'ur' ? 'rtl' : 'ltr'}
                         dangerouslySetInnerHTML={{ __html: interpretationHtml }}
                       />
                     </div>

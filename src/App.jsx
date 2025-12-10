@@ -62,6 +62,11 @@ const HindiJesusMohammed = lazy(() => import("./pages/HindiJesusMohammed"));
 const HindiFinalityOfProphethood = lazy(() => import("./pages/HindiFinalityOfProphethood"));
 const BanglaJesusMohammed = lazy(() => import("./pages/BanglaJesusMohammed"));
 const BanglaFinalityOfProphethood = lazy(() => import("./pages/BanglaFinalityOfProphethood"));
+const TamilSayyidMaududi = lazy(() => import("./pages/TamilSayyidMaududi"));
+const TamilAuthorPreface = lazy(() => import("./pages/TamilAuthorPreface"));
+const TamilAuthorConclusion = lazy(() => import("./pages/TamilAuthorConclusion"));
+const TamilJesusMohammed = lazy(() => import("./pages/TamilJesusMohammed"));
+const TamilFinalityOfProphethood = lazy(() => import("./pages/TamilFinalityOfProphethood"));
 
 function resolveRouterBasename() {
   const raw = import.meta.env.VITE_BASE_PATH?.trim();
@@ -149,6 +154,11 @@ function App() {
                 <Route path="/hindi/finality-of-prophethood" element={<HindiFinalityOfProphethood />} />
                 <Route path="/bangla/jesus-mohammed" element={<BanglaJesusMohammed />} />
                 <Route path="/bangla/finality-of-prophethood" element={<BanglaFinalityOfProphethood />} />
+                <Route path="/tamil/sayyid-maududi" element={<TamilSayyidMaududi />} />
+                <Route path="/tamil/author-preface" element={<TamilAuthorPreface />} />
+                <Route path="/tamil/author-conclusion" element={<TamilAuthorConclusion />} />
+                <Route path="/tamil/jesus-mohammed" element={<TamilJesusMohammed />} />
+                <Route path="/tamil/finality-of-prophethood" element={<TamilFinalityOfProphethood />} />
                 <Route
                   path="/word-by-word/:surahId/:verseId"
                   element={<WordByWordPage />}

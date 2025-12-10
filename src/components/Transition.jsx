@@ -384,7 +384,13 @@ const Transition = ({ showPageInfo = false }) => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center space-x-1 sm:space-x-2 px-1.5 sm:px-2 py-1 text-gray-700 dark:text-white rounded-lg transition-colors"
                 >
-                  <span className="font-medium text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">
+                  <span 
+                    className={`font-medium text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none ${
+                      translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
+                      translationLanguage === 'mal' ? 'font-malayalam' : ''
+                    }`}
+                    style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                  >
                     {selectedSurah.name}
                   </span>
                   {surahIcon}

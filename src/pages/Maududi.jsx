@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import maududiImg from "../assets/maududi.png";
 import Ed1 from "../assets/ed1.png";
 import Ed2 from "../assets/ed2.png";
@@ -295,10 +296,24 @@ const BANGLA_CONTENT = `
 
 const Maududi = () => {
     const { translationLanguage } = useTheme();
+    const navigate = useNavigate();
     const isMalayalam = translationLanguage === "mal";
     const isUrdu = translationLanguage === "ur" || translationLanguage === "urdu";
     const isHindi = translationLanguage === "hi";
     const isBangla = translationLanguage === "bn";
+    const isTamil = translationLanguage === "ta";
+
+    // Redirect to Tamil Sayyid Maududi page when Tamil is selected
+    useEffect(() => {
+        if (isTamil) {
+            navigate("/tamil/sayyid-maududi", { replace: true });
+        }
+    }, [isTamil, navigate]);
+
+    // Return null while redirecting to Tamil page
+    if (isTamil) {
+        return null;
+    }
 
     const books = [
         "Jihad in Islam",

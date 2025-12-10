@@ -162,14 +162,17 @@ const Home = () => {
 
                     {/* Name + meta column */}
                     <div className="flex flex-col justify-center min-w-0">
-                      <h3 className={`text-base sm:text-[16px] font-medium text-gray-900 dark:text-white truncate transition-colors duration-200 group-hover:text-[#3FA5C0] ${
-                        translationLanguage === 'mal' ? 'font-malayalam' :
-                        translationLanguage === 'ur' ? 'font-urdu' :
-                        translationLanguage === 'hi' ? 'font-hindi' :
-                        translationLanguage === 'bn' ? 'font-bengali' :
-                        translationLanguage === 'ta' ? 'font-tamil' :
-                        'font-poppins'
-                      }`}>
+                      <h3 
+                        className={`text-base sm:text-[16px] font-medium text-gray-900 dark:text-white truncate transition-colors duration-200 group-hover:text-[#3FA5C0] ${
+                          translationLanguage === 'mal' ? 'font-malayalam' :
+                          translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
+                          translationLanguage === 'hi' ? 'font-hindi' :
+                          translationLanguage === 'bn' ? 'font-bengali' :
+                          translationLanguage === 'ta' ? 'font-tamil' :
+                          'font-poppins'
+                        }`}
+                        style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                      >
                         {surah.name}
                       </h3>
 

@@ -340,6 +340,43 @@ const HomepageNavbar = () => {
     { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
   ];
 
+  // Tamil menu items
+  const tamilMenuItems = [
+    { icon: Home, label: "Home", path: "/", key: "home" },
+    { icon: FileText, label: "Sayyid Maududi", path: "/tamil/sayyid-maududi", key: "sayyid_maududi" },
+    {
+      icon: Book,
+      label: "Thafheemul Quran",
+      path: "/tamil/author-preface",
+      key: "thafheemul_quran",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Author's Preface", path: "/tamil/author-preface", key: "authors_preface" },
+        { label: "Author's Conclusion", path: "/tamil/author-conclusion", key: "authors_conclusion" },
+      ],
+    },
+    {
+      icon: FolderOpen,
+      label: "Library",
+      path: "/appendix/tamil",
+      key: "library",
+      hasSubmenu: true,
+      hasArrow: true,
+      submenuItems: [
+        { label: "Appendix", path: "/appendix/tamil", key: "appendix" },
+        { label: "Jesus and Mohammed", path: "/tamil/jesus-mohammed", key: "jesus_mohammed" },
+        { label: "An Introduction to the Quran", path: "/introduction-to-quran", key: "introduction_to_quran" },
+        { label: "The Finality of Prophethood", path: "/tamil/finality-of-prophethood", key: "finality_of_prophethood" },
+      ],
+    },
+    { icon: User, label: "About Us", path: "/about", key: "about_us" },
+    { icon: MessageSquareMore, label: "Contact Us", path: "/contact", key: "contact_us" },
+    { icon: MessageCircleQuestion, label: "Share app", onClick: handleShareApp, key: "share_app" },
+    { icon: MessageSquare, label: "Feedback", path: "/feedback", key: "feedback" },
+    { icon: Shield, label: "Privacy", onClick: () => window.open("https://d4dx.co/privacy-policy/", "_blank"), key: "privacy" },
+  ];
+
   // Base menu items with English labels (for non-Malayalam languages)
   const baseMenuItems = [
     { icon: Home, label: "Home", path: "/", key: "home" },
@@ -405,11 +442,11 @@ const HomepageNavbar = () => {
   };
 
   // Select menu items based on language
-  // Tamil uses Urdu menu for now (data will be added later)
   const selectedMenuItems = 
     translationLanguage === 'mal' ? malayalamMenuItems :
     translationLanguage === 'E' ? englishMenuItems :
-    translationLanguage === 'ur' || translationLanguage === 'ta' ? urduMenuItems :
+    translationLanguage === 'ur' ? urduMenuItems :
+    translationLanguage === 'ta' ? tamilMenuItems :
     translationLanguage === 'hi' ? hindiMenuItems :
     translationLanguage === 'bn' ? banglaMenuItems :
     baseMenuItems;

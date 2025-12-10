@@ -253,7 +253,15 @@ const WordNavbar = ({
                       }`}
                     onClick={() => handleSurahSelect(surah)}
                   >
-                    {surah.number} - {surah.name}
+                    <span 
+                      className={
+                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
+                        translationLanguage === 'mal' ? 'font-malayalam' : ''
+                      }
+                      style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                    >
+                      {surah.number} - {surah.name}
+                    </span>
                   </div>
                 ))}
               </div>

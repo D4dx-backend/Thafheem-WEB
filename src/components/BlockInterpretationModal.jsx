@@ -1710,6 +1710,13 @@ const BlockInterpretationModal = ({
           margin-bottom: 10px !important;
           font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
         }
+        .urdu-interpretation-content a {
+          font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+          text-align: right !important;
+        }
+        .urdu-interpretation-content * {
+          font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
+        }
         
         /* Urdu interpretation link (superscript) styling - matching Malayalam style */
         .urdu-interpretation-content sup.interpretation-link,

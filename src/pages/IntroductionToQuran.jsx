@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
-import { fetchMalayalamIntroductionToQuran, fetchEnglishIntroductionToQuran, fetchHindiIntroductionToQuran, fetchBanglaIntroductionToQuran } from "../api/apifunction";
+import { fetchMalayalamIntroductionToQuran, fetchEnglishIntroductionToQuran, fetchHindiIntroductionToQuran, fetchBanglaIntroductionToQuran, fetchTamilIntroductionToQuran } from "../api/apifunction";
 
 const URDU_INTRODUCTION = `
 <div dir="rtl" style="text-align: right;">
@@ -37,15 +37,16 @@ const IntroductionToQuran = () => {
   const isEnglish = translationLanguage === 'E';
   const isHindi = translationLanguage === 'hi';
   const isBangla = translationLanguage === 'bn';
+  const isTamil = translationLanguage === 'ta' || translationLanguage === 'tamil';
 
   // State for API content (Malayalam, English, and Hindi)
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch content when language is Malayalam, English, Hindi, or Bangla
+  // Fetch content when language is Malayalam, English, Hindi, Bangla, or Tamil
   useEffect(() => {
-    if (!isMalayalam && !isEnglish && !isHindi && !isBangla) {
+    if (!isMalayalam && !isEnglish && !isHindi && !isBangla && !isTamil) {
       setSections([]);
       setError(null);
       return;
@@ -64,6 +65,8 @@ const IntroductionToQuran = () => {
           data = await fetchHindiIntroductionToQuran();
         } else if (isBangla) {
           data = await fetchBanglaIntroductionToQuran();
+        } else if (isTamil) {
+          data = await fetchTamilIntroductionToQuran();
         } else {
           data = await fetchEnglishIntroductionToQuran();
         }
@@ -89,14 +92,15 @@ const IntroductionToQuran = () => {
     return () => {
       isMounted = false;
     };
-  }, [isMalayalam, isEnglish, isHindi, isBangla]);
+  }, [isMalayalam, isEnglish, isHindi, isBangla, isTamil]);
 
   // Determine title based on language
   const getTitle = () => {
     if (isUrdu) return "قرآن سے تعارف";
-    if (isMalayalam) return "ഖുര്‍ആനിലേക്കുള്ള ആമുഖം";
+    if (isMalayalam) return "ഖുര്‍ആന്‍പഠനത്തിന് ഒരു മുഖവുര";
     if (isHindi) return "कुरान का परिचय";
     if (isBangla) return "কুরআনের পরিচিতি";
+    if (isTamil) return "குர்ஆன் - ஓர் அறிமுகம்";
     return "An Introduction to the Quran";
   };
 
@@ -113,17 +117,45 @@ const IntroductionToQuran = () => {
           }
         `}</style>
       )}
+      {isTamil && (
+        <style>{`
+          .tamil-introduction-content {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            line-height: 1.8 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+          .tamil-introduction-content p {
+            margin-bottom: 1.5em !important;
+            text-align: justify !important;
+            text-justify: inter-word !important;
+            font-family: 'Bamini', serif !important;
+            font-size: 16px !important;
+            line-height: 1.8 !important;
+          }
+          .tamil-introduction-content h1,
+          .tamil-introduction-content h2,
+          .tamil-introduction-content h3,
+          .tamil-introduction-content h4,
+          .tamil-introduction-content strong {
+            font-family: 'Bamini', serif !important;
+            text-align: justify !important;
+          }
+        `}</style>
+      )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
+        <h2 className={`text-2xl font-bold mb-4 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2 ${isUrdu ? 'font-urdu' : isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : isTamil ? 'font-tamil' : ''}`} dir={isUrdu ? 'rtl' : 'ltr'}>
           {getTitle()}
         </h2>
 
-        {/* Malayalam, English, Hindi, and Bangla content from API */}
-        {(isMalayalam || isEnglish || isHindi || isBangla) && (
+        {/* Malayalam, English, Hindi, Bangla, and Tamil content from API */}
+        {(isMalayalam || isEnglish || isHindi || isBangla || isTamil) && (
           <>
             {loading && (
-              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : 'inherit' }}>
-                {isMalayalam ? 'ഉള്ളടക്കം ലോഡുചെയ്യുന്നു...' : isHindi ? 'सामग्री लोड हो रही है...' : isBangla ? 'বিষয়বস্তু লোড হচ্ছে...' : 'Loading content...'}
+              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : isTamil ? "'Bamini', serif" : 'inherit' }}>
+                {isMalayalam ? 'ഉള്ളടക്കം ലോഡുചെയ്യുന്നു...' : isHindi ? 'सामग्री लोड हो रही है...' : isBangla ? 'বিষয়বস্তু লোড হচ্ছে...' : isTamil ? 'உள்ளடக்கம் ஏற்றுகிறது...' : 'Loading content...'}
               </div>
             )}
 
@@ -134,8 +166,8 @@ const IntroductionToQuran = () => {
             )}
 
             {!loading && !error && sections.length === 0 && (
-              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : 'inherit' }}>
-                {isMalayalam ? 'ഇപ്പോൾ ഉള്ളടക്കം ലഭ്യമല്ല.' : isHindi ? 'सामग्री इस समय उपलब्ध नहीं है।' : isBangla ? 'বিষয়বস্তু এই মুহূর্তে উপলব্ধ নয়।' : 'Content is not available at the moment.'}
+              <div className="py-10 text-center text-gray-600 dark:text-gray-300" style={{ fontFamily: isMalayalam ? 'inherit' : isTamil ? "'Bamini', serif" : 'inherit' }}>
+                {isMalayalam ? 'ഇപ്പോൾ ഉള്ളടക്കം ലഭ്യമല്ല.' : isHindi ? 'सामग्री इस समय उपलब्ध नहीं है।' : isBangla ? 'বিষয়বস্তু এই মুহূর্তে উপলব্ধ নয়।' : isTamil ? 'உள்ளடக்கம் இந்த நேரத்தில் கிடைக்கவில்லை.' : 'Content is not available at the moment.'}
               </div>
             )}
 
@@ -148,14 +180,22 @@ const IntroductionToQuran = () => {
                   >
                     {section.title && (
                       <div
-                        className={`mb-4 prose prose-lg dark:prose-invert max-w-none ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`}
+                        className={`mb-4 prose prose-lg dark:prose-invert max-w-none ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : isTamil ? 'font-tamil tamil-introduction-content' : ''}`}
                         dangerouslySetInnerHTML={{ __html: section.title }}
+                        style={isTamil ? { fontFamily: "'Bamini', serif", textAlign: 'justify' } : {}}
                       />
                     )}
                     <div
-                      className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : ''}`}
+                      className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 ${isMalayalam ? 'font-malayalam' : isHindi ? 'font-hindi' : isBangla ? 'font-bengali' : isTamil ? 'tamil-introduction-content' : ''}`}
                       dangerouslySetInnerHTML={{ __html: section.text || '' }}
-                      style={{
+                      style={isTamil ? {
+                        lineHeight: 1.8,
+                        textAlign: 'justify',
+                        textJustify: 'inter-word',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        fontFamily: "'Bamini', serif",
+                      } : {
                         lineHeight: 1.8,
                         textAlign: 'justify',
                       }}

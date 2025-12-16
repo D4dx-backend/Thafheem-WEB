@@ -7,6 +7,8 @@ import { Play, Book, Circle, BookOpen, ArrowLeft } from "lucide-react";
 import { surahNameUnicodes } from "../components/surahNameUnicodes";
 import { fetchPageRanges } from "../api/apifunction";
 import { API_BASE_PATH } from "../config/apiConfig";
+import { useTheme } from "../context/ThemeContext";
+import { getSurahNamesByLanguageAPI } from "../api/apis";
 //mee
 const Juz = () => {
   // State management
@@ -18,6 +20,7 @@ const Juz = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { juzId } = useParams(); // Get Juz ID from URL if present
+  const { translationLanguage } = useTheme(); // Get selected language from context
 
   const KaabaIcon = ({ className }) => (
     <svg
@@ -61,18 +64,40 @@ const Juz = () => {
         // Fetch page ranges data using the API function
         const pageRangesData = await fetchPageRanges();
 
-        // Fetch surah names using the new API endpoint
-        const surahNamesResponse = await fetch(`${API_BASE_PATH}/suranames/all`);
+        // Map translation language code to API language parameter
+        const mapLanguageToAPI = (languageCode) => {
+          const langMap = {
+            'E': 'english',
+            'en': 'english',
+            'english': 'english',
+            'mal': 'malayalam',
+            'ml': 'malayalam',
+            'malayalam': 'malayalam',
+            'bn': 'bangla',
+            'bangla': 'bangla',
+            'hi': 'hindi',
+            'hindi': 'hindi',
+            'ta': 'tamil',
+            'tamil': 'tamil',
+            'ur': 'urdu',
+            'urdu': 'urdu'
+          };
+          return langMap[languageCode?.toLowerCase()] || 'english';
+        };
+
+        // Fetch surah names based on selected language
+        const apiLanguage = mapLanguageToAPI(translationLanguage);
+        const surahNamesResponse = await fetch(getSurahNamesByLanguageAPI(apiLanguage));
         if (!surahNamesResponse.ok) {
           throw new Error(`HTTP error! status: ${surahNamesResponse.status}`);
         }
         const surahNamesData = await surahNamesResponse.json();
 
-        // Create surah names mapping - FIXED TYPE MAPPING
+        // Create surah names mapping with language-specific names
         const surahNamesMap = {};
         surahNamesData.forEach((surah) => {
           surahNamesMap[surah.SuraID] = {
-            name: surah.ESuraName,
+            name: surah.SuraName, // Language-specific name
             arabic: surah.ASuraName,
             type: surah.SuraType === "Makkan" ? "Makki" : "Madani", // FIXED: was "M", now "Makkan"
             totalAyas: surah.TotalAyas,
@@ -151,7 +176,7 @@ const Juz = () => {
     };
 
     fetchData();
-  }, []);
+  }, [translationLanguage]); // Re-fetch when language changes
 
   // Split juz data into three columns for display (1-19, 20-28, 29-30)
   const getColumnData = (columnIndex) => {
@@ -328,7 +353,14 @@ navigate(targetUrl);
                       {/* Surah Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-1">
-                          {surah.name}
+                          {(() => {
+                            // Remove number prefix from surah name if it exists (e.g., "1. अल फ़ातिहा" -> "अल फ़ातिहा")
+                            // This prevents duplicate numbers since StarNumber already shows the number
+                            const name = surah.name || '';
+                            // Match pattern: number followed by period and space (e.g., "1. ", "2. ", etc.)
+                            const numberPrefixPattern = /^\d+\.\s+/;
+                            return name.replace(numberPrefixPattern, '');
+                          })()}
                         </h3>
                         
                         {/* Icons and Info */}
@@ -403,7 +435,14 @@ navigate(targetUrl);
                                 {/* Name + Icons stacked */}
                                 <div className="flex flex-col min-w-0 flex-1">
                                   <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
-                                    {surah.name}
+                                    {(() => {
+                                      // Remove number prefix from surah name if it exists (e.g., "1. अल फ़ातिहा" -> "अल फ़ातिहा")
+                                      // This prevents duplicate numbers since StarNumber already shows the number
+                                      const name = surah.name || '';
+                                      // Match pattern: number followed by period and space (e.g., "1. ", "2. ", etc.)
+                                      const numberPrefixPattern = /^\d+\.\s+/;
+                                      return name.replace(numberPrefixPattern, '');
+                                    })()}
                                   </h4>
 
                                   {/* Icons row (under name) */}

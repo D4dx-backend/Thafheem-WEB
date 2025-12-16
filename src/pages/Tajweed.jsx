@@ -4,12 +4,9 @@ import {
   ChevronUp,
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
   Volume2,
   VolumeX,
-  ChevronLeft,
-  ChevronRight,
+  X,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -42,6 +39,7 @@ const Tajweed = () => {
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError, setAudioError] = useState("");
   const [isMuted, setIsMuted] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const { quranFont } = useTheme();
   const audioRef = useRef(null);
   const autoPlayOnLoadRef = useRef(false);
@@ -54,15 +52,28 @@ const Tajweed = () => {
 
     const handleLoadedMetadata = () => {
       setDuration(audioEl.duration || 0);
-      setAudioLoading(false);
+      // If metadata is loaded, we can at least show duration
+      // Don't hide loading yet, wait for canplay
+    };
 
-      if (autoPlayOnLoadRef.current) {
-        audioEl
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch(() => setIsPlaying(false));
-        autoPlayOnLoadRef.current = false;
+    const handleCanPlay = () => {
+      // Audio is ready to play, hide loading state
+      setAudioLoading(false);
+      // Ensure duration is set
+      if (audioEl.duration && !isNaN(audioEl.duration)) {
+        setDuration(audioEl.duration);
       }
+      // Don't auto-play - user must click play button
+    };
+
+    const handleCanPlayThrough = () => {
+      // Audio is fully loaded and can play through without buffering
+      setAudioLoading(false);
+      // Ensure duration is set
+      if (audioEl.duration && !isNaN(audioEl.duration)) {
+        setDuration(audioEl.duration);
+      }
+      // Don't auto-play - user must click play button
     };
 
     const handleTimeUpdate = () => {
@@ -74,19 +85,31 @@ const Tajweed = () => {
       setCurrentTime(audioEl.duration || 0);
     };
 
-    const handleAudioError = () => {
+    const handleAudioError = (e) => {
+      console.error("Audio error:", e, audioEl.error);
       setAudioError("Audio playback failed. Please try again.");
       setAudioLoading(false);
       setIsPlaying(false);
+      autoPlayOnLoadRef.current = false;
+    };
+
+    const handleLoadStart = () => {
+      setAudioLoading(true);
     };
 
     audioEl.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audioEl.addEventListener("canplay", handleCanPlay);
+    audioEl.addEventListener("canplaythrough", handleCanPlayThrough);
+    audioEl.addEventListener("loadstart", handleLoadStart);
     audioEl.addEventListener("timeupdate", handleTimeUpdate);
     audioEl.addEventListener("ended", handleEnded);
     audioEl.addEventListener("error", handleAudioError);
 
     return () => {
       audioEl.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audioEl.removeEventListener("canplay", handleCanPlay);
+      audioEl.removeEventListener("canplaythrough", handleCanPlayThrough);
+      audioEl.removeEventListener("loadstart", handleLoadStart);
       audioEl.removeEventListener("timeupdate", handleTimeUpdate);
       audioEl.removeEventListener("ended", handleEnded);
       audioEl.removeEventListener("error", handleAudioError);
@@ -104,16 +127,55 @@ const Tajweed = () => {
       setDuration(0);
       setCurrentTime(0);
       setAudioLoading(false);
+      autoPlayOnLoadRef.current = false;
       return;
     }
 
-    autoPlayOnLoadRef.current = true;
+    // Reset state for new audio
+    autoPlayOnLoadRef.current = false; // Disable auto-play
     setAudioLoading(true);
     setAudioError("");
     setIsPlaying(false);
     setCurrentTime(0);
+    
+    // Set source and load
     audioEl.src = audioUrl;
     audioEl.load();
+    
+    // Check readyState periodically to hide loading when ready
+    const checkReadyState = setInterval(() => {
+      if (!audioEl || !audioUrl) {
+        clearInterval(checkReadyState);
+        return;
+      }
+
+      // readyState values:
+      // 0 = HAVE_NOTHING
+      // 1 = HAVE_METADATA
+      // 2 = HAVE_CURRENT_DATA
+      // 3 = HAVE_FUTURE_DATA
+      // 4 = HAVE_ENOUGH_DATA
+      
+      if (audioEl.readyState >= 3) {
+        // Audio has enough data to play, hide loading
+        setAudioLoading(false);
+        clearInterval(checkReadyState);
+      }
+    }, 200); // Check every 200ms
+
+    // Clear interval after 10 seconds max (timeout)
+    const timeout = setTimeout(() => {
+      clearInterval(checkReadyState);
+      if (audioEl.readyState >= 2) {
+        // At least some data is loaded, hide loading
+        setAudioLoading(false);
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(checkReadyState);
+      clearTimeout(timeout);
+    };
   }, [audioUrl]);
 
   useEffect(() => {
@@ -128,6 +190,30 @@ const Tajweed = () => {
       audioEl.pause();
     }
   }, [isPlaying, audioUrl]);
+
+  // Update progress bar more frequently when playing
+  useEffect(() => {
+    if (!isPlaying || !audioUrl) {
+      return;
+    }
+
+    const updateProgress = () => {
+      const audioEl = audioRef.current;
+      if (audioEl && audioEl.readyState > 0) {
+        setCurrentTime(audioEl.currentTime || 0);
+        if (audioEl.duration && !duration) {
+          setDuration(audioEl.duration);
+        }
+      }
+    };
+
+    // Update every 100ms for smooth progress bar
+    const interval = setInterval(updateProgress, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isPlaying, audioUrl, duration]);
 
   // Fetch Tajweed rules on component mount
   useEffect(() => {
@@ -313,6 +399,57 @@ const subRulesData = await fetchSpecificTajweedRule(formattedRuleNo);
     });
   };
 
+  // Helper to render Malayalam content and make verse references (e.g., 83:14) clickable
+  const renderContentWithReferences = (text, ruleTitle = "") => {
+    if (!text) return null;
+
+    const versePattern = /(\d+)\s*:\s*(\d+)/g;
+    const elements = [];
+    let lastIndex = 0;
+    let match;
+    let keyIndex = 0;
+
+    while ((match = versePattern.exec(text)) !== null) {
+      const [fullMatch, surahNumber, ayahNumber] = match;
+      const matchStart = match.index;
+      const matchEnd = matchStart + fullMatch.length;
+
+      if (matchStart > lastIndex) {
+        elements.push(
+          <span key={`text-${keyIndex++}`}>
+            {text.slice(lastIndex, matchStart)}
+          </span>
+        );
+      }
+
+      const verseKey = `${surahNumber}:${ayahNumber}`;
+
+      elements.push(
+        <button
+          key={`ref-${verseKey}-${keyIndex++}`}
+          onClick={async (e) => {
+            e.stopPropagation();
+            await handleDirectVerseClick(verseKey, ruleTitle);
+          }}
+          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[#2AA0BF]/10 text-[#2AA0BF] border border-[#2AA0BF]/40 hover:bg-[#2AA0BF]/20 hover:border-[#2AA0BF] transition-colors"
+          title={`Play Surah ${surahNumber}, Ayah ${ayahNumber}`}
+        >
+          {fullMatch.trim()}
+        </button>
+      );
+
+      lastIndex = matchEnd;
+    }
+
+    if (lastIndex < text.length) {
+      elements.push(
+        <span key={`text-${keyIndex++}`}>{text.slice(lastIndex)}</span>
+      );
+    }
+
+    return elements;
+  };
+
   const togglePlay = () => {
     if (!audioUrl || audioLoading) {
       return;
@@ -489,6 +626,19 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
     }));
   };
 
+  const resetExampleAndAudioState = () => {
+    setExampleReferences([]);
+    setCurrentExampleIndex(0);
+    setCurrentVerseKey("");
+    setAudioUrl("");
+    setAudioError("");
+    setAudioLoading(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    autoPlayOnLoadRef.current = false;
+  };
+
   // Function to fetch Arabic ayah text
   const fetchArabicAyah = async (verseKey) => {
     try {
@@ -513,12 +663,14 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
       const audioSource = await fetchArabicAudioForTajweed(verseKey);
 
       if (!audioSource) {
+        console.warn("No audio source returned for verse:", verseKey);
         setAudioUrl("");
         setAudioError("Audio not available for this example.");
         setAudioLoading(false);
         return;
       }
 
+      console.log("Loading audio for verse:", verseKey, "URL:", audioSource);
       setAudioUrl(audioSource);
     } catch (error) {
       console.error("Error loading audio for verse:", error);
@@ -540,7 +692,6 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
 
     try {
       const arabicText = await fetchArabicAyah(verseKey);
-      const arabicAyahNumber = convertToArabicNumbers(ayahNumber);
 
       const metadataParts = [`Surah ${surahNumber}`, `Ayah ${ayahNumber}`];
       if (references.length > 1) {
@@ -548,7 +699,7 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
       }
 
       setSelectedArabicText(
-        `${arabicText} ﴿${arabicAyahNumber}﴾\n\n${metadataParts.join(" • ")}`
+        `${arabicText}\n\n${metadataParts.join(" • ")}`
       );
 
       await loadAudioForVerse(verseKey);
@@ -563,38 +714,12 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
     }
   };
 
-  const handleExampleNavigation = async (direction) => {
-    if (!exampleReferences.length) {
-      return;
-    }
-
-    const nextIndex = currentExampleIndex + direction;
-    if (nextIndex < 0 || nextIndex >= exampleReferences.length) {
-      return;
-    }
-
-    await loadExampleByIndex(exampleReferences, nextIndex);
-  };
-
   const handleSelectExample = async (index) => {
     if (index === currentExampleIndex || !exampleReferences[index]) {
       return;
     }
 
     await loadExampleByIndex(exampleReferences, index);
-  };
-
-  const seekAudioBy = (seconds) => {
-    const audioEl = audioRef.current;
-    if (!audioEl || !duration) {
-      return;
-    }
-
-    const nextTime = Math.min(
-      Math.max(audioEl.currentTime + seconds, 0),
-      duration
-    );
-    audioEl.currentTime = nextTime;
   };
 
   const handleToggleMute = () => {
@@ -609,26 +734,38 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
   };
 
   const hasExamples = exampleReferences.length > 0;
-  const hasPreviousExample = hasExamples && currentExampleIndex > 0;
-  const hasNextExample =
-    hasExamples && currentExampleIndex < exampleReferences.length - 1;
   const audioProgress = duration
     ? Math.min(Math.max((currentTime / duration) * 100, 0), 100)
     : 0;
 
+  const handleDirectVerseClick = async (verseKey, ruleTitle = "") => {
+    if (!verseKey) {
+      return;
+    }
+
+    setCurrentRuleTitle(ruleTitle);
+    resetExampleAndAudioState();
+    setIsPopupOpen(true);
+
+    const [surahNumber, ayahNumber] = verseKey.split(":");
+    const references = [
+      {
+        verseKey,
+        surahNumber,
+        ayahNumber,
+      },
+    ];
+
+    setExampleReferences(references);
+
+    await loadExampleByIndex(references, 0);
+  };
+
   // Function to handle title click and show Arabic text
   const handleTitleClick = async (examples, ruleTitle = "") => {
     setCurrentRuleTitle(ruleTitle);
-    setExampleReferences([]);
-    setCurrentExampleIndex(0);
-    setCurrentVerseKey("");
-    setAudioUrl("");
-    setAudioError("");
-    setAudioLoading(false);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
-    autoPlayOnLoadRef.current = false;
+    resetExampleAndAudioState();
+    setIsPopupOpen(true);
 
     if (!examples || examples.trim() === "") {
       setSelectedArabicText("No examples available");
@@ -796,7 +933,10 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                     {expandedSections[`rule_${index}`] && (
                       <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-200 dark:border-gray-600">
                         <p className="text-xs sm:text-[16px] text-gray-700 leading-relaxed mt-2 sm:mt-3 dark:text-white font-malayalam">
-                          {rule.content}
+                          {renderContentWithReferences(
+                            rule.content,
+                            rule.title
+                          )}
                         </p>
 
                         {/* Loading Sub-rules Indicator */}
@@ -862,7 +1002,10 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                                       )}
                                     </div>
                                     <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-malayalam leading-relaxed">
-                                      {subRule.description}
+                                      {renderContentWithReferences(
+                                        subRule.description,
+                                        subRule.title
+                                      )}
                                     </p>
                                     {subRule.examples &&
                                       subRule.examples.trim() !== "" && (
@@ -871,7 +1014,10 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                                             <span className="font-medium">
                                               ഉദാഹരണങ്ങൾ:
                                             </span>{" "}
-                                            {subRule.examples}
+                                            {renderContentWithReferences(
+                                              subRule.examples,
+                                              subRule.title
+                                            )}
                                           </p>
                                         </div>
                                       )}
@@ -925,7 +1071,10 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                                                     </span>
                                                   </h6>
                                                   <p className="text-xs text-gray-700 dark:text-gray-300 font-malayalam leading-relaxed">
-                                                    {nestedSubRule.description}
+                                                    {renderContentWithReferences(
+                                                      nestedSubRule.description,
+                                                      nestedSubRule.title
+                                                    )}
                                                   </p>
                                                   {nestedSubRule.examples &&
                                                     nestedSubRule.examples.trim() !==
@@ -935,9 +1084,10 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                                                           <span className="font-medium">
                                                             ഉദാഹരണങ്ങൾ:
                                                           </span>{" "}
-                                                          {
-                                                            nestedSubRule.examples
-                                                          }
+                                                          {renderContentWithReferences(
+                                                            nestedSubRule.examples,
+                                                            nestedSubRule.title
+                                                          )}
                                                         </p>
                                                       </div>
                                                     )}
@@ -978,201 +1128,6 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
                             </div>
                           )}
 
-                        {/* Audio Player Section - Always show when rule is expanded */}
-                        <div className="mt-4 sm:mt-6">
-                          {/* Audio Player */}
-                          {/* Audio Player */}
-                          <div className="bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg">
-                            {/* Arabic Example Text Display */}
-                            <div className="text-center mb-6 sm:mb-8">
-                              <div className="w-full flex justify-center items-center gap-2 sm:gap-3 lg:gap-4 px-2 sm:px-4">
-                                {/* Left Navigation Button */}
-                                <button
-                                  onClick={() => handleExampleNavigation(-1)}
-                                  disabled={!hasPreviousExample}
-                                  className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm flex-shrink-0 self-center ${
-                                    hasPreviousExample
-                                      ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
-                                      : "opacity-50 cursor-not-allowed"
-                                  }`}
-                                  aria-label="Previous"
-                                >
-                                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
-                                </button>
-
-                                {/* Arabic Text Display */}
-                                <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 sm:p-4 lg:p-6 w-full max-w-[406px] min-h-[80px] sm:min-h-[200px] lg:min-h-[132px] flex items-center justify-center shadow-inner border border-gray-300/30 dark:border-gray-700/30 flex-shrink">
-                                  {loadingArabicText ? (
-                                    <div className="flex flex-col items-center justify-center gap-3">
-                                      <div className="animate-spin rounded-full h-8 w-8 border-3 border-gray-300 border-t-gray-600 dark:border-gray-600 dark:border-t-gray-300"></div>
-                                      <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
-                                        Loading Arabic text...
-                                      </span>
-                                    </div>
-                                  ) : selectedArabicText ? (
-                                    <div className="text-center w-full px-2">
-                                      <p
-                                        className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white leading-relaxed mb-2"
-                                        style={{
-                                          fontFamily: `'${quranFont}', serif`,
-                                          direction: "rtl",
-                                          lineHeight: "2",
-                                          textShadow:
-                                            "0 1px 2px rgba(0,0,0,0.1)",
-                                        }}
-                                      >
-                                        {selectedArabicText.split("\n\n")[0]}
-                                      </p>
-                                      {selectedArabicText.includes("\n\n") && (
-                                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-3 font-malayalam leading-relaxed">
-                                          {selectedArabicText.split("\n\n")[1]}
-                                        </p>
-                                      )}
-                                      {hasExamples && (
-                                        <div className="mt-3 flex flex-wrap justify-center gap-2">
-                                          {exampleReferences.map((reference, idx) => (
-                                            <button
-                                              key={reference.verseKey}
-                                              onClick={() => handleSelectExample(idx)}
-                                              className={`px-3 py-1 text-xs sm:text-sm rounded-full border transition-colors ${
-                                                idx === currentExampleIndex
-                                                  ? "bg-[#2AA0BF] text-white border-[#2AA0BF]"
-                                                  : "border-[#2AA0BF]/40 text-[#2AA0BF] hover:bg-[#2AA0BF]/10"
-                                              }`}
-                                            >
-                                              {reference.verseKey}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="text-center px-4">
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 font-malayalam mb-3 font-medium">
-                                        📖 Click on rule titles to see Arabic
-                                        examples
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-500 font-malayalam">
-                                        Look for verse references like "2:255"
-                                        in examples
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Right Navigation Button */}
-                                <button
-                                  onClick={() => handleExampleNavigation(1)}
-                                  disabled={!hasNextExample}
-                                  className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm flex-shrink-0 self-center ${
-                                    hasNextExample
-                                      ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
-                                      : "opacity-50 cursor-not-allowed"
-                                  }`}
-                                  aria-label="Next"
-                                >
-                                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="mb-4 sm:mb-6 px-1 sm:px-2 flex flex-col items-center">
-                              <div className="w-full max-w-[406px] bg-gray-400/40 dark:bg-gray-700/40 rounded-full h-1.5 sm:h-2 overflow-hidden shadow-inner backdrop-blur-sm">
-                                <div
-                                  className="bg-gradient-to-r from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white h-full rounded-full transition-all duration-300 shadow-sm"
-                                  style={{
-                                  width: `${audioProgress}%`,
-                                  }}
-                                ></div>
-                              </div>
-
-                              <div className="flex justify-between text-xs sm:text-sm text-gray-800 dark:text-gray-200 mt-3 w-full max-w-[406px] font-medium">
-                                <span className="font-mono tabular-nums">
-                                  {formatTime(currentTime)}
-                                </span>
-                                <span className="font-mono tabular-nums">
-                                  {formatTime(duration)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Audio Controls */}
-                            <div className="flex justify-center items-center gap-3 sm:gap-5 lg:gap-6">
-                              <button
-                                onClick={handleToggleMute}
-                                disabled={!audioUrl}
-                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
-                                  audioUrl
-                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
-                                    : "opacity-50 cursor-not-allowed"
-                                }`}
-                                aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-                              >
-                                {isMuted ? (
-                                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
-                                ) : (
-                                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
-                                )}
-                              </button>
-
-                              <button
-                                onClick={() => seekAudioBy(-5)}
-                                disabled={!audioUrl || audioLoading}
-                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
-                                  audioUrl && !audioLoading
-                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
-                                    : "opacity-50 cursor-not-allowed"
-                                }`}
-                                aria-label="Rewind 5 seconds"
-                              >
-                                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
-                              </button>
-
-                              <button
-                                onClick={togglePlay}
-                                disabled={!audioUrl || audioLoading || !!audioError}
-                                className={`p-4 sm:p-5 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-100 dark:to-white rounded-full text-white dark:text-gray-900 transition-all duration-200 transform shadow-xl ${
-                                  audioUrl && !audioLoading && !audioError
-                                    ? "hover:scale-110 active:scale-100 hover:shadow-2xl"
-                                    : "opacity-60 cursor-not-allowed"
-                                }`}
-                                aria-label={isPlaying ? "Pause" : "Play"}
-                              >
-                                {isPlaying ? (
-                                  <Pause className="w-6 h-6 sm:w-7 sm:h-7" />
-                                ) : (
-                                  <Play className="w-6 h-6 sm:w-7 sm:h-7 ml-1" />
-                                )}
-                              </button>
-
-                              <button
-                                onClick={() => seekAudioBy(5)}
-                                disabled={!audioUrl || audioLoading}
-                                className={`p-2 sm:p-3 rounded-full bg-white/40 dark:bg-gray-800/40 transition-all duration-200 shadow-md backdrop-blur-sm ${
-                                  audioUrl && !audioLoading
-                                    ? "hover:bg-white/60 dark:hover:bg-gray-700/60 hover:shadow-lg active:scale-95"
-                                    : "opacity-50 cursor-not-allowed"
-                                }`}
-                                aria-label="Forward 5 seconds"
-                              >
-                                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
-                              </button>
-                            </div>
-                            <audio ref={audioRef} preload="auto" className="hidden" />
-                            {audioLoading && (
-                              <div className="mt-4 flex justify-center items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                                <div className="h-3 w-3 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
-                                <span>Loading audio...</span>
-                              </div>
-                            )}
-                            {audioError && !audioLoading && (
-                              <p className="mt-4 text-xs text-red-600 dark:text-red-400 text-center">
-                                {audioError}
-                              </p>
-                            )}
-                          </div>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1187,6 +1142,181 @@ const nestedSubRulesData = await fetchSpecificTajweedRule(
           </div>
         </div>
       </div>
+
+      {/* Popup for Arabic text and audio */}
+      {isPopupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 sm:px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700 relative">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setIsPopupOpen(false);
+                setIsPlaying(false);
+              }}
+              className="absolute top-5 right-6 sm:top-6 sm:right-6 z-10 inline-flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-300" />
+            </button>
+
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              {/* Arabic Example Text Display */}
+              <div className="bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-inner">
+                <div className="w-full flex justify-center items-center">
+                  {/* Arabic Text Display */}
+                  <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 sm:p-4 w-full max-w-[406px] min-h-[120px] sm:min-h-[180px] flex items-center justify-center shadow-inner border border-gray-300/30 dark:border-gray-700/30">
+                    {loadingArabicText ? (
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-3 border-gray-300 border-t-gray-600 dark:border-gray-600 dark:border-t-gray-300"></div>
+                        <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+                          Loading Arabic text...
+                        </span>
+                      </div>
+                    ) : selectedArabicText ? (
+                      <div className="text-center w-full px-2">
+                        <p
+                          className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-relaxed mb-2"
+                          style={{
+                            fontFamily: `'${quranFont}', serif`,
+                            direction: "rtl",
+                            lineHeight: "2",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          {selectedArabicText.split("\n\n")[0]}
+                        </p>
+                        {selectedArabicText.includes("\n\n") && (
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-3 font-malayalam leading-relaxed">
+                            {selectedArabicText.split("\n\n")[1]}
+                          </p>
+                        )}
+                        {hasExamples && (
+                          <div className="mt-3 flex flex-wrap justify-center gap-2">
+                            {exampleReferences.map((reference, idx) => (
+                              <button
+                                key={reference.verseKey}
+                                onClick={() => handleSelectExample(idx)}
+                                className={`px-3 py-1 text-xs sm:text-sm rounded-full border transition-colors ${
+                                  idx === currentExampleIndex
+                                    ? "bg-[#2AA0BF] text-white border-[#2AA0BF]"
+                                    : "border-[#2AA0BF]/40 text-[#2AA0BF] hover:bg-[#2AA0BF]/10"
+                                }`}
+                              >
+                                {reference.verseKey}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center px-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-malayalam mb-3 font-medium">
+                          📖 Click on rule titles or verse references to see
+                          Arabic examples
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 font-malayalam">
+                          Look for verse references like "83:14" in the
+                          content.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar with Live Playback Indicator */}
+              <div className="px-1 sm:px-2 flex flex-col items-center w-full">
+                {/* Audio Progress Bar - Clickable */}
+                <div 
+                  className="w-full max-w-[406px] bg-gray-300 dark:bg-gray-700 rounded-full h-2 sm:h-3 overflow-hidden shadow-inner cursor-pointer relative group"
+                  onClick={(e) => {
+                    if (!audioUrl || !duration) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const percentage = (clickX / rect.width) * 100;
+                    const newTime = (percentage / 100) * duration;
+                    const audioEl = audioRef.current;
+                    if (audioEl) {
+                      audioEl.currentTime = Math.max(0, Math.min(newTime, duration));
+                    }
+                  }}
+                  title="Click to seek"
+                >
+                  <div
+                    className="bg-gradient-to-r from-[#2AA0BF] to-[#2AA0BF]/90 h-full rounded-full transition-all duration-100 shadow-sm relative"
+                    style={{
+                      width: `${audioProgress}%`,
+                    }}
+                  >
+                    {/* Progress indicator dot */}
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-[#2AA0BF] rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  </div>
+                </div>
+
+                {/* Live Playback Time Indicator */}
+                <div className="flex justify-between items-center text-sm sm:text-base text-gray-800 dark:text-gray-200 mt-3 w-full max-w-[406px] font-semibold">
+                  <span className="font-mono tabular-nums text-[#2AA0BF] dark:text-[#2AA0BF]">
+                    {formatTime(currentTime)}
+                  </span>
+                  <span className="font-mono tabular-nums text-gray-600 dark:text-gray-400">
+                    {formatTime(duration)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Audio Controls */}
+              <div className="flex justify-center items-center gap-4 sm:gap-6 pb-1">
+                <button
+                  onClick={handleToggleMute}
+                  disabled={!audioUrl}
+                  className={`p-2 sm:p-3 rounded-full bg-gray-100 dark:bg-gray-800 transition-all duration-200 shadow-md ${
+                    audioUrl
+                      ? "hover:bg-gray-200 dark:hover:bg-gray-700 hover:shadow-lg active:scale-95"
+                      : "opacity-50 cursor-not-allowed"
+                  }`}
+                  aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                  ) : (
+                    <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200" />
+                  )}
+                </button>
+
+                <button
+                  onClick={togglePlay}
+                  disabled={!audioUrl || audioLoading || !!audioError}
+                  className={`p-4 sm:p-5 bg-gradient-to-br from-[#2AA0BF] to-[#2AA0BF]/90 rounded-full text-white transition-all duration-200 transform shadow-xl ${
+                    audioUrl && !audioLoading && !audioError
+                      ? "hover:scale-110 active:scale-100 hover:shadow-2xl"
+                      : "opacity-60 cursor-not-allowed"
+                  }`}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-6 h-6 sm:w-7 sm:h-7" />
+                  ) : (
+                    <Play className="w-6 h-6 sm:w-7 sm:h-7 ml-1" />
+                  )}
+                </button>
+              </div>
+
+              <audio ref={audioRef} preload="auto" className="hidden" />
+              {audioLoading && (
+                <div className="mt-1 mb-3 flex justify-center items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                  <div className="h-3 w-3 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
+                  <span>Loading audio...</span>
+                </div>
+              )}
+              {audioError && !audioLoading && (
+                <p className="mt-1 mb-2 text-xs text-red-600 dark:text-red-400 text-center">
+                  {audioError}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

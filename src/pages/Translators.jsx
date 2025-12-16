@@ -93,6 +93,14 @@ const Translators = () => {
             )}
 
             {!loading && !error && content && content.text && (() => {
+              // Translator name mapping based on image filenames
+              const translatorNames = {
+                "tk.png": "ടി.കെ. ഉബൈദ്",
+                "tka.png": "ടി.കെ. അബ്ദുള്ള",
+                "ti.png": "ടി. ഇസ്ഹാഖ്",
+                "vk.png": "വി.കെ. അലി"
+              };
+
               // Process image URLs - keep public folder paths as-is
               const processImageUrls = (html) => {
                 if (!html) return html;
@@ -271,6 +279,49 @@ const Translators = () => {
                 // First fix malformed HTML
                 processed = fixMalformedHtml(processed);
                 
+                // Add translator names above images
+                // Process each translator image - wrap images that aren't already in a wrapper
+                Object.keys(translatorNames).forEach(filename => {
+                  const translatorName = translatorNames[filename];
+                  const escapedFilename = filename.replace('.', '\\.');
+                  
+                  // Match img tags that contain the filename and are NOT already inside translator-name-wrapper
+                  // Negative lookbehind equivalent: match img tags not preceded by translator-name-wrapper opening
+                  const imgRegex = new RegExp(`(<img([^>]*?)src=["']([^"']*?)${escapedFilename}([^"']*?)["']([^>]*?)>)`, 'gi');
+                  
+                  // First, find all image matches with their positions
+                  const imageMatches = [];
+                  let match;
+                  const tempProcessed = processed;
+                  while ((match = imgRegex.exec(tempProcessed)) !== null) {
+                    imageMatches.push({
+                      fullMatch: match[0],
+                      index: match.index
+                    });
+                  }
+                  
+                  // Process in reverse order to maintain correct indices
+                  for (let i = imageMatches.length - 1; i >= 0; i--) {
+                    const { fullMatch, index } = imageMatches[i];
+                    
+                    // Check if already wrapped by examining context before the image
+                    const contextBefore = tempProcessed.substring(Math.max(0, index - 300), index);
+                    // Simple check: if we see translator-name-wrapper and translator name nearby, likely wrapped
+                    if (contextBefore.includes('translator-name-wrapper') && contextBefore.includes(translatorName)) {
+                      // More precise: check if there's an unclosed wrapper div
+                      const lastWrapperIdx = contextBefore.lastIndexOf('translator-name-wrapper');
+                      const lastDivCloseIdx = contextBefore.lastIndexOf('</div>');
+                      if (lastWrapperIdx > lastDivCloseIdx) {
+                        continue; // Already wrapped, skip this image
+                      }
+                    }
+                    
+                    // Wrap the image
+                    const wrapped = `<div class="translator-name-wrapper"><div class="translator-name">${translatorName}</div>${fullMatch}</div>`;
+                    processed = processed.substring(0, index) + wrapped + processed.substring(index + fullMatch.length);
+                  }
+                });
+                
                 // Remove inline border styles
                 processed = processed.replace(/\s*style=["'][^"']*border[^"']*["']/gi, '');
                 processed = processed.replace(/\s*style=["'][^"']*outline[^"']*["']/gi, '');
@@ -311,27 +362,29 @@ const Translators = () => {
               const processedText = processImageUrls(processHtml(content.text));
 
               return (
-                <div className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7 overflow-hidden">
+                <>
                   {processedTitle && (
                     <div
-                      className="mb-4 prose prose-lg dark:prose-invert max-w-none font-malayalam overflow-hidden"
+                      className="mb-4 prose prose-xl dark:prose-invert max-w-none font-malayalam overflow-hidden text-right py-4"
+                      style={{ fontSize: '1.75rem', lineHeight: '2.5rem' }}
                       dangerouslySetInnerHTML={{ __html: processedTitle }}
                     />
                   )}
-                  <div
-                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 font-malayalam overflow-hidden translator-content-wrapper"
-                    dangerouslySetInnerHTML={{ __html: processedText }}
-                    style={{
-                      lineHeight: 1.8,
-                      textAlign: 'justify',
-                      textJustify: 'inter-word',
-                      overflowWrap: 'break-word',
-                      wordWrap: 'break-word',
-                      wordBreak: 'break-word',
-                      overflowX: 'hidden',
-                      width: '100%',
-                    }}
-                  />
+                  <div className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7 overflow-hidden">
+                    <div
+                      className="prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 font-malayalam overflow-hidden translator-content-wrapper"
+                      dangerouslySetInnerHTML={{ __html: processedText }}
+                      style={{
+                        lineHeight: 1.8,
+                        textAlign: 'justify',
+                        textJustify: 'inter-word',
+                        overflowWrap: 'break-word',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        overflowX: 'hidden',
+                        width: '100%',
+                      }}
+                    />
                   {/* Add styles to remove borders, prevent overflow, and format content */}
                   <style>{`
                     .prose {
@@ -580,8 +633,32 @@ const Translators = () => {
                       visibility: visible !important;
                       opacity: 1 !important;
                     }
+                    /* Translator name wrapper and name styling */
+                    .translator-name-wrapper {
+                      margin: 2rem 0 1rem 0 !important;
+                      display: block !important;
+                      width: 100% !important;
+                    }
+                    .translator-name {
+                      font-size: 1.25rem !important;
+                      font-weight: 700 !important;
+                      color: #1f2937 !important;
+                      margin-bottom: 1rem !important;
+                      text-align: left !important;
+                      font-family: 'NotoSansMalayalam', sans-serif !important;
+                      line-height: 1.5 !important;
+                      padding: 0.5rem 0 !important;
+                    }
+                    .dark .translator-name {
+                      color: #f9fafb !important;
+                    }
+                    .translator-name-wrapper img {
+                      margin-top: 0 !important;
+                      margin-bottom: 1rem !important;
+                    }
                   `}</style>
-                </div>
+                  </div>
+                </>
               );
             })()}
           </>

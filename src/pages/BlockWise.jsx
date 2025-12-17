@@ -2027,9 +2027,10 @@ const BlockWise = () => {
     
     // Pattern 3A: Numbers directly combined/attached to Malayalam words (no space): word83., text94', ത്തീരുവിന്‍83., etc.
     // This is a dedicated pattern for numbers that are immediately attached to Malayalam text with no separator
-    // Match: one or more Malayalam characters immediately followed (no space) by 1-3 digits, then punctuation, space, or end
+    // Match: one or more Malayalam characters (including Zero Width Joiner) immediately followed (no space) by 1-3 digits, then punctuation, space, or end
     // This pattern runs before Pattern 3 to catch combined cases first
-    const combinedNumberPattern = /([\u0D00-\u0D7F]+)(\d{1,3})(?=[.,;:!?\u0027\u2018\u2019\s\u0D00-\u0D7F]|$)/g;
+    // Includes ZWJ (\u200D) support for complex Malayalam character combinations
+    const combinedNumberPattern = /([\u0D00-\u0D7F\u200D]+)(\d{1,3})(?=[.,;:!?\u0027\u2018\u2019\s\u0D00-\u0D7F]|$)/g;
     const combinedMatches = [];
     let combinedMatch;
     // Reset the regex lastIndex
@@ -2073,9 +2074,10 @@ const BlockWise = () => {
     }
     
     // Pattern 3: Numbers directly after Malayalam text (no period): text1, text2, text104, text83., ത്തീരുവിന്‍83., etc.
-    // Match: one or more Malayalam characters followed by 1-3 digits, then space, Malayalam char, punctuation, or end
+    // Match: one or more Malayalam characters (including Zero Width Joiner) followed by 1-3 digits, then space, Malayalam char, punctuation, or end
     // Only match if NOT already inside a sup tag and NOT after a period/comma/quotes
-    const directNumberPattern = /([\u0D00-\u0D7F]+)(\d{1,3})(?=[\s\u0D00-\u0D7F.,;:!?\u0027\u2018\u2019]|$)/g;
+    // Includes ZWJ (\u200D) support for complex Malayalam character combinations
+    const directNumberPattern = /([\u0D00-\u0D7F\u200D]+)(\d{1,3})(?=[\s\u0D00-\u0D7F.,;:!?\u0027\u2018\u2019]|$)/g;
     const directMatches = [];
     let directMatch;
     // Reset the regex lastIndex

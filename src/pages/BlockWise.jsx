@@ -1972,7 +1972,10 @@ const BlockWise = () => {
   };
 
   // Helper function to parse translation HTML and make sup tags clickable
-  // Extracts interpretation numbers from various formats: (1), .1, text1, etc.
+  // For Malayalam blockwise:
+  //   - Treat ANY digit sequence 1–342, optionally followed by a/A (e.g. 25, 25a, 199A),
+  //     as an interpretation marker – no need to inspect surrounding text.
+  //   - 199 and 199A are distinct markers and must be preserved as-is.
   const parseTranslationWithClickableSup = (htmlContent, blockRange) => {
     if (!htmlContent) return "";
 
@@ -1982,93 +1985,71 @@ const BlockWise = () => {
     const supTagStyle = 'cursor:pointer!important;background-color:rgb(41,169,199)!important;color:rgb(255,255,255)!important;font-weight:600!important;text-decoration:none!important;border:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:12px!important;vertical-align:middle!important;line-height:1!important;border-radius:9999px!important;position:relative!important;z-index:10!important;top:0!important;min-width:20px!important;min-height:19px!important;text-align:center!important;transition:0.2s ease-in-out!important;padding-top:3px!important;margin-right:4px!important;margin-left:-1px!important;margin-top:-15px!important;padding-left:2px!important;padding-right:2px!important;';
     
     // Create a helper function to generate the sup tag
-    const createSupTag = (number) => {
-      return `<sup class="interpretation-link" data-interpretation="${number}" data-range="${blockRange}" data-lang="${lang}" data-interpretation-number="${number}" data-interpretation-label="${number}" title="Click to view interpretation ${number}" aria-label="Interpretation ${number}" style="${supTagStyle}">${number}</sup>`;
+    const createSupTag = (token) => {
+      // token is the full marker as it appears in the text (e.g. "25", "25a", "199A")
+      return `<sup class="interpretation-link" data-interpretation="${token}" data-range="${blockRange}" data-lang="${lang}" data-interpretation-number="${token}" data-interpretation-label="${token}" title="Click to view interpretation ${token}" aria-label="Interpretation ${token}" style="${supTagStyle}">${token}</sup>`;
     };
-    
-    // Pattern 1: Numbers in parentheses: (1), (2), (10), etc.
-    const parenthesesPattern = /\((\d+)\)/g;
-    processedContent = processedContent.replace(parenthesesPattern, (match, number) => {
-      const num = parseInt(number, 10);
-      if (num >= 1 && num <= 99) {
-        return createSupTag(number);
-      }
-      return match;
-    });
-    
-    // Pattern 2: Numbers after period or single quote: .1, .2, '8, '9, etc. (MOST COMMON in Malayalam)
-    // Match: period OR any single quote variant followed by 1-2 digits, then space, Malayalam char, punctuation, or end
-    // Process from right to left to avoid index issues
-    // Handle: period (.), straight apostrophe ('), right single quotation mark ('), left single quotation mark (')
-    // Use alternation for better matching of quote variants
-    const periodNumberPattern = /(\.|'|'|'|\u2018|\u2019)(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
-    const periodMatches = [];
-    let periodMatch;
-    while ((periodMatch = periodNumberPattern.exec(processedContent)) !== null) {
-      const num = parseInt(periodMatch[2], 10);
-      if (num >= 1 && num <= 99) {
-        periodMatches.push({
-          index: periodMatch.index,
-          number: periodMatch[2],
-          fullMatch: periodMatch[0],
-          prefix: periodMatch[1] // The period or single quote character
-        });
-      }
-    }
-    
-    // Replace from right to left to maintain correct indices
-    for (let i = periodMatches.length - 1; i >= 0; i--) {
-      const match = periodMatches[i];
-      const before = processedContent.substring(0, match.index);
-      const after = processedContent.substring(match.index + match.fullMatch.length);
-      // Preserve the original character (period or single quote)
-      processedContent = before + match.prefix + createSupTag(match.number) + after;
-    }
-    
-    // Pattern 3: Numbers directly after Malayalam text (no period): text1, text2, etc.
-    // Only match if NOT already inside a sup tag and NOT after a period
-    const directNumberPattern = /([\u0D00-\u0D7F])(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
-    const directMatches = [];
-    let directMatch;
-    // Reset the regex lastIndex
-    directNumberPattern.lastIndex = 0;
-    while ((directMatch = directNumberPattern.exec(processedContent)) !== null) {
-      const num = parseInt(directMatch[2], 10);
-      if (num >= 1 && num <= 99) {
-        // Check if character before is a period or single quote (skip if so - already handled by Pattern 2)
-        if (directMatch.index > 0) {
-          const charBefore = processedContent[directMatch.index - 1];
-          // Check for period or any quote variant (straight apostrophe, curly quotes, Unicode quotes)
-          if (charBefore === '.' || charBefore === "'" || charBefore === "'" || charBefore === "'" || charBefore === '\u2018' || charBefore === '\u2019') {
-            continue;
-          }
+
+    // For Malayalam, apply the simplified "marker token" logic:
+    //   - Match any occurrence of 1–342, optionally followed by a/A.
+    //   - Do NOT inspect surrounding Malayalam / punctuation; just avoid:
+    //       * HTML tag contents
+    //       * existing <sup>...</sup> regions
+    if (translationLanguage === 'mal') {
+      const markerPattern = /(\d{1,3}[aA]?)/g;
+      const matches = [];
+      let match;
+
+      while ((match = markerPattern.exec(processedContent)) !== null) {
+        const token = match[1]; // e.g. "25", "25a", "199A"
+
+        // Extract numeric part
+        const numericPartMatch = token.match(/^(\d{1,3})/);
+        if (!numericPartMatch) continue;
+        const baseNumber = parseInt(numericPartMatch[1], 10);
+
+        // Only allow 1–342
+        if (!(baseNumber >= 1 && baseNumber <= 342)) continue;
+
+        const index = match.index;
+
+        // Skip if inside an HTML tag (between '<' and '>')
+        const beforeAll = processedContent.substring(0, index);
+        const lastLt = beforeAll.lastIndexOf("<");
+        const lastGt = beforeAll.lastIndexOf(">");
+        if (lastLt > lastGt) {
+          // We're currently inside a tag like <span attr="199">
+          continue;
         }
-        
-        // Check if already inside a sup tag
-        const beforeText = processedContent.substring(Math.max(0, directMatch.index - 100), directMatch.index);
-        const lastSupOpen = beforeText.lastIndexOf('<sup');
-        const lastSupClose = beforeText.lastIndexOf('</sup>');
+
+        // Skip if already inside a <sup>...</sup>
+        const contextStart = Math.max(0, index - 200);
+        const context = processedContent.substring(contextStart, index);
+        const lastSupOpen = context.lastIndexOf("<sup");
+        const lastSupClose = context.lastIndexOf("</sup>");
         if (lastSupOpen > lastSupClose) {
-          continue; // Already inside a sup tag
+          continue;
         }
-        
-        directMatches.push({
-          index: directMatch.index,
-          before: directMatch[1],
-          number: directMatch[2],
-          fullMatch: directMatch[0]
+
+        matches.push({
+          index,
+          token,
+          length: token.length,
         });
       }
-    }
-    
-    // Replace from right to left
-    for (let i = directMatches.length - 1; i >= 0; i--) {
-      const match = directMatches[i];
-      const before = processedContent.substring(0, match.index);
-      const after = processedContent.substring(match.index + match.fullMatch.length);
-      processedContent = before + match.before + createSupTag(match.number) + after;
+
+      // Replace from right to left so indices stay valid
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const { index, token, length } = matches[i];
+        const before = processedContent.substring(0, index);
+        const after = processedContent.substring(index + length);
+        processedContent = before + createSupTag(token) + after;
+      }
+
+      return processedContent;
     }
 
+    // Non-Malayalam: leave content unchanged (no special sup parsing here)
     return processedContent;
   };
 
@@ -2139,7 +2120,8 @@ const BlockWise = () => {
           // Force state update
           setSelectedInterpretation({
             range: range,
-            interpretationNumber: parseInt(interpretationNumber, 10),
+            // Keep the full token (e.g. "199A") so 199 and 199A are distinct
+            interpretationNumber: interpretationNumber,
           });
         } else {
           console.warn("[BlockWise] ⚠️ Missing interpretation data:", { interpretationNumber, range });
@@ -2473,7 +2455,7 @@ const BlockWise = () => {
                     className="relative rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300"
                   >
                     {/* Block Range Badge */}
-                    <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-br-xl border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10">
+                    <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10" style={{ borderRadius: '16px 0' }}>
                       {surahId}:{start}{start !== end && `-${end}`}
                     </div>
 

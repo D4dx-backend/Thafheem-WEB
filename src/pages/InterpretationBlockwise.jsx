@@ -27,7 +27,8 @@ const InterpretationBlockwise = (props) => {
         1
       ),
       range: props.range || searchParams.get("range") || state.range || "1-7",
-      ipt: parseInt(props.ipt || searchParams.get("ipt") || state.ipt || 1),
+      // Keep interpretation token as-is (e.g. "199A"), don't coerce to number
+      ipt: props.ipt || searchParams.get("ipt") || state.ipt || "1",
       lang: props.lang || searchParams.get("lang") || state.lang || "mal",
       footnoteId: props.footnoteId || searchParams.get("footnoteId") || state.footnoteId || null,
       interpretationId: props.interpretationId || searchParams.get("interpretationId") || state.interpretationId || null,

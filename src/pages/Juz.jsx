@@ -352,7 +352,17 @@ navigate(targetUrl);
 
                       {/* Surah Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                        <h3 
+                          className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-1 ${
+                            translationLanguage === 'ur' ? 'font-urdu-nastaliq' : ''
+                          }`}
+                          dir={translationLanguage === 'ur' ? 'ltr' : undefined}
+                          style={
+                            translationLanguage === 'ur'
+                              ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
+                              : {}
+                          }
+                        >
                           {(() => {
                             // Remove number prefix from surah name if it exists (e.g., "1. अल फ़ातिहा" -> "अल फ़ातिहा")
                             // This prevents duplicate numbers since StarNumber already shows the number
@@ -434,7 +444,24 @@ navigate(targetUrl);
 
                                 {/* Name + Icons stacked */}
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <h4 className="text-sm sm:text-[16px] font-poppins font-semibold text-gray-900 dark:text-white truncate">
+                                  <h4 
+                                    className={`text-sm sm:text-[16px] font-semibold text-gray-900 dark:text-white truncate ${
+                                      translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
+                                      translationLanguage === 'mal' ? 'font-malayalam' :
+                                      translationLanguage === 'hi' ? 'font-hindi' :
+                                      translationLanguage === 'bn' ? 'font-bengali' :
+                                      translationLanguage === 'ta' ? 'font-tamil' :
+                                      'font-poppins'
+                                    }`}
+                                    dir={translationLanguage === 'ur' ? 'ltr' : undefined}
+                                    style={
+                                      translationLanguage === 'mal'
+                                        ? { fontFamily: "'NotoSansMalayalam'" }
+                                        : translationLanguage === 'ur'
+                                        ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
+                                        : {}
+                                    }
+                                  >
                                     {(() => {
                                       // Remove number prefix from surah name if it exists (e.g., "1. अल फ़ातिहा" -> "अल फ़ातिहा")
                                       // This prevents duplicate numbers since StarNumber already shows the number

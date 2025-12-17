@@ -1986,32 +1986,32 @@ const BlockWise = () => {
       return `<sup class="interpretation-link" data-interpretation="${number}" data-range="${blockRange}" data-lang="${lang}" data-interpretation-number="${number}" data-interpretation-label="${number}" title="Click to view interpretation ${number}" aria-label="Interpretation ${number}" style="${supTagStyle}">${number}</sup>`;
     };
     
-    // Pattern 1: Numbers in parentheses: (1), (2), (10), etc.
+    // Pattern 1: Numbers in parentheses: (1), (2), (10), (104), etc.
     const parenthesesPattern = /\((\d+)\)/g;
     processedContent = processedContent.replace(parenthesesPattern, (match, number) => {
       const num = parseInt(number, 10);
-      if (num >= 1 && num <= 99) {
+      if (num >= 1 && num <= 999) {
         return createSupTag(number);
       }
       return match;
     });
     
-    // Pattern 2: Numbers after period or single quote: .1, .2, '8, '9, etc. (MOST COMMON in Malayalam)
-    // Match: period OR any single quote variant followed by 1-2 digits, then space, Malayalam char, punctuation, or end
+    // Pattern 2: Numbers after period, comma, single quote, exclamation, or question mark: .1, .2, ,24, '8, '9, !10, ?11, .104, ?106, ?107, .94', etc. (MOST COMMON in Malayalam)
+    // Match: period OR comma OR any single quote variant OR exclamation OR question mark followed by 1-3 digits, then space, Malayalam char, punctuation (including quotes), or end
     // Process from right to left to avoid index issues
-    // Handle: period (.), straight apostrophe ('), right single quotation mark ('), left single quotation mark (')
+    // Handle: period (.), comma (,), straight apostrophe ('), right single quotation mark ('), left single quotation mark ('), exclamation (!), question mark (?)
     // Use alternation for better matching of quote variants
-    const periodNumberPattern = /(\.|'|'|'|\u2018|\u2019)(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
+    const periodNumberPattern = /(\.|,|'|'|'|\u2018|\u2019|!|\?)(\d{1,3})(?=[\s\u0D00-\u0D7F.,;:!?\u0027\u2018\u2019]|$)/g;
     const periodMatches = [];
     let periodMatch;
     while ((periodMatch = periodNumberPattern.exec(processedContent)) !== null) {
       const num = parseInt(periodMatch[2], 10);
-      if (num >= 1 && num <= 99) {
+      if (num >= 1 && num <= 999) {
         periodMatches.push({
           index: periodMatch.index,
           number: periodMatch[2],
           fullMatch: periodMatch[0],
-          prefix: periodMatch[1] // The period or single quote character
+          prefix: periodMatch[1] // The period, comma, single quote, exclamation, or question mark character
         });
       }
     }
@@ -2021,25 +2021,75 @@ const BlockWise = () => {
       const match = periodMatches[i];
       const before = processedContent.substring(0, match.index);
       const after = processedContent.substring(match.index + match.fullMatch.length);
-      // Preserve the original character (period or single quote)
+      // Preserve the original character (period, comma, single quote, exclamation, or question mark)
       processedContent = before + match.prefix + createSupTag(match.number) + after;
     }
     
-    // Pattern 3: Numbers directly after Malayalam text (no period): text1, text2, etc.
-    // Only match if NOT already inside a sup tag and NOT after a period
-    const directNumberPattern = /([\u0D00-\u0D7F])(\d{1,2})(?=[\s\u0D00-\u0D7F.,;:!?]|$)/g;
+    // Pattern 3A: Numbers directly combined/attached to Malayalam words (no space): word83., text94', ത്തീരുവിന്‍83., etc.
+    // This is a dedicated pattern for numbers that are immediately attached to Malayalam text with no separator
+    // Match: one or more Malayalam characters immediately followed (no space) by 1-3 digits, then punctuation, space, or end
+    // This pattern runs before Pattern 3 to catch combined cases first
+    const combinedNumberPattern = /([\u0D00-\u0D7F]+)(\d{1,3})(?=[.,;:!?\u0027\u2018\u2019\s\u0D00-\u0D7F]|$)/g;
+    const combinedMatches = [];
+    let combinedMatch;
+    // Reset the regex lastIndex
+    combinedNumberPattern.lastIndex = 0;
+    while ((combinedMatch = combinedNumberPattern.exec(processedContent)) !== null) {
+      const num = parseInt(combinedMatch[2], 10);
+      if (num >= 1 && num <= 999) {
+        // Check if already inside a sup tag
+        const beforeText = processedContent.substring(Math.max(0, combinedMatch.index - 100), combinedMatch.index);
+        const lastSupOpen = beforeText.lastIndexOf('<sup');
+        const lastSupClose = beforeText.lastIndexOf('</sup>');
+        if (lastSupOpen > lastSupClose) {
+          continue; // Already inside a sup tag
+        }
+        
+        // Check if this number was already processed by Pattern 2 (punctuation directly before number)
+        const numberStartIndex = combinedMatch.index + combinedMatch[1].length;
+        if (numberStartIndex > 0) {
+          const charBeforeNumber = processedContent[numberStartIndex - 1];
+          // If punctuation is directly before the number, Pattern 2 should have handled it
+          if (charBeforeNumber === '.' || charBeforeNumber === ',' || charBeforeNumber === "'" || charBeforeNumber === "'" || charBeforeNumber === "'" || charBeforeNumber === '\u2018' || charBeforeNumber === '\u2019' || charBeforeNumber === '!' || charBeforeNumber === '?') {
+            continue; // Skip - Pattern 2 handles this
+          }
+        }
+        
+        combinedMatches.push({
+          index: combinedMatch.index,
+          before: combinedMatch[1], // All Malayalam characters before the number
+          number: combinedMatch[2],
+          fullMatch: combinedMatch[0]
+        });
+      }
+    }
+    
+    // Replace from right to left
+    for (let i = combinedMatches.length - 1; i >= 0; i--) {
+      const match = combinedMatches[i];
+      const before = processedContent.substring(0, match.index);
+      const after = processedContent.substring(match.index + match.fullMatch.length);
+      processedContent = before + match.before + createSupTag(match.number) + after;
+    }
+    
+    // Pattern 3: Numbers directly after Malayalam text (no period): text1, text2, text104, text83., ത്തീരുവിന്‍83., etc.
+    // Match: one or more Malayalam characters followed by 1-3 digits, then space, Malayalam char, punctuation, or end
+    // Only match if NOT already inside a sup tag and NOT after a period/comma/quotes
+    const directNumberPattern = /([\u0D00-\u0D7F]+)(\d{1,3})(?=[\s\u0D00-\u0D7F.,;:!?\u0027\u2018\u2019]|$)/g;
     const directMatches = [];
     let directMatch;
     // Reset the regex lastIndex
     directNumberPattern.lastIndex = 0;
     while ((directMatch = directNumberPattern.exec(processedContent)) !== null) {
       const num = parseInt(directMatch[2], 10);
-      if (num >= 1 && num <= 99) {
-        // Check if character before is a period or single quote (skip if so - already handled by Pattern 2)
-        if (directMatch.index > 0) {
-          const charBefore = processedContent[directMatch.index - 1];
-          // Check for period or any quote variant (straight apostrophe, curly quotes, Unicode quotes)
-          if (charBefore === '.' || charBefore === "'" || charBefore === "'" || charBefore === "'" || charBefore === '\u2018' || charBefore === '\u2019') {
+      if (num >= 1 && num <= 999) {
+        // Check if the character immediately before the NUMBER (not the Malayalam text) is punctuation
+        // This ensures we don't duplicate matches with Pattern 2, which handles punctuation directly before numbers
+        const numberStartIndex = directMatch.index + directMatch[1].length; // Position where the number starts
+        if (numberStartIndex > 0) {
+          const charBeforeNumber = processedContent[numberStartIndex - 1];
+          // If punctuation is directly before the number, Pattern 2 should handle it (skip to avoid duplicate)
+          if (charBeforeNumber === '.' || charBeforeNumber === ',' || charBeforeNumber === "'" || charBeforeNumber === "'" || charBeforeNumber === "'" || charBeforeNumber === '\u2018' || charBeforeNumber === '\u2019' || charBeforeNumber === '!' || charBeforeNumber === '?') {
             continue;
           }
         }
@@ -2054,7 +2104,7 @@ const BlockWise = () => {
         
         directMatches.push({
           index: directMatch.index,
-          before: directMatch[1],
+          before: directMatch[1], // All Malayalam characters before the number
           number: directMatch[2],
           fullMatch: directMatch[0]
         });
@@ -2067,6 +2117,55 @@ const BlockWise = () => {
       const before = processedContent.substring(0, match.index);
       const after = processedContent.substring(match.index + match.fullMatch.length);
       processedContent = before + match.before + createSupTag(match.number) + after;
+    }
+    
+    // Pattern 4: Numbers directly before Malayalam text: 17ഇനി, 5നാം, 104ഇനി, etc.
+    // Match: 1-3 digits directly followed by a Malayalam character
+    // Only match if NOT already inside a sup tag and NOT after punctuation (handled by Pattern 2)
+    const numberBeforeTextPattern = /(\d{1,3})([\u0D00-\u0D7F])/g;
+    const numberBeforeMatches = [];
+    let numberBeforeMatch;
+    // Reset the regex lastIndex
+    numberBeforeTextPattern.lastIndex = 0;
+    while ((numberBeforeMatch = numberBeforeTextPattern.exec(processedContent)) !== null) {
+      const num = parseInt(numberBeforeMatch[1], 10);
+      if (num >= 1 && num <= 999) {
+        // Check if character before is a digit (skip if so - part of larger number like 117ഇനി)
+        if (numberBeforeMatch.index > 0) {
+          const charBefore = processedContent[numberBeforeMatch.index - 1];
+          // Skip if preceded by a digit (part of larger number)
+          if (/\d/.test(charBefore)) {
+            continue;
+          }
+          // Check for period, comma, any quote variant, exclamation, or question mark (skip if so - already handled by Pattern 2)
+          if (charBefore === '.' || charBefore === ',' || charBefore === "'" || charBefore === "'" || charBefore === "'" || charBefore === '\u2018' || charBefore === '\u2019' || charBefore === '!' || charBefore === '?') {
+            continue;
+          }
+        }
+        
+        // Check if already inside a sup tag
+        const beforeText = processedContent.substring(Math.max(0, numberBeforeMatch.index - 100), numberBeforeMatch.index);
+        const lastSupOpen = beforeText.lastIndexOf('<sup');
+        const lastSupClose = beforeText.lastIndexOf('</sup>');
+        if (lastSupOpen > lastSupClose) {
+          continue; // Already inside a sup tag
+        }
+        
+        numberBeforeMatches.push({
+          index: numberBeforeMatch.index,
+          number: numberBeforeMatch[1],
+          after: numberBeforeMatch[2], // The Malayalam character after the number
+          fullMatch: numberBeforeMatch[0]
+        });
+      }
+    }
+    
+    // Replace from right to left
+    for (let i = numberBeforeMatches.length - 1; i >= 0; i--) {
+      const match = numberBeforeMatches[i];
+      const before = processedContent.substring(0, match.index);
+      const after = processedContent.substring(match.index + match.fullMatch.length);
+      processedContent = before + createSupTag(match.number) + match.after + after;
     }
 
     return processedContent;
@@ -2473,7 +2572,7 @@ const BlockWise = () => {
                     className="relative rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300"
                   >
                     {/* Block Range Badge */}
-                    <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-br-xl border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10">
+                    <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10" style={{ borderRadius: '16px 0' }}>
                       {surahId}:{start}{start !== end && `-${end}`}
                     </div>
 

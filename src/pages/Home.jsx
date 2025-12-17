@@ -171,11 +171,12 @@ const Home = () => {
                           translationLanguage === 'ta' ? 'font-tamil' :
                           'font-poppins'
                         }`}
+                        dir={translationLanguage === 'ur' ? 'ltr' : undefined}
                         style={
                           translationLanguage === 'mal' 
                             ? { fontFamily: "'NotoSansMalayalam'" } 
                             : translationLanguage === 'ur'
-                            ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2' }
+                            ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
                             : {}
                         }
                       >

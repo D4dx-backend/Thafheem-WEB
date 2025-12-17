@@ -67,6 +67,11 @@ const Transition = ({ showPageInfo = false }) => {
   const [currentVisibleBlock, setCurrentVisibleBlock] = useState(null);
   const blockRangeDropdownRef = useRef(null);
 
+  // Ayah dropdown state (only for ayahwise pages)
+  const [showAyahDropdown, setShowAyahDropdown] = useState(false);
+  const [currentVisibleAyah, setCurrentVisibleAyah] = useState(null);
+  const ayahDropdownRef = useRef(null);
+
   const { surahId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,6 +81,9 @@ const Transition = ({ showPageInfo = false }) => {
   
   // Check if we're on a blockwise page
   const isBlockwisePage = location.pathname.startsWith('/blockwise');
+  
+  // Check if we're on an ayahwise page (surah page, not blockwise or reading)
+  const isAyahwisePage = location.pathname.startsWith('/surah') && !location.pathname.startsWith('/surah/all');
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
@@ -308,6 +316,67 @@ const Transition = ({ showPageInfo = false }) => {
     return () => window.removeEventListener('scroll', handleBlockTracking);
   }, [isBlockwisePage, blockRanges]);
 
+  // Track which ayah is currently visible (only on ayahwise pages)
+  useEffect(() => {
+    if (!isAyahwisePage || !verseCount) {
+      setCurrentVisibleAyah(null);
+      return;
+    }
+
+    const handleAyahTracking = () => {
+      // First check if there's a hash in the URL
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#verse-")) {
+        const hashAyah = parseInt(hash.replace("#verse-", ""), 10);
+        if (!isNaN(hashAyah) && hashAyah >= 1 && hashAyah <= verseCount) {
+          setCurrentVisibleAyah(hashAyah);
+          return;
+        }
+      }
+
+      // Otherwise, find the most visible ayah in viewport
+      const viewportTop = window.scrollY;
+      const viewportBottom = window.scrollY + window.innerHeight;
+      const viewportCenter = viewportTop + window.innerHeight / 2;
+
+      let visibleAyah = null;
+      let minDistance = Infinity;
+
+      // Check all ayahs from 1 to verseCount
+      for (let ayahNum = 1; ayahNum <= verseCount; ayahNum++) {
+        const element = document.getElementById(`verse-${ayahNum}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const elementTop = rect.top + window.scrollY;
+          const elementBottom = elementTop + rect.height;
+          const elementCenter = elementTop + rect.height / 2;
+
+          // Check if ayah is in viewport
+          if (elementTop <= viewportBottom && elementBottom >= viewportTop) {
+            const distance = Math.abs(elementCenter - viewportCenter);
+            if (distance < minDistance) {
+              minDistance = distance;
+              visibleAyah = ayahNum;
+            }
+          }
+        }
+      }
+
+      if (visibleAyah) {
+        setCurrentVisibleAyah(visibleAyah);
+      }
+    };
+
+    window.addEventListener('scroll', handleAyahTracking, { passive: true });
+    window.addEventListener('hashchange', handleAyahTracking);
+    // Initial check
+    handleAyahTracking();
+    return () => {
+      window.removeEventListener('scroll', handleAyahTracking);
+      window.removeEventListener('hashchange', handleAyahTracking);
+    };
+  }, [isAyahwisePage, verseCount]);
+
   // Close block range dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -321,6 +390,20 @@ const Transition = ({ showPageInfo = false }) => {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showBlockRangeDropdown]);
+
+  // Close ayah dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (ayahDropdownRef.current && !ayahDropdownRef.current.contains(event.target)) {
+        setShowAyahDropdown(false);
+      }
+    };
+
+    if (showAyahDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAyahDropdown]);
 
   // Function to scroll to a specific block
   const scrollToBlock = (rangeKey) => {
@@ -336,6 +419,48 @@ const Transition = ({ showPageInfo = false }) => {
         blockElement.style.backgroundColor = "";
       }, 2000);
       setShowBlockRangeDropdown(false);
+    }
+  };
+
+  // Function to scroll to a specific ayah
+  const scrollToAyah = (ayahNumber) => {
+    const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+    if (!effectiveId) return;
+
+    setShowAyahDropdown(false);
+
+    // Update URL with hash
+    const targetUrl = `/surah/${effectiveId}#verse-${ayahNumber}`;
+    if (window.location.pathname === `/surah/${effectiveId}`) {
+      // Same page - update hash and scroll
+      window.location.hash = `verse-${ayahNumber}`;
+      
+      // Scroll to element with retry logic
+      const scrollToElement = (attempt = 1) => {
+        const verseElement = document.getElementById(`verse-${ayahNumber}`);
+        if (verseElement) {
+          verseElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          // Highlight the verse briefly
+          verseElement.style.backgroundColor = "#fef3c7";
+          setTimeout(() => {
+            verseElement.style.backgroundColor = "";
+          }, 2000);
+        } else if (attempt < 5) {
+          // Retry up to 5 times with increasing delays
+          setTimeout(() => scrollToElement(attempt + 1), attempt * 100);
+        }
+      };
+      
+      // Start scrolling immediately
+      requestAnimationFrame(() => {
+        scrollToElement(1);
+      });
+    } else {
+      // Different page - navigate
+      navigate(targetUrl);
     }
   };
 
@@ -505,7 +630,7 @@ const Transition = ({ showPageInfo = false }) => {
         <div className="max-w-none w-full mx-0 py-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 min-h-[48px]">
             {/* Left Section - Chapter Selector */}
-            <div className="flex items-center ml-[17px] sm:ml-[21px] justify-self-start">
+            <div className="flex items-center ml-[17px] sm:ml-[21px] justify-self-start space-x-1 sm:space-x-2">
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -536,6 +661,95 @@ const Transition = ({ showPageInfo = false }) => {
                   )
                 }
               </div>
+
+              {/* Block Range Dropdown - Only show on blockwise pages */}
+              {isBlockwisePage && blockRanges.length > 0 && (
+                <div className="relative" ref={blockRangeDropdownRef}>
+                  <button
+                    onClick={() => setShowBlockRangeDropdown(!showBlockRangeDropdown)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
+                    title="Select block range"
+                  >
+                    <span>
+                      {currentVisibleBlock || ''}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showBlockRangeDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showBlockRangeDropdown && (
+                    <div className="absolute left-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                      {blockRanges.map((block, index) => {
+                        const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+                        const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+                        const parsedStart = Number.parseInt(rawStart, 10);
+                        const parsedEnd = Number.parseInt(rawEnd, 10);
+                        const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+                        const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+                        const start = hasNumericBounds ? parsedStart : fallbackStart;
+                        const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+                        const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+                        const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
+                        const isSelected = currentVisibleBlock === rangeKey;
+
+                        return (
+                          <button
+                            key={`dropdown-${rangeKey}-${index}`}
+                            onClick={() => scrollToBlock(rangeKey)}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <span>{rangeKey}</span>
+                            {isSelected && <Check className="w-4 h-4" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Ayah Dropdown - Only show on ayahwise pages */}
+              {isAyahwisePage && verseCount && verseCount > 0 && (
+                <div className="relative" ref={ayahDropdownRef}>
+                  <button
+                    onClick={() => setShowAyahDropdown(!showAyahDropdown)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
+                    title="Select ayah"
+                  >
+                    <span>
+                      {currentVisibleAyah || ''}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showAyahDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showAyahDropdown && (
+                    <div className="absolute left-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                      {Array.from({ length: verseCount }, (_, index) => {
+                        const ayahNumber = index + 1;
+                        const isSelected = currentVisibleAyah === ayahNumber;
+
+                        return (
+                          <button
+                            key={`ayah-${ayahNumber}`}
+                            onClick={() => scrollToAyah(ayahNumber)}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <span>{ayahNumber}</span>
+                            {isSelected && <Check className="w-4 h-4" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Center Section - Translation/Reading Toggle - Only show on surah, reading, and blockwise pages */}
@@ -642,56 +856,6 @@ const Transition = ({ showPageInfo = false }) => {
                   <span>Juz 1 | Hizb 1</span>
                 </div>
               ) : null}
-              
-              {/* Block Range Dropdown - Only show on blockwise pages */}
-              {isBlockwisePage && blockRanges.length > 0 && (
-                <div className="relative" ref={blockRangeDropdownRef}>
-                  <button
-                    onClick={() => setShowBlockRangeDropdown(!showBlockRangeDropdown)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
-                    title="Select block range"
-                  >
-                    <span className="hidden sm:inline">
-                      {currentVisibleBlock || 'Select Block'}
-                    </span>
-                    <span className="sm:hidden">Blocks</span>
-                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showBlockRangeDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {showBlockRangeDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
-                      {blockRanges.map((block, index) => {
-                        const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
-                        const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
-                        const parsedStart = Number.parseInt(rawStart, 10);
-                        const parsedEnd = Number.parseInt(rawEnd, 10);
-                        const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
-                        const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
-                        const start = hasNumericBounds ? parsedStart : fallbackStart;
-                        const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
-                        const end = hasNumericBounds ? parsedEnd : fallbackEnd;
-                        const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
-                        const isSelected = currentVisibleBlock === rangeKey;
-
-                        return (
-                          <button
-                            key={`dropdown-${rangeKey}-${index}`}
-                            onClick={() => scrollToBlock(rangeKey)}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                                : 'text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <span>{rangeKey}</span>
-                            {isSelected && <Check className="w-4 h-4" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
               
               {renderActionButtons("mobile")}
               {renderActionButtons("desktop")}

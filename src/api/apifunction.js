@@ -4065,9 +4065,34 @@ export const fetchArabicAudioForTajweed = async (
     return "";
   }
 
-  // Audio functionality not available in MySQL database
-  console.warn('Audio functionality not available in MySQL database');
-  return "";
+  try {
+    // Parse verseKey format: "83:14" -> surah 83, ayah 14
+    const [surahNumber, ayahNumber] = verseKey.split(":").map(Number);
+    
+    if (!surahNumber || !ayahNumber || isNaN(surahNumber) || isNaN(ayahNumber)) {
+      console.error("Invalid verseKey format:", verseKey);
+      return "";
+    }
+
+    // Pad surah and ayah numbers to 3 digits
+    const surahPadded = String(surahNumber).padStart(3, "0");
+    const ayahPadded = String(ayahNumber).padStart(3, "0");
+
+    // Default qari is al-afasy (prefix: QA)
+    // Format: https://old.thafheem.net/audio/qirath/al-afasy/QA083_014.ogg
+    const qariName = "al-afasy";
+    const prefix = "QA"; // Q for Quran, A for Afasy
+
+    // Build audio URL based on environment
+    if (import.meta?.env?.DEV) {
+      return `/api/audio/qirath/${qariName}/${prefix}${surahPadded}_${ayahPadded}.ogg`;
+    }
+    
+    return `https://old.thafheem.net/audio/qirath/${qariName}/${prefix}${surahPadded}_${ayahPadded}.ogg`;
+  } catch (error) {
+    console.error("Error building audio URL for Tajweed:", error);
+    return "";
+  }
 };
 
 // const fetchWithTimeout = (url, options = {}, timeout = 8000) => {

@@ -54,6 +54,14 @@ const MalayalamJesusMohammed = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 font-poppins">
+      <style>{`
+        .malayalam-jesus-content p {
+          margin-bottom: 1.5rem !important;
+        }
+        .malayalam-jesus-content p:last-child {
+          margin-bottom: 0 !important;
+        }
+      `}</style>
       <div className="max-w-[1070px] w-full mx-auto px-4 sm:px-6 py-8">
         {/* Back */}
         <button
@@ -114,7 +122,7 @@ const MalayalamJesusMohammed = () => {
                   />
                 )}
                 <div
-                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 ${
+                  className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 malayalam-jesus-content ${
                     isMalayalam ? 'font-malayalam' : ''
                   }`}
                   dangerouslySetInnerHTML={{ __html: section.text || '' }}

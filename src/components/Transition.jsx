@@ -1,9 +1,9 @@
-import { ChevronDown, BookOpen, Notebook, Info, Play, Pause, Heart, LibraryBig } from "lucide-react"; // swapped icons
+import { ChevronDown, BookOpen, Notebook, Info, Play, Pause, Heart, LibraryBig, Check } from "lucide-react"; // swapped icons
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import NavigateSurah from "../pages/NavigateSurah";
-import { fetchPageRanges } from "../api/apifunction";
+import { fetchPageRanges, fetchAyaRanges } from "../api/apifunction";
 import { PAGE_RANGES_API } from "../api/apis";
 import { useSurahData } from "../hooks/useSurahData";
 import { useAuth } from "../context/AuthContext";
@@ -61,6 +61,11 @@ const Transition = ({ showPageInfo = false }) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showSurahInfoModal, setShowSurahInfoModal] = useState(false);
+  // Block range dropdown state (only for blockwise pages)
+  const [blockRanges, setBlockRanges] = useState([]);
+  const [showBlockRangeDropdown, setShowBlockRangeDropdown] = useState(false);
+  const [currentVisibleBlock, setCurrentVisibleBlock] = useState(null);
+  const blockRangeDropdownRef = useRef(null);
 
   const { surahId } = useParams();
   const location = useLocation();
@@ -68,6 +73,9 @@ const Transition = ({ showPageInfo = false }) => {
   const { user } = useAuth();
   const { translationLanguage } = useTheme();
   const { surahs: surahNames } = useSurahData(translationLanguage);
+  
+  // Check if we're on a blockwise page
+  const isBlockwisePage = location.pathname.startsWith('/blockwise');
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
@@ -211,6 +219,125 @@ const Transition = ({ showPageInfo = false }) => {
       window.removeEventListener('audioStateChange', handleAudioStateChange);
     };
   }, []);
+
+  // Fetch block ranges when on blockwise page
+  useEffect(() => {
+    if (!isBlockwisePage) {
+      setBlockRanges([]);
+      setCurrentVisibleBlock(null);
+      return;
+    }
+
+    const effectiveId = surahId ? parseInt(surahId) : getSurahIdFromPath();
+    const supportsBlockwise = translationLanguage === 'mal' || translationLanguage === 'E';
+    
+    if (!effectiveId || !supportsBlockwise) {
+      setBlockRanges([]);
+      return;
+    }
+
+    const loadBlockRanges = async () => {
+      try {
+        const ranges = await fetchAyaRanges(effectiveId, translationLanguage || 'mal');
+        setBlockRanges(ranges || []);
+      } catch (error) {
+        console.error('Error fetching block ranges:', error);
+        setBlockRanges([]);
+      }
+    };
+
+    loadBlockRanges();
+  }, [isBlockwisePage, surahId, location.pathname, translationLanguage]);
+
+  // Track which block is currently visible (only on blockwise pages)
+  useEffect(() => {
+    if (!isBlockwisePage || blockRanges.length === 0) {
+      return;
+    }
+
+    const handleBlockTracking = () => {
+      const blocks = blockRanges.map((block) => {
+        const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+        const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+        const parsedStart = Number.parseInt(rawStart, 10);
+        const parsedEnd = Number.parseInt(rawEnd, 10);
+        const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+        const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+        const start = hasNumericBounds ? parsedStart : fallbackStart;
+        const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+        const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+        const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
+        const element = document.getElementById(`block-${rangeKey}`);
+        return { rangeKey, element, start };
+      });
+
+      // Find the block that's most visible in the viewport
+      const viewportTop = window.scrollY;
+      const viewportBottom = window.scrollY + window.innerHeight;
+      const viewportCenter = viewportTop + window.innerHeight / 2;
+
+      let visibleBlock = null;
+      let minDistance = Infinity;
+
+      blocks.forEach(({ rangeKey, element, start }) => {
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const elementTop = rect.top + window.scrollY;
+          const elementBottom = elementTop + rect.height;
+          const elementCenter = elementTop + rect.height / 2;
+
+          // Check if block is in viewport
+          if (elementTop <= viewportBottom && elementBottom >= viewportTop) {
+            const distance = Math.abs(elementCenter - viewportCenter);
+            if (distance < minDistance) {
+              minDistance = distance;
+              visibleBlock = rangeKey;
+            }
+          }
+        }
+      });
+
+      if (visibleBlock) {
+        setCurrentVisibleBlock(visibleBlock);
+      }
+    };
+
+    window.addEventListener('scroll', handleBlockTracking, { passive: true });
+    // Initial check
+    handleBlockTracking();
+    return () => window.removeEventListener('scroll', handleBlockTracking);
+  }, [isBlockwisePage, blockRanges]);
+
+  // Close block range dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (blockRangeDropdownRef.current && !blockRangeDropdownRef.current.contains(event.target)) {
+        setShowBlockRangeDropdown(false);
+      }
+    };
+
+    if (showBlockRangeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showBlockRangeDropdown]);
+
+  // Function to scroll to a specific block
+  const scrollToBlock = (rangeKey) => {
+    const blockElement = document.getElementById(`block-${rangeKey}`);
+    if (blockElement) {
+      blockElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      // Highlight the block briefly
+      blockElement.style.backgroundColor = "#fef3c7";
+      setTimeout(() => {
+        blockElement.style.backgroundColor = "";
+      }, 2000);
+      setShowBlockRangeDropdown(false);
+    }
+  };
 
   const handleSurahSelect = (surah) => {
     const surahIdValue = surah?.number ?? surah?.id;
@@ -515,6 +642,57 @@ const Transition = ({ showPageInfo = false }) => {
                   <span>Juz 1 | Hizb 1</span>
                 </div>
               ) : null}
+              
+              {/* Block Range Dropdown - Only show on blockwise pages */}
+              {isBlockwisePage && blockRanges.length > 0 && (
+                <div className="relative" ref={blockRangeDropdownRef}>
+                  <button
+                    onClick={() => setShowBlockRangeDropdown(!showBlockRangeDropdown)}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
+                    title="Select block range"
+                  >
+                    <span className="hidden sm:inline">
+                      {currentVisibleBlock || 'Select Block'}
+                    </span>
+                    <span className="sm:hidden">Blocks</span>
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showBlockRangeDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showBlockRangeDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                      {blockRanges.map((block, index) => {
+                        const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
+                        const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
+                        const parsedStart = Number.parseInt(rawStart, 10);
+                        const parsedEnd = Number.parseInt(rawEnd, 10);
+                        const hasNumericBounds = Number.isFinite(parsedStart) && Number.isFinite(parsedEnd);
+                        const fallbackStart = Number.isFinite(Number(rawStart)) ? Number(rawStart) : 1;
+                        const start = hasNumericBounds ? parsedStart : fallbackStart;
+                        const fallbackEnd = Number.isFinite(Number(rawEnd)) ? Number(rawEnd) : start;
+                        const end = hasNumericBounds ? parsedEnd : fallbackEnd;
+                        const rangeKey = hasNumericBounds ? `${start}-${end}` : `${rawStart}-${rawEnd}`;
+                        const isSelected = currentVisibleBlock === rangeKey;
+
+                        return (
+                          <button
+                            key={`dropdown-${rangeKey}-${index}`}
+                            onClick={() => scrollToBlock(rangeKey)}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <span>{rangeKey}</span>
+                            {isSelected && <Check className="w-4 h-4" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {renderActionButtons("mobile")}
               {renderActionButtons("desktop")}
             </div>

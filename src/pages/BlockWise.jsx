@@ -2197,30 +2197,38 @@ const BlockWise = () => {
     }
   };
 
+
   // Handle scroll to show/hide floating button
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
+    const handleScrollButton = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      if (scrollY > 300) {
         setShowScrollButton(true);
       } else {
         setShowScrollButton(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Use both window and document scroll events for better compatibility
+    window.addEventListener('scroll', handleScrollButton, { passive: true });
+    document.addEventListener('scroll', handleScrollButton, { passive: true });
+    // Initial check
+    handleScrollButton();
+    return () => {
+      window.removeEventListener('scroll', handleScrollButton);
+      document.removeEventListener('scroll', handleScrollButton);
+    };
   }, []);
 
   // Handle scroll to specific block when navigating from bookmark
   useEffect(() => {
-    const scrollToBlock = () => {
+    const scrollToBlockFromState = () => {
       const scrollToBlockRange = location.state?.scrollToBlock;
       
       if (scrollToBlockRange && !loading && blockRanges.length > 0) {
         // Wait for DOM to render blocks
         setTimeout(() => {
           const blockElement = document.getElementById(`block-${scrollToBlockRange}`);
-          
           if (blockElement) {
             blockElement.scrollIntoView({
               behavior: "smooth",
@@ -2237,7 +2245,7 @@ const BlockWise = () => {
     };
 
     if (!loading && blockRanges.length > 0) {
-      scrollToBlock();
+      scrollToBlockFromState();
     }
   }, [loading, blockRanges, location.state]);
 
@@ -3047,20 +3055,21 @@ const BlockWise = () => {
             />
           )}
 
-          {/* Floating Back to Top Button */}
-          {showScrollButton && (
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className={`fixed right-6 z-[60] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${currentAyahInBlock ? 'bottom-32 sm:bottom-36' : 'bottom-6'
-                }`}
-              title="Beginning of Surah"
-              aria-label="Beginning of Surah"
-            >
-              <ArrowUp className="w-6 h-6" />
-            </button>
-          )}
         </div>
       </div>
+
+      {/* Floating Back to Top Button - Outside main container */}
+      {showScrollButton && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className={`fixed right-6 z-[100] bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center ${currentAyahInBlock ? 'bottom-32 sm:bottom-36' : 'bottom-6'
+            }`}
+          title="Beginning of Surah"
+          aria-label="Beginning of Surah"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Sticky Audio Player */}
       {currentAyahInBlock && (

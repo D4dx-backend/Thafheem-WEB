@@ -1,8 +1,4 @@
-import React from 'react';
-import { Languages } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
-
-const ENGLISH_ABOUT = `
+import{i as y,j as t,O as w}from"./index-CUlJBpza.js";import"./react-vendor-v5ei6ytj.js";const v=`
   <p>
     The Holy Qur'an is the magnificent message bestowed upon humanity by the Creator of the universe, Allah. It transcends time, 
     making it eternally relevant. Therefore, digital access to the Holy Qur'an holds great significance.
@@ -26,9 +22,7 @@ const ENGLISH_ABOUT = `
   <p>
     May Allah reward and bless all those who contributed to this endeavour with abundant rewards. Ameen.
   </p>
-`;
-
-const URDU_ABOUT = `
+`,g=`
   <div dir="rtl" style="text-align: right;">
     <p>
       قرآن کریم کائنات کے خالق اللہ کی طرف سے انسانیت کو دیا گیا سب سے بڑا پیغام ہے۔ یہ بے وقت ہے۔ اس لیے قرآن پاک کی ڈیجیٹل پڑھائی بہت اہمیت کی حامل ہے۔ سید ابوالاعلیٰ مودودی کی تحریر کردہ تفسیری کتاب 'تفہیم القرآن' کی ڈیجیٹل ایپلی کیشن کا مقصد قرآن مجید کے تصورات کے مطالعہ کے لیے ڈیجیٹل سہولیات کا زیادہ سے زیادہ استعمال کرنا ہے۔
@@ -51,9 +45,7 @@ const URDU_ABOUT = `
       <strong>D4DX Innovations LLP</strong>
     </p>
   </div>
-`;
-
-const HINDI_ABOUT = `
+`,A=`
   <p>
     पवित्र कुरान, दुनिया बनाने वाले अल्लाह का इंसानियत को दिया गया सबसे बड़ा मैसेज है।
     यह हमेशा रहने वाला है। इसलिए, पवित्र कुरान को डिजिटल तरीके से पढ़ना बहुत ज़रूरी है।
@@ -88,9 +80,7 @@ const HINDI_ABOUT = `
   <p style="margin-top: 2em;">
     <strong>- शिहाब पूक्कोट्टूर, चेयरमैन, D4DX</strong>
   </p>
-`;
-
-const BANGLA_ABOUT = `
+`,j=`
   <p>
     পবিত্র কুরআন হলো বিশ্বজগতের স্রষ্টা আল্লাহর পক্ষ থেকে মানবজাতির জন্য প্রদত্ত সর্বশ্রেষ্ঠ বার্তা। এটি চিরন্তন। তাই, পবিত্র কুরআনের ডিজিটাল পাঠ অত্যন্ত গুরুত্বপূর্ণ। সৈয়দ আবুল-আলা মওদুদী রচিত তাফসীর গ্রন্থ 'তাফহীমুল কুরআন'-এর ডিজিটাল অ্যাপ্লিকেশনটির লক্ষ্য পবিত্র কুরআনের ধারণা অধ্যয়নের জন্য ডিজিটাল সুযোগ-সুবিধার সর্বাধিক ব্যবহার করা।
   </p>
@@ -111,9 +101,7 @@ const BANGLA_ABOUT = `
     <strong>- শাহাব পোক্কোতুর, চেয়ারম্যান,</strong><br/>
     <strong>D4DX Innovations LLP</strong>
   </p>
-`;
-
-const MALAYALAM_ABOUT = `
+`,N=`
   <p>
     പ്രപഞ്ച സ്രഷ്ടാവായ അല്ലാഹു മാനവരാശിക്ക് നല്‍കിയ അതിമഹത്തായ സന്ദേശമാണ് വിശുദ്ധ ഖുര്‍ആന്‍. അത് കാലാതിവര്‍ത്തിയാണ്. അതിനാല്‍ തന്നെ  പരിശുദ്ധ ഖുര്‍ആന്റെ ഡിജിറ്റല്‍ വായനക്ക് വലിയ പ്രധാന്യവുമുണ്ട്.  പരിശുദ്ധ ഖുര്‍ആന്റെ ആശയ പഠനത്തിന് ഡിജിറ്റല്‍ സൗകര്യങ്ങള്‍ പരമാവധി പ്രയോജനപ്പെടുത്തുക എന്നതാണ്, സയ്യിദ് അബുല്‍അഅ്‌ലാ മൗദൂദി രചിച്ച 'തഫ്ഹീമുല്‍ ഖുര്‍ആൻ' എന്ന വ്യാഖ്യാന ഗ്രന്ഥത്തിന്റെ  ഡിജിറ്റൽ ആപ്ലിക്കേഷനിലൂടെ ലക്ഷ്യമാക്കുന്നത്.
   </p>
@@ -129,9 +117,7 @@ const MALAYALAM_ABOUT = `
   <p>
     ഇത് ഉപയോഗപ്പെടുത്തുന്ന എല്ലാ തലത്തിലുള്ളവരില്‍ നിന്നും തങ്ങളുടെ വിലപ്പെട്ട അഭിപ്രായങ്ങളും ഉപദേശ നിര്‍ദ്ദേശങ്ങളും താല്‍പര്യപൂര്‍വം പ്രതീക്ഷിക്കുന്നുണ്ട്. പരമകാരുണികനായ അല്ലാഹു ഇതൊരു സദ്കര്‍മ്മമായി സ്വീകരിച്ച് അതിമഹത്തായ പ്രതിഫലം നല്‍കി എല്ലാവരെയും അനുഗ്രഹിക്കട്ടെ. ആമീന്‍.
   </p>
-`;
-
-const TAMIL_ABOUT = `
+`,c=`
   <p>
     புனித குர்ஆன் என்பது அகிலங்களின் படைப்பாளனாகிய அல்லாஹ் மனிதகுலத்திற்கு வழங்கிய மகத்தான செய்தியாகும். இது காலங்களுக்கு அப்பாற்பட்டது. எனவே, புனித குர்ஆனின் டிஜிட்டல் வாசிப்பு மிகுந்த முக்கியத்துவம் வாய்ந்ததாகும். சையத் அபுல் அஃலா மௌதூதி எழுதிய 'தஃபீமுல் குர்ஆன்' விளக்கவுரை நூலின் இந்த டிஜிட்டல் செயலி (Application), புனித குர்ஆனின் கருத்துக்களைப் படிப்பதற்கு டிஜிட்டல் வசதிகளை அதிகபட்சமாகப் பயன்படுத்துவதை நோக்கமாகக் கொண்டுள்ளது.
   </p>
@@ -152,65 +138,7 @@ const TAMIL_ABOUT = `
     <strong>- ஷிஹாப் பூக்கோட்டூர்,</strong><br/>
     <strong>சேர்மன், D4DX</strong>
   </p>
-`;
-
-const About = () => {
-  const { translationLanguage } = useTheme();
-  const isUrdu = translationLanguage === 'ur' || translationLanguage === 'urdu';
-  const isHindi = translationLanguage === 'hi';
-  const isBangla = translationLanguage === 'bn';
-  const isMalayalam = translationLanguage === 'mal';
-  const isTamil = translationLanguage === 'ta' || translationLanguage === 'tamil';
-
-  // Determine content based on language
-  let content = ENGLISH_ABOUT;
-  let title = 'About Us';
-  let languageFeatureText = 'Available in multiple language';
-  let dir = 'ltr';
-  let fontClass = '';
-
-  if (isMalayalam) {
-    content = MALAYALAM_ABOUT;
-    title = 'About Us';
-    languageFeatureText = 'ഒന്നിലധികം ഭാഷകളിൽ ലഭ്യമാണ്';
-    dir = 'ltr';
-    fontClass = '';
-  } else if (isUrdu) {
-    content = URDU_ABOUT;
-    title = 'ہمارے بارے میں';
-    languageFeatureText = 'متعدد زبانوں میں دستیاب';
-    dir = 'rtl';
-    fontClass = 'font-urdu';
-  } else if (isHindi) {
-    content = HINDI_ABOUT;
-    title = 'हमारे बारे में';
-    languageFeatureText = 'कई भाषाओं में उपलब्ध';
-    dir = 'ltr';
-    fontClass = 'font-hindi';
-  } else if (isBangla) {
-    content = BANGLA_ABOUT;
-    title = 'আমাদের সম্পর্কে';
-    languageFeatureText = 'একাধিক ভাষায় উপলব্ধ';
-    dir = 'ltr';
-    fontClass = 'font-bengali';
-  } else if (isTamil) {
-    content = TAMIL_ABOUT;
-    title = 'எங்களைப் பற்றி';
-    languageFeatureText = 'பல மொழிகளில் கிடைக்கிறது';
-    dir = 'ltr';
-    fontClass = 'font-tamil';
-  }
-
-  return (
-    <div className=" mx-auto min-h-screen p-6 bg-white dark:bg-gray-900 font-poppins">
-      {isUrdu && (
-        <style>{`
-          .urdu-about-content {
-            text-align: right !important;
-            font-size: 16px !important;
-            line-height: 2.6 !important;
-            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
-          }
+`,U=()=>{const{translationLanguage:e}=y(),a=e==="ur"||e==="urdu",h=e==="hi",f=e==="bn",x=e==="mal",r=e==="ta"||e==="tamil";let o=v,s="About Us",l="Available in multiple language",i="ltr",n="";return x?(o=N,s="About Us",l="ഒന്നിലധികം ഭാഷകളിൽ ലഭ്യമാണ്",i="ltr",n=""):a?(o=g,s="ہمارے بارے میں",l="متعدد زبانوں میں دستیاب",i="rtl",n="font-urdu"):h?(o=A,s="हमारे बारे में",l="कई भाषाओं में उपलब्ध",i="ltr",n="font-hindi"):f?(o=j,s="আমাদের সম্পর্কে",l="একাধিক ভাষায় উপলব্ধ",i="ltr",n="font-bengali"):r&&(o=c,s="எங்களைப் பற்றி",l="பல மொழிகளில் கிடைக்கிறது",i="ltr",n="font-tamil"),t.jsxs("div",{className:" mx-auto min-h-screen p-6 bg-white dark:bg-gray-900 font-poppins",children:[a&&t.jsx("style",{children:`
           .urdu-about-content p {
             text-align: right !important;
             font-size: 16px !important;
@@ -218,13 +146,7 @@ const About = () => {
             margin-bottom: 10px !important;
             font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
           }
-          .urdu-about-content strong {
-            font-family: 'Noto Nastaliq Urdu', 'JameelNoori', serif !important;
-          }
-        `}</style>
-      )}
-      {isTamil && (
-        <style>{`
+        `}),r&&t.jsx("style",{children:`
           .tamil-about-content {
             font-family: 'Bamini', serif !important;
             text-align: justify !important;
@@ -249,91 +171,4 @@ const About = () => {
             font-family: 'Bamini', serif !important;
             text-align: justify !important;
           }
-        `}</style>
-      )}
-      <div className="max-w-[1070px] w-full mx-auto">
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className={`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${fontClass} ${isUrdu ? 'font-urdu-nastaliq' : ''}`} dir={dir} style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isTamil ? { fontFamily: "'Bamini', serif" } : {}}>
-            {title}
-          </h1>
-          <div className=" h-px bg-gray-200 "></div>
-        </div>
-
-        {/* Content */}
-        <div className={`dark:text-white text-gray-800 leading-relaxed ${fontClass}`} dir={dir}>
-          {isUrdu ? (() => {
-            // Parse Urdu content and combine into single block
-            const parseUrduContent = () => {
-              // Remove the outer div wrapper
-              let cleanContent = URDU_ABOUT.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
-              
-              // Remove all paragraph tags but keep the content
-              cleanContent = cleanContent.replace(/<p[^>]*>/g, '');
-              cleanContent = cleanContent.replace(/<\/p>/g, '<br /><br />');
-              
-              // Remove style attributes from any remaining tags
-              cleanContent = cleanContent.replace(/style="[^"]*"/g, '');
-              
-              return cleanContent;
-            };
-            
-            const urduContent = parseUrduContent();
-            
-            return (
-              <div dir="rtl" className="ml-4 sm:ml-6 md:ml-8 lg:ml-12">
-                <div
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 md:p-8 urdu-about-content"
-                  dir="rtl"
-                >
-                  <div
-                    dangerouslySetInnerHTML={{ __html: urduContent }}
-                    style={{
-                      textAlign: 'right',
-                      fontSize: '16px',
-                      lineHeight: '2.6',
-                      fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif"
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })() : isTamil ? (
-            <div className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7 tamil-about-content">
-              <div
-                dangerouslySetInnerHTML={{ __html: TAMIL_ABOUT }}
-                style={{
-                  textAlign: 'justify',
-                  textJustify: 'inter-word',
-                  fontFamily: "'Bamini', serif",
-                  lineHeight: '1.8',
-                  wordWrap: 'break-word',
-                  overflowWrap: 'break-word',
-                  fontSize: '16px'
-                }}
-              />
-            </div>
-          ) : (
-            <div
-              className="prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7"
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
-          )}
-
-          {/* Language Feature */}
-          <div className={`flex items-center mt-8 pt-4 ${isUrdu ? 'flex-row-reverse' : ''}`}>
-            <div className={`rounded-lg p-2 ${isUrdu ? 'ml-3' : 'mr-3'}`} style={{ backgroundColor: '#2AA0BF' }}>
-              <Languages className="w-6 h-6 text-white" />
-            </div>
-            <span className={`text-lg font-medium dark:text-white ${isTamil ? 'font-tamil' : ''}`} style={{ color: '#2AA0BF', fontFamily: isTamil ? "'Bamini', serif" : 'inherit' }}>
-              {languageFeatureText}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default About;
+        `}),t.jsxs("div",{className:"max-w-[1070px] w-full mx-auto",children:[t.jsxs("div",{className:"mb-8",children:[t.jsx("h1",{className:`text-3xl font-bold text-gray-900 mb-4 dark:text-white ${n} ${a?"font-urdu-nastaliq":""}`,dir:i,style:a?{textAlign:"right",fontFamily:"'Noto Nastaliq Urdu', 'JameelNoori', serif"}:r?{fontFamily:"'Bamini', serif"}:{},children:s}),t.jsx("div",{className:" h-px bg-gray-200 "})]}),t.jsxs("div",{className:`dark:text-white text-gray-800 leading-relaxed ${n}`,dir:i,children:[a?(()=>{const b=(()=>{let p=g.replace(/^<div[^>]*>/,"").replace(/<\/div>$/,"");const m=/<p[^>]*>[\s\S]*?<\/p>/g,d=[];let u;for(;(u=m.exec(p))!==null;)d.push(u[0]);return d})();return t.jsx("div",{dir:"rtl",className:"ml-4 sm:ml-6 md:ml-8 lg:ml-12",children:b.map((p,m)=>t.jsx("div",{className:"bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 urdu-about-content",dir:"rtl",children:t.jsx("div",{dangerouslySetInnerHTML:{__html:p},style:{textAlign:"right",fontSize:"16px",lineHeight:"2.6",fontFamily:"'Noto Nastaliq Urdu', 'JameelNoori', serif"}})},m))})})():r?t.jsx("div",{className:"bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7 tamil-about-content",children:t.jsx("div",{dangerouslySetInnerHTML:{__html:c},style:{textAlign:"justify",textJustify:"inter-word",fontFamily:"'Bamini', serif",lineHeight:"1.8",wordWrap:"break-word",overflowWrap:"break-word",fontSize:"16px"}})}):t.jsx("div",{className:"prose prose-base dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 leading-7",dangerouslySetInnerHTML:{__html:o}}),t.jsxs("div",{className:`flex items-center mt-8 pt-4 ${a?"flex-row-reverse":""}`,children:[t.jsx("div",{className:`rounded-lg p-2 ${a?"ml-3":"mr-3"}`,style:{backgroundColor:"#2AA0BF"},children:t.jsx(w,{className:"w-6 h-6 text-white"})}),t.jsx("span",{className:`text-lg font-medium dark:text-white ${r?"font-tamil":""}`,style:{color:"#2AA0BF",fontFamily:r?"'Bamini', serif":"inherit"},children:l})]})]})]})]})};export{U as default};

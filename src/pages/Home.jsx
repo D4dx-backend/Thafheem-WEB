@@ -171,9 +171,22 @@ const Home = () => {
                           translationLanguage === 'ta' ? 'font-tamil' :
                           'font-poppins'
                         }`}
-                        style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                        style={
+                          translationLanguage === 'mal' 
+                            ? { fontFamily: "'NotoSansMalayalam'" } 
+                            : translationLanguage === 'ur'
+                            ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2' }
+                            : {}
+                        }
                       >
-                        {surah.name}
+                        {(() => {
+                          // Remove number prefix from surah name if it exists (e.g., "1. अल फ़ातिहा" -> "अल फ़ातिहा")
+                          // This prevents duplicate numbers since StarNumber already shows the number
+                          const name = surah.name || '';
+                          // Match pattern: number followed by period and space (e.g., "1. ", "2. ", etc.)
+                          const numberPrefixPattern = /^\d+\.\s+/;
+                          return name.replace(numberPrefixPattern, '');
+                        })()}
                       </h3>
 
                       <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm mt-1">

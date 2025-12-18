@@ -52,6 +52,8 @@ import {
   surahNameFontFamily,
 } from "../utils/surahNameUtils.js";
 import { useSurahViewCache } from "../context/SurahViewCacheContext";
+import { processMalayalamMediaLinks, handleMalayalamMediaLinkClick, setMediaPopupHandlers } from "../utils/malayalamMediaLinks";
+import MediaPopup from "../components/MediaPopup";
 
 const BlockWise = () => {
   const [activeTab, setActiveTab] = useState("Translation");
@@ -95,6 +97,8 @@ const BlockWise = () => {
   // Word-by-Word modal state
   const [showWordByWord, setShowWordByWord] = useState(false);
   const [selectedVerseForWordByWord, setSelectedVerseForWordByWord] = useState(null);
+  // Media popup state
+  const [mediaPopup, setMediaPopup] = useState({ isOpen: false, mediaId: null });
   const [loadingBlocks, setLoadingBlocks] = useState(new Set());
   const hasFetchedRef = useRef(false);
   const [blockReloadToken, setBlockReloadToken] = useState(0);
@@ -2046,6 +2050,9 @@ const BlockWise = () => {
         processedContent = before + createSupTag(token) + after;
       }
 
+      // Also process M1, M2, etc. media links for Malayalam
+      processedContent = processMalayalamMediaLinks(processedContent);
+
       return processedContent;
     }
 
@@ -2053,9 +2060,25 @@ const BlockWise = () => {
     return processedContent;
   };
 
+  // Set up media popup handlers
+  useEffect(() => {
+    setMediaPopupHandlers(
+      (mediaId) => setMediaPopup({ isOpen: true, mediaId }),
+      () => setMediaPopup({ isOpen: false, mediaId: null })
+    );
+    return () => setMediaPopupHandlers(null, null);
+  }, []);
+
   // Handle clicks on interpretation numbers in the rendered HTML
   useEffect(() => {
     const handleSupClick = (e) => {
+      // Check if clicked element is a Malayalam media link (M1, M2, etc.)
+      const mediaLink = e.target.closest('.malayalam-media-link');
+      if (mediaLink) {
+        handleMalayalamMediaLinkClick(e);
+        return;
+      }
+
       // Check if the click is on an interpretation link or inside one
       let target = e.target.closest(".interpretation-link");
       
@@ -3140,6 +3163,13 @@ const BlockWise = () => {
           }}
         />
       )}
+
+      {/* Media Popup */}
+      <MediaPopup
+        isOpen={mediaPopup.isOpen}
+        onClose={() => setMediaPopup({ isOpen: false, mediaId: null })}
+        mediaId={mediaPopup.mediaId}
+      />
     </>
   );
 };

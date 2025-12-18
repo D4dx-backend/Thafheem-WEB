@@ -10,6 +10,7 @@ import {
   fetchArabicVerses,
   fetchAyahAudioTranslations,
   fetchSurahs,
+  fetchNoteById,
 } from "../api/apifunction";
 import { API_BASE_PATH } from "../api/apis";
 import tamilTranslationService from "../services/tamilTranslationService";
@@ -24,6 +25,10 @@ import {
   getCalligraphicSurahName,
   surahNameFontFamily,
 } from "../utils/surahNameUtils.js";
+import { processMalayalamMediaLinks, handleMalayalamMediaLinkClick, setMediaPopupHandlers } from "../utils/malayalamMediaLinks";
+import { processMalayalamNoteLinks, handleMalayalamNoteLinkClick, setNotePopupHandlers } from "../utils/malayalamNoteLinks";
+import MediaPopup from "./MediaPopup";
+import NotePopup from "./NotePopup";
 
 // Helper function to decode HTML entities
 const decodeHTML = (html) => {
@@ -157,6 +162,8 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   const [playingAyah, setPlayingAyah] = useState(null);
   const [selectedQari, setSelectedQari] = useState('al-afasy');
   const [audioType, setAudioType] = useState('qirath');
+  const [mediaPopup, setMediaPopup] = useState({ isOpen: false, mediaId: null });
+  const [notePopup, setNotePopup] = useState({ isOpen: false, noteId: null, noteName: null, noteText: null });
 
   // Initialize verse from props
   useEffect(() => {
@@ -754,10 +761,25 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
   };
 
   const handleInterpretationContentClick = (event) => {
+    // Check if clicked element is a Malayalam note link (B, H, N, P, X)
+    const noteLink = event.target.closest('.malayalam-note-link');
+    if (noteLink) {
+      handleMalayalamNoteLinkClick(event);
+      return;
+    }
+
+    // Check if clicked element is a Malayalam media link (M1, M2, etc.)
+    const mediaLink = event.target.closest('.malayalam-media-link');
+    if (mediaLink) {
+      handleMalayalamMediaLinkClick(event);
+      return;
+    }
+
     if (translationLanguage !== "mal") {
       return;
     }
 
+    // Legacy handling for verse references (non-note patterns)
     const clickable = event.target.closest("sup, a");
     if (!clickable) {
       return;
@@ -769,24 +791,14 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
     }
 
     let handled = false;
-    const normalized = rawText.replace(/[\s()]+/g, "").toUpperCase();
-
-    if (/^N\d+$/.test(normalized)) {
-      handled = true;
-      if (onClose) {
-        onClose();
-      }
-      navigate(`/note/${normalized}`);
-    } else {
-      const verseMatch = rawText.match(/(\d+)\s*[:：]\s*(\d+)/);
-      if (verseMatch) {
-        const surahRef = parseInt(verseMatch[1], 10);
-        const ayahRef = parseInt(verseMatch[2], 10);
-        if (Number.isFinite(surahRef) && Number.isFinite(ayahRef)) {
-          handled = true;
-          setActiveSurahId(surahRef);
-          setCurrentVerseId(ayahRef);
-        }
+    const verseMatch = rawText.match(/(\d+)\s*[:：]\s*(\d+)/);
+    if (verseMatch) {
+      const surahRef = parseInt(verseMatch[1], 10);
+      const ayahRef = parseInt(verseMatch[2], 10);
+      if (Number.isFinite(surahRef) && Number.isFinite(ayahRef)) {
+        handled = true;
+        setActiveSurahId(surahRef);
+        setCurrentVerseId(ayahRef);
       }
     }
 
@@ -1106,6 +1118,12 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
                     interpretationHtml = decodeHTML(interpretationHtml);
                   }
 
+                  // For Malayalam, process M1, M2, etc. media links and B, H, N, P, X note links
+                  if (translationLanguage === 'mal') {
+                    interpretationHtml = processMalayalamMediaLinks(interpretationHtml);
+                    interpretationHtml = processMalayalamNoteLinks(interpretationHtml);
+                  }
+
                   // For Hindi, Urdu, and English, show explanation/interpretation numbers
                   const explanationNumber =
                     translationLanguage === "hi"
@@ -1231,6 +1249,22 @@ const AyahModal = ({ surahId, verseId, onClose }) => {
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      {/* Media Popup */}
+      <MediaPopup
+        isOpen={mediaPopup.isOpen}
+        onClose={() => setMediaPopup({ isOpen: false, mediaId: null })}
+        mediaId={mediaPopup.mediaId}
+      />
+
+      {/* Note Popup for Malayalam (B, H, N, P, X) */}
+      <NotePopup
+        isOpen={notePopup.isOpen}
+        onClose={() => setNotePopup({ isOpen: false, noteId: null, noteName: null, noteText: null })}
+        noteId={notePopup.noteId}
+        noteContent={notePopup.noteText}
+        noteName={notePopup.noteName}
+      />
     </div>,
     modalRoot
   );

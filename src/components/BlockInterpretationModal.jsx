@@ -18,6 +18,9 @@ import urduTranslationService from "../services/urduTranslationService";
 import englishTranslationService from "../services/englishTranslationService";
 import { useAuth } from "../context/AuthContext";
 import WordByWord from "../pages/WordByWord";
+import { processMalayalamMediaLinks, handleMalayalamMediaLinkClick, setMediaPopupHandlers } from "../utils/malayalamMediaLinks";
+import { processMalayalamNoteLinks, handleMalayalamNoteLinkClick, setNotePopupHandlers } from "../utils/malayalamNoteLinks";
+import MediaPopup from "./MediaPopup";
 
 const BlockInterpretationModal = ({
   surahId,
@@ -55,6 +58,8 @@ const BlockInterpretationModal = ({
   const [footnotesInRange, setFootnotesInRange] = useState([]); // Store footnotes for current range
   const [isClosing, setIsClosing] = useState(false);
   const isClosingRef = useRef(false); // Use ref to track closing state across renders
+  const [mediaPopup, setMediaPopup] = useState({ isOpen: false, mediaId: null });
+  const [notePopup, setNotePopup] = useState({ isOpen: false, noteId: null, noteName: null });
   const parseRangeString = useCallback((value) => {
     if (value == null) {
       return null;
@@ -246,6 +251,34 @@ const BlockInterpretationModal = ({
     return () => {
       document.body.style.overflow = "";
     };
+  }, []);
+
+  // Set up media popup handlers
+  useEffect(() => {
+    setMediaPopupHandlers(
+      (mediaId) => setMediaPopup({ isOpen: true, mediaId }),
+      () => setMediaPopup({ isOpen: false, mediaId: null })
+    );
+    return () => setMediaPopupHandlers(null, null);
+  }, []);
+
+  // Set up note popup handlers
+  useEffect(() => {
+    setNotePopupHandlers(
+      async (noteId) => {
+        try {
+          const noteData = await fetchNoteById(noteId);
+          const noteName = noteData?.NoteName || null;
+          const noteText = noteData?.NoteText || noteData?.note_text || noteData?.content || noteData?.html || noteData?.text || noteData?.body || noteData?.description || noteData?.note || null;
+          setNotePopup({ isOpen: true, noteId, noteName, noteText });
+        } catch (err) {
+          console.error(`Failed to fetch note ${noteId}:`, err.message);
+          setNotePopup({ isOpen: true, noteId, noteName: null, noteText: `<p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>` });
+        }
+      },
+      () => setNotePopup({ isOpen: false, noteId: null, noteName: null, noteText: null })
+    );
+    return () => setNotePopupHandlers(null, null);
   }, []);
 
   // Sync props to state when they change
@@ -772,8 +805,13 @@ const BlockInterpretationModal = ({
     loadInterpretation();
   }, [currentSurahId, currentRange, currentInterpretationNo, currentLanguage, currentFootnoteId]);
 
-  // Enhanced styling for note and verse markers
+  // Enhanced styling for note and verse markers (legacy - kept for non-Malayalam)
   const applySimpleStyling = () => {
+    // Only apply legacy styling for non-Malayalam languages
+    if (currentLanguage === 'mal') {
+      return; // Malayalam uses unified note link system
+    }
+
     contentRefs.current.forEach((el) => {
       if (!el) return;
 
@@ -790,35 +828,7 @@ const BlockInterpretationModal = ({
         m.style.removeProperty("font-weight");
 
         // Apply data attributes for CSS styling and set click handlers
-        if (/^N\d+$/.test(text)) {
-          // Note references (N-prefixed)
-          m.setAttribute("data-type", "note");
-          m.setAttribute("data-value", text);
-          m.onclick = handleNoteHighlightClick;
-        } else if (/^B\d+$/.test(text)) {
-          // Note references (B-prefixed)
-          m.setAttribute("data-type", "note");
-          m.setAttribute("data-value", text);
-          m.onclick = handleNoteHighlightClick;
-        } else if (/^\d+B\d+$/.test(text)) {
-          // Number followed by B note like 1B67
-          const bNoteMatch = text.match(/B(\d+)/i);
-          if (bNoteMatch) {
-            const noteId = `B${bNoteMatch[1]}`;
-            m.setAttribute("data-type", "note");
-            m.setAttribute("data-value", noteId);
-            m.onclick = handleNoteHighlightClick;
-          }
-        } else if (/^\d+,\d+B\d+$/.test(text)) {
-          // Multiple numbers followed by B note like 43,44B70
-          const bNoteMatch = text.match(/B(\d+)/i);
-          if (bNoteMatch) {
-            const noteId = `B${bNoteMatch[1]}`;
-            m.setAttribute("data-type", "note");
-            m.setAttribute("data-value", noteId);
-            m.onclick = handleNoteHighlightClick;
-          }
-        } else if (
+        if (
           /^\(?\d+\s*[:：]\s*\d+\)?$/.test(text) ||
           /^\d+\s*[:：]\s*\d+$/.test(text) ||
           /അശ്ശുഅറാഅ്,?\s*സൂക്തം:\s*\d+\s+\d+:\d+/.test(text) ||
@@ -849,6 +859,7 @@ const BlockInterpretationModal = ({
     }
   }, [isNoteOpen, showAyahModal]);
 
+  // Legacy handleNoteClick - kept for backward compatibility but will be replaced by unified system
   const handleNoteClick = async (noteId) => {
     // Show loading state immediately
     setSelectedNote({ id: noteId, content: "Loading..." });
@@ -964,6 +975,20 @@ const BlockInterpretationModal = ({
   const handleContentClick = (e) => {
     const target = e.target;
 
+    // Check if clicked element is a Malayalam note link (B, H, N, P, X)
+    const noteLink = target.closest('.malayalam-note-link');
+    if (noteLink) {
+      handleMalayalamNoteLinkClick(e);
+      return;
+    }
+
+    // Check if clicked element is a Malayalam media link (M1, M2, etc.)
+    const mediaLink = target.closest('.malayalam-media-link');
+    if (mediaLink) {
+      handleMalayalamMediaLinkClick(e);
+      return;
+    }
+
     // Check if clicked element is a verse reference link
     const verseLink = target.closest('.verse-reference-link');
     if (verseLink) {
@@ -984,32 +1009,18 @@ const BlockInterpretationModal = ({
       return;
     }
 
-    // Fallback: text-based detection
-    const clickedText = target.innerText || target.textContent || "";
+    // Legacy fallback: text-based detection (only for non-Malayalam)
+    if (currentLanguage !== 'mal') {
+      const clickedText = target.innerText || target.textContent || "";
 
-    // Look for B-prefixed note patterns first (PRIORITY) - handle complex patterns
-    // Patterns like "1B67", "43,44B70", "B67"
-    const bNoteMatch = clickedText.match(/(\d+,\d+)?B(\d+)/i) || clickedText.match(/B(\d+)/i);
-    if (bNoteMatch) {
-      const noteId = `B${bNoteMatch[2] || bNoteMatch[1]}`;
-      handleNoteClick(noteId);
-      return;
-    }
-
-    // Look for N-prefixed note patterns
-    const nNoteMatch = clickedText.match(/N(\d+)/i);
-    if (nNoteMatch) {
-      const noteId = `N${nNoteMatch[1]}`;
-      handleNoteClick(noteId);
-      return;
-    }
-
-    // Look for H-prefixed note patterns
-    const hNoteMatch = clickedText.match(/H(\d+)/i);
-    if (hNoteMatch) {
-      const noteId = `H${hNoteMatch[1]}`;
-      handleNoteClick(noteId);
-      return;
+      // Look for verse patterns
+      const verseMatch = clickedText.match(/\(?(\d+)\s*[:：]\s*(\d+)\)?/);
+      if (verseMatch) {
+        const [, s, v] = verseMatch;
+        setAyahTarget({ surahId: parseInt(s, 10), verseId: parseInt(v, 10) });
+        setShowAyahModal(true);
+        return;
+      }
     }
 
     // Look for Malayalam verse patterns first
@@ -1561,7 +1572,7 @@ const BlockInterpretationModal = ({
     // - (1:2) - single digit surah/ayah
     const versePattern = /\(?(\d+)\s*[:：]\s*(\d+)\)?/g;
     
-    return text.replace(versePattern, (match, surah, ayah) => {
+    let processed = text.replace(versePattern, (match, surah, ayah) => {
       // Check if already wrapped in a clickable element
       if (match.includes('verse-reference-link')) {
         return match;
@@ -1570,6 +1581,14 @@ const BlockInterpretationModal = ({
       // Wrap in clickable span with cyan blue styling
       return `<span class="verse-reference-link inline-block cursor-pointer text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 underline decoration-cyan-500/50 hover:decoration-cyan-600 dark:decoration-cyan-400/50 dark:hover:decoration-cyan-300 transition-colors" data-surah="${surah}" data-ayah="${ayah}" title="Click to view Surah ${surah}, Verse ${ayah}">${match}</span>`;
     });
+
+    // For Malayalam, also process M1, M2, etc. media links and B, H, N, P, X note links
+    if (currentLanguage === 'mal') {
+      processed = processMalayalamMediaLinks(processed);
+      processed = processMalayalamNoteLinks(processed);
+    }
+
+    return processed;
   };
 
   const extractText = (item) => {
@@ -1960,11 +1979,21 @@ const BlockInterpretationModal = ({
       </div>
 
       {/* Note Popup */}
+      {/* Legacy NotePopup (for non-Malayalam) */}
       <NotePopup
         isOpen={isNoteOpen}
         onClose={() => setIsNoteOpen(false)}
         noteId={selectedNote.id}
         noteContent={selectedNote.content}
+      />
+
+      {/* Unified NotePopup for Malayalam (B, H, N, P, X) */}
+      <NotePopup
+        isOpen={notePopup.isOpen}
+        onClose={() => setNotePopup({ isOpen: false, noteId: null, noteName: null, noteText: null })}
+        noteId={notePopup.noteId}
+        noteContent={notePopup.noteText}
+        noteName={notePopup.noteName}
       />
 
       {/* Ayah Modal */}
@@ -1977,6 +2006,13 @@ const BlockInterpretationModal = ({
           language={currentLanguage}
         />
       )}
+
+      {/* Media Popup */}
+      <MediaPopup
+        isOpen={mediaPopup.isOpen}
+        onClose={() => setMediaPopup({ isOpen: false, mediaId: null })}
+        mediaId={mediaPopup.mediaId}
+      />
     </>,
     modalRoot
   );

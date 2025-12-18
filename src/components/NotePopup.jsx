@@ -17,6 +17,7 @@ const NotePopup = ({
   onClose,
   noteId,
   noteContent,
+  noteName = null,
   loading = false,
   error = null,
 }) => {
@@ -175,7 +176,9 @@ const NotePopup = ({
               >
                 Back
               </button>
-              <h2 className="text-lg font-medium text-[#2AA0BF]">Note {noteId}</h2>
+              <h2 className="text-lg font-medium text-[#2AA0BF]">
+                {noteName ? noteName : `Note ${noteId}`}
+              </h2>
             </div>
             <div className="flex items-center space-x-2">
               <button

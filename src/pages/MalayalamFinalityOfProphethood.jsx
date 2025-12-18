@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { fetchMalayalamFinalityOfProphethood, fetchMalayalamFootnote } from '../api/apifunction';
+import { fetchMalayalamFinalityOfProphethood, fetchNoteById } from '../api/apifunction';
+import NotePopup from '../components/NotePopup';
 
 const MalayalamFinalityOfProphethood = () => {
   const navigate = useNavigate();
@@ -11,12 +12,12 @@ const MalayalamFinalityOfProphethood = () => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [noteModal, setNoteModal] = useState({
-    open: false,
-    code: '',
-    content: '',
+  const [notePopup, setNotePopup] = useState({
+    isOpen: false,
+    noteId: null,
+    noteName: null,
+    noteText: null,
     loading: false,
-    error: null,
   });
 
   // Determine container width based on content length
@@ -65,68 +66,59 @@ const MalayalamFinalityOfProphethood = () => {
     };
   }, []);
 
-  const handleNoteClick = async (event, section) => {
-    const target = event.target.closest('.note-marker');
+  const handleNoteClick = async (event) => {
+    const target = event.target.closest('.p-note-link');
     if (!target) return;
 
-    const code = target.getAttribute('data-code');
-    setNoteModal({
-      open: true,
-      code,
-      content: 'Loading...',
+    event.preventDefault();
+    event.stopPropagation();
+
+    const noteId = target.getAttribute('data-note-id');
+    if (!noteId) return;
+
+    setNotePopup({
+      isOpen: true,
+      noteId,
+      noteName: null,
+      noteText: null,
       loading: true,
-      error: null,
     });
 
     try {
-      let noteContent = '';
-
-      // Try Notes API (accepts alphanumeric IDs like P/H/N1234)
-      const data = await fetchMalayalamFootnote(code);
-      if (data?.footnote_text) {
-        noteContent = data.footnote_text;
-      } else if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      // Fallback: pull any note-like field from the raw row
-      if (!noteContent) {
-        const raw = section?.raw || {};
-        noteContent =
-          raw.notes ||
-          raw.Notes ||
-          raw.note ||
-          raw.Note ||
-          raw.comments ||
-          raw.Comments ||
-          raw.commentary ||
-          raw.Commentary ||
-          '';
-      }
-
-      setNoteModal({
-        open: true,
-        code,
-        content: noteContent || 'Note content not available.',
+      const noteData = await fetchNoteById(noteId);
+      const noteName = noteData?.NoteName || null;
+      const noteText = noteData?.NoteText || noteData?.note_text || noteData?.content || noteData?.html || noteData?.text || noteData?.body || noteData?.description || noteData?.note || null;
+      
+      setNotePopup({
+        isOpen: true,
+        noteId,
+        noteName,
+        noteText: noteText || '<p style="color: #666;">Note content is not available.</p>',
         loading: false,
-        error: null,
       });
     } catch (err) {
-      setNoteModal({
-        open: true,
-        code,
-        content: 'Note content not available.',
+      console.error(`Failed to fetch note ${noteId}:`, err.message);
+      setNotePopup({
+        isOpen: true,
+        noteId,
+        noteName: null,
+        noteText: '<p style="color: #666;">Note content is temporarily unavailable. Please try again later.</p>',
         loading: false,
-        error: err?.message || 'Unable to load note.',
       });
     }
   };
 
-  const processNotes = (html, section) => {
+  const processNotes = (html) => {
     if (!html) return html;
-    // Wrap note markers (P#### / H#### / N####) with clickable buttons
-    return html.replace(/\b([PHN]\d{1,5})\b/g, (match, code) => {
-      return `<button type="button" class="note-marker" data-code="${code}">${code}</button>`;
+    // Process B, H, N, P, X followed by digits (B123, H456, N789, P2151, X123, etc.)
+    // Pattern: letter immediately followed by one or more digits
+    return html.replace(/([BHNPX])(\d+)/g, (match, letter, number) => {
+      // Check if already wrapped in a link element
+      if (match.includes('p-note-link')) {
+        return match;
+      }
+      const noteId = `${letter}${number}`;
+      return `<a href="#" class="p-note-link inline-block cursor-pointer text-cyan-500 hover:text-cyan-600 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors font-semibold" data-note-id="${noteId}" title="Click to view note ${noteId}"><sup>${match}</sup></a>`;
     });
   };
 
@@ -189,7 +181,7 @@ const MalayalamFinalityOfProphethood = () => {
               <section
                 key={section.id || index}
                 className="bg-white dark:bg-[#1b1d27] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-7"
-                onClick={(e) => handleNoteClick(e, section)}
+                onClick={handleNoteClick}
               >
                 {section.title && (
                   <div
@@ -197,14 +189,14 @@ const MalayalamFinalityOfProphethood = () => {
                       isMalayalam ? 'font-malayalam' : ''
                     }`}
                     style={isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
-                    dangerouslySetInnerHTML={{ __html: processNotes(section.title, section) }}
+                    dangerouslySetInnerHTML={{ __html: processNotes(section.title) }}
                   />
                 )}
                 <div
                   className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200 ${
                     isMalayalam ? 'font-malayalam' : ''
                   }`}
-                  dangerouslySetInnerHTML={{ __html: processNotes(section.text || '', section) }}
+                  dangerouslySetInnerHTML={{ __html: processNotes(section.text || '') }}
                   style={{
                     lineHeight: 1.8,
                     textAlign: 'justify',
@@ -215,63 +207,15 @@ const MalayalamFinalityOfProphethood = () => {
             ))}
           </div>
         )}
-        {/* Note Modal */}
-        {noteModal.open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className={`bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full ${determineContainerWidth(noteModal.content?.length || 0)} max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700`}>
-              {/* Header - Fixed */}
-              <div className="flex items-start justify-between p-5 sm:p-6 pb-3 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-malayalam">കുറിപ്പ്</p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{noteModal.code}</h3>
-                </div>
-                <button
-                  onClick={() =>
-                    setNoteModal({ open: false, code: '', content: '', loading: false, error: null })
-                  }
-                  className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  ✕
-                </button>
-              </div>
-              {/* Content - Scrollable */}
-              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                <div className="p-5 sm:p-6 pt-4 overflow-y-auto flex-1">
-                  {noteModal.loading ? (
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Loading...</div>
-                  ) : (
-                    <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-200 font-malayalam whitespace-pre-wrap break-words text-justify" style={{ textAlign: 'justify' }}>
-                      {noteModal.content}
-                    </div>
-                  )}
-                  {noteModal.error && (
-                    <div className="mt-3 text-xs text-red-600 dark:text-red-300">
-                      {noteModal.error}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        <style>{`
-          .note-marker {
-            color: #0891b2;
-            border: none;
-            background: transparent;
-            padding: 0 2px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: color 0.15s ease;
-          }
-          .note-marker:hover {
-            color: #04748d;
-          }
-          .note-marker:focus {
-            outline: none;
-            text-decoration: underline;
-          }
-        `}</style>
+        {/* Note Popup for P notes */}
+        <NotePopup
+          isOpen={notePopup.isOpen}
+          onClose={() => setNotePopup({ isOpen: false, noteId: null, noteName: null, noteText: null, loading: false })}
+          noteId={notePopup.noteId}
+          noteContent={notePopup.loading ? 'Loading...' : notePopup.noteText}
+          noteName={notePopup.noteName}
+          loading={notePopup.loading}
+        />
       </div>
     </div>
   );

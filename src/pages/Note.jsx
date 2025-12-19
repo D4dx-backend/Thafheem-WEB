@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import NotePopup from "../components/NotePopup";
 import { fetchNoteById } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
 
 const Note = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [content, setContent] = useState(null);
@@ -74,16 +73,10 @@ const Note = () => {
         `}
       </style>
       <div className={`max-w-4xl mx-auto p-6 transition-all duration-300 ${isVisible ? 'animate-slide-in-up' : 'opacity-0'}`}>
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h1 className="text-xl font-semibold bg-gradient-to-r from-[#2596be] to-[#62C3DC] bg-clip-text text-transparent">
             Note {id}
           </h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="group px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:border-[#2596be] dark:hover:border-[#62C3DC] hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 hover:scale-105 active:scale-95 font-medium"
-          >
-            ← Back
-          </button>
         </div>
 
         {loading && (

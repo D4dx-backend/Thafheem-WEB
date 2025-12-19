@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { fetchAppendix } from "../api/apifunction";
 
@@ -38,7 +38,6 @@ const PAGE_CONFIG = {
 
 const Appendix = () => {
   const { lang } = useParams();
-  const navigate = useNavigate();
   const { translationLanguage } = useTheme();
   const normalized = String(lang || "english").toLowerCase();
   
@@ -107,14 +106,6 @@ const Appendix = () => {
       isMounted = false;
     };
   }, [pageConfig.apiLanguage]);
-
-  const handleBack = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/authorpreface");
-    }
-  };
 
   // Fix question mark position in English text within parentheses for Urdu content
   const fixQuestionMarkPosition = (html) => {
@@ -207,13 +198,6 @@ const Appendix = () => {
         `}</style>
       )}
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <button
-          onClick={handleBack}
-          className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline mb-4"
-        >
-          ← Back
-        </button>
-
         <h2 className="text-2xl font-bold mb-2 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2">
           {pageConfig.title}
         </h2>

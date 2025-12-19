@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { fetchMalayalamFinalityOfProphethood, fetchNoteById } from '../api/apifunction';
 import NotePopup from '../components/NotePopup';
 
 const MalayalamFinalityOfProphethood = () => {
-  const navigate = useNavigate();
   const { translationLanguage } = useTheme();
   const isMalayalam = translationLanguage === 'mal';
 
@@ -122,25 +120,9 @@ const MalayalamFinalityOfProphethood = () => {
     });
   };
 
-  const handleBack = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 font-poppins">
       <div className="max-w-[1070px] w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Back */}
-        <button
-          onClick={handleBack}
-          className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline mb-4"
-        >
-          ← Back
-        </button>
-
         {/* Header */}
         <div className="mb-6">
           <h1

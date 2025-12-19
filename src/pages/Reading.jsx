@@ -89,55 +89,47 @@ const Reading = () => {
   const { translationLanguage } = useTheme();
 
   // Generate audio URL based on audio type
+  // Returns object with primary and fallback URLs for Malayalam translation
   const generateAudioUrl = async (surahId, ayahId, type, qirathName, qirathCode) => {
     const surahIdPadded = String(surahId).padStart(3, '0');
     const ayahIdPadded = String(ayahId).padStart(3, '0');
     
-    let audioUrl;
-    
     if (type === 'quran') {
-      // Quran audio format: https://old.thafheem.net/audio/qirath/{qirathName}/{prefix}{surahId_3digit}_{ayahId_3digit}.ogg
-      // Example: https://old.thafheem.net/audio/qirath/al-afasy/QA002_004.ogg
-      if (import.meta.env.DEV) {
-        audioUrl = `/api/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
-      } else {
-        audioUrl = `https://old.thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`;
-      }
+      return { primary: `https://thafheem.net/audio/qirath/${qirathName}/${qirathCode}${surahIdPadded}_${ayahIdPadded}.ogg`, fallback: null };
     } else if (type === 'translation') {
       // For Urdu, fetch from API (language code is 'ur')
       if (translationLanguage === 'ur') {
         const apiUrl = await fetchUrduTranslationAudio(surahId, ayahId);
         if (apiUrl) {
-          return apiUrl;
+          return { primary: apiUrl, fallback: null };
         }
         // If API fails, return null instead of falling back to Malayalam pattern
-        return null;
+        return { primary: null, fallback: null };
       }
       // For Malayalam, use default pattern
-      if (import.meta.env.DEV) {
-        audioUrl = `/api/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
-      } else {
-        audioUrl = `https://old.thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+      const primaryUrl = `https://thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
+      // Generate fallback URL with previous ayah (only if ayahId > 1)
+      let fallbackUrl = null;
+      if (translationLanguage === 'mal' && ayahId > 1) {
+        const previousAyahPadded = String(ayahId - 1).padStart(3, '0');
+        fallbackUrl = `https://thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded},${previousAyahPadded}.ogg`;
       }
+      return { primary: primaryUrl, fallback: fallbackUrl };
     } else if (type === 'interpretation') {
       // For Urdu, fetch from API (language code is 'ur')
       if (translationLanguage === 'ur') {
         const apiUrl = await fetchUrduInterpretationAudio(surahId, ayahId);
         if (apiUrl) {
-          return apiUrl;
+          return { primary: apiUrl, fallback: null };
         }
         // If API fails, return null instead of falling back to Malayalam pattern
-        return null;
+        return { primary: null, fallback: null };
       }
       // For Malayalam, use default pattern
-      if (import.meta.env.DEV) {
-        audioUrl = `/api/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
-      } else {
-        audioUrl = `https://old.thafheem.net/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`;
-      }
+      return { primary: `https://thafheem.net/audio/interpretation/I${surahIdPadded}_${ayahIdPadded}.ogg`, fallback: null };
     }
     
-    return audioUrl;
+    return { primary: null, fallback: null };
   };
 
   // Play audio types for an ayah in sequence, then move to next ayah
@@ -179,9 +171,9 @@ const Reading = () => {
     const currentAudioType = activeAudioTypes[audioTypeIndex];
     
     // Generate audio URL (async for Urdu audio)
-    let audioUrl;
+    let audioUrls;
     try {
-      audioUrl = await generateAudioUrl(currentSurahId, ayahId, currentAudioType, selectedQirath, qirathCode);
+      audioUrls = await generateAudioUrl(currentSurahId, ayahId, currentAudioType, selectedQirath, qirathCode);
     } catch (error) {
       console.error('[Reading] Error generating audio URL:', error);
       // Skip to next audio type on error
@@ -199,7 +191,7 @@ const Reading = () => {
       return;
     }
     
-    if (!audioUrl) {
+    if (!audioUrls || !audioUrls.primary) {
       // Skip to next audio type if URL is null
       if (audioTypeIndex < activeAudioTypes.length - 1) {
         playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
@@ -215,86 +207,112 @@ const Reading = () => {
       return;
     }
     
-    // Create new audio element
-    const audio = new Audio(audioUrl);
+    // Start with primary URL, will try fallback if needed
+    let currentAudioUrl = audioUrls.primary;
+    let triedFallback = false;
     
-    // Set audio properties before adding event listeners
-    audio.preload = 'none'; // Don't preload to avoid conflicts
-    audio.playbackRate = playbackSpeed; // Apply playback speed
-    // Removed crossOrigin to avoid CORS issues
+    // Helper function to try loading audio with fallback support
+    const tryLoadAudio = (urlToTry, isFallback = false) => {
+      // Create new audio element
+      const audio = new Audio(urlToTry);
     
-    // Ensure playback speed is applied after audio metadata loads
-    const handleLoadedMetadata = () => {
-      if (audio && currentAudioRef.current === audio) {
-        audio.playbackRate = playbackSpeed;
-      }
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-    };
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-    
-    const handleCanPlay = () => {
-      if (audio && currentAudioRef.current === audio) {
-        audio.playbackRate = playbackSpeed;
-      }
-      audio.removeEventListener('canplay', handleCanPlay);
-    };
-    audio.addEventListener('canplay', handleCanPlay, { once: true });
-    
-    setAudioElement(audio);
-    currentAudioRef.current = audio;
-    setCurrentAyah(ayahId);
-    setCurrentAyahIndex(index);
-    setCurrentAudioTypeIndex(audioTypeIndex);
-    
-    // Handle audio end - play next audio type or next ayah
-    audio.onended = () => {
-      // Only continue if this is still the current audio element
-      if (currentAudioRef.current === audio) {
-        // Play next audio type for this ayah, or move to next ayah if all types done
-        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
-      }
-    };
-    
-    audio.onerror = (error) => {
-      console.error('Audio playback error:', error);
-      console.error('Failed URL:', audioUrl);
-      // Only continue if this is still the current audio element
-      if (currentAudioRef.current === audio) {
-        // Skip to next audio type or next ayah
-        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
-      }
-    };
-    
-    // Play the audio with better error handling
-    audio.play().then(() => {
-      // Successfully started playing
-      // Dispatch event to update header button
-      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
-    }).catch((error) => {
-      // If it's an abort error (interrupted by another play), don't log as error
-      if (error.name === 'AbortError') {
-        // This is normal - happens when switching between ayahs
-        // Don't log as error, just silently handle it
-        return;
-      }
+      // Set audio properties before adding event listeners
+      audio.preload = 'none'; // Don't preload to avoid conflicts
+      audio.playbackRate = playbackSpeed; // Apply playback speed
+      // Removed crossOrigin to avoid CORS issues
       
-      // Only log actual errors (not AbortErrors)
-      console.error('Error playing audio:', error);
-      console.error('Audio URL that failed:', audioUrl);
+      // Ensure playback speed is applied after audio metadata loads
+      const handleLoadedMetadata = () => {
+        if (audio && currentAudioRef.current === audio) {
+          audio.playbackRate = playbackSpeed;
+        }
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      };
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
       
-      // Handle CORS errors specifically
-      if (error.name === 'NotSupportedError' || error.message.includes('CORS')) {
-        console.error('CORS error - audio server does not allow cross-origin requests');
-        // Try to continue to next audio type or ayah anyway
-        setTimeout(() => {
+      const handleCanPlay = () => {
+        if (audio && currentAudioRef.current === audio) {
+          audio.playbackRate = playbackSpeed;
+        }
+        audio.removeEventListener('canplay', handleCanPlay);
+      };
+      audio.addEventListener('canplay', handleCanPlay, { once: true });
+      
+      setAudioElement(audio);
+      currentAudioRef.current = audio;
+      setCurrentAyah(ayahId);
+      setCurrentAyahIndex(index);
+      setCurrentAudioTypeIndex(audioTypeIndex);
+      
+      // Handle audio end - play next audio type or next ayah
+      audio.onended = () => {
+        // Only continue if this is still the current audio element
+        if (currentAudioRef.current === audio) {
+          // Play next audio type for this ayah, or move to next ayah if all types done
           playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
-        }, 1000);
-        return;
-      }
+        }
+      };
       
-      // For other errors, skip to next audio type or next ayah
-      playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
-    });
+      audio.onerror = (error) => {
+        console.error('Audio playback error:', error);
+        console.error('Failed URL:', urlToTry);
+        
+        // Check if we should try fallback for Malayalam translation
+        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          console.log('[Reading] Primary Malayalam translation audio failed, trying fallback:', audioUrls.fallback);
+          // Try fallback URL
+          tryLoadAudio(audioUrls.fallback, true);
+          return;
+        }
+        
+        // Only continue if this is still the current audio element
+        if (currentAudioRef.current === audio) {
+          // Skip to next audio type or next ayah
+          playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
+        }
+      };
+      
+      // Play the audio with better error handling
+      audio.play().then(() => {
+        // Successfully started playing
+        // Dispatch event to update header button
+        window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: true } }));
+      }).catch((error) => {
+        // If it's an abort error (interrupted by another play), don't log as error
+        if (error.name === 'AbortError') {
+          // This is normal - happens when switching between ayahs
+          // Don't log as error, just silently handle it
+          return;
+        }
+        
+        // Check if we should try fallback for Malayalam translation
+        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          console.log('[Reading] Primary Malayalam translation audio play failed, trying fallback:', audioUrls.fallback);
+          tryLoadAudio(audioUrls.fallback, true);
+          return;
+        }
+        
+        // Only log actual errors (not AbortErrors)
+        console.error('Error playing audio:', error);
+        console.error('Audio URL that failed:', urlToTry);
+        
+        // Handle CORS errors specifically
+        if (error.name === 'NotSupportedError' || error.message.includes('CORS')) {
+          console.error('CORS error - audio server does not allow cross-origin requests');
+          // Try to continue to next audio type or ayah anyway
+          setTimeout(() => {
+            playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
+          }, 1000);
+          return;
+        }
+        
+        // For other errors, skip to next audio type or next ayah
+        playAyahAtIndexWithTypes(index, audioTypeIndex + 1, typesToPlay);
+      });
+    };
+    
+    // Start loading with primary URL
+    tryLoadAudio(currentAudioUrl, false);
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)
@@ -906,7 +924,10 @@ const Reading = () => {
                       </p>
                       {/* Page Header */}
                       {pageGroup.pageNumber && (
-                        <div className="flex items-center justify-center my-6 relative">
+                        <div 
+                          id={`page-${pageGroup.pageNumber}`}
+                          className="flex items-center justify-center my-6 relative scroll-mt-20"
+                        >
                           <div className="w-full  border-b border-gray-300 dark:border-gray-600 py-2 text-center">
                             <span className="px-4 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-semibold">
                               {pageGroup.pageNumber}

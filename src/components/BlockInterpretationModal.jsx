@@ -1683,6 +1683,14 @@ const BlockInterpretationModal = ({
           animation: modalSlideDown 0.2s ease-in;
         }
         
+        /* Word wrapping for interpretation content to prevent horizontal overflow */
+        .interpretation-content,
+        .interpretation-content * {
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          max-width: 100% !important;
+        }
+        
         /* Specific styling for note and verse markers in interpretation content */
         .interpretation-content sup[data-type="note"], 
         .interpretation-content a[data-type="note"],
@@ -1887,6 +1895,7 @@ const BlockInterpretationModal = ({
                 : 'flex-1 overflow-y-auto'
             } px-4 sm:px-6 py-6 sm:py-8 ${currentLanguage === 'E' || currentLanguage === 'en' ? '' : 'min-h-0'}`}
             style={{
+              overflowX: 'hidden',
               ...(currentLanguage === 'E' || currentLanguage === 'en'
                 ? {
                     maxHeight: 'calc(95vh - 120px)', // Account for header height
@@ -1945,6 +1954,9 @@ const BlockInterpretationModal = ({
                         pointerEvents: "auto",
                         position: "relative",
                         zIndex: 1,
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        maxWidth: '100%',
                         ...(isUrdu ? {
                           textAlign: 'right',
                           fontSize: '16px',

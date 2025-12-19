@@ -115,17 +115,6 @@ export default defineConfig({
           proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
         },
       },
-      // Proxy audio files to bypass CORS
-      '/api/audio': {
-        target: 'https://old.thafheem.net',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/audio/, '/audio'),
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-})
-          proxy.on('proxyReq', (proxyReq) => attachLegacyHeaders(proxyReq))
-        },
-      },
       '/api/old-thaf-api': {
         target: 'https://old.thafheem.net',
         changeOrigin: true,

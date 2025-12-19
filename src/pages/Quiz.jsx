@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
   X,
   Search,
   ChevronDown,
@@ -101,8 +100,8 @@ const [start, end] = selectedRange.split("-").map(Number);
         ) {
           setQuizData({
             title: isEntireThafheem
-              ? "തഹാഫീസ് പ്രശ്നോത്തരി - സമ്പൂർണ്ണ തഹാഫീം"
-              : "തഹാഫീസ് പ്രശ്നോത്തരി",
+              ? "തഫ്ഹീം പ്രശ്നോത്തരി - സമ്പൂർണ്ണ തഹാഫീം"
+              : "തഫ്ഹീം പ്രശ്നോത്തരി",
             totalQuestions: quizResponse.questions.length,
             questions: quizResponse.questions,
             surahInfo: quizResponse.surahInfo || selectedSurah,
@@ -111,7 +110,7 @@ const [start, end] = selectedRange.split("-").map(Number);
           console.warn("Quiz data validation failed, using fallback data");
           const fallbackData = createFallbackQuizData(selectedSurah.id);
           setQuizData({
-            title: "തഹാഫീസ് പ്രശ്നോത്തരി (Debug Mode)",
+            title: "തഫ്ഹീം പ്രശ്നോത്തരി (Debug Mode)",
             ...fallbackData,
           });
         }
@@ -120,7 +119,7 @@ const [start, end] = selectedRange.split("-").map(Number);
         setError(err.message);
         const fallbackData = createFallbackQuizData(selectedSurah.id);
         setQuizData({
-          title: "തഹാഫീസ് പ്രശ്നോത്തരി (Error Mode)",
+          title: "തഫ്ഹീം പ്രശ്നോത്തരി (Error Mode)",
           ...fallbackData,
         });
       } finally {
@@ -409,10 +408,6 @@ const [start, end] = selectedRange.split("-").map(Number);
       </div>
 
       {/* Header */}
-      <div>
-        <ArrowLeft className="hidden sm:inline w-4 h-4 sm:w-5 sm:h-5 text-gray-600 relative top-6 sm:top-8 left-4 sm:left-10" />
-      </div>
-
       <div className="bg-white dark:bg-gray-900">
         <div className="w-full max-w-[884px] mx-auto border-b px-3 sm:px-4 py-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">

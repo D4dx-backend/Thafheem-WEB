@@ -478,16 +478,29 @@ const Transition = ({ showPageInfo = false }) => {
 
   // Close page dropdown when clicking outside
   useEffect(() => {
+    if (!showPageDropdown) return;
+
     const handleClickOutside = (event) => {
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target)) {
-        setShowPageDropdown(false);
+      // Check if the click target is inside the dropdown
+      if (pageDropdownRef.current && pageDropdownRef.current.contains(event.target)) {
+        // Click is inside dropdown - let the button's onClick handle it
+        return;
       }
+
+      // Click is outside - close the dropdown
+      // Use a small delay to ensure button clicks inside dropdown process first
+      requestAnimationFrame(() => {
+        setShowPageDropdown(false);
+      });
     };
 
-    if (showPageDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    // Use 'click' event (bubbling phase) to fire after button onClick
+    // This ensures button onClick handlers execute before we check for outside clicks
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, [showPageDropdown]);
 
   // Function to scroll to a specific block
@@ -508,21 +521,41 @@ const Transition = ({ showPageInfo = false }) => {
   };
 
   // Function to scroll to a specific page (for reading mode)
-  const scrollToPage = (pageNumber) => {
+  const scrollToPage = (pageNumber, event) => {
+    // Prevent event propagation to avoid conflicts with click-outside handler
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    // Close dropdown immediately
     setShowPageDropdown(false);
 
-    const pageElement = document.getElementById(`page-${pageNumber}`);
-    if (pageElement) {
-      pageElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-      // Highlight the page briefly
-      pageElement.style.backgroundColor = "#fef3c7";
-      setTimeout(() => {
-        pageElement.style.backgroundColor = "";
-      }, 2000);
-    }
+    // Use requestAnimationFrame to ensure DOM is ready and avoid blocking
+    requestAnimationFrame(() => {
+      const pageElement = document.getElementById(`page-${pageNumber}`);
+      if (pageElement) {
+        // Calculate offset to account for sticky header
+        const headerOffset = 100; // Approximate header height
+        const elementPosition = pageElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        // Use scrollTo for better control
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+
+        // Highlight the page briefly
+        const originalBg = pageElement.style.backgroundColor;
+        pageElement.style.backgroundColor = "#fef3c7";
+        setTimeout(() => {
+          pageElement.style.backgroundColor = originalBg || "";
+        }, 2000);
+      } else {
+        console.warn(`Page element with id "page-${pageNumber}" not found`);
+      }
+    });
   };
 
   // Function to scroll to a specific ayah
@@ -915,15 +948,16 @@ const Transition = ({ showPageInfo = false }) => {
 
                           {/* Page Dropdown - Only show on reading pages */}
                           {isReadingPage && showPageDropdown && surahPageNumbers.length > 0 && (
-                            <div className="absolute left-0 top-full mt-1.5 w-full min-w-[120px] sm:min-w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
+                            <div className="absolute left-0 top-full mt-1.5 w-full min-w-[120px] sm:min-w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-[100] pointer-events-auto">
                               {surahPageNumbers.map((pageNum) => {
                                 const isSelected = currentVisiblePage === pageNum;
 
                                 return (
                                   <button
                                     key={`page-${pageNum}`}
-                                    onClick={() => scrollToPage(pageNum)}
-                                    className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
+                                    onClick={(e) => scrollToPage(pageNum, e)}
+                                    type="button"
+                                    className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 pointer-events-auto ${
                                       isSelected
                                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
                                         : 'text-gray-700 dark:text-gray-300'
@@ -996,15 +1030,16 @@ const Transition = ({ showPageInfo = false }) => {
 
                           {/* Page Dropdown - Mobile - Only show on reading pages */}
                           {isReadingPage && showPageDropdown && surahPageNumbers.length > 0 && (
-                            <div className="absolute left-0 top-full mt-1.5 w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
+                            <div className="absolute left-0 top-full mt-1.5 w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-[100] pointer-events-auto">
                               {surahPageNumbers.map((pageNum) => {
                                 const isSelected = currentVisiblePage === pageNum;
 
                                 return (
                                   <button
                                     key={`page-mobile-${pageNum}`}
-                                    onClick={() => scrollToPage(pageNum)}
-                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
+                                    onClick={(e) => scrollToPage(pageNum, e)}
+                                    type="button"
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 pointer-events-auto ${
                                       isSelected
                                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
                                         : 'text-gray-700 dark:text-gray-300'

@@ -109,10 +109,11 @@ const Reading = () => {
       // For Malayalam, use default pattern
       const primaryUrl = `https://thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded}.ogg`;
       // Generate fallback URL with previous ayah (only if ayahId > 1)
+      // Format: T{surah}_{previousAyah},{currentAyah}.ogg (previous, current order)
       let fallbackUrl = null;
       if (translationLanguage === 'mal' && ayahId > 1) {
         const previousAyahPadded = String(ayahId - 1).padStart(3, '0');
-        fallbackUrl = `https://thafheem.net/audio/translation/T${surahIdPadded}_${ayahIdPadded},${previousAyahPadded}.ogg`;
+        fallbackUrl = `https://thafheem.net/audio/translation/T${surahIdPadded}_${previousAyahPadded},${ayahIdPadded}.ogg`;
       }
       return { primary: primaryUrl, fallback: fallbackUrl };
     } else if (type === 'interpretation') {

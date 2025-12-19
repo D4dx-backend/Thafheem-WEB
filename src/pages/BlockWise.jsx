@@ -416,10 +416,11 @@ const BlockWise = () => {
       // For Malayalam, use default pattern (Urdu doesn't support blockwise)
       const primaryUrl = `${baseUrl}/translation/T${surahCode}_${ayahCode}.ogg`;
       // Generate fallback URL with previous ayah (only if ayahId > 1)
+      // Format: T{surah}_{previousAyah},{currentAyah}.ogg (previous, current order)
       let fallbackUrl = null;
       if (translationLanguage === 'mal' && ayahId > 1) {
         const previousAyahCode = String(ayahId - 1).padStart(3, "0");
-        fallbackUrl = `${baseUrl}/translation/T${surahCode}_${ayahCode},${previousAyahCode}.ogg`;
+        fallbackUrl = `${baseUrl}/translation/T${surahCode}_${previousAyahCode},${ayahCode}.ogg`;
       }
       return { primary: primaryUrl, fallback: fallbackUrl };
     } else if (type === 'interpretation') {
@@ -614,12 +615,31 @@ const BlockWise = () => {
         // Check if we should try fallback for Malayalam translation
         if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
           console.log('[BlockWise] Primary Malayalam translation audio failed, trying fallback:', audioUrls.fallback);
-          // Try fallback URL
+          // Reset audio element before trying fallback
+          if (audioElement) {
+            try {
+              audioElement.pause();
+              audioElement.currentTime = 0;
+              // Clear error state by removing src and reloading
+              audioElement.src = '';
+              audioElement.load();
+            } catch (resetError) {
+              console.warn('[BlockWise] Error resetting audio for fallback:', resetError);
+            }
+          }
+          // Try fallback URL - this will set up new handlers and play the fallback
+          // IMPORTANT: Return early to prevent moving to next audio type
           tryLoadAudio(audioUrls.fallback, true);
-          return;
+          return; // Exit early - don't continue to next audio type
         }
         
         // Handle error (no fallback or fallback also failed)
+        // Only reach here if: isFallback is true OR no fallback available OR fallback also failed
+        // If this is a fallback that failed, log it and then move to next audio type
+        if (isFallback && currentAudioType === 'translation' && translationLanguage === 'mal') {
+          console.log('[BlockWise] Fallback Malayalam translation audio also failed, moving to next audio type');
+        }
+        
         if (audioElement && audioElement.error) {
           const errorCode = audioElement.error.code;
           // Error codes: 1=MEDIA_ERR_ABORTED, 2=MEDIA_ERR_NETWORK, 3=MEDIA_ERR_DECODE, 4=MEDIA_ERR_SRC_NOT_SUPPORTED
@@ -721,7 +741,28 @@ const BlockWise = () => {
         loadTimeout = setTimeout(() => {
           if (audioRef.current && audioRef.current.readyState < 2 && 
               playingBlock === blockId && currentAyahInBlock === ayahToPlay && isContinuousPlay) {
+            // Don't timeout if we're trying a fallback - give it more time
+            if (isFallback && currentAudioType === 'translation' && translationLanguage === 'mal') {
+              console.log('[BlockWise] Fallback audio still loading, extending timeout...');
+              // Extend timeout for fallback
+              clearLoadTimeout();
+              loadTimeout = setTimeout(() => {
+                if (audioRef.current && audioRef.current.readyState < 2 && 
+                    playingBlock === blockId && currentAyahInBlock === ayahToPlay && isContinuousPlay) {
+                  console.warn('[BlockWise] Fallback audio load timeout (file may be missing):', urlToTry);
+                  // Only skip to next audio type if fallback also fails
+                  playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+                }
+              }, 5000); // Additional 5 seconds for fallback
+              return;
+            }
             console.warn('[BlockWise] Audio load timeout (file may be missing):', urlToTry);
+            // Check if we should try fallback before skipping
+            if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+              console.log('[BlockWise] Primary audio timeout, trying fallback:', audioUrls.fallback);
+              tryLoadAudio(audioUrls.fallback, true);
+              return;
+            }
             // Skip to next audio type
             playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
           }
@@ -739,8 +780,22 @@ const BlockWise = () => {
         // Check if we should try fallback for Malayalam translation
         if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
           console.log('[BlockWise] Primary Malayalam translation audio play failed, trying fallback:', audioUrls.fallback);
+          // Reset audio element before trying fallback
+          if (audioRef.current) {
+            try {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+              // Clear error state by removing src and reloading
+              audioRef.current.src = '';
+              audioRef.current.load();
+            } catch (resetError) {
+              console.warn('[BlockWise] Error resetting audio for fallback:', resetError);
+            }
+          }
+          // Try fallback URL - this will set up new handlers and play the fallback
+          // IMPORTANT: Return early to prevent moving to next audio type
           tryLoadAudio(audioUrls.fallback, true);
-          return;
+          return; // Exit early - don't continue to next audio type
         }
         
         // Guard against duplicate calls if we're already processing an error
@@ -754,13 +809,20 @@ const BlockWise = () => {
           return;
         }
         
-        // Only log unexpected errors
-        if (err.name !== 'NotSupportedError') {
+        // Only log unexpected errors (skip AbortError if it's from our reset)
+        if (err.name === 'AbortError' && isFallback) {
+          // AbortError during fallback might be from reset, ignore it
+          console.log('[BlockWise] AbortError during fallback (likely from reset), ignoring');
+          return;
+        }
+        
+        if (err.name !== 'NotSupportedError' && err.name !== 'AbortError') {
           console.error('[BlockWise] Error playing audio:', err.name, err.message, urlToTry);
-        } else if (import.meta.env.DEV) {
+        } else if (import.meta.env.DEV && err.name !== 'AbortError') {
           console.log('[BlockWise] Audio file not supported (expected for missing files):', urlToTry);
         }
         
+        // Only move to next audio type if fallback also failed or no fallback available
         const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
         
         if (shouldContinue) {

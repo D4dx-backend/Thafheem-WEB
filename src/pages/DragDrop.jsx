@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
   X,
   RotateCcw,
 } from "lucide-react";
@@ -12,9 +11,11 @@ import {
   fetchWordMeanings,
 } from "../api/apifunction";
 import { useTheme } from "../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
 
 const DragDropQuiz = () => {
   const { translationLanguage } = useTheme();
+  const navigate = useNavigate();
   const [score, setScore] = useState(0);
   const [currentAyah, setCurrentAyah] = useState(1);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -422,7 +423,7 @@ const DragDropQuiz = () => {
             </p>
             <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               <button
-                onClick={() => {}}
+                onClick={() => navigate(-1)}
                 className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-600 dark:text-white hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 transition-colors order-2 sm:order-1"
               >
                 Cancel
@@ -573,10 +574,6 @@ const DragDropQuiz = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      <div>
-        <ArrowLeft className="hidden sm:inline w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-white relative top-8 sm:top-10 left-4 sm:left-30" />
       </div>
 
       {/* Header */}

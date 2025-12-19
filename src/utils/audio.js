@@ -23,10 +23,11 @@ export async function buildAyahAudioUrl({ ayahNumber, surahNumber, audioType = "
 		// For Malayalam, use default pattern
 		const primaryUrl = `https://thafheem.net/audio/translation/T${surahPadded}_${ayahPadded}.ogg`;
 		// Generate fallback URL with previous ayah (only if ayahNumber > 1)
+		// Format: T{surah}_{previousAyah},{currentAyah}.ogg (previous, current order)
 		let fallbackUrl = null;
 		if (translationLanguage === 'mal' && ayahNumber > 1) {
 			const previousAyahPadded = String(ayahNumber - 1).padStart(3, "0");
-			fallbackUrl = `https://thafheem.net/audio/translation/T${surahPadded}_${ayahPadded},${previousAyahPadded}.ogg`;
+			fallbackUrl = `https://thafheem.net/audio/translation/T${surahPadded}_${previousAyahPadded},${ayahPadded}.ogg`;
 		}
 		return { primary: primaryUrl, fallback: fallbackUrl };
 	}
@@ -93,9 +94,8 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 			// Check if we should try fallback for Malayalam translation
 			if (!isFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
 				console.log('[audio.js] Primary Malayalam translation audio failed, trying fallback:', urls.fallback);
-				// Try fallback URL
-				tryLoadAudio(urls.fallback, true);
-				return;
+				// Try fallback URL - return the new audio object
+				return tryLoadAudio(urls.fallback, true);
 			}
 			
 			// For interpretation audio, missing files are expected for some ayahs
@@ -125,8 +125,8 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 			// Check if we should try fallback for Malayalam translation
 			if (!isFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
 				console.log('[audio.js] Primary Malayalam translation audio play failed, trying fallback:', urls.fallback);
-				tryLoadAudio(urls.fallback, true);
-				return;
+				// Try fallback URL - return the new audio object
+				return tryLoadAudio(urls.fallback, true);
 			}
 			
 			// Check if it's a NotSupportedError or network error (expected for missing files)

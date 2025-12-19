@@ -72,18 +72,27 @@ const Transition = ({ showPageInfo = false }) => {
   const [currentVisibleAyah, setCurrentVisibleAyah] = useState(null);
   const ayahDropdownRef = useRef(null);
 
+  // Page dropdown state (only for reading pages)
+  const [showPageDropdown, setShowPageDropdown] = useState(false);
+  const [currentVisiblePage, setCurrentVisiblePage] = useState(null);
+  const [surahPageNumbers, setSurahPageNumbers] = useState([]);
+  const pageDropdownRef = useRef(null);
+
   const { surahId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { translationLanguage } = useTheme();
-  const { surahs: surahNames } = useSurahData(translationLanguage);
+  const { surahs: surahNames, loading: surahNamesLoading } = useSurahData(translationLanguage);
   
   // Check if we're on a blockwise page
   const isBlockwisePage = location.pathname.startsWith('/blockwise');
   
   // Check if we're on an ayahwise page (surah page, not blockwise or reading)
   const isAyahwisePage = location.pathname.startsWith('/surah') && !location.pathname.startsWith('/surah/all');
+  
+  // Check if we're on a reading page
+  const isReadingPage = location.pathname.startsWith('/reading');
 
   const getSurahIdFromPath = () => {
     const match = location?.pathname?.match(/\/(surah|reading|blockwise)\/(\d+)/);
@@ -170,12 +179,17 @@ const Transition = ({ showPageInfo = false }) => {
                 // Find the maximum ayato value for this surah
                 const maxAyah = Math.max(...surahRanges.map((range) => range.ayato));
                 setVerseCount(maxAyah);
-            } else {
-              // Fallback to surah names data
+                
+                // Get all unique page numbers for this surah
+                const uniquePages = [...new Set(surahRanges.map((range) => range.PageId))].sort((a, b) => a - b);
+                setSurahPageNumbers(uniquePages);
+              } else {
+                // Fallback to surah names data
                 const currentSurah = surahNames.find(s => s.number === surahIdNum);
                 if (currentSurah && currentSurah.ayahs) {
                   setVerseCount(currentSurah.ayahs);
                 }
+                setSurahPageNumbers([]);
               }
             } else {
               // For non-reading pages, use surah names ayah count
@@ -316,6 +330,63 @@ const Transition = ({ showPageInfo = false }) => {
     return () => window.removeEventListener('scroll', handleBlockTracking);
   }, [isBlockwisePage, blockRanges]);
 
+  // Clear page numbers when not on reading page
+  useEffect(() => {
+    if (!isReadingPage) {
+      setSurahPageNumbers([]);
+      setCurrentVisiblePage(null);
+      setShowPageDropdown(false);
+    }
+  }, [isReadingPage]);
+
+  // Track which page is currently visible (only on reading pages)
+  useEffect(() => {
+    if (!isReadingPage || surahPageNumbers.length === 0) {
+      setCurrentVisiblePage(null);
+      return;
+    }
+
+    const handlePageTracking = () => {
+      const viewportTop = window.scrollY;
+      const viewportBottom = window.scrollY + window.innerHeight;
+      const viewportCenter = viewportTop + window.innerHeight / 2;
+
+      let visiblePage = null;
+      let minDistance = Infinity;
+
+      // Check all pages for this surah
+      surahPageNumbers.forEach((pageNum) => {
+        const element = document.getElementById(`page-${pageNum}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const elementTop = rect.top + window.scrollY;
+          const elementBottom = elementTop + rect.height;
+          const elementCenter = elementTop + rect.height / 2;
+
+          // Check if page is in viewport
+          if (elementTop <= viewportBottom && elementBottom >= viewportTop) {
+            const distance = Math.abs(elementCenter - viewportCenter);
+            if (distance < minDistance) {
+              minDistance = distance;
+              visiblePage = pageNum;
+            }
+          }
+        }
+      });
+
+      if (visiblePage) {
+        setCurrentVisiblePage(visiblePage);
+      }
+    };
+
+    window.addEventListener('scroll', handlePageTracking, { passive: true });
+    // Initial check
+    handlePageTracking();
+    return () => {
+      window.removeEventListener('scroll', handlePageTracking);
+    };
+  }, [isReadingPage, surahPageNumbers]);
+
   // Track which ayah is currently visible (only on ayahwise pages)
   useEffect(() => {
     if (!isAyahwisePage || !verseCount) {
@@ -405,6 +476,20 @@ const Transition = ({ showPageInfo = false }) => {
     }
   }, [showAyahDropdown]);
 
+  // Close page dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target)) {
+        setShowPageDropdown(false);
+      }
+    };
+
+    if (showPageDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showPageDropdown]);
+
   // Function to scroll to a specific block
   const scrollToBlock = (rangeKey) => {
     const blockElement = document.getElementById(`block-${rangeKey}`);
@@ -419,6 +504,24 @@ const Transition = ({ showPageInfo = false }) => {
         blockElement.style.backgroundColor = "";
       }, 2000);
       setShowBlockRangeDropdown(false);
+    }
+  };
+
+  // Function to scroll to a specific page (for reading mode)
+  const scrollToPage = (pageNumber) => {
+    setShowPageDropdown(false);
+
+    const pageElement = document.getElementById(`page-${pageNumber}`);
+    if (pageElement) {
+      pageElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      // Highlight the page briefly
+      pageElement.style.backgroundColor = "#fef3c7";
+      setTimeout(() => {
+        pageElement.style.backgroundColor = "";
+      }, 2000);
     }
   };
 
@@ -643,7 +746,7 @@ const Transition = ({ showPageInfo = false }) => {
                     }`}
                     style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
                   >
-                    {selectedSurah.name}
+                    {surahNamesLoading || surahNames.length === 0 ? '...' : selectedSurah.name}
                   </span>
                   {surahIcon}
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -667,17 +770,17 @@ const Transition = ({ showPageInfo = false }) => {
                 <div className="relative" ref={blockRangeDropdownRef}>
                   <button
                     onClick={() => setShowBlockRangeDropdown(!showBlockRangeDropdown)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
+                    className="flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm min-h-[36px] sm:min-h-[40px]"
                     title="Select block range"
                   >
-                    <span>
+                    <span className="whitespace-nowrap">
                       {currentVisibleBlock || ''}
                     </span>
-                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showBlockRangeDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 transition-transform ${showBlockRangeDropdown ? 'rotate-180' : ''}`} />
                   </button>
 
                   {showBlockRangeDropdown && (
-                    <div className="absolute left-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                    <div className="absolute left-0 top-full mt-1.5 w-full min-w-[120px] sm:min-w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
                       {blockRanges.map((block, index) => {
                         const rawStart = block.AyaFrom ?? block.ayafrom ?? block.from ?? 1;
                         const rawEnd = block.AyaTo ?? block.ayato ?? block.to ?? rawStart;
@@ -695,14 +798,14 @@ const Transition = ({ showPageInfo = false }) => {
                           <button
                             key={`dropdown-${rangeKey}-${index}`}
                             onClick={() => scrollToBlock(rangeKey)}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                            className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
                               isSelected
                                 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <span>{rangeKey}</span>
-                            {isSelected && <Check className="w-4 h-4" />}
+                            <span className="flex-1">{rangeKey}</span>
+                            {isSelected && <Check className="w-4 h-4 flex-shrink-0" />}
                           </button>
                         );
                       })}
@@ -716,17 +819,17 @@ const Transition = ({ showPageInfo = false }) => {
                 <div className="relative" ref={ayahDropdownRef}>
                   <button
                     onClick={() => setShowAyahDropdown(!showAyahDropdown)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm"
+                    className="flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm min-h-[36px] sm:min-h-[40px]"
                     title="Select ayah"
                   >
-                    <span>
+                    <span className="whitespace-nowrap">
                       {currentVisibleAyah || ''}
                     </span>
-                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showAyahDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 transition-transform ${showAyahDropdown ? 'rotate-180' : ''}`} />
                   </button>
 
                   {showAyahDropdown && (
-                    <div className="absolute left-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                    <div className="absolute left-0 top-full mt-1.5 w-full min-w-[120px] sm:min-w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
                       {Array.from({ length: verseCount }, (_, index) => {
                         const ayahNumber = index + 1;
                         const isSelected = currentVisibleAyah === ayahNumber;
@@ -735,14 +838,14 @@ const Transition = ({ showPageInfo = false }) => {
                           <button
                             key={`ayah-${ayahNumber}`}
                             onClick={() => scrollToAyah(ayahNumber)}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                            className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
                               isSelected
                                 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <span>{ayahNumber}</span>
-                            {isSelected && <Check className="w-4 h-4" />}
+                            <span className="flex-1">Ayah {ayahNumber}</span>
+                            {isSelected && <Check className="w-4 h-4 flex-shrink-0" />}
                           </button>
                         );
                       })}
@@ -780,23 +883,60 @@ const Transition = ({ showPageInfo = false }) => {
                           <LibraryBig className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span className="text-xs sm:text-sm font-poppins">Translation</span>
                         </button>
-                        <button
-                          onClick={() => {
-                            const effectiveId =
-                              surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
-                            if (!location.pathname.startsWith('/reading')) {
-                              navigate(`/reading/${effectiveId}`);
-                            }
-                          }}
-                          className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
-                            location.pathname.startsWith('/reading')
-                              ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
-                              : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <Notebook className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="text-xs sm:text-sm font-poppins">Reading</span>
-                        </button>
+                        <div className="relative" ref={pageDropdownRef}>
+                          <button
+                            onClick={(e) => {
+                              const effectiveId =
+                                surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                              if (!location.pathname.startsWith('/reading')) {
+                                navigate(`/reading/${effectiveId}`);
+                              } else if (isReadingPage && surahPageNumbers.length > 0) {
+                                // Toggle dropdown if already on reading page
+                                e.stopPropagation();
+                                setShowPageDropdown(!showPageDropdown);
+                              }
+                            }}
+                            className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium min-h-[40px] transition-colors ${
+                              location.pathname.startsWith('/reading')
+                                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                                : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                            }`}
+                          >
+                            <Notebook className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-xs sm:text-sm font-poppins">Reading</span>
+                            {isReadingPage && currentVisiblePage && (
+                              <>
+                                <span className="text-xs sm:text-sm font-poppins">•</span>
+                                <span className="text-xs sm:text-sm font-poppins font-semibold">{currentVisiblePage}</span>
+                                <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showPageDropdown ? 'rotate-180' : ''}`} />
+                              </>
+                            )}
+                          </button>
+
+                          {/* Page Dropdown - Only show on reading pages */}
+                          {isReadingPage && showPageDropdown && surahPageNumbers.length > 0 && (
+                            <div className="absolute left-0 top-full mt-1.5 w-full min-w-[120px] sm:min-w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
+                              {surahPageNumbers.map((pageNum) => {
+                                const isSelected = currentVisiblePage === pageNum;
+
+                                return (
+                                  <button
+                                    key={`page-${pageNum}`}
+                                    onClick={() => scrollToPage(pageNum)}
+                                    className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
+                                      isSelected
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                        : 'text-gray-700 dark:text-gray-300'
+                                    }`}
+                                  >
+                                    <span className="flex-1">Page {pageNum}</span>
+                                    {isSelected && <Check className="w-4 h-4 flex-shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -824,24 +964,60 @@ const Transition = ({ showPageInfo = false }) => {
                         >
                           <LibraryBig className="w-2.5 h-2.5" />
                         </button>
-                        <button
-                          onClick={() => {
-                            const effectiveId =
-                              surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
-                            if (!location.pathname.startsWith('/reading')) {
-                              navigate(`/reading/${effectiveId}`);
-                            }
-                          }}
-                          aria-label="Reading"
-                          title="Go to reading view"
-                          className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
-                            location.pathname.startsWith('/reading')
-                              ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
-                              : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
-                          }`}
-                        >
-                          <Notebook className="w-2.5 h-2.5" />
-                        </button>
+                        <div className="relative" ref={pageDropdownRef}>
+                          <button
+                            onClick={(e) => {
+                              const effectiveId =
+                                surahId ? parseInt(surahId) : getSurahIdFromPath() || selectedSurah.id;
+                              if (!location.pathname.startsWith('/reading')) {
+                                navigate(`/reading/${effectiveId}`);
+                              } else if (isReadingPage && surahPageNumbers.length > 0) {
+                                // Toggle dropdown if already on reading page
+                                e.stopPropagation();
+                                setShowPageDropdown(!showPageDropdown);
+                              }
+                            }}
+                            aria-label="Reading"
+                            title={isReadingPage && currentVisiblePage ? `Page ${currentVisiblePage}` : "Go to reading view"}
+                            className={`flex items-center px-2 py-2 rounded-full min-h-[32px] transition-colors ${
+                              location.pathname.startsWith('/reading')
+                                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                                : 'text-gray-600 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400'
+                            }`}
+                          >
+                            <Notebook className="w-2.5 h-2.5" />
+                            {isReadingPage && currentVisiblePage && (
+                              <>
+                                <span className="ml-1 text-[10px] font-semibold">{currentVisiblePage}</span>
+                                <ChevronDown className={`w-2.5 h-2.5 ml-0.5 transition-transform ${showPageDropdown ? 'rotate-180' : ''}`} />
+                              </>
+                            )}
+                          </button>
+
+                          {/* Page Dropdown - Mobile - Only show on reading pages */}
+                          {isReadingPage && showPageDropdown && surahPageNumbers.length > 0 && (
+                            <div className="absolute left-0 top-full mt-1.5 w-[140px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-[60vh] overflow-y-auto z-50">
+                              {surahPageNumbers.map((pageNum) => {
+                                const isSelected = currentVisiblePage === pageNum;
+
+                                return (
+                                  <button
+                                    key={`page-mobile-${pageNum}`}
+                                    onClick={() => scrollToPage(pageNum)}
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between gap-2 ${
+                                      isSelected
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                        : 'text-gray-700 dark:text-gray-300'
+                                    }`}
+                                  >
+                                    <span className="flex-1">Page {pageNum}</span>
+                                    {isSelected && <Check className="w-3 h-3 flex-shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

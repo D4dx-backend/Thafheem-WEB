@@ -44,12 +44,14 @@ const Mad = ({ className }) => (
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState("Quran");
+  const [touchedCard, setTouchedCard] = useState(null); // Track touched card for mobile
   const { viewType, translationLanguage } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Use cached surah data hook - prevents duplicate API calls
   const { surahs, loading, error, retry: handleRetry } = useSurahData(translationLanguage);
+  
   const handleSurahClick = (surahNumber, event) => {
     // Check if modifier key is pressed (Ctrl/Cmd)
     const isModifierPressed = event?.ctrlKey || event?.metaKey;
@@ -70,6 +72,18 @@ const Home = () => {
       // Normal navigation
       navigate(url);
     }
+  };
+
+  // Handle touch start for mobile hover effect
+  const handleTouchStart = (surahNumber) => {
+    setTouchedCard(surahNumber);
+  };
+
+  // Handle touch end - clear after a short delay to allow click to register
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      setTouchedCard(null);
+    }, 150);
   };
   return (
     <>
@@ -144,13 +158,21 @@ const Home = () => {
                 </div>
               </div>
             ) : (
-              surahs.map((surah) => (
+              surahs.map((surah) => {
+                const isTouched = touchedCard === surah.number;
+                return (
                 <div
                   key={surah.number}
                   onClick={(e) => handleSurahClick(surah.number, e)}
-                  className="group w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
-                     rounded-xl px-4 py-3 sm:py-0 hover:shadow-md transition-all duration-200 cursor-pointer mx-auto
-                     flex items-center hover:border-[#3FA5C0]"
+                  onTouchStart={() => handleTouchStart(surah.number)}
+                  onTouchEnd={handleTouchEnd}
+                  className={`group w-full max-w-[421px] sm:max-w-full h-auto sm:h-[81px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+                     rounded-xl px-4 py-3 sm:py-0 transition-all duration-200 cursor-pointer mx-auto
+                     flex items-center ${
+                       isTouched 
+                         ? 'shadow-md border-[#3FA5C0]' 
+                         : 'hover:shadow-md active:shadow-md hover:border-[#3FA5C0] active:border-[#3FA5C0] active:bg-gray-50 dark:active:bg-gray-800'
+                     }`}
                 >
                   {/* Left: number + name + small meta */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -163,7 +185,11 @@ const Home = () => {
                     {/* Name + meta column */}
                     <div className="flex flex-col justify-center min-w-0">
                       <h3 
-                        className={`text-base sm:text-[16px] font-medium text-gray-900 dark:text-white truncate transition-colors duration-200 group-hover:text-[#3FA5C0] ${
+                        className={`text-base sm:text-[16px] font-medium truncate transition-colors duration-200 ${
+                          isTouched 
+                            ? 'text-[#3FA5C0]' 
+                            : 'text-gray-900 dark:text-white group-hover:text-[#3FA5C0]'
+                        } ${
                           translationLanguage === 'mal' ? 'font-malayalam' :
                           translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
                           translationLanguage === 'hi' ? 'font-hindi' :
@@ -207,7 +233,11 @@ const Home = () => {
                   {/* Right: Arabic title */}
                   <div className="ml-auto text-right" dir="rtl">
                     <h3
-                      className="text-lg sm:text-[30px] font-normal text-gray-900 dark:text-white transition-colors duration-200 group-hover:text-[#3FA5C0]"
+                      className={`text-lg sm:text-[30px] font-normal transition-colors duration-200 ${
+                        isTouched 
+                          ? 'text-[#3FA5C0]' 
+                          : 'text-gray-900 dark:text-white group-hover:text-[#3FA5C0]'
+                      }`}
                       style={{ fontFamily: "SuraName, Amiri, serif" }}
                     >
                       {surahNameUnicodes[surah.number]
@@ -221,7 +251,8 @@ const Home = () => {
                     </h3>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

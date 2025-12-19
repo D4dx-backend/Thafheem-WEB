@@ -685,24 +685,22 @@ const HomepageNavbar = () => {
               <Menu size={18} className="sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
 
-            {(location.pathname === '/' || location.pathname === '/sign' || location.pathname.startsWith('/reading') || location.pathname.startsWith('/surah') || location.pathname.startsWith('/blockwise') || isBookmarkPage) && (
-              <button
-                onClick={() => {
-                  navigate('/');
-                  // Scroll to top when navigating to home
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"
-                aria-label="Go to home page"
-              >
-                <img
-                  src={theme === 'dark' ? logoWhite : logoBlack}
-                  alt="Thafheem ul Quran"
-                  className="h-7 sm:h-8 w-auto select-none drop-shadow-sm"
-                  draggable="false"
-                />
-              </button>
-            )}
+            <button
+              onClick={() => {
+                navigate('/');
+                // Scroll to top when navigating to home
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95"
+              aria-label="Go to home page"
+            >
+              <img
+                src={theme === 'dark' ? logoWhite : logoBlack}
+                alt="Thafheem ul Quran"
+                className="h-7 sm:h-8 w-auto select-none drop-shadow-sm"
+                draggable="false"
+              />
+            </button>
           </div>
 
           {/* Right side */}

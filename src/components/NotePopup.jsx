@@ -176,7 +176,7 @@ const NotePopup = ({
               >
                 Back
               </button>
-              <h2 className="text-lg font-medium text-[#2AA0BF]">
+              <h2 className="text-lg font-medium text-[#2AA0BF]" style={{ fontFamily: "'NotoSansMalayalam'" }}>
                 {noteName ? noteName : `Note ${noteId}`}
               </h2>
             </div>

@@ -205,7 +205,7 @@ const BlockWise = () => {
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahNumber).padStart(3, "0");
     
-    const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+    const qirathUrl = `https://thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
     
     
     setCurrentAudioType('qirath');
@@ -228,7 +228,7 @@ const BlockWise = () => {
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahNumber).padStart(3, "0");
     
-    const translationUrl = `https://old.thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
+    const translationUrl = `https://thafheem.net/audio/translation/T${surahCode}_${ayahCode}.ogg`;
     
     
     setCurrentAudioType('translation');
@@ -251,10 +251,10 @@ const BlockWise = () => {
     // First interpretation has no number suffix, subsequent ones have _02, _03, etc.
     let interpretationUrl;
     if (interpretationNum === 1) {
-      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
+      interpretationUrl = `https://thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}.ogg`;
     } else {
       const interpretationCode = String(interpretationNum).padStart(2, "0");
-      interpretationUrl = `https://old.thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
+      interpretationUrl = `https://thafheem.net/audio/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
     }
     
     
@@ -456,7 +456,7 @@ const BlockWise = () => {
       // Restart qirath with new reciter for the current ayah
       const surahCode = String(surahId).padStart(3, "0");
       const ayahCode = String(currentAyahInBlock).padStart(3, "0");
-      const qirathUrl = `https://old.thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+      const qirathUrl = `https://thafheem.net/audio/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
       
       
       audioRef.current.src = qirathUrl;

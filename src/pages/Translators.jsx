@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { fetchMalayalamTranslators } from '../api/apifunction';
 
 const Translators = () => {
-  const navigate = useNavigate();
   const { translationLanguage } = useTheme();
   const isMalayalam = translationLanguage === 'mal';
 
@@ -50,27 +48,9 @@ const Translators = () => {
     };
   }, [isMalayalam]);
 
-  const handleBack = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 font-poppins overflow-x-hidden">
       <div className="max-w-[1070px] w-full mx-auto px-4 sm:px-6 py-8 overflow-x-hidden">
-        {/* Back */}
-        <button
-          onClick={handleBack}
-          className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline mb-4"
-        >
-          ← Back
-        </button>
-
-       
-
         {/* Malayalam content from API */}
         {isMalayalam && (
           <>

@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { fetchUrduJesusMohammed } from "../api/apifunction";
 
 const UrduJesusMohammed = () => {
-  const navigate = useNavigate();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,14 +39,6 @@ const UrduJesusMohammed = () => {
     };
   }, []);
 
-  const handleBack = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
-  };
-
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen" dir="rtl">
       <style>{`
@@ -61,14 +51,6 @@ const UrduJesusMohammed = () => {
         }
       `}</style>
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
-        <button
-          onClick={handleBack}
-          className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline mb-4 text-left"
-          style={{ direction: 'ltr' }}
-        >
-          ← Back
-        </button>
-
         <h2 className="text-2xl font-bold mb-2 dark:text-white border-b border-gray-300 dark:border-gray-600 pb-2" dir="rtl">
           Jesus and Mohammed
         </h2>

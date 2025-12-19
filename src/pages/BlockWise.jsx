@@ -403,29 +403,38 @@ const BlockWise = () => {
   };
 
   // Generate audio URL based on audio type
+  // Returns object with primary and fallback URLs for Malayalam translation
   const generateAudioUrl = async (surahId, ayahId, type, interpretationNumber = 1) => {
     const surahCode = String(surahId).padStart(3, "0");
     const ayahCode = String(ayahId).padStart(3, "0");
 
-    // Use proxy path in development to avoid CORS issues
-    const baseUrl = import.meta.env.DEV ? '/api/audio' : 'https://old.thafheem.net/audio';
+    const baseUrl = 'https://thafheem.net/audio';
 
     if (type === 'quran') {
-      return `${baseUrl}/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`;
+      return { primary: `${baseUrl}/qirath/${selectedQirath}/${qirathPrefixes[selectedQirath]}${surahCode}_${ayahCode}.ogg`, fallback: null };
     } else if (type === 'translation') {
       // For Malayalam, use default pattern (Urdu doesn't support blockwise)
-      return `${baseUrl}/translation/T${surahCode}_${ayahCode}.ogg`;
+      const primaryUrl = `${baseUrl}/translation/T${surahCode}_${ayahCode}.ogg`;
+      // Generate fallback URL with previous ayah (only if ayahId > 1)
+      let fallbackUrl = null;
+      if (translationLanguage === 'mal' && ayahId > 1) {
+        const previousAyahCode = String(ayahId - 1).padStart(3, "0");
+        fallbackUrl = `${baseUrl}/translation/T${surahCode}_${ayahCode},${previousAyahCode}.ogg`;
+      }
+      return { primary: primaryUrl, fallback: fallbackUrl };
     } else if (type === 'interpretation') {
       // For Malayalam, use default pattern (Urdu doesn't support blockwise)
       // First interpretation has no number suffix, subsequent ones have _02, _03, etc.
+      let primaryUrl;
       if (interpretationNumber === 1) {
-        return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}.ogg`;
+        primaryUrl = `${baseUrl}/interpretation/I${surahCode}_${ayahCode}.ogg`;
       } else {
         const interpretationCode = String(interpretationNumber).padStart(2, "0");
-        return `${baseUrl}/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
+        primaryUrl = `${baseUrl}/interpretation/I${surahCode}_${ayahCode}_${interpretationCode}.ogg`;
       }
+      return { primary: primaryUrl, fallback: null };
     }
-    return null;
+    return { primary: null, fallback: null };
   };
 
   // Function to play audio types for a specific ayah in sequence
@@ -490,9 +499,9 @@ const BlockWise = () => {
     }
     
     // Generate audio URL (async for Urdu audio)
-    let audioUrl;
+    let audioUrls;
     try {
-      audioUrl = await generateAudioUrl(surahId, ayahToPlay, currentAudioType, interpretationNumber);
+      audioUrls = await generateAudioUrl(surahId, ayahToPlay, currentAudioType, interpretationNumber);
     } catch (error) {
       console.error('[BlockWise] Error generating audio URL:', error);
       // If URL generation fails, skip to next audio type
@@ -500,17 +509,22 @@ const BlockWise = () => {
       return;
     }
     
-    if (!audioUrl) {
+    if (!audioUrls || !audioUrls.primary) {
       // If URL generation fails, skip to next audio type
       playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, typesToPlay);
       return;
     }
 
+    // Start with primary URL, will try fallback if needed
+    let currentAudioUrl = audioUrls.primary;
+    let triedFallback = false;
+
     console.log("[BlockWise] generated audioUrl", {
       blockId,
       ayahToPlay,
       currentAudioType,
-      audioUrl
+      primary: audioUrls.primary,
+      fallback: audioUrls.fallback
     });
 
     // Map audioType to currentAudioType format for display
@@ -542,245 +556,231 @@ const BlockWise = () => {
       }
     };
 
-    const startLoadTimeout = () => {
-      clearLoadTimeout(); // Clear any existing timeout
-      loadTimeout = setTimeout(() => {
-        if (audioRef.current && audioRef.current.readyState < 2 && 
-            playingBlock === blockId && currentAyahInBlock === ayahToPlay && isContinuousPlay) {
-          console.warn('[BlockWise] Audio load timeout (file may be missing):', audioUrl);
-          // Skip to next audio type
-          playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
-        }
-      }, 5000); // 5 second timeout
-    };
-
-    // Set up audio event handlers before setting src
-    audioRef.current.onended = () => {
-      clearLoadTimeout();
-      console.log('[BlockWise] Audio ended', {
-        blockId,
-        ayahToPlay,
-        audioTypeIndex,
-        currentAudioType,
-        playingBlock: playingBlockRef.current,
-        isContinuousPlay: isContinuousPlayRef.current,
-        audioTypes: activeAudioTypes,
-        totalTypes: activeAudioTypes.length,
-        isProcessingNext: isProcessingNextRef.current
-      });
+    // Helper function to try loading audio with fallback support
+    const tryLoadAudio = (urlToTry, isFallback = false) => {
+      if (!audioRef.current) return;
       
-      // Guard against duplicate calls when already processing next move
-      if (isProcessingNextRef.current) {
-        console.warn('[BlockWise] onended handler aborted - already processing next move');
-        return;
+      // Clear previous handlers
+      try {
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+      } catch (error) {
+        console.warn('[BlockWise] Error clearing audio handlers:', error);
       }
       
-      // Use refs instead of state for reliability (state might be stale)
-      // Check if we should continue - only check block and continuous play mode
-      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
-      
-      if (shouldContinue) {
-        console.log('[BlockWise] Continuing to next audio type/ayah');
-        // Play next audio type for this ayah, or move to next ayah if all types done
-        playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
-      } else {
-        console.warn('[BlockWise] Not continuing - state mismatch', {
-          isContinuousPlay: isContinuousPlayRef.current,
-          playingBlock: playingBlockRef.current,
+      // Set up event handlers
+      audioRef.current.onended = () => {
+        clearLoadTimeout();
+        console.log('[BlockWise] Audio ended', {
           blockId,
-          ayahToPlay
+          ayahToPlay,
+          audioTypeIndex,
+          currentAudioType,
+          url: urlToTry,
+          isFallback,
+          playingBlock: playingBlockRef.current,
+          isContinuousPlay: isContinuousPlayRef.current,
+          audioTypes: activeAudioTypes,
+          totalTypes: activeAudioTypes.length,
+          isProcessingNext: isProcessingNextRef.current
         });
-      }
-    };
-
-    audioRef.current.onerror = (error) => {
-      clearLoadTimeout();
-      // Check if it's a network/load error (404, network failure, etc.)
-      const audioElement = audioRef.current;
-      if (audioElement && audioElement.error) {
-        const errorCode = audioElement.error.code;
-        // Error codes: 1=MEDIA_ERR_ABORTED, 2=MEDIA_ERR_NETWORK, 3=MEDIA_ERR_DECODE, 4=MEDIA_ERR_SRC_NOT_SUPPORTED
-        if (errorCode === 2 || errorCode === 4) {
-          // Only log as debug for missing files (expected behavior)
-          if (import.meta.env.DEV) {
-            console.log('[BlockWise] Audio file not found (expected), skipping:', audioUrl);
-          }
-          
-          // If it's an interpretation that doesn't exist, skip to next audio type (translation) for the same ayah
-          if (currentAudioType === 'interpretation') {
-            // Only log in development mode
-            if (import.meta.env.DEV) {
-              console.log('[BlockWise] Interpretation not found, skipping to next audio type', {
-                currentInterpretationNumber,
-                ayahToPlay,
-                audioUrl,
-                audioTypeIndex,
-                nextAudioTypeIndex: audioTypeIndex + 1
-              });
-            }
-            // CRITICAL: Set guard flag immediately to prevent other handlers (onended, play().catch()) from continuing
-            isProcessingNextRef.current = true;
-            // CRITICAL: Pause and clear handlers to prevent duplicate calls
-            if (audioRef.current) {
-              try {
-                audioRef.current.pause();
-                audioRef.current.onended = null;
-                audioRef.current.onerror = null;
-              } catch (error) {
-                console.warn('[BlockWise] Error cleaning up audio on interpretation error:', error);
-              }
-            }
-            // Reset interpretation number for next ayah (will be used if we move to next ayah later)
-            setCurrentInterpretationNumber(1);
-            // Skip to next audio type (translation) for the same ayah instead of moving to next ayah
-            // Use refs to check if we should continue
-            const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
-            if (shouldContinue) {
-              // Only log in development mode
-              if (import.meta.env.DEV) {
-                console.log('[BlockWise] Continuing to next audio type after interpretation error', {
-                  blockId,
-                  ayahToPlay,
-                  audioTypeIndex,
-                  nextAudioTypeIndex: audioTypeIndex + 1,
-                  playingBlockRef: playingBlockRef.current,
-                  isContinuousPlayRef: isContinuousPlayRef.current
-                });
-              }
-              // Continue to next audio type (translation) for the same ayah
-              setTimeout(() => {
-                playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
-                // Reset guard flag after a short delay to ensure new audio has started
-                setTimeout(() => {
-                  isProcessingNextRef.current = false;
-                }, 300);
-              }, 200);
-              return; // Don't continue with error handler
-            } else {
-              // Only log in development mode
-              if (import.meta.env.DEV) {
-                console.warn('[BlockWise] Not continuing after interpretation error - state mismatch', {
-                  blockId,
-                  playingBlockRef: playingBlockRef.current,
-                  isContinuousPlayRef: isContinuousPlayRef.current
-                });
-              }
-              // Reset guard flag if we're not continuing
-              isProcessingNextRef.current = false;
-            }
-          }
-        } else {
-          // Log unexpected errors (not 404/network errors)
-          console.error('[BlockWise] Unexpected audio error:', {
-            errorCode: audioElement.error?.code,
-            audioUrl,
-            currentAudioType
-          });
+        
+        // Guard against duplicate calls when already processing next move
+        if (isProcessingNextRef.current) {
+          console.warn('[BlockWise] onended handler aborted - already processing next move');
+          return;
         }
-      } else {
-        // Log if we can't determine the error
-        console.error('[BlockWise] Audio error event (unknown error):', audioUrl, error);
-      }
-      
-      // Use refs instead of state for reliability (state might be stale)
-      // Check if we should continue - only check block and continuous play mode
-      // Also check guard flag to prevent duplicate calls if interpretation error was already handled
-      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId && !isProcessingNextRef.current;
-      
-      if (shouldContinue) {
-        // Skip to next audio type or next ayah with delay to prevent rapid error loops
-        setTimeout(() => {
+        
+        // Use refs instead of state for reliability (state might be stale)
+        const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+        
+        if (shouldContinue) {
+          console.log('[BlockWise] Continuing to next audio type/ayah');
           playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
-        }, 200);
-      } else {
-        // Only log in development mode - this is expected when guard flag is set
-        if (import.meta.env.DEV && isProcessingNextRef.current) {
-          console.log('[BlockWise] Not continuing after error - already processing (expected)');
-        } else if (!isProcessingNextRef.current) {
-          console.warn('[BlockWise] Not continuing after error - state mismatch', {
+        } else {
+          console.warn('[BlockWise] Not continuing - state mismatch', {
             isContinuousPlay: isContinuousPlayRef.current,
             playingBlock: playingBlockRef.current,
-            blockId
+            blockId,
+            ayahToPlay
           });
         }
-      }
-    };
+      };
 
-    // Reset guard flag when audio is ready to play (canplay event)
-    // This ensures the flag is reset before audio ends, allowing progression
-    const handleCanPlay = () => {
-      isProcessingNextRef.current = false;
-      // Ensure playback speed is applied after audio loads (use ref to get current value)
-      if (audioRef.current) {
-        audioRef.current.playbackRate = playbackSpeedRef.current;
-      }
-      audioRef.current.removeEventListener('canplay', handleCanPlay);
-    };
-    audioRef.current.addEventListener('canplay', handleCanPlay, { once: true });
-    
-    // Clear timeout when audio successfully loads
-    audioRef.current.addEventListener('canplay', clearLoadTimeout, { once: true });
-    audioRef.current.addEventListener('loadeddata', clearLoadTimeout, { once: true });
-    
-    // Also set playback rate when metadata is loaded
-    const handleLoadedMetadata = () => {
-      if (audioRef.current) {
-        audioRef.current.playbackRate = playbackSpeedRef.current;
-      }
-      audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
-    };
-    audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-
-    audioRef.current.src = audioUrl;
-    audioRef.current.playbackRate = playbackSpeedRef.current;
-    audioRef.current.load();
-    startLoadTimeout();
-    
-    audioRef.current.play().catch(err => {
-      clearLoadTimeout();
-      
-      // Guard against duplicate calls if we're already processing an error
-      // But still reset the flag to allow future attempts
-      if (isProcessingNextRef.current) {
-        // Only log in development mode - this is expected behavior
-        if (import.meta.env.DEV) {
-          console.log('[BlockWise] play().catch() aborted - already processing next move (expected)');
+      audioRef.current.onerror = (error) => {
+        clearLoadTimeout();
+        const audioElement = audioRef.current;
+        
+        // Check if we should try fallback for Malayalam translation
+        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          console.log('[BlockWise] Primary Malayalam translation audio failed, trying fallback:', audioUrls.fallback);
+          // Try fallback URL
+          tryLoadAudio(audioUrls.fallback, true);
+          return;
         }
-        // Reset flag even if already processing to allow future attempts
-        setTimeout(() => {
+        
+        // Handle error (no fallback or fallback also failed)
+        if (audioElement && audioElement.error) {
+          const errorCode = audioElement.error.code;
+          // Error codes: 1=MEDIA_ERR_ABORTED, 2=MEDIA_ERR_NETWORK, 3=MEDIA_ERR_DECODE, 4=MEDIA_ERR_SRC_NOT_SUPPORTED
+          if (errorCode === 2 || errorCode === 4) {
+            if (import.meta.env.DEV) {
+              console.log('[BlockWise] Audio file not found (expected), skipping:', urlToTry);
+            }
+            
+            // If it's an interpretation that doesn't exist, skip to next audio type
+            if (currentAudioType === 'interpretation') {
+              if (import.meta.env.DEV) {
+                console.log('[BlockWise] Interpretation not found, skipping to next audio type', {
+                  currentInterpretationNumber,
+                  ayahToPlay,
+                  audioUrl: urlToTry,
+                  audioTypeIndex
+                });
+              }
+              isProcessingNextRef.current = true;
+              if (audioRef.current) {
+                try {
+                  audioRef.current.pause();
+                  audioRef.current.onended = null;
+                  audioRef.current.onerror = null;
+                } catch (error) {
+                  console.warn('[BlockWise] Error cleaning up audio on interpretation error:', error);
+                }
+              }
+              setCurrentInterpretationNumber(1);
+              const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+              if (shouldContinue) {
+                setTimeout(() => {
+                  playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+                  setTimeout(() => {
+                    isProcessingNextRef.current = false;
+                  }, 300);
+                }, 200);
+                return;
+              } else {
+                isProcessingNextRef.current = false;
+              }
+            }
+          } else {
+            console.error('[BlockWise] Unexpected audio error:', {
+              errorCode: audioElement.error?.code,
+              audioUrl: urlToTry,
+              currentAudioType
+            });
+          }
+        } else {
+          console.error('[BlockWise] Audio error event (unknown error):', urlToTry, error);
+        }
+        
+        const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId && !isProcessingNextRef.current;
+        
+        if (shouldContinue) {
+          setTimeout(() => {
+            playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+          }, 200);
+        } else {
+          if (import.meta.env.DEV && isProcessingNextRef.current) {
+            console.log('[BlockWise] Not continuing after error - already processing (expected)');
+          } else if (!isProcessingNextRef.current) {
+            console.warn('[BlockWise] Not continuing after error - state mismatch', {
+              isContinuousPlay: isContinuousPlayRef.current,
+              playingBlock: playingBlockRef.current,
+              blockId
+            });
+          }
+        }
+      };
+
+      // Reset guard flag when audio is ready to play
+      const handleCanPlay = () => {
+        isProcessingNextRef.current = false;
+        if (audioRef.current) {
+          audioRef.current.playbackRate = playbackSpeedRef.current;
+        }
+        audioRef.current.removeEventListener('canplay', handleCanPlay);
+      };
+      audioRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+      
+      // Clear timeout when audio successfully loads
+      audioRef.current.addEventListener('canplay', clearLoadTimeout, { once: true });
+      audioRef.current.addEventListener('loadeddata', clearLoadTimeout, { once: true });
+      
+      // Set playback rate when metadata is loaded
+      const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+          audioRef.current.playbackRate = playbackSpeedRef.current;
+        }
+        audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      };
+      audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+
+      // Add timeout to detect stuck audio loading (missing files)
+      const startLoadTimeout = () => {
+        clearLoadTimeout(); // Clear any existing timeout
+        loadTimeout = setTimeout(() => {
+          if (audioRef.current && audioRef.current.readyState < 2 && 
+              playingBlock === blockId && currentAyahInBlock === ayahToPlay && isContinuousPlay) {
+            console.warn('[BlockWise] Audio load timeout (file may be missing):', urlToTry);
+            // Skip to next audio type
+            playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+          }
+        }, 5000); // 5 second timeout
+      };
+
+      audioRef.current.src = urlToTry;
+      audioRef.current.playbackRate = playbackSpeedRef.current;
+      audioRef.current.load();
+      startLoadTimeout();
+      
+      audioRef.current.play().catch(err => {
+        clearLoadTimeout();
+        
+        // Check if we should try fallback for Malayalam translation
+        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          console.log('[BlockWise] Primary Malayalam translation audio play failed, trying fallback:', audioUrls.fallback);
+          tryLoadAudio(audioUrls.fallback, true);
+          return;
+        }
+        
+        // Guard against duplicate calls if we're already processing an error
+        if (isProcessingNextRef.current) {
+          if (import.meta.env.DEV) {
+            console.log('[BlockWise] play().catch() aborted - already processing next move (expected)');
+          }
+          setTimeout(() => {
+            isProcessingNextRef.current = false;
+          }, 100);
+          return;
+        }
+        
+        // Only log unexpected errors
+        if (err.name !== 'NotSupportedError') {
+          console.error('[BlockWise] Error playing audio:', err.name, err.message, urlToTry);
+        } else if (import.meta.env.DEV) {
+          console.log('[BlockWise] Audio file not supported (expected for missing files):', urlToTry);
+        }
+        
+        const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
+        
+        if (shouldContinue) {
           isProcessingNextRef.current = false;
-        }, 100);
-        return;
-      }
-      
-      // Only log unexpected errors (not NotSupportedError which is expected for missing files)
-      if (err.name !== 'NotSupportedError') {
-        console.error('[BlockWise] Error playing audio:', err.name, err.message, audioUrl);
-      } else if (import.meta.env.DEV) {
-        console.log('[BlockWise] Audio file not supported (expected for missing files):', audioUrl);
-      }
-      
-      // If audio fails to play, skip to next audio type or next ayah
-      // Use refs instead of state for reliability
-      const shouldContinue = isContinuousPlayRef.current && playingBlockRef.current === blockId;
-      
-      if (shouldContinue) {
-        // Reset guard flag before continuing to next audio type
-        isProcessingNextRef.current = false;
-        // Small delay to prevent rapid error loops
-        setTimeout(() => {
-          playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
-        }, 200);
-      } else {
-        // Reset guard flag if not continuing
-        isProcessingNextRef.current = false;
-        console.warn('[BlockWise] Not continuing after play error - state mismatch', {
-          blockId,
-          playingBlockRef: playingBlockRef.current,
-          isContinuousPlayRef: isContinuousPlayRef.current
-        });
-      }
-    });
+          setTimeout(() => {
+            playAyahAudioWithTypes(blockId, ayahToPlay, audioTypeIndex + 1, activeAudioTypes);
+          }, 200);
+        } else {
+          isProcessingNextRef.current = false;
+          console.warn('[BlockWise] Not continuing after play error - state mismatch', {
+            blockId,
+            playingBlockRef: playingBlockRef.current,
+            isContinuousPlayRef: isContinuousPlayRef.current
+          });
+        }
+      });
+    };
+
+    // Start loading with primary URL
+    tryLoadAudio(currentAudioUrl, false);
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)

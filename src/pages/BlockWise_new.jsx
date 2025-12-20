@@ -28,6 +28,7 @@ import { ToastContainer } from "../components/Toast";
 import WordByWord from "./WordByWord";
 import InterpretationBlockwise from "./InterpretationBlockwise";
 import Bismi from "../assets/bismi.png";
+import audioManager from "../utils/audioManager";
 import DarkModeBismi from "../assets/darkmode-bismi.png";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -140,6 +141,8 @@ const BlockWise = () => {
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
+      // Register with audio manager
+      audioManager.register(audioRef.current);
     }
     
     // Cleanup: Stop audio when component unmounts (navigating away)
@@ -198,6 +201,11 @@ const BlockWise = () => {
   // Function to play audio for a specific ayah (qirath → translation → interpretation)
   const playAyahAudio = (blockId, ayahNumber) => {
     if (!audioRef.current) return;
+    
+    // Check if audio should be stopped (language changed)
+    if (audioManager.getShouldStop()) {
+      return;
+    }
 
     // Stop any currently playing audio before starting new ayah
     audioRef.current.pause();
@@ -404,6 +412,18 @@ const BlockWise = () => {
     setCurrentInterpretationNumber(1);
     setIsPaused(false);
   };
+
+  // Stop audio when language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      audioManager.stopAll();
+      stopPlayback();
+    };
+    window.addEventListener('languageChange', handleLanguageChange);
+    return () => {
+      window.removeEventListener('languageChange', handleLanguageChange);
+    };
+  }, []);
 
   // Handle audio ended event to chain audio files
   useEffect(() => {

@@ -1,6 +1,7 @@
 // Audio utilities for ayah-wise playback
 
 import { fetchUrduTranslationAudio, fetchUrduInterpretationAudio } from '../api/apifunction';
+import audioManager from './audioManager';
 
 const QARI_INITIALS = {
 	"al-ghamidi": "G",
@@ -13,6 +14,10 @@ export async function buildAyahAudioUrl({ ayahNumber, surahNumber, audioType = "
 	const ayahPadded = String(ayahNumber).padStart(3, "0");
 
 	if (audioType === "translation") {
+		// Only support translation audio for Urdu and Malayalam
+		if (translationLanguage !== 'ur' && translationLanguage !== 'mal') {
+			return { primary: null, fallback: null };
+		}
 		// For Urdu, fetch from API (language code is 'ur')
 		if (translationLanguage === 'ur') {
 			const audioUrl = await fetchUrduTranslationAudio(surahNumber, ayahNumber);
@@ -62,11 +67,27 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 		return null;
 	}
 	
+	// Track if we're already trying fallback to prevent duplicate attempts
+	let isTryingFallback = false;
+	
 	// Helper function to try loading audio with fallback support
 	const tryLoadAudio = (urlToTry, isFallback = false) => {
+		// Check if audio should be stopped (language changed)
+		if (audioManager.getShouldStop()) {
+			return null;
+		}
+		
+		// Reset fallback flag when starting a new primary audio load
+		if (!isFallback) {
+			isTryingFallback = false;
+		}
+		
 		const audio = new Audio(urlToTry);
 		audio.preload = "none";
 		audio.playbackRate = playbackSpeed;
+		
+		// Register audio with global manager
+		audioManager.register(audio);
 
 		// Ensure playback speed is applied after audio metadata loads
 		const handleLoadedMetadata = () => {
@@ -92,10 +113,21 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 			errorHandled = true;
 			
 			// Check if we should try fallback for Malayalam translation
-			if (!isFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
+			// Guard against multiple handlers triggering fallback simultaneously
+			if (!isFallback && !isTryingFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
+				// Mark that we're trying fallback to prevent duplicate attempts
+				isTryingFallback = true;
 				console.log('[audio.js] Primary Malayalam translation audio failed, trying fallback:', urls.fallback);
 				// Try fallback URL - return the new audio object
 				return tryLoadAudio(urls.fallback, true);
+			}
+			
+			// If fallback attempt was already triggered by another handler, just return
+			if (!isFallback && isTryingFallback) {
+				if (import.meta?.env?.DEV) {
+					console.log('[audio.js] onerror handler aborted - fallback already being attempted');
+				}
+				return;
 			}
 			
 			// For interpretation audio, missing files are expected for some ayahs
@@ -120,13 +152,34 @@ export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qira
 			audio.onerror = handleError;
 		}
 
+		// Check again before playing (language might have changed during async operations)
+		if (audioManager.getShouldStop()) {
+			audio.pause();
+			return null;
+		}
+		
 		// Start loading and playing
 		audio.play().catch((e) => {
+			// Don't handle errors if language changed
+			if (audioManager.getShouldStop()) {
+				return null;
+			}
 			// Check if we should try fallback for Malayalam translation
-			if (!isFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
+			// Guard against multiple handlers triggering fallback simultaneously
+			if (!isFallback && !isTryingFallback && audioType === "translation" && translationLanguage === 'mal' && urls.fallback) {
+				// Mark that we're trying fallback to prevent duplicate attempts
+				isTryingFallback = true;
 				console.log('[audio.js] Primary Malayalam translation audio play failed, trying fallback:', urls.fallback);
 				// Try fallback URL - return the new audio object
 				return tryLoadAudio(urls.fallback, true);
+			}
+			
+			// If fallback attempt was already triggered by another handler, just return
+			if (!isFallback && isTryingFallback) {
+				if (import.meta?.env?.DEV) {
+					console.log('[audio.js] play().catch() handler aborted - fallback already being attempted');
+				}
+				return;
 			}
 			
 			// Check if it's a NotSupportedError or network error (expected for missing files)

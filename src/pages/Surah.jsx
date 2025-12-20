@@ -32,6 +32,7 @@ import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import AyahModal from "../components/AyahModal";
 import { playAyahAudio } from "../utils/audio";
+import audioManager from "../utils/audioManager";
 import {
   fetchAyahAudioTranslations,
   listSurahNames,
@@ -1718,6 +1719,11 @@ Read more: ${shareUrl}`;
       return;
     }
 
+    // Check if audio should be stopped (language changed)
+    if (audioManager.getShouldStop()) {
+      return;
+    }
+    
     // Set playing state early so UI shows loading/playing state immediately
     setIsSequencePlaying(true);
     setPlayingAyah(ayahNumber);
@@ -1766,6 +1772,17 @@ Read more: ${shareUrl}`;
           }, 100);
         },
       });
+      
+      // Check if audio should be stopped (language changed during async operation)
+      if (audioManager.getShouldStop()) {
+        if (audioElement) {
+          audioElement.pause();
+          audioElement.currentTime = 0;
+        }
+        setIsSequencePlaying(false);
+        setPlayingAyah(null);
+        return;
+      }
       
       if (audioElement) {
         setAudioEl(audioElement);
@@ -1856,6 +1873,20 @@ Read more: ${shareUrl}`;
     // Dispatch event to sync with other components
     window.dispatchEvent(new CustomEvent('reciterChange', { detail: { reciter: selectedQari } }));
   }, [selectedQari]);
+
+  // Stop audio when language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      audioManager.stopAll();
+      stopCurrentAudio();
+      setIsSequencePlaying(false);
+      setPlayingAyah(null);
+    };
+    window.addEventListener('languageChange', handleLanguageChange);
+    return () => {
+      window.removeEventListener('languageChange', handleLanguageChange);
+    };
+  }, []);
 
   // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
   useEffect(() => {

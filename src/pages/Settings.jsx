@@ -359,6 +359,8 @@ const Settings = ({ onClose }) => {
                   const selectedCode = getLanguageCodeFromName(selectedName);
                   setLanguage(selectedName);
                   setContextTranslationLanguage(selectedCode);
+                  // Dispatch event to stop all audio when language changes
+                  window.dispatchEvent(new CustomEvent('languageChange', { detail: { language: selectedCode } }));
                   if (!VIEW_TYPE_SUPPORTED_LANGUAGES.includes(selectedCode)) {
                     if (viewType !== "Ayah Wise") setViewType("Ayah Wise");
                     if (contextViewType !== "Ayah Wise") setContextViewType("Ayah Wise");

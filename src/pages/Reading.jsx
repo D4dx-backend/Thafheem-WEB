@@ -28,6 +28,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import { VersesSkeleton, CompactLoading } from "../components/LoadingSkeleton";
+import audioManager from "../utils/audioManager";
 import { saveLastReading } from "../services/readingProgressService";
 import {
   getCalligraphicSurahName,
@@ -171,6 +172,11 @@ const Reading = () => {
     const ayahId = index + 1; // Since verse_number is undefined, use index + 1
     const currentAudioType = activeAudioTypes[audioTypeIndex];
     
+    // Check if audio should be stopped (language changed)
+    if (audioManager.getShouldStop()) {
+      return;
+    }
+    
     // Generate audio URL (async for Urdu audio)
     let audioUrls;
     try {
@@ -192,6 +198,11 @@ const Reading = () => {
       return;
     }
     
+    // Check again after async operation (language might have changed)
+    if (audioManager.getShouldStop()) {
+      return;
+    }
+    
     if (!audioUrls || !audioUrls.primary) {
       // Skip to next audio type if URL is null
       if (audioTypeIndex < activeAudioTypes.length - 1) {
@@ -210,12 +221,25 @@ const Reading = () => {
     
     // Start with primary URL, will try fallback if needed
     let currentAudioUrl = audioUrls.primary;
-    let triedFallback = false;
+    let isTryingFallback = false; // Guard to prevent multiple fallback attempts
     
     // Helper function to try loading audio with fallback support
     const tryLoadAudio = (urlToTry, isFallback = false) => {
+      // Check if audio should be stopped (language changed)
+      if (audioManager.getShouldStop()) {
+        return null;
+      }
+      
+      // Reset fallback flag when starting a new primary audio load
+      if (!isFallback) {
+        isTryingFallback = false;
+      }
+      
       // Create new audio element
       const audio = new Audio(urlToTry);
+      
+      // Register with audio manager
+      audioManager.register(audio);
     
       // Set audio properties before adding event listeners
       audio.preload = 'none'; // Don't preload to avoid conflicts
@@ -259,10 +283,21 @@ const Reading = () => {
         console.error('Failed URL:', urlToTry);
         
         // Check if we should try fallback for Malayalam translation
-        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+        // Guard against multiple handlers triggering fallback simultaneously
+        if (!isFallback && !isTryingFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          // Mark that we're trying fallback to prevent duplicate attempts
+          isTryingFallback = true;
           console.log('[Reading] Primary Malayalam translation audio failed, trying fallback:', audioUrls.fallback);
           // Try fallback URL
           tryLoadAudio(audioUrls.fallback, true);
+          return;
+        }
+        
+        // If fallback attempt was already triggered by another handler, just return
+        if (!isFallback && isTryingFallback) {
+          if (import.meta.env.DEV) {
+            console.log('[Reading] onerror handler aborted - fallback already being attempted');
+          }
           return;
         }
         
@@ -287,9 +322,20 @@ const Reading = () => {
         }
         
         // Check if we should try fallback for Malayalam translation
-        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+        // Guard against multiple handlers triggering fallback simultaneously
+        if (!isFallback && !isTryingFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          // Mark that we're trying fallback to prevent duplicate attempts
+          isTryingFallback = true;
           console.log('[Reading] Primary Malayalam translation audio play failed, trying fallback:', audioUrls.fallback);
           tryLoadAudio(audioUrls.fallback, true);
+          return;
+        }
+        
+        // If fallback attempt was already triggered by another handler, just return
+        if (!isFallback && isTryingFallback) {
+          if (import.meta.env.DEV) {
+            console.log('[Reading] play().catch() handler aborted - fallback already being attempted');
+          }
           return;
         }
         
@@ -541,6 +587,18 @@ const Reading = () => {
       }
     };
   }, [surahId]);
+
+  // Stop audio when language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      audioManager.stopAll();
+      stopAudio();
+    };
+    window.addEventListener('languageChange', handleLanguageChange);
+    return () => {
+      window.removeEventListener('languageChange', handleLanguageChange);
+    };
+  }, []);
 
   // Progressive loading: Load surah info and page ranges first, then verses in batches
   useEffect(() => {

@@ -47,6 +47,7 @@ import { AyahViewIcon, BlockViewIcon } from "../components/ViewToggleIcons";
 import StickyAudioPlayer from "../components/StickyAudioPlayer";
 import englishTranslationService from "../services/englishTranslationService";
 import useSequentialEnglishFootnotes from "../hooks/useSequentialEnglishFootnotes";
+import audioManager from "../utils/audioManager";
 import {
   getCalligraphicSurahName,
   surahNameFontFamily,
@@ -82,6 +83,7 @@ const BlockWise = () => {
   const isProcessingNextRef = useRef(false); // Guard to prevent duplicate calls to moveToNextAyahOrBlock/playNextBlock
   const playbackSpeedRef = useRef(playbackSpeed); // Ref to track current playback speed
   const preservedAudioTypesRef = useRef(null); // Ref to preserve audioTypes when block playback starts
+  const isTryingFallbackRef = useRef(false); // Guard to prevent multiple fallback attempts for the same audio
 
 
   // State management for API data
@@ -264,6 +266,8 @@ const BlockWise = () => {
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
+      // Register with audio manager
+      audioManager.register(audioRef.current);
     }
 
     // Cleanup: Stop audio when component unmounts (navigating away)
@@ -442,6 +446,11 @@ const BlockWise = () => {
   // This version accepts audioTypes as parameter to avoid closure issues
   const playAyahAudioWithTypes = async (blockId, ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
     if (!audioRef.current) return;
+    
+    // Check if audio should be stopped (language changed)
+    if (audioManager.getShouldStop()) {
+      return;
+    }
 
     const ayahToPlay = normalizeAyahNumber(
       ayahNumber,
@@ -561,6 +570,11 @@ const BlockWise = () => {
     const tryLoadAudio = (urlToTry, isFallback = false) => {
       if (!audioRef.current) return;
       
+      // Reset fallback flag when starting a new primary audio load
+      if (!isFallback) {
+        isTryingFallbackRef.current = false;
+      }
+      
       // Clear previous handlers
       try {
         audioRef.current.onended = null;
@@ -613,7 +627,10 @@ const BlockWise = () => {
         const audioElement = audioRef.current;
         
         // Check if we should try fallback for Malayalam translation
-        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+        // Guard against multiple handlers triggering fallback simultaneously
+        if (!isFallback && !isTryingFallbackRef.current && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          // Mark that we're trying fallback to prevent duplicate attempts
+          isTryingFallbackRef.current = true;
           console.log('[BlockWise] Primary Malayalam translation audio failed, trying fallback:', audioUrls.fallback);
           // Reset audio element before trying fallback
           if (audioElement) {
@@ -633,11 +650,21 @@ const BlockWise = () => {
           return; // Exit early - don't continue to next audio type
         }
         
+        // If fallback attempt was already triggered by another handler, just return
+        if (!isFallback && isTryingFallbackRef.current) {
+          if (import.meta.env.DEV) {
+            console.log('[BlockWise] onerror handler aborted - fallback already being attempted');
+          }
+          return;
+        }
+        
         // Handle error (no fallback or fallback also failed)
         // Only reach here if: isFallback is true OR no fallback available OR fallback also failed
         // If this is a fallback that failed, log it and then move to next audio type
         if (isFallback && currentAudioType === 'translation' && translationLanguage === 'mal') {
           console.log('[BlockWise] Fallback Malayalam translation audio also failed, moving to next audio type');
+          // Reset fallback flag when fallback fails
+          isTryingFallbackRef.current = false;
         }
         
         if (audioElement && audioElement.error) {
@@ -758,9 +785,20 @@ const BlockWise = () => {
             }
             console.warn('[BlockWise] Audio load timeout (file may be missing):', urlToTry);
             // Check if we should try fallback before skipping
-            if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+            // Guard against multiple handlers triggering fallback simultaneously
+            if (!isFallback && !isTryingFallbackRef.current && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+              // Mark that we're trying fallback to prevent duplicate attempts
+              isTryingFallbackRef.current = true;
               console.log('[BlockWise] Primary audio timeout, trying fallback:', audioUrls.fallback);
               tryLoadAudio(audioUrls.fallback, true);
+              return;
+            }
+            
+            // If fallback attempt was already triggered by another handler, just skip to next
+            if (!isFallback && isTryingFallbackRef.current) {
+              if (import.meta.env.DEV) {
+                console.log('[BlockWise] Timeout handler aborted - fallback already being attempted');
+              }
               return;
             }
             // Skip to next audio type
@@ -778,7 +816,10 @@ const BlockWise = () => {
         clearLoadTimeout();
         
         // Check if we should try fallback for Malayalam translation
-        if (!isFallback && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+        // Guard against multiple handlers triggering fallback simultaneously
+        if (!isFallback && !isTryingFallbackRef.current && currentAudioType === 'translation' && translationLanguage === 'mal' && audioUrls.fallback) {
+          // Mark that we're trying fallback to prevent duplicate attempts
+          isTryingFallbackRef.current = true;
           console.log('[BlockWise] Primary Malayalam translation audio play failed, trying fallback:', audioUrls.fallback);
           // Reset audio element before trying fallback
           if (audioRef.current) {
@@ -796,6 +837,14 @@ const BlockWise = () => {
           // IMPORTANT: Return early to prevent moving to next audio type
           tryLoadAudio(audioUrls.fallback, true);
           return; // Exit early - don't continue to next audio type
+        }
+        
+        // If fallback attempt was already triggered by another handler, just return
+        if (!isFallback && isTryingFallbackRef.current) {
+          if (import.meta.env.DEV) {
+            console.log('[BlockWise] play().catch() handler aborted - fallback already being attempted');
+          }
+          return;
         }
         
         // Guard against duplicate calls if we're already processing an error
@@ -1300,6 +1349,18 @@ const BlockWise = () => {
     setCurrentInterpretationNumber(1);
     setIsPaused(false);
   };
+
+  // Stop audio when language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      audioManager.stopAll();
+      stopPlayback();
+    };
+    window.addEventListener('languageChange', handleLanguageChange);
+    return () => {
+      window.removeEventListener('languageChange', handleLanguageChange);
+    };
+  }, []);
 
   // Stop audio on unmount (navigating away)
   useEffect(() => {

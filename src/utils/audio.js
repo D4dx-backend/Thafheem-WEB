@@ -59,8 +59,19 @@ export async function buildAyahAudioUrl({ ayahNumber, surahNumber, audioType = "
 export async function playAyahAudio({ ayahNumber, surahNumber, audioType = "qirath", qariName = "al-afasy", playbackSpeed = 1.0, translationLanguage = null, onStart, onEnd, onError }) {
 	const urls = await buildAyahAudioUrl({ ayahNumber, surahNumber, audioType, qariName, translationLanguage });
 	
-	// If URL is null (e.g., API failed for Urdu), trigger error callback
+	// If URL is null, handle based on audio type and language
 	if (!urls || !urls.primary) {
+		// For Urdu translation/interpretation audio, 404s are expected for ayahs that are not
+		// the last in their range. Skip silently without triggering error callback.
+		if (audioType === "translation" && translationLanguage === 'ur') {
+			// Silently skip - this is expected behavior for Urdu translation audio ranges
+			return null;
+		}
+		if (audioType === "interpretation" && translationLanguage === 'ur') {
+			// Silently skip - this is expected behavior for Urdu interpretation audio ranges
+			return null;
+		}
+		// For other cases, trigger error callback
 		if (typeof onError === "function") {
 			onError(new Error(`Audio URL not available for ${audioType}`));
 		}

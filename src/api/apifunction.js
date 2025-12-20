@@ -1573,14 +1573,24 @@ export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
 };
 
 // Fetch Urdu translation audio URL from API
+// Note: Urdu translation audio files cover ranges (e.g., 1-7, 8-15)
+// The API only returns audio for the LAST ayah in each range
+// For other ayahs in the range, it returns 404 (which is expected and should be handled silently)
 export const fetchUrduTranslationAudio = async (surahId, ayahId) => {
   try {
     const url = `${API_BASE_PATH}/urdu/translation-audio/${surahId}/${ayahId}`;
     const response = await fetch(url);
     if (!response.ok) {
-      // Log more details for debugging
-      console.error(`[fetchUrduTranslationAudio] HTTP ${response.status} for ${url}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // 404 is expected for ayahs that are not the last in their range
+      // Silently return null without logging errors
+      if (response.status === 404) {
+        return null;
+      }
+      // Only log non-404 errors for debugging
+      if (import.meta?.env?.DEV) {
+        console.warn(`[fetchUrduTranslationAudio] HTTP ${response.status} for ${url}`);
+      }
+      return null;
     }
     const data = await response.json();
     // Handle both single object and array response
@@ -1591,20 +1601,33 @@ export const fetchUrduTranslationAudio = async (surahId, ayahId) => {
     }
     return data.audio_url || null;
   } catch (error) {
-    console.error(`[fetchUrduTranslationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
+    // Network errors or other issues - only log in dev mode
+    if (import.meta?.env?.DEV) {
+      console.warn(`[fetchUrduTranslationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
+    }
     return null;
   }
 };
 
 // Fetch Urdu interpretation audio URL from API
+// Note: Urdu interpretation audio files may also cover ranges
+// The API only returns audio for the LAST ayah in each range
+// For other ayahs in the range, it returns 404 (which is expected and should be handled silently)
 export const fetchUrduInterpretationAudio = async (surahId, ayahId) => {
   try {
     const url = `${API_BASE_PATH}/urdu/interpretation-audio/${surahId}/${ayahId}`;
     const response = await fetch(url);
     if (!response.ok) {
-      // Log more details for debugging
-      console.error(`[fetchUrduInterpretationAudio] HTTP ${response.status} for ${url}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // 404 is expected for ayahs that are not the last in their range
+      // Silently return null without logging errors
+      if (response.status === 404) {
+        return null;
+      }
+      // Only log non-404 errors for debugging
+      if (import.meta?.env?.DEV) {
+        console.warn(`[fetchUrduInterpretationAudio] HTTP ${response.status} for ${url}`);
+      }
+      return null;
     }
     const data = await response.json();
     // Handle both single object and array response
@@ -1615,7 +1638,10 @@ export const fetchUrduInterpretationAudio = async (surahId, ayahId) => {
     }
     return data.audio_url || null;
   } catch (error) {
-    console.error(`[fetchUrduInterpretationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
+    // Network errors or other issues - only log in dev mode
+    if (import.meta?.env?.DEV) {
+      console.warn(`[fetchUrduInterpretationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
+    }
     return null;
   }
 };

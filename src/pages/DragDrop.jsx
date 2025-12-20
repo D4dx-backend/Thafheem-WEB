@@ -45,6 +45,11 @@ const DragDropQuiz = () => {
 
   const quranFont = "Amiri Quran";
 
+  // Check if language supports ayah ranges (only Malayalam and English)
+  const supportsAyahRanges = () => {
+    return translationLanguage === 'mal' || translationLanguage === 'E' || translationLanguage === 'en';
+  };
+
   // Get font class based on language
   const getTranslationFontClass = () => {
     if (translationLanguage === 'hi') return 'font-hindi';
@@ -94,10 +99,27 @@ const DragDropQuiz = () => {
     loadSurahs();
   }, []);
 
-  // Fetch ayah ranges when surah is selected
+  // Reset ayah ranges when language changes to one that doesn't support it
+  useEffect(() => {
+    if (!supportsAyahRanges()) {
+      setAyahRanges([]);
+      setSelectedRangeId(null);
+      setLoadingRanges(false);
+    }
+  }, [translationLanguage]);
+
+  // Fetch ayah ranges when surah is selected (only for languages that support it)
   useEffect(() => {
     const loadAyahRanges = async () => {
       if (!selectedSurahId) return;
+
+      // Skip ayah range fetching for languages that don't support it
+      if (!supportsAyahRanges()) {
+        setAyahRanges([]);
+        setSelectedRangeId(null);
+        setLoadingRanges(false);
+        return;
+      }
 
       try {
         setLoadingRanges(true);
@@ -373,9 +395,28 @@ const DragDropQuiz = () => {
 
   const handleSurahSelect = () => {
     const selectedSurah = surahs.find((s) => s.number === selectedSurahId);
-    const selectedRange = ayahRanges.find((r) => r.ID === selectedRangeId);
+    
+    if (!selectedSurah) return;
 
-    if (selectedSurah && selectedRange) {
+    // For languages without ayah range support, use full surah range
+    if (!supportsAyahRanges()) {
+      const rangeText = `1-${selectedSurah.ayahs}`;
+      setCurrentSurah({
+        id: selectedSurahId,
+        name: selectedSurah.name,
+        range: rangeText,
+      });
+      setCurrentAyah(1);
+      setShowSurahSelector(false);
+      setDroppedItems({});
+      setScore(0);
+      setCurrentWordPage(0);
+      return;
+    }
+
+    // For languages with ayah range support, require range selection
+    const selectedRange = ayahRanges.find((r) => r.ID === selectedRangeId);
+    if (selectedRange) {
       const rangeText = `${selectedRange.AyaFrom}-${selectedRange.AyaTo}`;
       setCurrentSurah({
         id: selectedSurahId,
@@ -386,7 +427,7 @@ const DragDropQuiz = () => {
       setShowSurahSelector(false);
       setDroppedItems({});
       setScore(0);
-      setCurrentWordPage(0); // Reset to first page
+      setCurrentWordPage(0);
     }
   };
 
@@ -509,47 +550,49 @@ const DragDropQuiz = () => {
                       </select>
                     </div>
 
-                    {/* Ayah Range Selection */}
-                    <div className="mb-4">
-                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Available Ayah Ranges
-                      </label>
-                      {loadingRanges ? (
-                        <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                          <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">
-                            Loading ranges...
-                          </span>
-                        </div>
-                      ) : ayahRanges.length > 0 ? (
-                        <select
-                          value={selectedRangeId || ""}
-                          onChange={(e) =>
-                            setSelectedRangeId(Number(e.target.value))
-                          }
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        >
-                          <option value="">Select a range</option>
-                          {ayahRanges.map((range, index) => (
-                            <option
-                              key={range.ID || index}
-                              value={range.ID || index}
-                            >
-                              Verses {range.AyaFrom}-{range.AyaTo} (
-                              {range.AyaTo - range.AyaFrom + 1} verses)
-                            </option>
-                          ))}
-                        </select>
-                      ) : selectedSurahId ? (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
-                          No ayah ranges available for this surah
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
-                          Please select a surah first
-                        </div>
-                      )}
-                    </div>
+                    {/* Ayah Range Selection - Only show for languages that support it */}
+                    {supportsAyahRanges() && (
+                      <div className="mb-4">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Available Ayah Ranges
+                        </label>
+                        {loadingRanges ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                            <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">
+                              Loading ranges...
+                            </span>
+                          </div>
+                        ) : ayahRanges.length > 0 ? (
+                          <select
+                            value={selectedRangeId || ""}
+                            onChange={(e) =>
+                              setSelectedRangeId(Number(e.target.value))
+                            }
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          >
+                            <option value="">Select a range</option>
+                            {ayahRanges.map((range, index) => (
+                              <option
+                                key={range.ID || index}
+                                value={range.ID || index}
+                              >
+                                Verses {range.AyaFrom}-{range.AyaTo} (
+                                {range.AyaTo - range.AyaFrom + 1} verses)
+                              </option>
+                            ))}
+                          </select>
+                        ) : selectedSurahId ? (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
+                            No ayah ranges available for this surah
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 py-2">
+                            Please select a surah first
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Footer */}
                     <div className="flex justify-end gap-2 pt-2 border-t dark:border-gray-700">
@@ -561,7 +604,7 @@ const DragDropQuiz = () => {
                       </button>
                       <button
                         onClick={handleSurahSelect}
-                        disabled={!selectedSurahId || selectedRangeId === null}
+                        disabled={!selectedSurahId || (supportsAyahRanges() && selectedRangeId === null)}
                         className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: "#2AA0BF" }}
                       >

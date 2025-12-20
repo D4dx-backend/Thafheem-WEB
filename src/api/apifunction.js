@@ -1575,18 +1575,23 @@ export const fetchAyahAudioTranslations = async (suraId, ayahNumber = null) => {
 // Fetch Urdu translation audio URL from API
 export const fetchUrduTranslationAudio = async (surahId, ayahId) => {
   try {
-    const response = await fetch(`${API_BASE_PATH}/urdu/translation-audio/${surahId}/${ayahId}`);
+    const url = `${API_BASE_PATH}/urdu/translation-audio/${surahId}/${ayahId}`;
+    const response = await fetch(url);
     if (!response.ok) {
+      // Log more details for debugging
+      console.error(`[fetchUrduTranslationAudio] HTTP ${response.status} for ${url}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
     // Handle both single object and array response
+    // Single ayah: { "surah": 1, "ayah": 1, "audio_url": "..." }
+    // All ayahs: { "audio": [{ "surah": 1, "ayah": 1, "audio_url": "..." }, ...] }
     if (Array.isArray(data.audio)) {
       return data.audio[0]?.audio_url || null;
     }
     return data.audio_url || null;
   } catch (error) {
-    console.error('Error fetching Urdu translation audio:', error);
+    console.error(`[fetchUrduTranslationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
     return null;
   }
 };
@@ -1594,18 +1599,23 @@ export const fetchUrduTranslationAudio = async (surahId, ayahId) => {
 // Fetch Urdu interpretation audio URL from API
 export const fetchUrduInterpretationAudio = async (surahId, ayahId) => {
   try {
-    const response = await fetch(`${API_BASE_PATH}/urdu/interpretation-audio/${surahId}/${ayahId}`);
+    const url = `${API_BASE_PATH}/urdu/interpretation-audio/${surahId}/${ayahId}`;
+    const response = await fetch(url);
     if (!response.ok) {
+      // Log more details for debugging
+      console.error(`[fetchUrduInterpretationAudio] HTTP ${response.status} for ${url}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
     // Handle both single object and array response
+    // Single ayah: { "surah": 1, "ayah": 1, "audio_url": "..." }
+    // All ayahs: { "audio": [{ "surah": 1, "ayah": 1, "audio_url": "..." }, ...] }
     if (Array.isArray(data.audio)) {
       return data.audio[0]?.audio_url || null;
     }
     return data.audio_url || null;
   } catch (error) {
-    console.error('Error fetching Urdu interpretation audio:', error);
+    console.error(`[fetchUrduInterpretationAudio] Error for surah ${surahId}, ayah ${ayahId}:`, error);
     return null;
   }
 };

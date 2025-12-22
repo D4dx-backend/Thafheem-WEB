@@ -388,37 +388,26 @@ class BanglaTranslationService {
         if (/^[\d১২৩৪৫৬৭৮৯০]+$/.test(explanationNumber)) {
           sup.style.cssText = `
             cursor: pointer !important;
-            background-color: #19B5DD !important;
-            color: #ffffff !important;
+            background-color: transparent !important;
+            color: #19B5DD !important;
             font-weight: 500 !important;
             text-decoration: none !important;
             border: none !important;
-            padding: 4px 8px !important;
-            margin: 0 4px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            display: inline !important;
             font-size: 12px !important;
-            vertical-align: middle !important;
+            vertical-align: super !important;
             line-height: 1 !important;
-            border-radius: 50% !important;
             position: relative !important;
-            top: 0 !important;
-            min-width: 24px !important;
-            min-height: 24px !important;
-            text-align: center !important;
+            top: 3px !important;
             transition: all 0.2s ease-in-out !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
           `;
 
           sup.addEventListener('mouseenter', () => {
-            sup.style.backgroundColor = '#0ea5e9';
-            sup.style.transform = 'scale(1.1)';
+            sup.style.color = '#0ea5e9';
           });
 
           sup.addEventListener('mouseleave', () => {
-            sup.style.backgroundColor = '#19B5DD';
-            sup.style.transform = 'scale(1)';
+            sup.style.color = '#19B5DD';
           });
 
           sup.setAttribute('data-explanation-number', explanationNumber);

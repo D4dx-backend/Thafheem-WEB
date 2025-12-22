@@ -291,15 +291,15 @@ input[type="radio"]:checked::after {
 }
 
 @font-face {
-  font-family: 'SutonnyMJ';
-  src: url('/fonts/SutonnyMJ Regular.ttf') format('truetype');
+  font-family: 'Noto Sans Bengali';
+  src: url('/fonts/Noto_Sans_Bengali/NotoSansBengali-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'Bamini';
-  src: url('/fonts/Bamini.TTF') format('truetype');
+  font-family: 'Noto Sans Tamil';
+  src: url('/fonts/Noto_Sans_Tamil/NotoSansTamil-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -341,11 +341,11 @@ input[type="radio"]:checked::after {
 }
 
 .font-bengali {
-  font-family: 'SutonnyMJ', serif;
+  font-family: 'Noto Sans Bengali', serif;
 }
 
 .font-tamil {
-  font-family: 'Bamini', serif;
+  font-family: 'Noto Sans Tamil', serif;
 }
 
 .font-hindi {

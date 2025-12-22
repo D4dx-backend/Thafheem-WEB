@@ -303,6 +303,12 @@ const Maududi = () => {
     const isBangla = translationLanguage === "bn";
     const isTamil = translationLanguage === "ta";
 
+    // All hooks must be declared before any conditional returns
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const videoRef = useRef(null);
+
     // Redirect to Tamil Sayyid Maududi page when Tamil is selected
     useEffect(() => {
         if (isTamil) {
@@ -335,11 +341,6 @@ const Maududi = () => {
         "The Question of Dress",
         "The Rights of Non-Muslims in Islamic State",
     ];
-
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const videoRef = useRef(null);
 
     // Format time from seconds to MM:SS
     const formatTime = (seconds) => {

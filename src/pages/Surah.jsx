@@ -1270,12 +1270,10 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
     const style = document.createElement('style');
     style.textContent = `
       .hindi-footnote-link:hover {
-        background-color: #0891b2 !important;
-        transform: scale(1.05) !important;
+        color: #0891b2 !important;
       }
       .hindi-footnote-link:active {
-        background-color: #0e7490 !important;
-        transform: scale(0.95) !important;
+        color: #0e7490 !important;
       }
     `;
     document.head.appendChild(style);
@@ -2332,7 +2330,11 @@ Read more: ${shareUrl}`;
                               className="font-poppins leading-relaxed"
                               style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               data-footnote-context="ayahwise"
-                              dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                              dangerouslySetInnerHTML={{ 
+                                __html: viewType === 'Ayah Wise' && translationLanguage === 'E'
+                                  ? (verse.Translation || '').replace(/<sup[^>]*>.*?<\/sup>/gi, '').replace(/<span[^>]*class="english-footnote-link"[^>]*>.*?<\/span>/gi, '')
+                                  : verse.Translation 
+                              }}
                             />
                           )}
                         </div>

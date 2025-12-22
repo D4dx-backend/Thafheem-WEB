@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
 
 @import "tailwindcss";
 
@@ -235,13 +234,13 @@ input[type="radio"]:checked::after {
 /* Font Faces */
 @font-face {
   font-family: 'ScheherazadeNew-Regular';
-  src: url('/public/fonts/ScheherazadeNew-Regular.ttf') format('truetype');
+  src: url('/fonts/ScheherazadeNew-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'NotoSansMalayalam';
+  font-family: 'Noto Sans Malayalam';
   src: url('/fonts/NotoSansMalayalam-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
@@ -251,6 +250,43 @@ input[type="radio"]:checked::after {
   font-family: 'JameelNoori';
   src: url('/fonts/JameelNooriNastaleeq.ttf') format('truetype');
   font-weight: normal;
+  font-style: normal;
+}
+
+/* Noto Nastaliq Urdu - Variable Font */
+@font-face {
+  font-family: 'Noto Nastaliq Urdu';
+  src: url('/fonts/Noto_Nastaliq_Urdu/NotoNastaliqUrdu-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+/* Noto Nastaliq Urdu - Static Fonts (fallbacks) */
+@font-face {
+  font-family: 'Noto Nastaliq Urdu';
+  src: url('/fonts/Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Nastaliq Urdu';
+  src: url('/fonts/Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Nastaliq Urdu';
+  src: url('/fonts/Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Nastaliq Urdu';
+  src: url('/fonts/Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Bold.ttf') format('truetype');
+  font-weight: 700;
   font-style: normal;
 }
 
@@ -291,7 +327,7 @@ input[type="radio"]:checked::after {
 
 /* Language-specific font classes */
 .font-malayalam {
-  font-family: 'NotoSansMalayalam', sans-serif;
+  font-family: 'Noto Sans Malayalam', sans-serif;
 }
 
 .font-urdu {

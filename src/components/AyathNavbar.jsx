@@ -368,9 +368,11 @@ const AyathNavbar = ({
                     <span 
                       className={
                         translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
-                        translationLanguage === 'mal' ? 'font-malayalam' : ''
+                        translationLanguage === 'mal' ? 'font-malayalam' : 
+                        translationLanguage === 'hi' ? 'font-hindi' : 
+                        translationLanguage === 'bn' ? 'font-bengali' : 
+                        translationLanguage === 'ta' ? 'font-tamil' : ''
                       }
-                      style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
                     >
                       {surah.number} - {surah.name}
                     </span>

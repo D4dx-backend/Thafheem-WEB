@@ -242,7 +242,11 @@ const NavigateSurah = ({ onClose, onSurahSelect }) => {
                   >
                     <div className="flex items-center">
                       <span className={`flex-1 min-w-0 pr-2 ${
-                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : ''
+                        translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
+                        translationLanguage === 'mal' ? 'font-malayalam' : 
+                        translationLanguage === 'hi' ? 'font-hindi' : 
+                        translationLanguage === 'bn' ? 'font-bengali' : 
+                        translationLanguage === 'ta' ? 'font-tamil' : ''
                       }`}>{surah.english || surah.name}</span>
                       {surahIcon && (
                         <span className="flex items-center justify-center w-5 h-5 flex-shrink-0 self-center">

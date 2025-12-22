@@ -775,9 +775,11 @@ const Transition = ({ showPageInfo = false }) => {
                   <span 
                     className={`font-medium text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none ${
                       translationLanguage === 'ur' ? 'font-urdu-nastaliq' : 
-                      translationLanguage === 'mal' ? 'font-malayalam' : ''
+                      translationLanguage === 'mal' ? 'font-malayalam' : 
+                      translationLanguage === 'hi' ? 'font-hindi' : 
+                      translationLanguage === 'bn' ? 'font-bengali' : 
+                      translationLanguage === 'ta' ? 'font-tamil' : ''
                     }`}
-                    style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
                   >
                     {surahNamesLoading || surahNames.length === 0 ? '...' : selectedSurah.name}
                   </span>

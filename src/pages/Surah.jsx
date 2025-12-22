@@ -2229,17 +2229,27 @@ Read more: ${shareUrl}`;
             </div>
           ) : !loading && ayahData.length > 0 ? (
             <>
-              {ayahData.map((verse, index) => {
-                const arabicVerse = arabicVerses[index];
-                const arabicText = arabicVerse?.text_uthmani || "";
-                const fallbackArabicVerse = arabicVerses.find(
-                  (av) => av.verse_key === `${surahId}:${index + 1}`
-                );
-                const finalArabicText = arabicText || fallbackArabicVerse?.text_uthmani || "";
-                const sanitizedArabicText = stripArabicVerseMarker(finalArabicText);
-                const displayArabicText = sanitizedArabicText || finalArabicText;
-                const isCurrentAyah = playingAyah === index + 1;
-                const isPlaying = isCurrentAyah && isSequencePlaying;
+              {(() => {
+                // Create efficient lookup map for Arabic verses by verse_number
+                const arabicVerseMap = new Map();
+                arabicVerses.forEach(av => {
+                  if (av?.verse_number != null) {
+                    arabicVerseMap.set(av.verse_number, av);
+                  }
+                  if (av?.verse_key) {
+                    arabicVerseMap.set(av.verse_key, av);
+                  }
+                });
+                return ayahData.map((verse, index) => {
+                  const verseNumber = verse.number || index + 1;
+                  const verseKey = `${surahId}:${verseNumber}`;
+                  const arabicVerse = arabicVerseMap.get(verseNumber) || arabicVerseMap.get(verseKey) || arabicVerses[index];
+                  const arabicText = arabicVerse?.text_uthmani || "";
+                  const finalArabicText = arabicText;
+                  const sanitizedArabicText = stripArabicVerseMarker(arabicText);
+                  const displayArabicText = sanitizedArabicText || arabicText;
+                  const isCurrentAyah = playingAyah === verseNumber;
+                  const isPlaying = isCurrentAyah && isSequencePlaying;
 
                 // Card Styling
                 const cardClasses = `
@@ -2251,10 +2261,10 @@ Read more: ${shareUrl}`;
                   `;
 
                 return (
-                  <div key={index} id={`verse-${index + 1}`} className={cardClasses}>
+                  <div key={index} id={`verse-${verseNumber}`} className={cardClasses}>
                     {/* Verse Number Badge */}
                     <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-br-xl border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10">
-                      {surahId}:{index + 1}
+                      {surahId}:{verseNumber}
                     </div>
 
                     <div className="p-4 sm:p-6 lg:p-8">
@@ -2269,7 +2279,7 @@ Read more: ${shareUrl}`;
                         >
                           {displayArabicText}{" "}
                           <span className="inline-block mx-1 text-gray-400 dark:text-gray-500 font-arabic text-[0.8em]">
-                            ﴿{toArabicNumber(arabicVerse?.verse_number || index + 1)}﴾
+                            ﴿{toArabicNumber(arabicVerse?.verse_number || verseNumber)}﴾
                           </span>
                         </p>
                       </div>
@@ -2281,14 +2291,14 @@ Read more: ${shareUrl}`;
                             <div
                               data-hindi-translation={verse.Translation}
                               data-surah={surahId}
-                              data-ayah={verse.number || index + 1}
+                              data-ayah={verseNumber}
                               className="font-hindi leading-relaxed"
                               style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               dangerouslySetInnerHTML={{ 
                                 __html: hindiTranslationService.parseHindiTranslationWithClickableExplanations(
                                   verse.Translation || '',
                                   parseInt(surahId),
-                                  verse.number || index + 1
+                                  verseNumber
                                 )
                               }}
                             />
@@ -2334,7 +2344,7 @@ Read more: ${shareUrl}`;
 
                           {/* Play Button */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleAyahPlayPause(index + 1); }}
+                            onClick={(e) => { e.stopPropagation(); handleAyahPlayPause(verseNumber); }}
                             className={`icon-btn ${isPlaying ? 'text-primary bg-primary/10' : ''}`}
                             title={isPlaying ? "Pause" : "Play"}
                           >
@@ -2352,7 +2362,7 @@ Read more: ${shareUrl}`;
                           {/* Interpretation */}
                           {translationLanguage !== 'ta' && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleInterpretationClick(index + 1); }}
+                              onClick={(e) => { e.stopPropagation(); handleInterpretationClick(verseNumber); }}
                               className="icon-btn group"
                               title="Interpretation"
                             >
@@ -2362,7 +2372,7 @@ Read more: ${shareUrl}`;
 
                           {/* Word by Word */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleWordByWordClick(index + 1, e); }}
+                            onClick={(e) => { e.stopPropagation(); handleWordByWordClick(verseNumber, e); }}
                             className="icon-btn group"
                             title="Word by Word"
                           >
@@ -2374,7 +2384,7 @@ Read more: ${shareUrl}`;
                         <div className="flex items-center gap-1 sm:gap-2">
                           {/* Copy */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleCopyVerse(finalArabicText, verse.Translation, index + 1); }}
+                            onClick={(e) => { e.stopPropagation(); handleCopyVerse(finalArabicText, verse.Translation, verseNumber); }}
                             className="icon-btn"
                             title="Copy"
                           >
@@ -2388,20 +2398,20 @@ Read more: ${shareUrl}`;
                           {/* Bookmark */}
                           <button
                             onClick={(e) => handleBookmarkClick(e, index, finalArabicText, verse.Translation)}
-                            disabled={bookmarkLoading[`${surahId}:${index + 1}`]}
-                            className={`icon-btn ${bookmarkedVerses.has(`${surahId}:${index + 1}`) ? 'text-accent' : ''}`}
+                            disabled={bookmarkLoading[`${surahId}:${verseNumber}`]}
+                            className={`icon-btn ${bookmarkedVerses.has(`${surahId}:${verseNumber}`) ? 'text-accent' : ''}`}
                             title="Bookmark"
                           >
-                            {bookmarkLoading[`${surahId}:${index + 1}`] ? (
+                            {bookmarkLoading[`${surahId}:${verseNumber}`] ? (
                               <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
                             ) : (
-                              <Bookmark className={`w-5 h-5 ${bookmarkedVerses.has(`${surahId}:${index + 1}`) ? 'fill-current' : ''}`} />
+                              <Bookmark className={`w-5 h-5 ${bookmarkedVerses.has(`${surahId}:${verseNumber}`) ? 'fill-current' : ''}`} />
                             )}
                           </button>
 
                           {/* Share */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleShareVerse(finalArabicText, verse.Translation, index + 1); }}
+                            onClick={(e) => { e.stopPropagation(); handleShareVerse(finalArabicText, verse.Translation, verseNumber); }}
                             className="icon-btn"
                             title="Share"
                           >
@@ -2412,7 +2422,8 @@ Read more: ${shareUrl}`;
                     </div>
                   </div>
                 );
-              })}
+                });
+              })()}
 
               {/* Paginated translation indicator */}
               {PAGINATED_TRANSLATION_LANGUAGES.has(translationLanguage) &&

@@ -1,6 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const TamilAuthorConclusion = () => {
+  const { translationLanguage } = useTheme();
+  const navigate = useNavigate();
+  const isTamil = translationLanguage === "ta";
+
+  // Redirect to main Author Conclusion page when language is not Tamil
+  useEffect(() => {
+    if (!isTamil) {
+      navigate("/authorconclusion", { replace: true });
+    }
+  }, [isTamil, navigate]);
+
+  // Return null while redirecting
+  if (!isTamil) {
+    return null;
+  }
   // Tamil Author Conclusion content
   const tamilContent = `**ஆசிரியரின் முடிவுரை Author's Conclusion**
 

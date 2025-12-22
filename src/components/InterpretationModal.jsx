@@ -345,30 +345,20 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           .urdu-interpretation-content sup[data-interpretation],
           .urdu-interpretation-content sup.urdu-footnote-link,
           .urdu-interpretation-content sup[data-footnote-id] {
-            margin-right: 4px !important;
-            margin-left: -1px !important;
-            margin-top: -15px !important;
             cursor: pointer !important;
-            background-color: rgb(41, 169, 199) !important;
-            color: rgb(255, 255, 255) !important;
+            background-color: transparent !important;
+            color: rgb(41, 169, 199) !important;
             font-weight: 600 !important;
             text-decoration: none !important;
             border: none !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            display: inline !important;
             font-size: 12px !important;
-            vertical-align: middle !important;
+            vertical-align: super !important;
             line-height: 1 !important;
-            border-radius: 9999px !important;
             position: relative !important;
+            top: 3px !important;
             z-index: 10 !important;
-            top: 0px !important;
-            min-width: 20px !important;
-            min-height: 19px !important;
-            text-align: center !important;
             transition: 0.2s ease-in-out !important;
-            padding: 0 !important;
           }
           .urdu-interpretation-content sup.interpretation-link > a,
           .urdu-interpretation-content sup[data-interpretation] > a,
@@ -394,15 +384,13 @@ const InterpretationModal = ({ surahId, verseId, interpretationNo, language, onC
           .urdu-interpretation-content sup[data-interpretation]:hover,
           .urdu-interpretation-content sup.urdu-footnote-link:hover,
           .urdu-interpretation-content sup[data-footnote-id]:hover {
-            background-color: #0891b2 !important;
-            transform: scale(1.05) !important;
+            color: #0891b2 !important;
           }
           .urdu-interpretation-content sup.interpretation-link:active,
           .urdu-interpretation-content sup[data-interpretation]:active,
           .urdu-interpretation-content sup.urdu-footnote-link:active,
           .urdu-interpretation-content sup[data-footnote-id]:active {
-            background-color: #0e7490 !important;
-            transform: scale(0.95) !important;
+            color: #0e7490 !important;
           }
         `}</style>
       )}

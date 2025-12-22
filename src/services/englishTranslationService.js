@@ -393,24 +393,17 @@ class EnglishTranslationService {
 
     const FOOTNOTE_BADGE_STYLES = `
       cursor: pointer !important;
-      background-color: #19B5DD !important;
-      color: #ffffff !important;
+      background-color: transparent !important;
+      color: #19B5DD !important;
       font-weight: 600 !important;
       text-decoration: none !important;
       border: none !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      display: inline !important;
       font-size: 11px !important;
       line-height: 1 !important;
-      border-radius: 9999px !important;
-      min-width: 18px !important;
-      min-height: 18px !important;
-      text-align: center !important;
+      position: relative !important;
+      top: 0px !important;
       transition: all 0.2s ease-in-out !important;
-      padding-left: 4px !important;
-      padding-right: 4px !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     `;
 
     const decorateFootnote = (supEl, number, attrs = {}) => {

@@ -692,33 +692,21 @@ const BlockWise = () => {
     supTags.forEach((sup) => {
       const number = sup.textContent.trim();
       if (/^\d+$/.test(number)) {
-        // Style as rounded badge with cyan background
+        // Style as cyan blue text without background circle
         sup.style.cssText = `
           cursor: pointer !important;
-          background-color: rgb(41 169 199) !important;
-          color: rgb(255, 255, 255) !important;
+          background-color: transparent !important;
+          color: rgb(41, 169, 199) !important;
           font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+          display: inline !important;
           font-size: 12px !important;
-          vertical-align: middle !important;
+          vertical-align: super !important;
           line-height: 1 !important;
-          border-radius: 9999px !important;
           position: relative !important;
-          top: 0px !important;
-          min-width: 20px !important;
-          min-height: 19px !important;
-          text-align: center !important;
+          top: 3px !important;
           transition: 0.2s ease-in-out !important;
-          padding-top: 3px !important;
-          margin-right: 4px;
-          margin-left: -1px;
-          margin-top: -15px;
-          padding-left: 2px !important;
-          padding-right: 2px !important;
         `;
         sup.setAttribute("data-interpretation", number);
         sup.setAttribute("data-range", blockRange);
@@ -775,12 +763,10 @@ const BlockWise = () => {
         text-decoration: none !important;
       }
       .interpretation-link:hover {
-        background-color: #0891b2 !important;
-        transform: scale(1.05) !important;
+        color: #0891b2 !important;
       }
       .interpretation-link:active {
-        background-color: #0e7490 !important;
-        transform: scale(0.95) !important;
+        color: #0e7490 !important;
       }
     `;
     document.head.appendChild(style);

@@ -1,6 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const TamilAuthorPreface = () => {
+  const { translationLanguage } = useTheme();
+  const navigate = useNavigate();
+  const isTamil = translationLanguage === "ta";
+
+  // Redirect to main Author Preface page when language is not Tamil
+  useEffect(() => {
+    if (!isTamil) {
+      navigate("/authorpreface", { replace: true });
+    }
+  }, [isTamil, navigate]);
+
+  // Return null while redirecting
+  if (!isTamil) {
+    return null;
+  }
   // Tamil Author Preface content
   const tamilContent = `**ஆசிரியரின் முன்னுரை Author's Preface**
 

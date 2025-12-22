@@ -1,7 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import maududiImage from "../assets/maududi.png";
 
 const TamilSayyidMaududi = () => {
+  const { translationLanguage } = useTheme();
+  const navigate = useNavigate();
+  const isTamil = translationLanguage === "ta";
+
+  // Redirect to main Maududi page when language is not Tamil
+  useEffect(() => {
+    if (!isTamil) {
+      navigate("/maududi", { replace: true });
+    }
+  }, [isTamil, navigate]);
+
+  // Return null while redirecting
+  if (!isTamil) {
+    return null;
+  }
   // Content sections based on the provided Tamil text
   const contentSections = [
     {

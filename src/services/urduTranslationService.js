@@ -414,29 +414,19 @@ class UrduTranslationService {
         const displayNumber = Number.isFinite(sequentialNumber) ? sequentialNumber : fallbackNumber;
         element.style.cssText = `
           cursor: pointer !important;
-          background-color: rgb(41, 169, 199) !important;
-          color: rgb(255, 255, 255) !important;
+          background-color: transparent !important;
+          color: rgb(41, 169, 199) !important;
           font-weight: 600 !important;
           text-decoration: none !important;
           border: none !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+          display: inline !important;
           font-size: 12px !important;
-          vertical-align: middle !important;
+          vertical-align: super !important;
           line-height: 1 !important;
-          border-radius: 9999px !important;
           position: relative !important;
+          top: 3px !important;
           z-index: 10 !important;
-          top: 0px !important;
-          min-width: 20px !important;
-          min-height: 19px !important;
-          text-align: center !important;
           transition: 0.2s ease-in-out !important;
-          padding: 0 !important;
-          margin-right: 4px;
-          margin-left: -1px;
-          margin-top: -15px;
         `;
 
         element.setAttribute('data-footnote-id', footnoteId);

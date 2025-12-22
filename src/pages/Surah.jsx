@@ -1270,12 +1270,10 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
     const style = document.createElement('style');
     style.textContent = `
       .hindi-footnote-link:hover {
-        background-color: #0891b2 !important;
-        transform: scale(1.05) !important;
+        color: #0891b2 !important;
       }
       .hindi-footnote-link:active {
-        background-color: #0e7490 !important;
-        transform: scale(0.95) !important;
+        color: #0e7490 !important;
       }
     `;
     document.head.appendChild(style);
@@ -1698,17 +1696,18 @@ Read more: ${shareUrl}`;
 
   // Play audio types for an ayah in sequence, then move to next ayah
   // This version accepts audioTypes as parameter to avoid closure issues
-  const playAyahSequenceWithTypes = async (ayahNumber, audioTypeIndex = 0, typesToPlay = null) => {
+  const playAyahSequenceWithTypes = async (ayahNumber, audioTypeIndex = 0, typesToPlay = null, qariToUse = null) => {
     if (!surahId) return;
 
     // Use provided types or fall back to state
     const activeAudioTypes = typesToPlay || audioTypes;
+    const activeQari = qariToUse || selectedQari;
     const totalAyahs = ayahData?.length || 0;
 
     // If all audio types for this ayah have been played, move to next ayah
     if (audioTypeIndex >= activeAudioTypes.length) {
       if (ayahNumber < totalAyahs) {
-        playAyahSequenceWithTypes(ayahNumber + 1, 0, typesToPlay);
+        playAyahSequenceWithTypes(ayahNumber + 1, 0, typesToPlay, qariToUse);
       } else {
         setIsSequencePlaying(false);
         setPlayingAyah(null);
@@ -1747,7 +1746,7 @@ Read more: ${shareUrl}`;
         ayahNumber,
         surahNumber: parseInt(surahId),
         audioType: mappedAudioType,
-        qariName: selectedQari,
+        qariName: activeQari,
         playbackSpeed: playbackSpeed,
         translationLanguage: translationLanguage,
         onStart: () => {
@@ -1759,7 +1758,7 @@ Read more: ${shareUrl}`;
         },
         onEnd: () => {
           // Play next audio type for this ayah, or move to next ayah if all types done
-          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay, qariToUse);
         },
         onError: () => {
           // If audio fails, skip to next audio type or next ayah
@@ -1768,7 +1767,7 @@ Read more: ${shareUrl}`;
             setIsSequencePlaying(false);
             setPlayingAyah(null);
             window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
-            playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+            playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay, qariToUse);
           }, 100);
         },
       });
@@ -1793,7 +1792,7 @@ Read more: ${shareUrl}`;
           setIsSequencePlaying(false);
           setPlayingAyah(null);
           window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
-          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+          playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay, qariToUse);
         }, 100);
       }
     } catch (error) {
@@ -1803,14 +1802,14 @@ Read more: ${shareUrl}`;
         setIsSequencePlaying(false);
         setPlayingAyah(null);
         window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
-        playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay);
+        playAyahSequenceWithTypes(ayahNumber, audioTypeIndex + 1, typesToPlay, qariToUse);
       }, 100);
     }
   };
 
   // Wrapper function that uses state audioTypes (for backwards compatibility)
-  const playAyahSequence = async (ayahNumber, audioTypeIndex = 0) => {
-    await playAyahSequenceWithTypes(ayahNumber, audioTypeIndex, null);
+  const playAyahSequence = async (ayahNumber, audioTypeIndex = 0, qariToUse = null) => {
+    await playAyahSequenceWithTypes(ayahNumber, audioTypeIndex, null, qariToUse);
   };
 
 
@@ -2332,7 +2331,11 @@ Read more: ${shareUrl}`;
                               className="font-poppins leading-relaxed"
                               style={{ fontSize: `${adjustedTranslationFontSize}px` }}
                               data-footnote-context="ayahwise"
-                              dangerouslySetInnerHTML={{ __html: verse.Translation }}
+                              dangerouslySetInnerHTML={{ 
+                                __html: viewType === 'Ayah Wise' && translationLanguage === 'E'
+                                  ? (verse.Translation || '').replace(/<sup[^>]*>.*?<\/sup>/gi, '').replace(/<span[^>]*class="english-footnote-link"[^>]*>.*?<\/span>/gi, '')
+                                  : verse.Translation 
+                              }}
                             />
                           )}
                         </div>
@@ -2802,7 +2805,7 @@ Read more: ${shareUrl}`;
                 stopCurrentAudio();
                 setIsSequencePlaying(false);
                 setTimeout(() => {
-                  playAyahSequence(playingAyah, 0);
+                  playAyahSequence(playingAyah, 0, newQari);
                 }, 50);
               }
             }}

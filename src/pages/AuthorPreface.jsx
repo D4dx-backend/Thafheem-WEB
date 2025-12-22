@@ -147,6 +147,11 @@ const AuthorPreface = () => {
   const isBangla = translationLanguage === 'bn';
   const isTamil = translationLanguage === 'ta';
 
+  // All hooks must be declared before any conditional returns
+  // Audio player state for Malayalam
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
   // Redirect to Tamil Author Preface page when Tamil is selected
   useEffect(() => {
     if (isTamil) {
@@ -158,10 +163,6 @@ const AuthorPreface = () => {
   if (isTamil) {
     return null;
   }
-
-  // Audio player state for Malayalam
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(null);
 
   const handlePlayPause = () => {
     if (audioRef.current) {

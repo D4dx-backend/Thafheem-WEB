@@ -143,12 +143,12 @@ const Appendix = () => {
       {isMalayalam && (
         <style>{`
           .malayalam-appendix-content {
-            font-family: 'NotoSansMalayalam' !important;
+            font-family: 'Noto Sans Malayalam' !important;
           }
           .malayalam-appendix-content p {
             text-align: justify !important;
             margin-bottom: 2em !important;
-            font-family: 'NotoSansMalayalam';
+            font-family: 'Noto Sans Malayalam';
             font-size: 16px;
             line-height: 1.7;
           }
@@ -234,7 +234,7 @@ const Appendix = () => {
                   <h3 
                     className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 ${isBangla ? 'font-bengali' : ''} ${isUrdu ? 'font-urdu-nastaliq' : ''} ${isMalayalam ? 'font-malayalam' : ''} ${isTamil ? 'font-tamil' : ''}`}
                     dangerouslySetInnerHTML={{ __html: fixQuestionMarkPosition(section.title) }}
-                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : isTamil ? { fontFamily: "'Bamini', serif", textAlign: 'justify' } : {}}
+                    style={isUrdu ? { textAlign: 'right', fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif" } : isMalayalam ? { fontFamily: "'Noto Sans Malayalam'" } : isTamil ? { fontFamily: "'Bamini', serif", textAlign: 'justify' } : {}}
                   />
                 )}
                 <div
@@ -249,7 +249,7 @@ const Appendix = () => {
                     textAlign: 'justify',
                     fontFamily: "'Poppins', sans-serif"
                   } : isMalayalam ? {
-                    fontFamily: "'NotoSansMalayalam'"
+                    fontFamily: "'Noto Sans Malayalam'"
                   } : isBangla ? {
                     textAlign: 'justify',
                     fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif"

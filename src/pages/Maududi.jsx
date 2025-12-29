@@ -392,7 +392,7 @@ const Maududi = () => {
                 <style>{`
                     .malayalam-maududi-content {
                         text-align: justify !important;
-                        font-family: 'NotoSansMalayalam' !important;
+                        font-family: 'Noto Sans Malayalam' !important;
                     }
                     /* Target all paragraphs with maximum specificity */
                     .malayalam-maududi-content p,
@@ -415,7 +415,7 @@ const Maududi = () => {
                     .malayalam-maududi-content.prose.prose-base p {
                         text-align: justify !important;
                         margin-bottom: 2em !important;
-                        font-family: 'NotoSansMalayalam' !important;
+                        font-family: 'Noto Sans Malayalam' !important;
                         font-size: 16px !important;
                         line-height: 1.7 !important;
                     }
@@ -443,7 +443,7 @@ const Maududi = () => {
                             <div
                                 className="malayalam-maududi-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100 font-malayalam leading-7"
                                 style={{
-                                    fontFamily: "'NotoSansMalayalam'"
+                                    fontFamily: "'Noto Sans Malayalam'"
                                 }}
                                 dangerouslySetInnerHTML={{ __html: MALAYALAM_CONTENT }}
                             />
@@ -545,7 +545,7 @@ const Maududi = () => {
                             <div
                                 className="hindi-maududi-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
                                 style={{
-                                    fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif"
+                                    fontFamily: "'NotoSansDevanagari', 'Poppins', sans-serif"
                                 }}
                                 dangerouslySetInnerHTML={{ __html: HINDI_CONTENT.replace(/\n/g, '<br />') }}
                             />

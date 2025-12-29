@@ -104,7 +104,7 @@ const Note = () => {
                 translationLanguage === 'ur' ? 'JameelNoori, sans-serif' :
                   translationLanguage === 'bn' ? 'SutonnyMJ, sans-serif' :
                     translationLanguage === 'ta' ? 'Bamini, sans-serif' :
-                      translationLanguage === 'mal' ? 'NotoSansMalayalam, sans-serif' :
+                      translationLanguage === 'mal' ? 'Noto Sans Malayalam, sans-serif' :
                         'Poppins, sans-serif',
             }}
           />

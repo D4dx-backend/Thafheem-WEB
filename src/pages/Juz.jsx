@@ -354,11 +354,14 @@ navigate(targetUrl);
                       <div className="flex-1 min-w-0">
                         <h3 
                           className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-1 ${
-                            translationLanguage === 'ur' ? 'font-urdu-nastaliq' : ''
+                            translationLanguage === 'ur' ? 'font-urdu-nastaliq' :
+                            translationLanguage === 'mal' ? 'font-malayalam' : ''
                           }`}
                           dir={translationLanguage === 'ur' ? 'ltr' : undefined}
                           style={
-                            translationLanguage === 'ur'
+                            translationLanguage === 'mal'
+                              ? { fontFamily: "'Noto Sans Malayalam'" }
+                              : translationLanguage === 'ur'
                               ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
                               : {}
                           }
@@ -456,7 +459,7 @@ navigate(targetUrl);
                                     dir={translationLanguage === 'ur' ? 'ltr' : undefined}
                                     style={
                                       translationLanguage === 'mal'
-                                        ? { fontFamily: "'NotoSansMalayalam'" }
+                                        ? { fontFamily: "'Noto Sans Malayalam', 'Noto Sans', sans-serif'" }
                                         : translationLanguage === 'ur'
                                         ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
                                         : {}

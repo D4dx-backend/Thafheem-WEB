@@ -69,7 +69,7 @@ const SurahSelector = ({ isOpen, onClose, onSelect, currentSurahId }) => {
               translationLanguage === 'ur' && showRanges ? 'font-urdu-nastaliq' : 
               translationLanguage === 'mal' ? 'font-malayalam' : ''
             }`}
-            style={translationLanguage === 'mal' ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+            style={translationLanguage === 'mal' ? { fontFamily: "'Noto Sans Malayalam'" } : {}}
           >
             {showRanges ? `${selectedSurah?.name} - Verse Ranges` : "Select Surah"}
           </h2>

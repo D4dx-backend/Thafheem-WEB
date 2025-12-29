@@ -98,7 +98,7 @@ const MediaPopup = ({ isOpen, onClose, mediaId }) => {
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white" style={{ fontFamily: "'NotoSansMalayalam'" }}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white" style={{ fontFamily: "'Noto Sans Malayalam'" }}>
               {mediaData?.mediasubject || 'Media'}
             </h3>
             <button

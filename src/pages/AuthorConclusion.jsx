@@ -143,7 +143,7 @@ const AuthorConclusion = () => {
       <div className="sm:max-w-[1070px] max-w-[350px] w-full mx-auto font-poppins">
         {isMalayalam ? (
           <div className="flex items-center justify-between mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">
-            <h2 className="text-2xl font-bold dark:text-white font-malayalam" style={{ fontFamily: "'NotoSansMalayalam'" }}>
+            <h2 className="text-2xl font-bold dark:text-white font-malayalam" style={{ fontFamily: "'Noto Sans Malayalam'" }}>
               രചയിതാവിന്റെ ഉപസംഹാരം
             </h2>
             <div className="relative group">
@@ -243,7 +243,7 @@ const AuthorConclusion = () => {
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 sm:p-8 md:p-10 lg:p-12">
               <div
                 className="hindi-conclusion-content prose max-w-none prose-sm sm:prose-base dark:prose-invert text-gray-800 dark:text-gray-100"
-                style={{ fontFamily: "'Noto Sans Devanagari', 'Poppins', sans-serif" }}
+                style={{ fontFamily: "'NotoSansDevanagari', 'Poppins', sans-serif" }}
                 dangerouslySetInnerHTML={{ __html: HINDI_CONCLUSION_CONTENT }}
               />
             </div>
@@ -331,7 +331,7 @@ const AuthorConclusion = () => {
                 text-justify: inter-word !important;
                 word-spacing: normal !important;
                 letter-spacing: normal !important;
-                font-family: 'NotoSansMalayalam' !important;
+                font-family: 'Noto Sans Malayalam' !important;
               }
               .malayalam-conclusion-content p {
                 text-align: justify !important;
@@ -345,7 +345,7 @@ const AuthorConclusion = () => {
                 white-space: normal !important;
                 orphans: 2 !important;
                 widows: 2 !important;
-                font-family: 'NotoSansMalayalam' !important;
+                font-family: 'Noto Sans Malayalam' !important;
               }
               .malayalam-conclusion-content p:last-child {
                 margin-bottom: 0 !important;
@@ -361,7 +361,7 @@ const AuthorConclusion = () => {
               <div
                 className="malayalam-conclusion-content prose prose-base dark:prose-invert max-w-none leading-7 font-malayalam text-gray-800 dark:text-gray-100"
                 style={{
-                  fontFamily: "'NotoSansMalayalam'"
+                  fontFamily: "'Noto Sans Malayalam'"
                 }}
                 dangerouslySetInnerHTML={{ __html: MALAYALAM_CONCLUSION_CONTENT }}
               />

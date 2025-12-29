@@ -127,7 +127,7 @@ const MalayalamFinalityOfProphethood = () => {
         <div className="mb-6">
           <h1
             className={`text-3xl font-bold text-gray-900 mb-2 dark:text-white ${isMalayalam ? 'font-malayalam' : ''}`}
-            style={isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+            style={isMalayalam ? { fontFamily: "'Noto Sans Malayalam'" } : {}}
           >
             {isMalayalam ? 'പ്രവാചകത്വത്തിന്റെ അന്ത്യം' : 'The Finality of Prophethood'}
           </h1>
@@ -170,7 +170,7 @@ const MalayalamFinalityOfProphethood = () => {
                     className={`mb-4 prose prose-lg dark:prose-invert max-w-none ${
                       isMalayalam ? 'font-malayalam' : ''
                     }`}
-                    style={isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}}
+                    style={isMalayalam ? { fontFamily: "'Noto Sans Malayalam'" } : {}}
                     dangerouslySetInnerHTML={{ __html: processNotes(section.title) }}
                   />
                 )}
@@ -182,7 +182,7 @@ const MalayalamFinalityOfProphethood = () => {
                   style={{
                     lineHeight: 1.8,
                     textAlign: 'justify',
-                    ...(isMalayalam ? { fontFamily: "'NotoSansMalayalam'" } : {}),
+                    ...(isMalayalam ? { fontFamily: "'Noto Sans Malayalam'" } : {}),
                   }}
                 />
               </section>

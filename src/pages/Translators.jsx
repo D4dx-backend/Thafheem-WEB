@@ -625,7 +625,7 @@ const Translators = () => {
                       color: #1f2937 !important;
                       margin-bottom: 1rem !important;
                       text-align: left !important;
-                      font-family: 'NotoSansMalayalam', sans-serif !important;
+                      font-family: 'Noto Sans Malayalam', sans-serif !important;
                       line-height: 1.5 !important;
                       padding: 0.5rem 0 !important;
                     }

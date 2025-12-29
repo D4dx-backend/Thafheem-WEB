@@ -53,7 +53,7 @@ const getExampleTextByLanguage = (languageName) => {
 // Helper function to get font family for each language
 const getFontFamilyByLanguage = (languageName) => {
   const fontFamilies = {
-    'Malayalam': 'NotoSansMalayalam, sans-serif',
+    'Malayalam': 'Noto Sans Malayalam, sans-serif',
     'English': 'Poppins, sans-serif',
     'Hindi': 'NotoSansDevanagari, sans-serif',
     'Bangla': 'SutonnyMJ, serif',

@@ -200,7 +200,7 @@ const Home = () => {
                         dir={translationLanguage === 'ur' ? 'ltr' : undefined}
                         style={
                           translationLanguage === 'mal' 
-                            ? { fontFamily: "'NotoSansMalayalam'" } 
+                            ? { fontFamily: "'Noto Sans Malayalam'" } 
                             : translationLanguage === 'ur'
                             ? { fontFamily: "'Noto Nastaliq Urdu', 'JameelNoori', serif", lineHeight: '2.2', direction: 'ltr', textAlign: 'left' }
                             : {}

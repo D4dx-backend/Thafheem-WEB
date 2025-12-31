@@ -481,6 +481,15 @@ class EnglishTranslationService {
 
     try {
       const response = await apiService.getInterpretation('english', surahNo, ayahNo, interpretationNo);
+      
+      // Handle new API format: single object with interpretation field
+      if (response?.interpretation) {
+        const content = response.interpretation || '';
+        this.setCachedData(cacheKey, content);
+        return content;
+      }
+      
+      // Handle old format: explanations array
       const explanations = response?.explanations || [];
       const explanation =
         explanations.find((exp) => {

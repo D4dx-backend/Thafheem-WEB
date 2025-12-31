@@ -81,8 +81,12 @@ class ApiService {
 
   // Get interpretation/explanation for specific ayah
   async getInterpretation(language, surah, ayah, explanationNo = null) {
-    const params = explanationNo ? { explanationNo } : {};
-    return this.makeRequest(`/${language}/interpretation/${surah}/${ayah}`, params);
+    // For English blockwise: use /api/english/interpretation/{surahId}/{explanationNo}
+    const endpoint = (language === 'english' && explanationNo)
+      ? `/${language}/interpretation/${surah}/${explanationNo}`
+      : `/${language}/interpretation/${surah}/${ayah}`;
+    const params = (language === 'english' && explanationNo) ? {} : (explanationNo ? { explanationNo } : {});
+    return this.makeRequest(endpoint, params);
   }
 
   // Get word-by-word data for specific ayah

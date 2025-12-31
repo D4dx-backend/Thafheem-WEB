@@ -2110,6 +2110,11 @@ const BlockWise = () => {
 
     let processedContent = String(htmlContent);
     
+    // Preprocess: Convert escape sequences from database content
+    // \n (newline) → <br> tag for line breaks
+    // \t (tab) → single space
+    processedContent = processedContent.replace(/\n/g, '<br>');
+    processedContent = processedContent.replace(/\t/g, ' ');
     const lang = translationLanguage === 'E' ? 'en' : translationLanguage === 'hi' ? 'hi' : 'mal';
     const supTagStyle = 'cursor:pointer!important;background-color:transparent!important;color:rgb(41,169,199)!important;font-weight:600!important;text-decoration:none!important;border:none!important;display:inline!important;font-size:12px!important;vertical-align:super!important;line-height:1!important;position:relative!important;top:3px!important;z-index:10!important;transition:0.2s ease-in-out!important;';
     
@@ -2174,12 +2179,12 @@ const BlockWise = () => {
       return processedContent;
     }
 
-    // For Malayalam, apply the simplified "marker token" logic:
+    // For Malayalam and English, apply the simplified "marker token" logic:
     //   - Match any occurrence of 1–342, optionally followed by a/A.
-    //   - Do NOT inspect surrounding Malayalam / punctuation; just avoid:
+    //   - Do NOT inspect surrounding text / punctuation; just avoid:
     //       * HTML tag contents
     //       * existing <sup>...</sup> regions
-    if (translationLanguage === 'mal') {
+    if (translationLanguage === 'mal' || translationLanguage === 'E') {
       const markerPattern = /(\d{1,3}[aA]?)/g;
       const matches = [];
       let match;
@@ -2215,6 +2220,20 @@ const BlockWise = () => {
           continue;
         }
 
+        // Skip if inside parentheses (e.g., (24-), (26-28), (1))
+        const beforeMatch = processedContent.substring(0, index);
+        const afterMatch = processedContent.substring(index + token.length);
+        const lastOpenParen = beforeMatch.lastIndexOf("(");
+        const nextCloseParen = afterMatch.indexOf(")");
+        if (lastOpenParen !== -1 && nextCloseParen !== -1) {
+          // Check if there's no closing paren before the match and no opening paren after
+          const beforeCloseParen = beforeMatch.substring(lastOpenParen + 1);
+          if (beforeCloseParen.indexOf(")") === -1) {
+            // We're inside parentheses, skip this match
+            continue;
+          }
+        }
+
         matches.push({
           index,
           token,
@@ -2230,8 +2249,10 @@ const BlockWise = () => {
         processedContent = before + createSupTag(token) + after;
       }
 
-      // Also process M1, M2, etc. media links for Malayalam
-      processedContent = processMalayalamMediaLinks(processedContent);
+      // Also process M1, M2, etc. media links for Malayalam only
+      if (translationLanguage === 'mal') {
+        processedContent = processMalayalamMediaLinks(processedContent);
+      }
 
       return processedContent;
     }
@@ -2730,17 +2751,10 @@ const BlockWise = () => {
                                 const verseNumber = Number.isFinite(parseInt(rawVerseNumber, 10))
                                   ? parseInt(rawVerseNumber, 10)
                                   : start + idx;
-                                const parsedHtml =
-                                  translationLanguage === 'E'
-                                  ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                                      translationText,
-                                      parseInt(surahId, 10),
-                                      verseNumber
-                                    )
-                                    : parseTranslationWithClickableSup(
-                                      translationText,
-                                      `${start}-${end}`
-                                    );
+                                const parsedHtml = parseTranslationWithClickableSup(
+                                  translationText,
+                                  `${start}-${end}`
+                                );
 
                                 return (
                                   <div
@@ -2759,17 +2773,10 @@ const BlockWise = () => {
                                 className="leading-relaxed"
                                 data-footnote-context="blockwise"
                                 dangerouslySetInnerHTML={{
-                                  __html:
-                                    translationLanguage === 'E'
-                                      ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
-                                        parseInt(surahId, 10),
-                                        start
-                                      )
-                                      : parseTranslationWithClickableSup(
-                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
-                                        `${start}-${end}`
-                                      ),
+                                  __html: parseTranslationWithClickableSup(
+                                    translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
+                                    `${start}-${end}`
+                                  ),
                                 }}
                               />
                             ) : (

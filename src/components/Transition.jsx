@@ -536,9 +536,15 @@ const Transition = ({ showPageInfo = false }) => {
     requestAnimationFrame(() => {
       const pageElement = document.getElementById(`page-${pageNumber}`);
       if (pageElement) {
+        // Find the parent container that holds all verses for this page
+        // The page element is inside: div.text-center > div (verses container) > div (page header)
+        // We want to scroll to the outer container (parent of parent of parent)
+        const pageContainer = pageElement.closest('div > div > div') || pageElement.parentElement?.parentElement?.parentElement;
+        const targetElement = pageContainer || pageElement.parentElement?.parentElement || pageElement;
+        
         // Calculate offset to account for sticky header
         const headerOffset = 100; // Approximate header height
-        const elementPosition = pageElement.getBoundingClientRect().top;
+        const elementPosition = targetElement.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         // Use scrollTo for better control

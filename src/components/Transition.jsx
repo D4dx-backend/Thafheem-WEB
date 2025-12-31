@@ -395,17 +395,7 @@ const Transition = ({ showPageInfo = false }) => {
     }
 
     const handleAyahTracking = () => {
-      // First check if there's a hash in the URL
-      const hash = window.location.hash;
-      if (hash && hash.startsWith("#verse-")) {
-        const hashAyah = parseInt(hash.replace("#verse-", ""), 10);
-        if (!isNaN(hashAyah) && hashAyah >= 1 && hashAyah <= verseCount) {
-          setCurrentVisibleAyah(hashAyah);
-          return;
-        }
-      }
-
-      // Otherwise, find the most visible ayah in viewport
+      // Find the most visible ayah in viewport first
       const viewportTop = window.scrollY;
       const viewportBottom = window.scrollY + window.innerHeight;
       const viewportCenter = viewportTop + window.innerHeight / 2;
@@ -433,8 +423,19 @@ const Transition = ({ showPageInfo = false }) => {
         }
       }
 
+      // If we found a visible ayah, use it (prioritize viewport over hash)
       if (visibleAyah) {
         setCurrentVisibleAyah(visibleAyah);
+        return;
+      }
+
+      // Fallback: check if there's a hash in the URL (only if nothing is visible)
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#verse-")) {
+        const hashAyah = parseInt(hash.replace("#verse-", ""), 10);
+        if (!isNaN(hashAyah) && hashAyah >= 1 && hashAyah <= verseCount) {
+          setCurrentVisibleAyah(hashAyah);
+        }
       }
     };
 

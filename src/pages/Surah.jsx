@@ -2587,14 +2587,26 @@ Read more: ${shareUrl}`;
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
-                    <div
-                      className="text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none"
-                      style={{ fontSize: `${adjustedTranslationFontSize}px` }}
-                    >
-                      {hindiFootnoteContent}
+                  <>
+                    <style>{`
+                      .hindi-explanation-content,
+                      .hindi-explanation-content p,
+                      .hindi-explanation-content div,
+                      .hindi-explanation-content span {
+                        text-align: justify !important;
+                      }
+                    `}</style>
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                      <div
+                        className="hindi-explanation-content text-gray-700 leading-[1.6] font-poppins sm:leading-[1.7] lg:leading-[1.8] dark:text-white text-sm sm:text-base lg:text-lg prose prose-sm dark:prose-invert max-w-none text-justify"
+                        style={{ 
+                          fontSize: `${adjustedTranslationFontSize}px`,
+                          textAlign: 'justify'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: hindiFootnoteContent }}
+                      />
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>

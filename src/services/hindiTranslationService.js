@@ -339,20 +339,24 @@ class HindiTranslationService {
   parseHindiTranslationWithClickableExplanations(htmlContent, surahNo, ayahNo) {
     if (!htmlContent) return '';
 
+    let processedContent = String(htmlContent);
+
+    // First, process existing sup.f-note tags
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = processedContent;
 
     const supTags = tempDiv.querySelectorAll('sup.f-note');
     supTags.forEach(sup => {
       const link = sup.querySelector('a');
       if (link) {
         const explanationNumber = link.textContent.trim();
-        if (/^[\d१२३४५६७८९०]+$/.test(explanationNumber)) {
+        // Updated regex to allow A or B suffix: /^[\d१२३४५६७८९०]+[aAbB]?$/
+        if (/^[\d१२३४५६७८९०]+[aAbB]?$/.test(explanationNumber)) {
           sup.style.cssText = `
             cursor: pointer !important;
             background-color: transparent !important;
-            color: #19B5DD !important;
-            font-weight: 500 !important;
+            color: rgb(41,169,199) !important;
+            font-weight: 600 !important;
             text-decoration: none !important;
             border: none !important;
             display: inline !important;
@@ -365,11 +369,11 @@ class HindiTranslationService {
           `;
 
           sup.addEventListener('mouseenter', () => {
-            sup.style.color = '#0ea5e9';
+            sup.style.color = '#0891b2';
           });
 
           sup.addEventListener('mouseleave', () => {
-            sup.style.color = '#19B5DD';
+            sup.style.color = 'rgb(41,169,199)';
           });
 
           sup.setAttribute('data-footnote', explanationNumber);
@@ -382,7 +386,71 @@ class HindiTranslationService {
       }
     });
 
-    return tempDiv.innerHTML;
+    // Get the processed HTML
+    processedContent = tempDiv.innerHTML;
+
+    // Now, find and replace plain text patterns like "25A", "18A", "27B" etc.
+    // Pattern: \d{1,3}[aAbB] - matches numbers 1-999 followed by A or B (case insensitive)
+    const markerPattern = /(\d{1,3}[aAbB])/g;
+    const matches = [];
+    let match;
+
+    while ((match = markerPattern.exec(processedContent)) !== null) {
+      const token = match[1]; // e.g. "25A", "18A", "27B"
+      const index = match.index;
+
+      // Extract numeric part
+      const numericPartMatch = token.match(/^(\d{1,3})/);
+      if (!numericPartMatch) continue;
+      const baseNumber = parseInt(numericPartMatch[1], 10);
+
+      // Only allow 1-342
+      if (!(baseNumber >= 1 && baseNumber <= 342)) continue;
+
+      // Skip if inside an HTML tag (between '<' and '>')
+      const beforeAll = processedContent.substring(0, index);
+      const lastLt = beforeAll.lastIndexOf("<");
+      const lastGt = beforeAll.lastIndexOf(">");
+      if (lastLt > lastGt) {
+        // We're currently inside a tag like <span attr="25A">
+        continue;
+      }
+
+      // Skip if already inside a <sup>...</sup> or other HTML tag
+      const contextStart = Math.max(0, index - 200);
+      const context = processedContent.substring(contextStart, index);
+      const lastSupOpen = context.lastIndexOf("<sup");
+      const lastSupClose = context.lastIndexOf("</sup>");
+      if (lastSupOpen > lastSupClose) {
+        continue;
+      }
+
+      // Skip if already processed (inside a hindi-footnote-link)
+      const afterMatch = processedContent.substring(index, index + token.length + 50);
+      if (afterMatch.includes('hindi-footnote-link') || afterMatch.includes('data-footnote')) {
+        continue;
+      }
+
+      matches.push({
+        index,
+        token,
+        length: token.length,
+      });
+    }
+
+    // Replace from right to left so indices stay valid
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const { index, token, length } = matches[i];
+      const before = processedContent.substring(0, index);
+      const after = processedContent.substring(index + length);
+      
+      // Create clickable sup tag with cyan blue styling (matching other interpretation numbers)
+      const clickableTag = `<sup class="hindi-footnote-link" data-footnote="${token}" data-surah="${surahNo}" data-ayah="${ayahNo}" title="Click to view explanation ${token}" style="cursor:pointer!important;background-color:transparent!important;color:rgb(41,169,199)!important;font-weight:600!important;text-decoration:none!important;border:none!important;display:inline!important;font-size:12px!important;vertical-align:super!important;line-height:1!important;position:relative!important;top:3px!important;z-index:10!important;transition:0.2s ease-in-out!important;">${token}</sup>`;
+      
+      processedContent = before + clickableTag + after;
+    }
+
+    return processedContent;
   }
 
   async isAvailable() {

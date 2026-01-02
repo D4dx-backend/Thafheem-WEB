@@ -350,7 +350,16 @@ const SurahInfoModal = ({ surahId, onClose }) => {
 
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 
+              className={`text-lg sm:text-xl font-semibold text-gray-900 dark:text-white ${
+                translationLanguage === 'mal' ? 'font-malayalam' : ''
+              }`}
+              style={
+                translationLanguage === 'mal'
+                  ? { fontFamily: "'Noto Sans Malayalam'" }
+                  : {}
+              }
+            >
               {surahInfo?.basic?.name_simple || surahInfo?.surah?.name || `Surah ${surahId}`}
             </h2>
             <div className="flex items-center gap-2">

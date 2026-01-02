@@ -1,6 +1,7 @@
 /**
  * Service Worker for Thafheem Quran App
- * Implements stale-while-revalidate caching strategy for translation API responses
+ * Implements stale-while-revalidate caching strategy for ALL API responses
+ * Caches: surah data, translations (ayahwise & blockwise), interpretations, word-by-word, etc.
  */
 
 const CACHE_NAME = 'thafheem-translations-v1';
@@ -8,11 +9,14 @@ const API_CACHE_NAME = 'thafheem-api-v1';
 const STATIC_CACHE_NAME = 'thafheem-static-v1';
 
 // API endpoints to cache
+// NOTE: Now caching ALL /api/ requests automatically (see isAPIRequest function)
+// This includes: surah data, translations, interpretations, blockwise, ayahwise, word-by-word, etc.
 const API_ENDPOINTS = [
   '/api/ayatranslation/',
   '/api/ayaranges/',
   '/api/ayahaudio/',
   '/api/interpretation/',
+  // All other /api/ endpoints are now automatically cached
 ];
 
 // Static assets to cache
@@ -105,9 +109,11 @@ self.addEventListener('fetch', (event) => {
 
 /**
  * Check if request is for API endpoint
+ * Now caches ALL /api/ requests (surah data, translations, interpretations, blockwise, ayahwise, etc.)
  */
 function isAPIRequest(url) {
-  return API_ENDPOINTS.some(endpoint => url.pathname.includes(endpoint));
+  // Cache all API requests (minimal change - catches everything under /api/)
+  return url.pathname.includes('/api/');
 }
 
 /**
@@ -286,12 +292,31 @@ function getCacheName(url) {
 
 /**
  * Get cache expiry time for request
+ * Extended to handle all API endpoints (surah data, translations, interpretations, blockwise, ayahwise)
  */
 function getCacheExpiry(url) {
-  if (url.includes('ayatranslation')) return Date.now() + CACHE_DURATIONS.translations;
-  if (url.includes('ayaranges')) return Date.now() + CACHE_DURATIONS.ranges;
-  if (url.includes('audio')) return Date.now() + CACHE_DURATIONS.audio;
-  return Date.now() + CACHE_DURATIONS.static;
+  // Surah data and page ranges - cache for 6 hours
+  if (url.includes('suranames') || url.includes('pageranges') || url.includes('arabic/surah')) {
+    return Date.now() + CACHE_DURATIONS.ranges;
+  }
+  // Translations (ayahwise and blockwise) - cache for 12 hours
+  if (url.includes('translation') || url.includes('ayatransl') || url.includes('ayatranslation')) {
+    return Date.now() + CACHE_DURATIONS.translations;
+  }
+  // Interpretations - cache for 12 hours
+  if (url.includes('interpretation') || url.includes('interpret')) {
+    return Date.now() + CACHE_DURATIONS.translations;
+  }
+  // Aya ranges for blockwise - cache for 6 hours
+  if (url.includes('ayaranges')) {
+    return Date.now() + CACHE_DURATIONS.ranges;
+  }
+  // Audio - cache for 7 days
+  if (url.includes('audio')) {
+    return Date.now() + CACHE_DURATIONS.audio;
+  }
+  // Word-by-word and other API data - cache for 6 hours
+  return Date.now() + CACHE_DURATIONS.ranges;
 }
 
 /**

@@ -356,14 +356,20 @@ const Transition = ({ showPageInfo = false }) => {
 
       // Check all pages for this surah
       surahPageNumbers.forEach((pageNum) => {
-        const element = document.getElementById(`page-${pageNum}`);
-        if (element) {
-          const rect = element.getBoundingClientRect();
+        const pageHeaderElement = document.getElementById(`page-${pageNum}`);
+        if (pageHeaderElement) {
+          // Find the page container (where verses start)
+          const pageContainer = pageHeaderElement.parentElement?.parentElement?.parentElement;
+          const containerElement = pageContainer || pageHeaderElement.parentElement?.parentElement;
+          
+          // Check both container and header to determine visibility
+          const elementToCheck = containerElement || pageHeaderElement;
+          const rect = elementToCheck.getBoundingClientRect();
           const elementTop = rect.top + window.scrollY;
           const elementBottom = elementTop + rect.height;
           const elementCenter = elementTop + rect.height / 2;
 
-          // Check if page is in viewport
+          // Check if page container is in viewport
           if (elementTop <= viewportBottom && elementBottom >= viewportTop) {
             const distance = Math.abs(elementCenter - viewportCenter);
             if (distance < minDistance) {
@@ -529,6 +535,9 @@ const Transition = ({ showPageInfo = false }) => {
       event.stopPropagation();
     }
 
+    // Update visible page immediately
+    setCurrentVisiblePage(pageNumber);
+
     // Close dropdown immediately
     setShowPageDropdown(false);
 
@@ -536,22 +545,25 @@ const Transition = ({ showPageInfo = false }) => {
     requestAnimationFrame(() => {
       const pageElement = document.getElementById(`page-${pageNumber}`);
       if (pageElement) {
-        // Find the parent container that holds all verses for this page
-        // The page element is inside: div.text-center > div (verses container) > div (page header)
-        // We want to scroll to the outer container (parent of parent of parent)
-        const pageContainer = pageElement.closest('div > div > div') || pageElement.parentElement?.parentElement?.parentElement;
-        const targetElement = pageContainer || pageElement.parentElement?.parentElement || pageElement;
+        // Find the page container (outer div) - 3 levels up from page header
+        // Structure: div (outer) > div (inner) > div.text-center > div (page header)
+        // The page header is at the bottom, so we scroll to the container's top
+        const pageContainer = pageElement.parentElement?.parentElement?.parentElement;
+        const targetElement = pageContainer || pageElement.parentElement?.parentElement;
         
-        // Calculate offset to account for sticky header
-        const headerOffset = 100; // Approximate header height
-        const elementPosition = targetElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        if (targetElement) {
+          // Calculate offset to account for sticky header
+          const headerOffset = 100;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-        // Use scrollTo for better control
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: "smooth"
-        });
+          // Scroll to top of page content (where verses start)
+          // This shows the selected page at the top, with previous page's header below
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: "smooth"
+          });
+        }
 
         // Highlight the page briefly
         const originalBg = pageElement.style.backgroundColor;

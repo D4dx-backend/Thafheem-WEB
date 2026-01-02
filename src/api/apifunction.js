@@ -2395,7 +2395,10 @@ export const fetchInterpretation = async (
   const apiLanguage = getLanguageCode(language);
   
   try {
-    const url = `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${verseId}${interpretationNo ? `?explanationNo=${interpretationNo}` : ''}`;
+    // For English blockwise: use /api/english/interpretation/{surahId}/{interpretationNo}
+    const url = (apiLanguage === 'english' && interpretationNo)
+      ? `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${interpretationNo}`
+      : `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${verseId}${interpretationNo ? `?explanationNo=${interpretationNo}` : ''}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -2404,7 +2407,18 @@ export const fetchInterpretation = async (
     
     const data = await response.json();
     
-    // Transform to match expected format
+    // Handle new API format: single object with interpretation field (for all languages)
+    if (interpretationNo && data.interpretation) {
+      return {
+        Interpretation: data.interpretation || '',
+        InterpretationNo: data.interpretationNo || interpretationNo,
+        surahId: parseInt(data.surah || surahId, 10),
+        verseId: parseInt(data.fromAyah || verseId, 10),
+        toAyah: parseInt(data.toAyah || verseId, 10)
+      };
+    }
+    
+    // Handle old format: explanations array
     if (data.explanations && data.explanations.length > 0) {
       const explanation = interpretationNo 
         ? data.explanations.find(exp => 
@@ -2460,11 +2474,50 @@ export const fetchInterpretationRange = async (
     : [parseInt(range), parseInt(range)];
 
   try {
-    // Fetch interpretations for each verse in the range
+    // For blockwise: use single endpoint call when interpretationNo is provided
+    if (interpretationNo) {
+      const url = `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${interpretationNo}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      // Handle new API format: single object with interpretation field
+      if (data.interpretation) {
+        return [{
+          Interpretation: data.interpretation || '',
+          InterpretationNo: data.interpretationNo || interpretationNo,
+          surahId: parseInt(data.surah || surahId, 10),
+          verseId: parseInt(data.fromAyah || fromAyah, 10),
+          toAyah: parseInt(data.toAyah || toAyah, 10)
+        }];
+      }
+      
+      // Handle old format: explanations array
+      if (data.explanations && data.explanations.length > 0) {
+        const explanation = data.explanations.find(exp => 
+          exp.explanation_no_en == interpretationNo || 
+          exp.explanation_no_local == interpretationNo
+        ) || data.explanations[0];
+        
+        return [{
+          Interpretation: explanation.explanation || '',
+          InterpretationNo: explanation.explanation_no_en || explanation.explanation_no_local || interpretationNo,
+          surahId: parseInt(surahId, 10),
+          verseId: fromAyah
+        }];
+      }
+      
+      return [];
+    }
+
+    // For other cases: fetch interpretations for each verse in the range
     const promises = [];
     for (let ayah = fromAyah; ayah <= toAyah; ayah++) {
+      const url = `${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${ayah}`;
       promises.push(
-        fetch(`${API_BASE_PATH}/${apiLanguage}/interpretation/${surahId}/${ayah}${interpretationNo ? `?explanationNo=${interpretationNo}` : ''}`)
+        fetch(url)
           .then(res => res.ok ? res.json() : null)
           .catch(() => null)
       );

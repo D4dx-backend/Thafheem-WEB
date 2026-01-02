@@ -356,14 +356,20 @@ const Transition = ({ showPageInfo = false }) => {
 
       // Check all pages for this surah
       surahPageNumbers.forEach((pageNum) => {
-        const element = document.getElementById(`page-${pageNum}`);
-        if (element) {
-          const rect = element.getBoundingClientRect();
+        const pageHeaderElement = document.getElementById(`page-${pageNum}`);
+        if (pageHeaderElement) {
+          // Find the page container (where verses start)
+          const pageContainer = pageHeaderElement.parentElement?.parentElement?.parentElement;
+          const containerElement = pageContainer || pageHeaderElement.parentElement?.parentElement;
+          
+          // Check both container and header to determine visibility
+          const elementToCheck = containerElement || pageHeaderElement;
+          const rect = elementToCheck.getBoundingClientRect();
           const elementTop = rect.top + window.scrollY;
           const elementBottom = elementTop + rect.height;
           const elementCenter = elementTop + rect.height / 2;
 
-          // Check if page is in viewport
+          // Check if page container is in viewport
           if (elementTop <= viewportBottom && elementBottom >= viewportTop) {
             const distance = Math.abs(elementCenter - viewportCenter);
             if (distance < minDistance) {
@@ -395,17 +401,7 @@ const Transition = ({ showPageInfo = false }) => {
     }
 
     const handleAyahTracking = () => {
-      // First check if there's a hash in the URL
-      const hash = window.location.hash;
-      if (hash && hash.startsWith("#verse-")) {
-        const hashAyah = parseInt(hash.replace("#verse-", ""), 10);
-        if (!isNaN(hashAyah) && hashAyah >= 1 && hashAyah <= verseCount) {
-          setCurrentVisibleAyah(hashAyah);
-          return;
-        }
-      }
-
-      // Otherwise, find the most visible ayah in viewport
+      // Find the most visible ayah in viewport first
       const viewportTop = window.scrollY;
       const viewportBottom = window.scrollY + window.innerHeight;
       const viewportCenter = viewportTop + window.innerHeight / 2;
@@ -433,8 +429,19 @@ const Transition = ({ showPageInfo = false }) => {
         }
       }
 
+      // If we found a visible ayah, use it (prioritize viewport over hash)
       if (visibleAyah) {
         setCurrentVisibleAyah(visibleAyah);
+        return;
+      }
+
+      // Fallback: check if there's a hash in the URL (only if nothing is visible)
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#verse-")) {
+        const hashAyah = parseInt(hash.replace("#verse-", ""), 10);
+        if (!isNaN(hashAyah) && hashAyah >= 1 && hashAyah <= verseCount) {
+          setCurrentVisibleAyah(hashAyah);
+        }
       }
     };
 
@@ -528,6 +535,9 @@ const Transition = ({ showPageInfo = false }) => {
       event.stopPropagation();
     }
 
+    // Update visible page immediately
+    setCurrentVisiblePage(pageNumber);
+
     // Close dropdown immediately
     setShowPageDropdown(false);
 
@@ -535,16 +545,25 @@ const Transition = ({ showPageInfo = false }) => {
     requestAnimationFrame(() => {
       const pageElement = document.getElementById(`page-${pageNumber}`);
       if (pageElement) {
-        // Calculate offset to account for sticky header
-        const headerOffset = 100; // Approximate header height
-        const elementPosition = pageElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        // Find the page container (outer div) - 3 levels up from page header
+        // Structure: div (outer) > div (inner) > div.text-center > div (page header)
+        // The page header is at the bottom, so we scroll to the container's top
+        const pageContainer = pageElement.parentElement?.parentElement?.parentElement;
+        const targetElement = pageContainer || pageElement.parentElement?.parentElement;
+        
+        if (targetElement) {
+          // Calculate offset to account for sticky header
+          const headerOffset = 100;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-        // Use scrollTo for better control
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: "smooth"
-        });
+          // Scroll to top of page content (where verses start)
+          // This shows the selected page at the top, with previous page's header below
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: "smooth"
+          });
+        }
 
         // Highlight the page briefly
         const originalBg = pageElement.style.backgroundColor;

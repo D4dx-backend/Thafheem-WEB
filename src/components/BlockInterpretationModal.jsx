@@ -1315,20 +1315,23 @@ const BlockInterpretationModal = ({
     }
 
     // First, check if we can navigate to next interpretation number in the same range
-    const nextInterpretationNo = currentInterpretationNo + 1;
+    // Convert to number to avoid string concatenation (e.g., '16' + 1 = '161' should be 17)
+    const currentInterpretationNoNum = parseInt(String(currentInterpretationNo), 10) || 1;
+    const nextInterpretationNo = currentInterpretationNoNum + 1;
     const rangeMatch = currentRange.match(/^(\d+)(?:-(\d+))?$/);
     const firstVerse = rangeMatch ? parseInt(rangeMatch[1], 10) : null;
     const lastVerse = rangeMatch && rangeMatch[2] ? parseInt(rangeMatch[2], 10) : firstVerse;
     const isSingleVerse = firstVerse === lastVerse;
     
-    if (firstVerse && currentLanguage === 'mal') {
+    if (firstVerse && (currentLanguage === 'mal' || currentLanguage === 'E' || currentLanguage === 'en')) {
       try {
         // Check if next interpretation exists for current range
         let nextInterpretationExists = false;
         
         if (isSingleVerse) {
           // For single verse, check all interpretations
-          const availableInterpretations = await fetchAllInterpretations(currentSurahId, firstVerse, 'mal');
+          const langCode = currentLanguage === 'E' || currentLanguage === 'en' ? 'E' : 'mal';
+          const availableInterpretations = await fetchAllInterpretations(currentSurahId, firstVerse, langCode);
           if (availableInterpretations && availableInterpretations.length > 0) {
             const getInterpretationNumber = (item, index) => {
               const candidates = [
@@ -1357,19 +1360,44 @@ const BlockInterpretationModal = ({
             }
           }
         } else {
-          // For range, try to fetch the next interpretation to see if it exists
+          // For range, check available interpretations for the first verse in the range
+          // This works better for English blockwise where interpretations are per verse, not per range
           try {
-            const rangeData = await fetchInterpretationRange(currentSurahId, currentRange, nextInterpretationNo, 'mal');
-            const rangeItems = Array.isArray(rangeData) ? rangeData : [rangeData];
+            const langCode = currentLanguage === 'E' || currentLanguage === 'en' ? 'E' : 'mal';
             
-            // Check if we got valid data
-            if (rangeItems.length > 0 && 
-                rangeItems[0] && 
-                Object.keys(rangeItems[0]).length > 0 &&
-                (rangeItems[0].Interpretation || rangeItems[0].interpret_text || rangeItems[0].text || '').trim() !== '') {
-              nextInterpretationExists = true;
+            // For English, try to fetch the next interpretation directly to see if it exists
+            if (currentLanguage === 'E' || currentLanguage === 'en') {
+              // Try to fetch the next interpretation for the current range
+              // If it succeeds, the interpretation exists; if it fails, it doesn't
+              try {
+                const testData = await fetchInterpretationRange(currentSurahId, currentRange, nextInterpretationNo, langCode);
+                const testItems = Array.isArray(testData) ? testData : [testData];
+                
+                // Check if we got valid data
+                if (testItems.length > 0 && 
+                    testItems[0] && 
+                    Object.keys(testItems[0]).length > 0 &&
+                    (testItems[0].Interpretation || testItems[0].interpret_text || testItems[0].text || '').trim() !== '') {
+                  nextInterpretationExists = true;
+                }
+              } catch (testErr) {
+                nextInterpretationExists = false;
+              }
+            } else {
+              // For other languages (Malayalam), use the range-based API
+              const rangeData = await fetchInterpretationRange(currentSurahId, currentRange, nextInterpretationNo, langCode);
+              const rangeItems = Array.isArray(rangeData) ? rangeData : [rangeData];
+              
+              // Check if we got valid data
+              if (rangeItems.length > 0 && 
+                  rangeItems[0] && 
+                  Object.keys(rangeItems[0]).length > 0 &&
+                  (rangeItems[0].Interpretation || rangeItems[0].interpret_text || rangeItems[0].text || '').trim() !== '') {
+                nextInterpretationExists = true;
+              }
             }
           } catch (rangeErr) {
+            console.warn('[BlockInterpretationModal] ⚠️ Error checking next interpretation:', rangeErr);
             // Interpretation doesn't exist for this range
             nextInterpretationExists = false;
           }
@@ -1403,7 +1431,8 @@ const BlockInterpretationModal = ({
               try {
                 if (nextA === nextB) {
                   // Single verse in next block
-                  const nextBlockInterpretations = await fetchAllInterpretations(currentSurahId, nextA, 'mal');
+                  const langCode = currentLanguage === 'E' || currentLanguage === 'en' ? 'E' : 'mal';
+                  const nextBlockInterpretations = await fetchAllInterpretations(currentSurahId, nextA, langCode);
                   if (nextBlockInterpretations && nextBlockInterpretations.length > 0) {
                     const getInterpretationNumber = (item, index) => {
                       const candidates = [
@@ -1435,17 +1464,44 @@ const BlockInterpretationModal = ({
                   }
                 } else {
                   // Range in next block
-                  const nextRangeData = await fetchInterpretationRange(currentSurahId, nextRange, nextInterpretationNo, 'mal');
-                  const nextRangeItems = Array.isArray(nextRangeData) ? nextRangeData : [nextRangeData];
+                  const langCode = currentLanguage === 'E' || currentLanguage === 'en' ? 'E' : 'mal';
+                  const [nextBlockFirstVerse] = nextRange.includes('-') 
+                    ? nextRange.split('-').map(Number)
+                    : [parseInt(nextRange), parseInt(nextRange)];
                   
-                  if (nextRangeItems.length > 0 && 
-                      nextRangeItems[0] && 
-                      Object.keys(nextRangeItems[0]).length > 0 &&
-                      (nextRangeItems[0].Interpretation || nextRangeItems[0].interpret_text || nextRangeItems[0].text || '').trim() !== '') {
-                    // Next interpretation exists in next block, navigate there
-                    setCurrentRange(nextRange);
-                    setCurrentInterpretationNo(nextInterpretationNo);
-                    return;
+                  // For English, try to fetch the next interpretation directly in the next block
+                  if (currentLanguage === 'E' || currentLanguage === 'en') {
+                    try {
+                      const nextBlockTestData = await fetchInterpretationRange(currentSurahId, nextRange, nextInterpretationNo, langCode);
+                      const nextBlockTestItems = Array.isArray(nextBlockTestData) ? nextBlockTestData : [nextBlockTestData];
+                      
+                      // Check if we got valid data
+                      if (nextBlockTestItems.length > 0 && 
+                          nextBlockTestItems[0] && 
+                          Object.keys(nextBlockTestItems[0]).length > 0 &&
+                          (nextBlockTestItems[0].Interpretation || nextBlockTestItems[0].interpret_text || nextBlockTestItems[0].text || '').trim() !== '') {
+                        // Next interpretation exists in next block, navigate there
+                        setCurrentRange(nextRange);
+                        setCurrentInterpretationNo(nextInterpretationNo);
+                        return;
+                      }
+                    } catch (nextBlockTestErr) {
+                      // Continue to normal block navigation below
+                    }
+                  } else {
+                    // For other languages (Malayalam), use the range-based API
+                    const nextRangeData = await fetchInterpretationRange(currentSurahId, nextRange, nextInterpretationNo, langCode);
+                    const nextRangeItems = Array.isArray(nextRangeData) ? nextRangeData : [nextRangeData];
+                    
+                    if (nextRangeItems.length > 0 && 
+                        nextRangeItems[0] && 
+                        Object.keys(nextRangeItems[0]).length > 0 &&
+                        (nextRangeItems[0].Interpretation || nextRangeItems[0].interpret_text || nextRangeItems[0].text || '').trim() !== '') {
+                      // Next interpretation exists in next block, navigate there
+                      setCurrentRange(nextRange);
+                      setCurrentInterpretationNo(nextInterpretationNo);
+                      return;
+                    }
                   }
                 }
               } catch (nextBlockErr) {

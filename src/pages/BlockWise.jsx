@@ -2103,26 +2103,88 @@ const BlockWise = () => {
   //   - Treat ANY digit sequence 1–342, optionally followed by a/A (e.g. 25, 25a, 199A),
   //     as an interpretation marker – no need to inspect surrounding text.
   //   - 199 and 199A are distinct markers and must be preserved as-is.
+  // For Hindi:
+  //   - Match digit sequence followed by A or B (e.g. 25A, 18A, 20A, 27B)
   const parseTranslationWithClickableSup = (htmlContent, blockRange) => {
     if (!htmlContent) return "";
 
     let processedContent = String(htmlContent);
     
-    const lang = translationLanguage === 'E' ? 'en' : 'mal';
+    // Preprocess: Convert escape sequences from database content
+    // \n (newline) → <br> tag for line breaks
+    // \t (tab) → single space
+    processedContent = processedContent.replace(/\n/g, '<br>');
+    processedContent = processedContent.replace(/\t/g, ' ');
+    const lang = translationLanguage === 'E' ? 'en' : translationLanguage === 'hi' ? 'hi' : 'mal';
     const supTagStyle = 'cursor:pointer!important;background-color:transparent!important;color:rgb(41,169,199)!important;font-weight:600!important;text-decoration:none!important;border:none!important;display:inline!important;font-size:12px!important;vertical-align:super!important;line-height:1!important;position:relative!important;top:3px!important;z-index:10!important;transition:0.2s ease-in-out!important;';
     
     // Create a helper function to generate the sup tag
     const createSupTag = (token) => {
-      // token is the full marker as it appears in the text (e.g. "25", "25a", "199A")
+      // token is the full marker as it appears in the text (e.g. "25", "25a", "199A", "25A", "27B")
       return `<sup class="interpretation-link" data-interpretation="${token}" data-range="${blockRange}" data-lang="${lang}" data-interpretation-number="${token}" data-interpretation-label="${token}" title="Click to view interpretation ${token}" aria-label="Interpretation ${token}" style="${supTagStyle}">${token}</sup>`;
     };
 
-    // For Malayalam, apply the simplified "marker token" logic:
+    // For Hindi, match numbers followed by A or B (e.g. 25A, 18A, 27B)
+    if (translationLanguage === 'hi') {
+      const markerPattern = /(\d{1,3}[aAbB])/g;
+      const matches = [];
+      let match;
+
+      while ((match = markerPattern.exec(processedContent)) !== null) {
+        const token = match[1]; // e.g. "25A", "18A", "27B"
+
+        // Extract numeric part
+        const numericPartMatch = token.match(/^(\d{1,3})/);
+        if (!numericPartMatch) continue;
+        const baseNumber = parseInt(numericPartMatch[1], 10);
+
+        // Only allow 1–342
+        if (!(baseNumber >= 1 && baseNumber <= 342)) continue;
+
+        const index = match.index;
+
+        // Skip if inside an HTML tag (between '<' and '>')
+        const beforeAll = processedContent.substring(0, index);
+        const lastLt = beforeAll.lastIndexOf("<");
+        const lastGt = beforeAll.lastIndexOf(">");
+        if (lastLt > lastGt) {
+          // We're currently inside a tag like <span attr="25A">
+          continue;
+        }
+
+        // Skip if already inside a <sup>...</sup>
+        const contextStart = Math.max(0, index - 200);
+        const context = processedContent.substring(contextStart, index);
+        const lastSupOpen = context.lastIndexOf("<sup");
+        const lastSupClose = context.lastIndexOf("</sup>");
+        if (lastSupOpen > lastSupClose) {
+          continue;
+        }
+
+        matches.push({
+          index,
+          token,
+          length: token.length,
+        });
+      }
+
+      // Replace from right to left so indices stay valid
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const { index, token, length } = matches[i];
+        const before = processedContent.substring(0, index);
+        const after = processedContent.substring(index + length);
+        processedContent = before + createSupTag(token) + after;
+      }
+
+      return processedContent;
+    }
+
+    // For Malayalam and English, apply the simplified "marker token" logic:
     //   - Match any occurrence of 1–342, optionally followed by a/A.
-    //   - Do NOT inspect surrounding Malayalam / punctuation; just avoid:
+    //   - Do NOT inspect surrounding text / punctuation; just avoid:
     //       * HTML tag contents
     //       * existing <sup>...</sup> regions
-    if (translationLanguage === 'mal') {
+    if (translationLanguage === 'mal' || translationLanguage === 'E') {
       const markerPattern = /(\d{1,3}[aA]?)/g;
       const matches = [];
       let match;
@@ -2158,6 +2220,20 @@ const BlockWise = () => {
           continue;
         }
 
+        // Skip if inside parentheses (e.g., (24-), (26-28), (1))
+        const beforeMatch = processedContent.substring(0, index);
+        const afterMatch = processedContent.substring(index + token.length);
+        const lastOpenParen = beforeMatch.lastIndexOf("(");
+        const nextCloseParen = afterMatch.indexOf(")");
+        if (lastOpenParen !== -1 && nextCloseParen !== -1) {
+          // Check if there's no closing paren before the match and no opening paren after
+          const beforeCloseParen = beforeMatch.substring(lastOpenParen + 1);
+          if (beforeCloseParen.indexOf(")") === -1) {
+            // We're inside parentheses, skip this match
+            continue;
+          }
+        }
+
         matches.push({
           index,
           token,
@@ -2173,13 +2249,15 @@ const BlockWise = () => {
         processedContent = before + createSupTag(token) + after;
       }
 
-      // Also process M1, M2, etc. media links for Malayalam
-      processedContent = processMalayalamMediaLinks(processedContent);
+      // Also process M1, M2, etc. media links for Malayalam only
+      if (translationLanguage === 'mal') {
+        processedContent = processMalayalamMediaLinks(processedContent);
+      }
 
       return processedContent;
     }
 
-    // Non-Malayalam: leave content unchanged (no special sup parsing here)
+    // Non-Malayalam/Hindi: leave content unchanged (no special sup parsing here)
     return processedContent;
   };
 
@@ -2673,17 +2751,10 @@ const BlockWise = () => {
                                 const verseNumber = Number.isFinite(parseInt(rawVerseNumber, 10))
                                   ? parseInt(rawVerseNumber, 10)
                                   : start + idx;
-                                const parsedHtml =
-                                  translationLanguage === 'E'
-                                  ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                                      translationText,
-                                      parseInt(surahId, 10),
-                                      verseNumber
-                                    )
-                                    : parseTranslationWithClickableSup(
-                                      translationText,
-                                      `${start}-${end}`
-                                    );
+                                const parsedHtml = parseTranslationWithClickableSup(
+                                  translationText,
+                                  `${start}-${end}`
+                                );
 
                                 return (
                                   <div
@@ -2702,17 +2773,10 @@ const BlockWise = () => {
                                 className="leading-relaxed"
                                 data-footnote-context="blockwise"
                                 dangerouslySetInnerHTML={{
-                                  __html:
-                                    translationLanguage === 'E'
-                                      ? englishTranslationService.parseEnglishTranslationWithClickableFootnotes(
-                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
-                                        parseInt(surahId, 10),
-                                        start
-                                      )
-                                      : parseTranslationWithClickableSup(
-                                        translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
-                                        `${start}-${end}`
-                                      ),
+                                  __html: parseTranslationWithClickableSup(
+                                    translationData.TranslationText || translationData.translationText || translationData.translation_text || translationData.text,
+                                    `${start}-${end}`
+                                  ),
                                 }}
                               />
                             ) : (

@@ -2541,7 +2541,7 @@ const BlockWise = () => {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 font-outfit transition-colors duration-300">
+      <div className="mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 font-outfit transition-colors duration-300 overflow-x-hidden w-full">
         {/* Sticky Header */}
         <div className="sticky top-0 z-40 glass border-b border-gray-200/50 dark:border-gray-700/50 transition-all duration-300">
           <div className="container-responsive py-3 sm:py-4">
@@ -2615,7 +2615,7 @@ const BlockWise = () => {
             </div>
           </div>
 
-          <div className={`container-responsive py-6 sm:py-8 space-y-4 sm:space-y-6 ${currentAyahInBlock ? 'pb-32 sm:pb-36' : ''}`}>
+          <div className={`container-responsive py-6 sm:py-8 space-y-4 sm:space-y-6 overflow-x-hidden w-full ${currentAyahInBlock ? 'pb-32 sm:pb-36' : ''}`}>
 
             {/* Render blocks based on aya ranges */}
             {loading && blockRanges.length === 0 ? (
@@ -2674,23 +2674,25 @@ const BlockWise = () => {
                   <div
                     id={`block-${start}-${end}`}
                     key={`block-${blockId}-${start}-${end}`}
-                    className="relative rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300"
+                    className="relative rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300 overflow-x-hidden w-full"
                   >
                     {/* Block Range Badge */}
                     <div className="absolute top-0 left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 border-b border-r border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 z-10" style={{ borderRadius: '16px 0' }}>
                       {surahId}:{start}{start !== end && `-${end}`}
                     </div>
 
-                    <div className="p-4 sm:p-6 lg:p-8 pt-12">
+                    <div className="p-4 sm:p-6 lg:p-8 pt-12 overflow-x-hidden">
                       {/* Arabic Text */}
-                      <div className="w-full mb-6 sm:mb-8 text-right" dir="rtl">
+                      <div className="w-full mb-6 sm:mb-8 text-right overflow-x-auto" dir="rtl">
                         <p
-                          className="leading-[2.2] text-gray-800 dark:text-gray-100"
+                          className="leading-[2.2] text-gray-800 dark:text-gray-100 break-words"
                           style={{
                             fontFamily: quranFont ? `'${quranFont}', serif` : '"Amiri Quran", serif',
                             direction: 'rtl',
                             lineHeight: '2.7',
                             fontSize: `${fontSize}px`,
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
                           }}
                         >
                           {arabicSlice.length > 0
@@ -2707,7 +2709,7 @@ const BlockWise = () => {
                       </div>
 
                       {/* Translation Text for this block */}
-                      <div className="w-full text-left mb-6">
+                      <div className="w-full text-left mb-6 overflow-x-hidden">
                         {translationData ? (
                           <div className={`prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 ${translationLanguage === 'hi' ? 'font-hindi' :
                             translationLanguage === 'ur' ? 'font-urdu' :
@@ -2716,7 +2718,11 @@ const BlockWise = () => {
                                   translationLanguage === 'mal' ? 'font-malayalam' :
                                     'font-poppins'
                             }`}
-                            style={{ fontSize: `${adjustedTranslationFontSize}px` }}
+                            style={{ 
+                              fontSize: `${adjustedTranslationFontSize}px`,
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                            }}
                           >
                             {/* Render translation text with HTML and clickable interpretation numbers */}
                             {isMalayalamBlockwise ? (

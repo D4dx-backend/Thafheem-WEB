@@ -42,6 +42,11 @@
 }
 
 /* Global Reset & Base Styles */
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   max-width: 100%;
   margin: 0 auto;
@@ -51,6 +56,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .dark body {
@@ -438,6 +445,8 @@ a:active {
 
   .container-responsive {
     @apply max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8;
+    width: 100%;
+    overflow-x: hidden;
   }
 }
 

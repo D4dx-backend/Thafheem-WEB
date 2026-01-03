@@ -590,6 +590,16 @@ const upsertArabicVerses = useCallback((incomingVerses, replace = false) => {
     audioRefForCleanup.current = audioEl;
   }, [audioEl]);
 
+  // Auto-scroll to current ayah when playing
+  useEffect(() => {
+    if (isSequencePlaying && playingAyah) {
+      const ayahElement = document.getElementById(`verse-${playingAyah}`);
+      if (ayahElement) {
+        ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [playingAyah, isSequencePlaying]);
+
   // Fetch ayah data and surah info
   useEffect(() => {
     let isMounted = true;

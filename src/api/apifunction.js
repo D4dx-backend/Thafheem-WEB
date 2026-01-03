@@ -1542,7 +1542,9 @@ const fetchFromMysqlQuranaya = async (surahId, ayahNumber = null) => {
   }
 
   const endpoint = `${apiBase}/malayalam/quranaya/${surahId}${ayahNumber ? `/${ayahNumber}` : ''}`;
-  const response = await fetchWithTimeout(endpoint, {}, 8000);
+  // Increased timeout for full surah requests (can take longer)
+  const timeout = ayahNumber ? 8000 : 20000; // 20 seconds for full surah, 8 seconds for single ayah
+  const response = await fetchWithTimeout(endpoint, {}, timeout);
   if (!response.ok) {
     throw new Error(`MySQL quranaya error: ${response.status}`);
   }

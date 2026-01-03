@@ -512,6 +512,16 @@ const Reading = () => {
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying } }));
   }, [isPlaying]);
 
+  // Auto-scroll to current ayah when playing
+  useEffect(() => {
+    if (isPlaying && currentAyah) {
+      const ayahElement = document.getElementById(`ayah-${currentAyah}`);
+      if (ayahElement) {
+        ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentAyah, isPlaying]);
+
   // Listen for toast events from Transition component
   useEffect(() => {
     const handleToastEvent = (event) => {
@@ -1020,6 +1030,7 @@ const Reading = () => {
                           return (
                             <span 
                               key={verse.id || `verse-${actualAyahNumber}`}
+                              id={`ayah-${actualAyahNumber}`}
                               onClick={() => handleAyahClick(actualAyahNumber)}
                               className={`inline transition-all duration-300 cursor-pointer hover:bg-cyan-50 dark:hover:bg-cyan-900/40 rounded px-2 ${
                                 currentAyah === actualAyahNumber 

@@ -91,6 +91,7 @@ const AyathNavbar = ({
     : `${surahId} - Loading...`;
 
   const handleSurahChange = (newSurahId) => {
+    window.dispatchEvent(new CustomEvent('surahChange'));
     if (onSurahChange) {
       onSurahChange(newSurahId);
     } else {

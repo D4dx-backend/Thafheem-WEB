@@ -215,6 +215,7 @@ const InterpretationNavbar = ({
                       <button
                         key={opt.value}
                         onClick={() => {
+                          window.dispatchEvent(new CustomEvent('surahChange'));
                           onPickSurah && onPickSurah(opt.value);
                           setOpenMenu(null);
                         }}
@@ -351,6 +352,7 @@ const InterpretationNavbar = ({
                       <button
                         key={opt.value}
                         onClick={() => {
+                          window.dispatchEvent(new CustomEvent('surahChange'));
                           onPickSurah && onPickSurah(opt.value);
                           setOpenMenu(null);
                         }}

@@ -162,6 +162,15 @@ const NotePopup = ({
           .animate-fade-in {
             animation: fade-in 0.3s ease-out;
           }
+          /* Ensure all headings in Malayalam note content use Noto Sans Malayalam */
+          .note-content-malayalam h1,
+          .note-content-malayalam h2,
+          .note-content-malayalam h3,
+          .note-content-malayalam h4,
+          .note-content-malayalam h5,
+          .note-content-malayalam h6 {
+            font-family: 'Noto Sans Malayalam', sans-serif !important;
+          }
         `}
       </style>
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] px-4 animate-backdrop-fade-in">
@@ -169,13 +178,7 @@ const NotePopup = ({
 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={onClose}
-                className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
-              >
-                Back
-              </button>
+            <div className="flex items-center">
               <h2 className="text-lg font-medium text-[#2AA0BF]" style={{ fontFamily: "'Noto Sans Malayalam'" }}>
                 {noteName ? noteName : `Note ${noteId}`}
               </h2>
@@ -249,14 +252,14 @@ const NotePopup = ({
 
                   {typeof noteContent === 'string' ? (
                     <div
-                      className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white break-words text-justify"
-                      style={{ textAlign: 'justify' }}
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-white break-words text-justify font-malayalam note-content-malayalam"
+                      style={{ textAlign: 'justify', fontFamily: "'Noto Sans Malayalam', sans-serif" }}
                       dangerouslySetInnerHTML={{ __html: noteContent }}
                     />
                   ) : (
                     <div
-                      className="text-gray-800 dark:text-white leading-relaxed text-justify break-words"
-                      style={{ fontFamily: "serif", textAlign: 'justify' }}
+                      className="text-gray-800 dark:text-white leading-relaxed text-justify break-words font-malayalam note-content-malayalam"
+                      style={{ fontFamily: "'Noto Sans Malayalam', sans-serif", textAlign: 'justify' }}
                     >
                       {noteContent}
                     </div>

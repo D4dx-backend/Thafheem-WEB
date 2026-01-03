@@ -1887,6 +1887,20 @@ Read more: ${shareUrl}`;
     };
   }, []);
 
+  // Stop audio when surah changes
+  useEffect(() => {
+    const handleSurahChange = () => {
+      audioManager.stopAll();
+      stopCurrentAudio();
+      setIsSequencePlaying(false);
+      setPlayingAyah(null);
+    };
+    window.addEventListener('surahChange', handleSurahChange);
+    return () => {
+      window.removeEventListener('surahChange', handleSurahChange);
+    };
+  }, []);
+
   // Listen for reciter changes from other components (Settings, StickyAudioPlayer)
   useEffect(() => {
     const handleReciterChange = (event) => {

@@ -1304,6 +1304,17 @@ const BlockWise = () => {
     };
   }, []);
 
+  // Stop audio when surah changes
+  useEffect(() => {
+    const handleSurahChange = () => {
+      stopPlayback();
+    };
+    window.addEventListener('surahChange', handleSurahChange);
+    return () => {
+      window.removeEventListener('surahChange', handleSurahChange);
+    };
+  }, []);
+
   // Dispatch audio state changes when isContinuousPlay changes
   useEffect(() => {
     const isPlaying = isContinuousPlay && !isPaused && playingBlock !== null;

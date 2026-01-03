@@ -472,6 +472,41 @@ const Reading = () => {
     };
   }, []);
 
+  // Stop audio when surah changes
+  useEffect(() => {
+    const handleSurahChange = () => {
+      // Stop all audio via audioManager first
+      audioManager.stopAll();
+      
+      // Also stop the current audio element if it exists
+      if (audioRefForCleanup.current) {
+        audioRefForCleanup.current.pause();
+        audioRefForCleanup.current.currentTime = 0;
+        audioRefForCleanup.current.onended = null;
+        audioRefForCleanup.current.onerror = null;
+        audioRefForCleanup.current.src = '';
+        audioRefForCleanup.current = null;
+      }
+      
+      // Clear all state
+      setIsPlaying(false);
+      setCurrentAyah(null);
+      setCurrentAyahIndex(0);
+      setCurrentAudioTypeIndex(0);
+      setAudioElement(null);
+      if (currentAudioRef.current) {
+        currentAudioRef.current = null;
+      }
+      
+      // Dispatch event to update header button
+      window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
+    };
+    window.addEventListener('surahChange', handleSurahChange);
+    return () => {
+      window.removeEventListener('surahChange', handleSurahChange);
+    };
+  }, []);
+
   // Dispatch audio state changes when isPlaying changes
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying } }));
@@ -578,14 +613,33 @@ const Reading = () => {
     audioRefForCleanup.current = audioElement;
   }, [audioElement]);
 
-  // Stop audio when surah changes (but keep this separate from unmount cleanup)
+  // Stop audio and clear state when surah changes
   useEffect(() => {
-    // Only run when surahId actually changes, not on initial mount
-    return () => {
-      if (audioElement) {
-        stopAudio();
-      }
-    };
+    // Stop all audio via audioManager first
+    audioManager.stopAll();
+    
+    // Also stop the current audio element if it exists
+    if (audioRefForCleanup.current) {
+      audioRefForCleanup.current.pause();
+      audioRefForCleanup.current.currentTime = 0;
+      audioRefForCleanup.current.onended = null;
+      audioRefForCleanup.current.onerror = null;
+      audioRefForCleanup.current.src = '';
+      audioRefForCleanup.current = null;
+    }
+    
+    // Clear all audio-related state
+    setIsPlaying(false);
+    setCurrentAyah(null);
+    setCurrentAyahIndex(0);
+    setCurrentAudioTypeIndex(0);
+    setAudioElement(null);
+    if (currentAudioRef.current) {
+      currentAudioRef.current = null;
+    }
+    
+    // Dispatch event to update header button
+    window.dispatchEvent(new CustomEvent('audioStateChange', { detail: { isPlaying: false } }));
   }, [surahId]);
 
   // Stop audio when language changes
